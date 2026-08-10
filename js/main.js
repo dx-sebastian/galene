@@ -44,6 +44,19 @@ function refrescarHora() {
 refrescarHora();
 setInterval(refrescarHora, 30_000);
 
+/* ── LÁMINAS SEGÚN LA PANTALLA ─────────────────────────────────────
+   Dos juegos: 2048 px y 1024 px. En un teléfono el lienzo mide unos
+   400×800, así que bajarse láminas de 2048 es pagar el doble de bytes
+   y el doble de memoria de textura para nada. Medido: 4.8 MB contra
+   2.2 MB, y 49 MB de textura contra ~13 MB.
+
+   El 67.5 % del tráfico en Colombia es móvil, y esto se abre a las
+   cuatro de la mañana con mala señal y el 3 % de batería. */
+const ANCHO_REAL = Math.min(2048, innerWidth * Math.min(devicePixelRatio || 1, 2));
+const LAMINAS_CHICAS = ANCHO_REAL <= 1100;
+const ARTE = LAMINAS_CHICAS ? 'arte/1024/' : 'arte/';
+const ANCHO_MAX = LAMINAS_CHICAS ? 1024 : 2048;
+
 /* ── 3 · EL MAR ───────────────────────────────────────────────────── */
 
 const hero   = document.getElementById('mar');
@@ -342,19 +355,19 @@ function arrancar(mar) {
      entero sigue funcionando. */
   mar.ventana('Lejano', 0.10, 0.86);   // recorta el margen de papel
   mar.cargar({
-    lejano:       'arte/mar-lejano.webp',
-    medio:        'arte/mar-medio.webp',
-    medioCalmo:   'arte/mar-medio-calmo.webp',
-    cercano:      'arte/mar-cercano.webp',
-    cercanoCalmo: 'arte/mar-cercano-calmo.webp',
-    manglar:      'arte/manglar-arco-a.webp',
-    papel:        'arte/papel.webp',
-    grafito:      'arte/grafito.webp',
-    nubes:        'arte/nubes.webp',
+    lejano:       ARTE + 'mar-lejano.webp',
+    medio:        ARTE + 'mar-medio.webp',
+    medioCalmo:   ARTE + 'mar-medio-calmo.webp',
+    cercano:      ARTE + 'mar-cercano.webp',
+    cercanoCalmo: ARTE + 'mar-cercano-calmo.webp',
+    manglar:      ARTE + 'manglar-arco-a.webp',
+    papel:        ARTE + 'papel.webp',
+    grafito:      ARTE + 'grafito.webp',
+    nubes:        ARTE + 'nubes.webp',
     /* Las garzas ya NO se pintan en el shader: allí estaban paradas en
        mar abierto, y una garza vadea en somero. Ahora hay una sola, en
        el DOM, que llega volando y se posa sobre la copa del manglar. */
-  }).then((n) => {
+  }, ANCHO_MAX).then((n) => {
     console.info('[mar] láminas conectadas:', n.join(', '));
     /* Con papel de verdad el grano se modula contra su propia media.
        0.55, no 1.15: a fuerza alta el papel deja de ser soporte y pasa
@@ -388,19 +401,19 @@ function arrancar(mar) {
    Todo medido con pruebas/lamina.html: si se regenera una lámina, hay
    que volver a medirla o el ave pega un salto en ese cuadro. */
 const VUELO = {
-  a: { src: 'arte/garza-vuelo-a.webp', cx: 0.463, cy: 0.469, ancho: 0.853, aspecto: 1.000 },
-  b: { src: 'arte/garza-vuelo-b.webp', cx: 0.565, cy: 0.511, ancho: 0.824, aspecto: 1.500 },
-  c: { src: 'arte/garza-vuelo-c.webp', cx: 0.565, cy: 0.480, ancho: 0.959, aspecto: 1.000 },
-  d: { src: 'arte/garza-vuelo-d.webp', cx: 0.529, cy: 0.411, ancho: 0.824, aspecto: 1.500 },
-  e: { src: 'arte/garza-vuelo-e.webp', cx: 0.537, cy: 0.565, ancho: 0.854, aspecto: 1.500 },
-  f: { src: 'arte/garza-vuelo-f.webp', cx: 0.498, cy: 0.520, ancho: 0.861, aspecto: 1.500 },
-  g: { src: 'arte/garza-vuelo-g.webp', cx: 0.473, cy: 0.504, ancho: 0.854, aspecto: 1.500 },
+  a: { src: ARTE + 'garza-vuelo-a.webp', cx: 0.463, cy: 0.469, ancho: 0.853, aspecto: 1.000 },
+  b: { src: ARTE + 'garza-vuelo-b.webp', cx: 0.565, cy: 0.511, ancho: 0.824, aspecto: 1.500 },
+  c: { src: ARTE + 'garza-vuelo-c.webp', cx: 0.565, cy: 0.480, ancho: 0.959, aspecto: 1.000 },
+  d: { src: ARTE + 'garza-vuelo-d.webp', cx: 0.529, cy: 0.411, ancho: 0.824, aspecto: 1.500 },
+  e: { src: ARTE + 'garza-vuelo-e.webp', cx: 0.537, cy: 0.565, ancho: 0.854, aspecto: 1.500 },
+  f: { src: ARTE + 'garza-vuelo-f.webp', cx: 0.498, cy: 0.520, ancho: 0.861, aspecto: 1.500 },
+  g: { src: ARTE + 'garza-vuelo-g.webp', cx: 0.473, cy: 0.504, ancho: 0.854, aspecto: 1.500 },
   /* Frenado. Se dimensiona por ALTURA contra la posada, no por
      envergadura: medido con envergadura salía 2.4 veces más alta que el
      ave posada y perdía toda la proporción. */
-  frena: { src: 'arte/garza-llegando.webp', cx: 0.528, cy: 0.418, ancho: 0.934,
+  frena: { src: ARTE + 'garza-llegando.webp', cx: 0.528, cy: 0.418, ancho: 0.934,
            aspecto: 0.667, altoTinta: 0.971, factor: 1.7 },
-  posada: { src: 'arte/garza-cerca.webp', cx: 0.523, cy: 0.477, ancho: 0.683,
+  posada: { src: ARTE + 'garza-cerca.webp', cx: 0.523, cy: 0.477, ancho: 0.683,
             aspecto: 1.000, pies: [0.580, 0.999], altoTinta: 0.997 },
 };
 

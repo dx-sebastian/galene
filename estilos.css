@@ -478,7 +478,17 @@ body {
   border-image-repeat: stretch;
   border-image-width: 1;
 }
-@media (max-width: 720px) { .cinta { border-width: 26px; } }
+/* En pantallas pequeñas, la cinta también viene del juego de 1024:
+   es la única lámina que no puede elegirlo desde JavaScript, porque la
+   sirve border-image. El slice va en píxeles de la fuente, así que se
+   divide entre dos junto con ella. */
+@media (max-width: 720px) {
+  .cinta {
+    border-width: 26px;
+    border-image-source: url("arte/1024/cinta-32.webp");
+    border-image-slice: 139 140 133 139;
+  }
+}
 @media (max-width: 420px) { .cinta { border-width: 20px; } }
 /* Si el navegador no entiende border-image, no aparece nada y no pasa
    nada: el marco es identidad, no estructura. */
