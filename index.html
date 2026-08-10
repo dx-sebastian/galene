@@ -187,10 +187,64 @@
       </form>
     </section>
 
-    <nav class="ramas">
-      <a href="#ya-paso">Ya me pasó, no es ahora</a>
-      <a href="#acompanar">Quiero acompañar a alguien</a>
-    </nav>
+    <!-- ═══ CARTOGRAFÍA ═════════════════════════════════════════════
+         Mapa real: se arrastra, hace zoom y admite puntero. Carga en
+         diferido para no competir nunca con la ayuda. -->
+    <section class="bloque bloque--mapa" id="mapa">
+      <h3>Dónde ir</h3>
+      <p>Elige tu ciudad. El mapa se mueve con el dedo o con el ratón.
+        <strong>No se envía tu ubicación a este sitio</strong>; si pulsas
+        «dónde estoy» se usa solo para centrar el mapa.</p>
+
+      <div class="mapa" id="mapa-host">
+        <div class="mapa__ciudades" role="group" aria-label="Ciudad"></div>
+        <div class="mapa__lienzo" role="application"
+             aria-label="Mapa de lugares de atención"></div>
+        <p class="mapa__aviso" hidden></p>
+        <div class="mapa__barra">
+          <div class="mapa__capas"></div>
+          <button type="button" class="boton mapa__aqui">Dónde estoy</button>
+        </div>
+        <div class="mapa__listado"></div>
+      </div>
+    </section>
+
+    <!-- ═══ YA ME PASÓ ══════════════════════════════════════════════ -->
+    <section class="bloque" id="ya-paso">
+      <h3>Ya me pasó, no es ahora</h3>
+      <p>No hay plazo para pedir atención médica ni para denunciar, y no
+        tienes que hacer ninguna de las dos cosas si no quieres.</p>
+      <ul class="enlaces">
+        <li><a href="#reloj">Ver qué sigue abierto</a>
+          <span>Gira la aguja hasta donde recuerdes. «No sé» también vale.</span></li>
+        <li><a href="#mapa">Dónde ir en mi ciudad</a>
+          <span>Atención en salud, acompañamiento y examen médico-legal.</span></li>
+        <li><a href="#recordar">Guardar lo que recuerdo</a>
+          <span>Se queda en tu teléfono. Sirve más adelante si decides usarlo.</span></li>
+      </ul>
+    </section>
+
+    <!-- ═══ ACOMPAÑAR ═══════════════════════════════════════════════ -->
+    <section class="bloque" id="acompanar">
+      <h3>Quiero acompañar a alguien</h3>
+      <p>Lo más útil que puedes hacer es quitarle decisiones de encima,
+        no pedirle explicaciones.</p>
+      <ul class="guion">
+        <li><strong>No preguntes qué pasó.</strong> No necesitas saberlo para
+          ayudar, y contarlo cuesta. Si quiere contarlo, lo hará.</li>
+        <li><strong>Ofrece opciones concretas, no preguntas abiertas.</strong>
+          «¿Voy por ti?» en vez de «¿qué necesitas?».</li>
+        <li><strong>No la dejes decidir sola bajo presión de tiempo.</strong>
+          Mírale el reloj de arriba tú, y dile qué sigue abierto.</li>
+        <li><strong>Acompáñala físicamente si puede ser.</strong> Ir sola a
+          urgencias a las cuatro de la mañana es el punto donde mucha gente
+          se da la vuelta.</li>
+        <li><strong>No la lleves a denunciar si no quiere.</strong> La atención
+          médica nunca depende de eso, y la decisión es suya.</li>
+        <li><strong>Guarda lo que ella te cuente tal cual.</strong> Sin
+          interpretar, sin corregirle la memoria.</li>
+      </ul>
+    </section>
   </section>
 
 </main>

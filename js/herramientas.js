@@ -263,3 +263,9 @@ montarReloj();
 montarVengan();
 montarRecuerdo();
 montarAviso();
+
+/* El mapa se carga aparte y en diferido: si Leaflet no llega, nada de lo
+   anterior se entera. La ayuda nunca depende de un CDN. */
+import('./mapa.js')
+  .then((m) => m.montarMapa($('#mapa-host')))
+  .catch((e) => console.warn('[mapa] no disponible:', e.message));

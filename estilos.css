@@ -406,6 +406,49 @@ body {
   font: inherit; font-size: 1rem; resize: vertical;
 }
 
+/* ── CARTOGRAFÍA ────────────────────────────────────────────────── */
+.bloque--mapa { max-width: 56rem; }
+.mapa { margin-top: 1.25rem; }
+.mapa__ciudades { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+.ficha {
+  min-height: 2.75rem; padding: 0 0.95rem;
+  border: 1px solid #16222E26; border-radius: 2px;
+  background: #fff; color: #16222E; font: inherit; font-size: 0.98rem; cursor: pointer;
+}
+.ficha[aria-pressed="true"] { background: #16222E; color: #F4F7F7; border-color: #16222E; }
+.ficha:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+
+.mapa__lienzo {
+  height: clamp(18rem, 52vw, 30rem);
+  border: 1px solid #16222E26; border-radius: 2px;
+  background: #E7EDEC;
+}
+.mapa__lienzo:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+.mapa__aviso { margin: 0.8rem 0 0; color: #A33B2A; font-size: 0.95rem; }
+
+.mapa__barra {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.2rem;
+  margin-top: 0.9rem;
+}
+.mapa__capas { display: flex; flex-wrap: wrap; gap: 0.9rem; }
+.capa { display: flex; align-items: center; gap: 0.45rem; font-size: 0.98rem; cursor: pointer; }
+.capa input { width: 1.05rem; height: 1.05rem; accent-color: #16222E; }
+
+.mapa__listado { margin-top: 1.25rem; }
+.mapa__vacio {
+  padding: 1rem 1.15rem; background: #EDF1F0; border-radius: 2px;
+  border-left: 4px solid #4A6274; line-height: 1.55; max-width: 46rem;
+}
+.mapa__fuente { color: #2F6B4F; font-size: 0.88rem; }
+
+/* El guion del acompañante: frases, no párrafos. Se lee de pie. */
+.guion { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: 0.75rem; max-width: 44rem; }
+.guion li {
+  padding: 0.85rem 1.05rem; background: #fff;
+  border: 1px solid #16222E1f; border-left: 4px solid #4A6274; border-radius: 2px;
+  line-height: 1.5;
+}
+
 .enlaces { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.9rem; }
 .enlaces a { color: #16222E; font-size: 1.05rem; }
 .enlaces span { display: block; font-size: 0.92rem; color: #16222Eb0; }
