@@ -457,6 +457,42 @@ body {
 .ramas a { color: #16222E; font-size: 1.05rem; }
 
 /* ═══════════════════════════════════════════════════════════════════
+   EL MARCO DE CINTA — 9-slice
+   Las cuatro esquinas quedan fijas y los lados se estiran, así que la
+   cinta conserva sus roturas y su esquina levantada en cualquier
+   proporción de ventana. Medido sobre la lámina: la tira ocupa de 55 a
+   165 px desde cada borde, con margen transparente por fuera; el corte
+   a ~208 px se lleva margen y tira enteros, y al escalarse a 40 px de
+   borde la cinta queda separada del canto de la pantalla, como está
+   pegada de verdad sobre una mesa.
+   ═══════════════════════════════════════════════════════════════════ */
+.cinta {
+  position: fixed;
+  inset: 0;
+  z-index: 60;                 /* por debajo de los reflejos (100) */
+  pointer-events: none;
+  border-style: solid;
+  border-width: 40px;
+  border-image-source: url("arte/cinta-32.webp");
+  border-image-slice: 208 210 199 208;   /* arriba der abajo izq */
+  border-image-repeat: stretch;
+  border-image-width: 1;
+}
+@media (max-width: 720px) { .cinta { border-width: 26px; } }
+@media (max-width: 420px) { .cinta { border-width: 20px; } }
+/* Si el navegador no entiende border-image, no aparece nada y no pasa
+   nada: el marco es identidad, no estructura. */
+@supports not (border-image-source: url("")) { .cinta { display: none; } }
+
+/* El contenido respira por dentro del marco. */
+.hero { padding-left: max(clamp(1.25rem, 4vw, 3rem), 3.5rem); }
+.herramientas { padding-left: max(clamp(1.25rem, 4vw, 3rem), 3.5rem);
+                padding-right: max(clamp(1.25rem, 4vw, 3rem), 3.5rem); }
+@media (max-width: 720px) {
+  .hero, .herramientas { padding-left: 2.4rem; padding-right: 2.4rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    prefers-reduced-motion APAGA. No reduce.
    Y con todo apagado el sitio sigue siendo bonito: mar quieto,
    garzas quietas, todo legible. Es también la versión de gama baja.
