@@ -58,6 +58,8 @@ const quieto = matchMedia('(prefers-reduced-motion: reduce)');
 const raices = 0;
 const TAU_CALMA = 500;
 const calma = 0.35 + 0.50 * (1 - Math.exp(-raices / TAU_CALMA));
+/* Cursor: sobre el agua se puede sostener, y hay que verlo. */
+document.getElementById('mar')?.style.setProperty('cursor', 'grab');
 
 function arrancar(mar) {
   let escala = Math.min(devicePixelRatio || 1, 1.5);
@@ -129,6 +131,72 @@ function arrancar(mar) {
     }, { passive: true });
   }
 
+  /* ── EL GESTO DE SOSTENER ────────────────────────────────────────
+     Se mantiene el dedo (o el ratón, o la barra espaciadora) sobre el
+     agua: el oleaje se aplana alrededor y, al soltar, EL AGUA SE QUEDA
+     PLANA. Lo que dejas, queda.
+
+     Es el camino de esfuerzo cero. La mujer de las 4 a.m. no puede
+     redactar: sostener le permite dejar huella sin elegir un color, sin
+     escribir y sin nombrarse. El propágulo con frase es para quien tiene
+     resto; esto es para quien no.
+
+     Tope por sesión para que nadie infle el mar dejando el dedo puesto. */
+  const TOQUES = [];
+  const TOPE_SESION = 240;          // 4 minutos, como el resto del sistema
+  let sostenido = 0, sosteniendo = null;
+
+  const enQ = (cx, cy) => {
+    const c = lienzo.getBoundingClientRect();
+    return { x: ((cx - c.left) / c.width) * (c.width / c.height),
+             y: 1 - (cy - c.top) / c.height };
+  };
+
+  function empezarToque(cx, cy) {
+    const q = enQ(cx, cy);
+    if (q.y >= estado.horizonte) return;      // solo sobre el agua
+    if (sostenido >= TOPE_SESION) return;
+    sosteniendo = { x: q.x, y: q.y, fuerza: 0, edad: 0 };
+    TOQUES.push(sosteniendo);
+    while (TOQUES.length > 6) TOQUES.shift();
+  }
+  const soltarToque = () => { sosteniendo = null; };
+
+  hero.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('a, button, input, textarea, label')) return;
+    empezarToque(e.clientX, e.clientY);
+  });
+  addEventListener('pointerup', soltarToque);
+  addEventListener('pointercancel', soltarToque);
+  hero.addEventListener('pointermove', (e) => {
+    if (!sosteniendo || !e.buttons) return;
+    const q = enQ(e.clientX, e.clientY);
+    if (q.y < estado.horizonte) { sosteniendo.x = q.x; sosteniendo.y = q.y; }
+  });
+  addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' || sosteniendo || e.target !== document.body) return;
+    e.preventDefault();
+    empezarToque(innerWidth * 0.5, innerHeight * (1 - estado.horizonte * 0.5));
+  });
+  addEventListener('keyup', (e) => { if (e.code === 'Space') soltarToque(); });
+
+  function avanzarToques(dt) {
+    if (sosteniendo && sostenido < TOPE_SESION) {
+      sostenido += dt;
+      sosteniendo.fuerza = Math.min(1, sosteniendo.fuerza + dt * 1.6);
+    }
+    for (const t of TOQUES) {
+      // La edad solo corre cuando NO se está sosteniendo: el anillo se
+      // cierra al soltar, no mientras se aguanta.
+      if (t !== sosteniendo) t.edad = Math.min(1, t.edad + dt * 0.85);
+    }
+    /* La calma global sube con lo sostenido, nunca baja, y nunca llega
+       al espejo: la curva es la misma del README. */
+    const n = raices + sostenido * 1.5;
+    estado.calma = 0.35 + 0.50 * (1 - Math.exp(-n / TAU_CALMA));
+    mar.toques(TOQUES);
+  }
+
   /* Pausar cuando el mar sale de pantalla: batería real en gama media. */
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
@@ -164,6 +232,7 @@ function arrancar(mar) {
     const salida = Math.min(1, Math.max(0, scrollY / innerHeight));
     estado.horizonte = horizonte + salida * 0.06;
     estado.luz = L;
+    avanzarToques(dt);
     mar.dibujar(estado);
     calibrarLavado();
     /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito

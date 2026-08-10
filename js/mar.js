@@ -45,6 +45,15 @@ uniform sampler2D u_lejano, u_medio, u_medioCalmo, u_cercano, u_cercanoCalmo, u_
 uniform vec2 u_vLejano, u_vMedio, u_vCercano;   // ventana v: (cerca, lejos)
 uniform float u_hayManglar;
 uniform vec4  u_manglarCaja;    // x centro, alto, hundimiento, ancho/alto
+/* EL GESTO DE SOSTENER. Hasta seis toques vivos: x, y (en q), fuerza y
+   edad. Sostener aplana el agua alrededor, y al soltar el agua SE QUEDA
+   plana: lo que dejas, queda.
+
+   Y la regla que no se cruza: EL ANILLO COLAPSA HACIA ADENTRO. Un anillo
+   que se expande desde un punto es una gota cayendo en un líquido, que
+   es exactamente la escena que este sitio no re-escenifica. Aquí el
+   radio se encoge con la edad del toque: el gesto recoge, no derrama. */
+uniform vec4  u_toques[6];
 uniform vec3  u_escalas;        // repeticiones por banda: lejos, medio, cerca
 uniform float u_croma;          // cuánto pigmento propio de la lámina se conserva
 uniform sampler2D u_papelTex;
@@ -155,7 +164,21 @@ void main(){
 
     /* Oleaje. Frecuencias en razón no entera para que el patrón no se
        vea repetirse: es lo que mata la sensación de bucle. */
-    float amp  = (1.0 - cn) * mix(0.0022, 0.034, pp);
+    /* Los toques sostenidos: aplanan alrededor y dejan un anillo que se
+       cierra hacia el centro. La ausencia de onda ES el efecto. */
+    float aplanado = 0.0, anillo = 0.0;
+    for (int i = 0; i < 6; i++) {
+      vec4 tk = u_toques[i];
+      if (tk.z <= 0.002) continue;
+      float d = distance(q, tk.xy);
+      float r = 0.115;
+      aplanado = max(aplanado, tk.z * exp(-(d * d) / (r * r)));
+      float rr = r * (1.0 - clamp(tk.w, 0.0, 1.0));   // se encoge
+      anillo = max(anillo, (1.0 - smoothstep(0.0, 0.007, abs(d - rr)))
+                           * (1.0 - tk.w) * tk.z);
+    }
+
+    float amp  = (1.0 - cn) * mix(0.0022, 0.034, pp) * (1.0 - aplanado * 0.92);
     float frec = mix(120.0, 9.0, pp);
     float vel  = mix(0.50, 0.22, pp);
     float onda =
@@ -231,6 +254,12 @@ void main(){
     float brillo = camino * (mix(0.18, 0.55, cn) + chispa * 0.5)
                  * u_int * mix(1.0, 0.35, prof);
     col = mix(col, u_reguero, clamp(brillo, 0.0, 0.75));
+
+    /* El anillo que se cierra. Muy tenue: es agua que se aquieta, no un
+       efecto. Y el sitio donde se sostuvo queda un punto más claro,
+       como una aguada que se secó más fina. */
+    col = mix(col, u_altas, anillo * 0.22);
+    col = mix(col, mix(col, u_altas, 0.35), aplanado * 0.16);
   }
 
   /* ═══ HORIZONTE ═══════════════════════════════════════════════
@@ -412,7 +441,7 @@ export function crear(lienzo) {
                    'u_nubes','u_hayNubes',
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
-                   'u_garzaCercaCaja','u_garzaLejosCaja']) {
+                   'u_garzaCercaCaja','u_garzaLejosCaja','u_toques']) {
     u[n] = gl.getUniformLocation(p, n);
   }
 
@@ -606,6 +635,18 @@ export function crear(lienzo) {
 
   /** Perillas de "cuánto se ve pintado". Menos repeticiones = pincelada
       más grande. Más croma = más pigmento propio de la lámina. */
+  /** Los toques vivos: hasta 6 × [x, y, fuerza, edad] en espacio q. */
+  const bufToques = new Float32Array(24);
+  function toques(lista) {
+    bufToques.fill(0);
+    for (let i = 0; i < Math.min(6, lista.length); i++) {
+      const t = lista[i];
+      bufToques.set([t.x, t.y, t.fuerza, t.edad], i * 4);
+    }
+    gl.useProgram(p);
+    gl.uniform4fv(u.u_toques, bufToques);
+  }
+
   /** Ajusta el grafito: ancla v del horizonte dibujado, escala vertical,
       fuerza del multiplicado. */
   function ajustarGrafito(ancla, escala, fuerza) {
@@ -633,7 +674,7 @@ export function crear(lienzo) {
   }
 
   return {
-    cargar, ventana, colocarManglar, pincelada, ajustarGrafito,
+    cargar, ventana, colocarManglar, pincelada, ajustarGrafito, toques,
     /* La caja del manglar, para que quien pinte encima —la garza que se
        posa— calcule su sitio con los MISMOS números y no con fracciones
        paralelas que se separan al cambiar de pantalla. */
