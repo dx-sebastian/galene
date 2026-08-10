@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>Galene — Sumisión química: qué hacer, y hasta cuándo</title>
+<meta name="description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo. Ventanas de tiempo, rutas de atención y líneas en Colombia. No hace falta denunciar para recibir atención médica.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo">
+<meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo.">
+<meta name="theme-color" content="#2E4256">
+<!-- BORRADOR: mientras las ventanas médicas y las líneas no estén
+     verificadas contra fuente primaria, este sitio NO debe ser
+     encontrable por alguien que lo necesite de verdad. Quitar estas dos
+     líneas el día que el aviso de borrador desaparezca. -->
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PLANO 2 — los reflejos. Primero en el HTML, fuera de toda
+     animación, nunca dependen de JS ni del canvas.
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="reflejos">
+  <!-- PENDIENTE VERIFICAR (sección 14): número, horario, cobertura y
+       qué atiende realmente. Verificar llamando y anotar la fecha
+       antes de publicar. No publicar con estos valores. -->
+  <a class="reflejos__linea" href="tel:155" data-verificar="pendiente">
+    <span aria-hidden="true">☎</span> Línea de atención
+  </a>
+  <button class="reflejos__salir" type="button" id="salir">
+    Salir <span class="reflejos__esc" aria-hidden="true">esc</span>
+  </button>
+</div>
+
+<main>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PLANO 0 y 1 — el mar y la lámina.
+       El texto vive sobre el cielo. El botón trae su propio fondo.
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="hero" id="mar">
+
+    <canvas class="hero__lienzo" id="lienzo" aria-hidden="true"></canvas>
+
+    <!-- Garzas. Andamiaje: siluetas SVG en el DOM, para reemplazar por
+         láminas PNG (arte/laminas.md · lámina 08). Máximo 15. -->
+    <div class="garzas" id="garzas" aria-hidden="true"></div>
+
+    <div class="hero__texto">
+      <h1 class="titulo">Galene</h1>
+      <p class="lockup">Sumisión química: qué hacer, y hasta cuándo.</p>
+    </div>
+
+    <a class="cta" href="#herramientas">Qué puedo hacer ahora</a>
+
+    <p class="hero__nota" id="nota-hora"></p>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       Inmediatamente después del home. DOM plano, sin canvas.
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="herramientas" id="herramientas">
+
+    <div class="aviso" id="aviso-borrador">
+      <strong>Borrador.</strong> <span id="aviso-cuantos">6</span> datos de
+      esta página todavía no tienen fuente verificada. No compartas este
+      enlace con nadie que lo necesite de verdad hasta que este aviso
+      desaparezca.
+    </div>
+
+    <h2 class="herramientas__titulo">¿Qué necesitas ahora?</h2>
+    <p class="herramientas__intro">
+      No hace falta saber qué pasó, ni contarlo, ni decidir nada todavía.
+    </p>
+
+    <!-- ═══ EL DESVÍO ═══════════════════════════════════════════════
+         Cuatro puertas, no una lista. La primera es la más grande a
+         propósito: alguien confundida puede no estar en condiciones de
+         decidir si lo que pasó fue un delito, pero sí sabe que quiere
+         irse y estar acompañada. -->
+    <div class="puertas">
+      <a class="puerta puerta--primera" href="#salir">
+        <span class="puerta__titulo">Que alguien venga por mí</span>
+        <span class="puerta__pie">Prepara un mensaje con tu ubicación. Sin llamar a nadie.</span>
+      </a>
+      <a class="puerta" href="#reloj">
+        <span class="puerta__titulo">Creo que me dieron algo</span>
+        <span class="puerta__pie">Qué se puede hacer y hasta cuándo.</span>
+      </a>
+      <a class="puerta" href="#sin-hablar">
+        <span class="puerta__titulo">Pedir ayuda sin hablar</span>
+        <span class="puerta__pie">Canales que funcionan por escrito o por internet.</span>
+      </a>
+      <a class="puerta" href="#recordar">
+        <span class="puerta__titulo">Guardar lo que recuerdo</span>
+        <span class="puerta__pie">Se queda en tu teléfono. No se sube a ningún sitio.</span>
+      </a>
+    </div>
+
+    <!-- ═══ QUE ALGUIEN VENGA ═══════════════════════════════════════ -->
+    <section class="bloque" id="salir">
+      <h3>Que alguien venga por mí</h3>
+      <p>Preparamos un mensaje con tu ubicación para que lo envíes a quien
+        tú elijas. <strong>Tu ubicación no se guarda ni se envía a este
+        sitio</strong>: se usa en el momento y se descarta.</p>
+      <button class="boton boton--grande" type="button" id="vengan">
+        Que alguien venga por mí
+      </button>
+
+      <div class="salida" id="vengan-salida" hidden>
+        <label class="visualmente-oculto" for="vengan-texto">Mensaje</label>
+        <textarea id="vengan-texto" rows="5" readonly></textarea>
+        <div class="salida__acciones">
+          <button class="boton" type="button" id="vengan-copiar">Copiar</button>
+          <a class="boton" id="vengan-wa" href="#" rel="noopener">WhatsApp</a>
+          <a class="boton" id="vengan-sms" href="#">Mensaje de texto</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ EL RELOJ ════════════════════════════════════════════════ -->
+    <section class="bloque bloque--reloj" id="reloj">
+      <h3>¿Cuándo fue?</h3>
+      <p class="bloque__intro">No hace falta estar segura.
+        <strong>«No sé» es una respuesta completa</strong> y no te quita ninguna
+        opción: te muestra todas las que podrían seguir abiertas.</p>
+
+      <div class="disco" role="group" aria-label="Hace cuánto"></div>
+      <div class="resultado" id="resultado" hidden></div>
+
+      <noscript><p class="bloque__intro">Sin JavaScript no se puede calcular
+        el reloj. Lo que nunca depende de JavaScript es el teléfono y el
+        botón de salir, abajo.</p></noscript>
+    </section>
+
+    <!-- ═══ SIN HABLAR ══════════════════════════════════════════════ -->
+    <section class="bloque" id="sin-hablar">
+      <h3>Pedir ayuda sin hablar</h3>
+      <p>Canales que no exigen una llamada.
+        <!-- PENDIENTE VERIFICAR: comprobar que cada uno sigue activo,
+             qué atiende realmente y en qué horario. Anotar la fecha. -->
+        <em class="sinfuente">Sin verificar.</em></p>
+      <ul class="enlaces">
+        <li><a href="https://salvia.minigualdadyequidad.gov.co" rel="noopener">
+          SALVIA — reportar un caso por internet</a>
+          <span>Ministerio de Igualdad y Equidad. Orienta y activa rutas.</span></li>
+        <li><a href="https://www.fiscalia.gov.co/colombia/servicios-de-informacion-al-ciudadano/denuncia-facil/" rel="noopener">
+          Denuncia Fácil — Fiscalía</a>
+          <span>Denuncia virtual, si decides denunciar. No es obligatorio.</span></li>
+      </ul>
+      <p class="bloque__intro">Denunciar nunca es requisito para que te
+        atiendan en salud.</p>
+    </section>
+
+    <!-- ═══ GUARDAR LO QUE RECUERDO ═════════════════════════════════ -->
+    <section class="bloque" id="recordar">
+      <h3>Guardar lo que recuerdo</h3>
+      <p>Todo es opcional y puedes dejar en blanco lo que quieras.
+        <strong>Nada de esto sale de tu teléfono.</strong> No hay servidor
+        detrás de este formulario.</p>
+      <form id="recuerdo" onsubmit="return false">
+        <label><span>Dónde estabas</span><input type="text" autocomplete="off"></label>
+        <label><span>A qué hora, más o menos</span><input type="text" autocomplete="off"></label>
+        <label><span>Qué estabas tomando</span><input type="text" autocomplete="off"></label>
+        <label><span>Con quién estabas</span><input type="text" autocomplete="off"></label>
+        <label><span>Lo último que recuerdas</span><textarea rows="3"></textarea></label>
+        <label><span>Cómo te sientes ahora</span><textarea rows="3"></textarea></label>
+        <label><span>Fotos, chats, recibos o nombres que quieras recordar</span><textarea rows="2"></textarea></label>
+        <div class="salida__acciones">
+          <button class="boton" type="button" id="recuerdo-guardar">Guardar en mi teléfono</button>
+          <button class="boton" type="button" id="recuerdo-compartir">Enviar a alguien de confianza</button>
+        </div>
+      </form>
+    </section>
+
+    <nav class="ramas">
+      <a href="#ya-paso">Ya me pasó, no es ahora</a>
+      <a href="#acompanar">Quiero acompañar a alguien</a>
+    </nav>
+  </section>
+
+</main>
+
+<script type="module" src="js/main.js"></script>
+<script type="module" src="js/herramientas.js"></script>
+</body>
+</html>

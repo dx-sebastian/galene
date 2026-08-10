@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# Láminas fuente en PNG/JPG. El sitio sirve los WebP; los originales
+# pesan 83 MB y no tienen por qué viajar en el repo.
+arte/fuente/

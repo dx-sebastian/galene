@@ -1,0 +1,397 @@
+/* ═══════════════════════════════════════════════════════════════════
+   GALENE — estilos
+   Tokens de luz: los escribe js/hora.js sobre :root, interpolados
+   desde las cuatro horas ancla. El CSS nunca los codifica a mano.
+   Tinta: [data-tinta="clara"|"oscura"] en <html>. Cruza en luminancia
+   relativa 0.175, donde clara y oscura empatan (~4.0:1).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   TIPOGRAFÍA — Atkinson Hyperlegible Next (fuentes/)
+   Diseñada por el Braille Institute para que las letras no se
+   confundan entre sí bajo visión reducida: exactamente el problema
+   de legibilidad de este sitio, ya resuelto y probado, no reinventado.
+   Autoalojada (no Google Fonts) para no filtrar a un tercero que
+   alguien visitó un sitio sobre sumisión química. OFL — ver
+   fuentes/LICENSE.txt. font-display:swap: el texto se lee desde el
+   primer paint con la fuente del sistema y cambia sin mover nada
+   cuando llega la nuestra. Lo que salva vidas se envía en HTML; lo
+   bonito llega después.
+   ═══════════════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("fuentes/Atkinson-Hyperlegible-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("fuentes/Atkinson-Hyperlegible-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Valores de arranque = 09:00. JS los sobreescribe al cargar, así que
+     si JS no corre el sitio se ve como una mañana y sigue legible. */
+  --cielo-alto:  #BFD4DC;
+  --cielo-bajo:  #DCE7E8;
+  --agua:        #4E8A94;
+  --agua-altas:  #7FB4B8;
+  --reguero:     #FFF4E2;
+  --bruma:       #CDDCDE;
+  --acento:      #C4703F;
+
+  --tinta:         #1C2A30;
+  --tinta-suave:   #1C2A30b3;
+  --lamina:        #10202699;
+  --lamina-tinta:  #F4F7F7;
+
+  --horizonte: 56%;
+
+  --tipo-titulo: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --tipo-texto:  "Atkinson Hyperlegible Next", system-ui, -apple-system,
+                 "Segoe UI", sans-serif;
+
+  --borde-seguro-abajo: env(safe-area-inset-bottom, 0px);
+  --alto-reflejos: calc(3.25rem + var(--borde-seguro-abajo));
+}
+
+:root[data-tinta="clara"] {
+  --tinta:        #E8EEF2;
+  --tinta-suave:  #E8EEF2c0;
+  --lamina:       #E9EFF2f0;
+  --lamina-tinta: #16222E;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--tipo-texto);
+  color: var(--tinta);
+  background: var(--cielo-bajo);
+  overflow-x: hidden;
+}
+
+.visualmente-oculto {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PLANO 2 — los reflejos
+   Fijos, en la zona del pulgar, fuera de toda animación y de todo
+   estado. No entran en ninguna transición. Nunca se ocultan.
+   ═══════════════════════════════════════════════════════════════════ */
+.reflejos {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 100;
+  display: flex;
+  gap: 1px;
+  padding-bottom: var(--borde-seguro-abajo);
+  background: #0E1A20;
+  font-size: 0.95rem;
+}
+.reflejos > * {
+  flex: 1;
+  min-height: 3.25rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.5em;
+  color: #F2F6F7;
+  background: #0E1A20;
+  border: 0;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.reflejos > *:focus-visible { outline: 3px solid #F2F6F7; outline-offset: -3px; }
+.reflejos__esc {
+  font-size: 0.7em; letter-spacing: 0.06em;
+  border: 1px solid #F2F6F766; border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+@media (max-width: 380px) { .reflejos__esc { display: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERO — planos 0 y 1
+   ═══════════════════════════════════════════════════════════════════ */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  padding-bottom: calc(var(--alto-reflejos) + 1.25rem);
+  overflow: hidden;
+  isolation: isolate;
+
+  /* Respaldo sin WebGL: cielo, horizonte y agua. Sigue siendo un mar. */
+  background:
+    linear-gradient(
+      to bottom,
+      var(--cielo-alto) 0%,
+      var(--cielo-bajo) calc(var(--horizonte) - 2%),
+      var(--bruma)      var(--horizonte),
+      var(--agua)       calc(var(--horizonte) + 14%),
+      color-mix(in oklab, var(--agua) 82%, #000) 100%
+    );
+}
+
+.hero__lienzo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  display: block;
+}
+
+/* El texto vive sobre el cielo. Es la única banda de luminancia
+   estable del cuadro; sobre el agua se midieron 1.98:1. */
+.hero__texto {
+  position: relative;
+  z-index: 1;
+  max-width: 22ch;
+  margin: 0;
+}
+
+/* EL LAVADO. Solo aparece en los crepúsculos, cuando ninguna tinta
+   alcanza 4.5:1 por sí sola (se midió 3.09:1 en el peor instante).
+   Alfa = 1 − compresión, así que a plena luz o de noche es 0 y no
+   existe. Un lavado es un gesto de acuarela, no una caja de color. */
+.hero__texto::before {
+  content: "";
+  position: absolute;
+  inset: -22% -34% -34% -30%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--lavado, 0);
+  /* Cobertura pareja sobre el texto y borde suave por fuera: si el
+     degradado se desvanece encima del lockup, el alfa nominal deja de
+     ser el alfa aplicado y el calibrador queda ciego. */
+  background: radial-gradient(150% 140% at 32% 45%,
+    var(--lavado-color, transparent) 0%,
+    var(--lavado-color, transparent) 58%,
+    transparent 100%);
+}
+
+.titulo {
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: clamp(2.75rem, 11vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.lockup {
+  font-size: clamp(1rem, 3.6vw, 1.35rem);
+  line-height: 1.35;
+  margin: 0.6em 0 0;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+/* PLANO 1 — la lámina. Trae su propio contraste, así que puede
+   pararse sobre el agua sin romper ninguna ley de legibilidad. */
+.cta {
+  grid-row: 3;
+  justify-self: start;
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-height: 3.5rem;
+  padding: 0 1.5rem;
+  border-radius: 2px;
+  background: var(--lamina);
+  color: var(--lamina-tinta);
+  font-size: clamp(1rem, 4vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 1px 0 #ffffff20 inset;
+
+  /* Visible desde el primer paint. Lo que llega con el mar es el
+     asentamiento, nunca la existencia. */
+  transform: translateY(0);
+  transition: transform 420ms cubic-bezier(.2,.7,.2,1),
+              opacity 420ms linear;
+}
+.hero[data-mar="listo"] .cta { animation: asentar 520ms cubic-bezier(.2,.7,.2,1) both; }
+@keyframes asentar {
+  from { transform: translateY(0.5rem); opacity: 0.82; }
+  to   { transform: translateY(0);      opacity: 1; }
+}
+.cta:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+@media (min-width: 700px) { .cta:hover { transform: translateY(-2px); } }
+
+.hero__nota {
+  grid-row: 4;
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+  min-height: 1.2em;
+}
+
+/* Garzas — andamiaje DOM, máx 15. Reemplazar por láminas PNG. */
+.garzas { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* La garza en vuelo: tres láminas superpuestas, una visible por cuadro.
+   El filtro la lleva a la luz de la hora — la lámina ya es casi
+   monocroma (12–14 % de saturación), así que basta con el brillo. */
+.vuelo {
+  position: absolute;
+  top: 0; left: 0;
+  height: auto;
+  will-change: transform;
+  transform-origin: 50% 50%;
+  filter: saturate(0.55) brightness(var(--vuelo-brillo, 1));
+  opacity: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERRAMIENTAS — DOM plano, cero canvas, cero JS necesario
+   ═══════════════════════════════════════════════════════════════════ */
+.herramientas {
+  padding: clamp(2rem, 7vw, 4.5rem) clamp(1.25rem, 4vw, 3rem);
+  padding-bottom: calc(var(--alto-reflejos) + 3rem);
+  background: #F3F5F4;
+  color: #16222E;
+
+  /* Franja de acuarela estática arriba: el link que la gente comparte
+     es esta página, no el home. Reemplazar por lámina 07. */
+  border-top: 0;
+  background-image: linear-gradient(to bottom, #DCE7E8 0, #F3F5F4 7rem);
+}
+.herramientas__titulo {
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: clamp(2rem, 8vw, 3.25rem);
+  margin: 0;
+}
+.herramientas__intro { max-width: 34ch; font-size: 1.05rem; line-height: 1.5; }
+
+/* Aviso de borrador. Grande y feo a propósito: mientras esté, el sitio
+   no está listo para que lo use alguien de verdad. */
+.aviso {
+  margin: 0 0 2rem; padding: 0.9rem 1.1rem;
+  border-left: 4px solid #A33B2A; background: #F6E9E5;
+  color: #5B1F14; font-size: 0.95rem; line-height: 1.45; max-width: 46rem;
+}
+.sinfuente { color: #A33B2A; font-style: normal; font-size: 0.9em; }
+
+/* ── Las cuatro puertas ─────────────────────────────────────────────
+   La primera es la más grande y va primera en orden de lectura: quien
+   está confundida puede no saber si lo que pasó fue un delito, pero sí
+   sabe que quiere irse y estar acompañada. */
+.puertas { display: grid; gap: 0.6rem; margin: 2rem 0 3.5rem; max-width: 44rem; }
+.puerta {
+  display: grid; gap: 0.25rem; padding: 1.15rem 1.25rem;
+  border: 1px solid #16222E26; border-radius: 2px;
+  background: #fff; color: #16222E; text-decoration: none;
+  transition: border-color 140ms linear, transform 140ms ease-out;
+}
+.puerta:hover, .puerta:focus-visible { border-color: #16222E; }
+.puerta:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+.puerta__titulo { font-size: 1.15rem; font-weight: 500; }
+.puerta__pie { font-size: 0.95rem; color: #16222Eb0; line-height: 1.4; }
+.puerta--primera { background: #16222E; color: #F4F7F7; border-color: #16222E; }
+.puerta--primera .puerta__titulo { font-size: clamp(1.25rem, 5vw, 1.6rem); }
+.puerta--primera .puerta__pie { color: #F4F7F7b8; }
+
+/* ── Bloques ────────────────────────────────────────────────────── */
+.bloque { max-width: 44rem; margin: 0 0 3.5rem; scroll-margin-top: 1.5rem; }
+.bloque h3 {
+  font-family: var(--tipo-titulo); font-weight: 400;
+  font-size: clamp(1.5rem, 6vw, 2.1rem); margin: 0 0 0.6rem;
+}
+.bloque p { line-height: 1.55; max-width: 42ch; }
+.bloque__intro { color: #16222Ec0; font-size: 0.98rem; }
+
+.boton {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 3.25rem; padding: 0 1.4rem; border: 1px solid #16222E;
+  border-radius: 2px; background: #fff; color: #16222E;
+  font: inherit; font-size: 1rem; text-decoration: none; cursor: pointer;
+}
+.boton:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+.boton--grande {
+  min-height: 4rem; width: 100%; max-width: 26rem;
+  background: #16222E; color: #F4F7F7; font-size: 1.15rem;
+}
+.boton[disabled] { opacity: 0.6; cursor: progress; }
+
+.salida { margin-top: 1.25rem; }
+.salida textarea {
+  width: 100%; max-width: 34rem; padding: 0.8rem;
+  border: 1px solid #16222E33; border-radius: 2px;
+  font: inherit; font-size: 0.98rem; line-height: 1.45; resize: vertical;
+}
+.salida__acciones { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem; }
+
+/* ── El disco del reloj ─────────────────────────────────────────── */
+.disco { display: grid; gap: 0.5rem; margin: 1.5rem 0 0; max-width: 30rem; }
+.disco__opcion {
+  display: flex; align-items: center;
+  min-height: 3.5rem; padding: 0 1.15rem;
+  border: 1px solid #16222E26; border-radius: 2px;
+  background: #fff; color: #16222E;
+  font: inherit; font-size: 1.05rem; text-align: left; cursor: pointer;
+}
+.disco__opcion[aria-pressed="true"] { border-color: #16222E; box-shadow: 0 0 0 1px #16222E; }
+.disco__opcion:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+/* "No sé" no es la última opción por descarte: va separada y con el
+   mismo peso, porque es el caso principal. */
+.disco__opcion--nose { margin-top: 0.6rem; background: #EDF1F0; }
+
+.resultado { margin-top: 2rem; }
+.reloj__nota { padding: 0.8rem 1rem; background: #EDF1F0; border-radius: 2px; }
+.reloj__pie { margin-top: 1.5rem; color: #16222Ec0; font-size: 0.98rem; }
+.ventanas { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.ventana {
+  padding: 1rem 1.15rem; border-radius: 2px;
+  border: 1px solid #16222E1f; border-left-width: 4px; background: #fff;
+}
+.ventana--abierta { border-left-color: #2F6B4F; }
+.ventana--quizas  { border-left-color: #4A6274; }
+.ventana--cerrada { border-left-color: #16222E33; background: #F0F2F1; color: #16222E9c; }
+.ventana__titulo { font-weight: 500; margin: 0 0 0.3rem; font-size: 1.05rem; }
+.ventana__texto { margin: 0; line-height: 1.5; }
+.ventana__detalle { margin: 0.4rem 0 0; font-size: 0.95rem; color: #16222Eb0; }
+.ventana__plazo { margin: 0.4rem 0 0; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.ventana__sinfuente { margin: 0.5rem 0 0; font-size: 0.85rem; color: #A33B2A; }
+
+/* ── Guardar lo que recuerdo ────────────────────────────────────── */
+#recuerdo { display: grid; gap: 0.9rem; margin-top: 1.25rem; max-width: 34rem; }
+#recuerdo label { display: grid; gap: 0.3rem; }
+#recuerdo span { font-size: 0.95rem; color: #16222Ec0; }
+#recuerdo input, #recuerdo textarea {
+  padding: 0.7rem 0.8rem; border: 1px solid #16222E33; border-radius: 2px;
+  font: inherit; font-size: 1rem; resize: vertical;
+}
+
+.enlaces { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.9rem; }
+.enlaces a { color: #16222E; font-size: 1.05rem; }
+.enlaces span { display: block; font-size: 0.92rem; color: #16222Eb0; }
+
+.ramas { display: grid; gap: 0.75rem; margin-top: 2.5rem; }
+.ramas a { color: #16222E; font-size: 1.05rem; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   prefers-reduced-motion APAGA. No reduce.
+   Y con todo apagado el sitio sigue siendo bonito: mar quieto,
+   garzas quietas, todo legible. Es también la versión de gama baja.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,593 @@
+/* ═══════════════════════════════════════════════════════════════════
+   main.js — orquestación.
+
+   Orden de prioridades, y no se negocia:
+   1. Los reflejos (salir / línea) funcionan siempre. Se enganchan
+      PRIMERO, antes de tocar el canvas.
+   2. La luz de la hora real se aplica al DOM aunque no haya WebGL.
+   3. El mar es un enhancement. Si falla, el sitio sigue sirviendo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+import { luz, aplicar, horaAhora, notaAmanecer } from './hora.js';
+import { crear } from './mar.js';
+
+/* ── 1 · REFLEJOS ─────────────────────────────────────────────────── */
+
+function salidaRapida() {
+  // Reemplaza la página para no dejar rastro en el historial.
+  location.replace('https://www.google.com');
+}
+document.getElementById('salir')?.addEventListener('click', salidaRapida);
+addEventListener('keydown', (e) => { if (e.key === 'Escape') salidaRapida(); });
+
+/* ── 2 · LA HORA ──────────────────────────────────────────────────── */
+
+/* Ganchos de verificación. `?hora=4.5` fuerza la hora para poder medir
+   sobre los píxeles en varias luces; `?dev` expone el estado. Nada de
+   esto altera el sitio sin los parámetros. */
+const PARAMS = new URLSearchParams(location.search);
+const HORA_FORZADA = PARAMS.has('hora') ? parseFloat(PARAMS.get('hora')) : null;
+const reloj = () => (HORA_FORZADA !== null && !Number.isNaN(HORA_FORZADA))
+  ? HORA_FORZADA : horaAhora();
+
+let L = luz(reloj());
+let lavadoAdaptativo = false;   // lo enciende arrancar() si hay lienzo
+aplicar(L);
+
+const nota = document.getElementById('nota-hora');
+function refrescarHora() {
+  const h = reloj();
+  L = luz(h);
+  aplicar(L, !lavadoAdaptativo);
+  if (nota) nota.textContent = notaAmanecer(h);
+}
+refrescarHora();
+setInterval(refrescarHora, 30_000);
+
+/* ── 3 · EL MAR ───────────────────────────────────────────────────── */
+
+const hero   = document.getElementById('mar');
+const lienzo = document.getElementById('lienzo');
+const contenedorGarzas = document.getElementById('garzas');
+const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* calma ∈ [0.35, 0.85] · 0.35 = revuelto (no picado: nadie es el
+   capítulo uno de nadie) · 0.85 = casi espejo, nunca espejo.
+   calma = 0.35 + 0.50·(1 − e^(−n/τ)), n = raíces, τ ≈ 500.
+   Sin servidor todavía: se fija en el arranque de la curva.  */
+const raices = 0;
+const TAU_CALMA = 500;
+const calma = 0.35 + 0.50 * (1 - Math.exp(-raices / TAU_CALMA));
+
+function arrancar(mar) {
+  let escala = Math.min(devicePixelRatio || 1, 1.5);
+  let horizonte = 0.44;
+  let deriva = 0, punteroX = 0, punteroObjetivo = 0;
+  let visible = true, corriendo = false;
+  let ultimo = 0, ultimoCuadro = 0, ultimoAve = 0;
+  const CUADRO = 1000 / 30;        // compuerta a 30 fps — SOLO el mar
+
+  const estado = { t: 0, horizonte, calma, deriva: 0, papel: 0.055, luz: L };
+
+  function medidas() {
+    const caja = hero.getBoundingClientRect();
+    const w = innerWidth, h = caja.height || innerHeight;
+    const aspecto = w / h;
+
+    /* SI EL BLOQUE DE TEXTO CRECE, EL PAISAJE SE AGACHA — nunca al revés.
+       Una fracción fija de horizonte no sirve: en ventanas bajas o
+       apaisadas el texto se sale del cielo y aterriza sobre el agua,
+       donde el contraste medido es 1.98:1. Se midió: a 882×415 el
+       lockup cruzaba el horizonte por 3 px y el peor contraste caía a
+       3.47:1. El horizonte lo manda el texto, no el diseño. */
+    const base = aspecto < 0.8 ? 0.58 : aspecto > 1.6 ? 0.52 : 0.55;
+    const texto = document.querySelector('.hero__texto');
+    const fondoTexto = texto ? (texto.getBoundingClientRect().bottom - caja.top) : 0;
+    const respiro = Math.max(24, h * 0.05);
+    const exigido = (fondoTexto + respiro) / h;
+    const desdeArriba = Math.min(0.80, Math.max(base, exigido));
+
+    horizonte = 1 - desdeArriba;
+    document.documentElement.style.setProperty('--horizonte', (desdeArriba * 100).toFixed(1) + '%');
+    mar.redimensionar(w, h, escala);
+    estado.horizonte = horizonte;
+
+    /* EL MANGLAR SE CENTRA EN VERTICAL. En móvil no hay sitio para una
+       composición descentrada: el árbol mide un 60 % del ancho y a 0.705
+       se salía por la derecha. En pantallas anchas vuelve a su sitio,
+       que deja el flanco izquierdo libre para el texto. */
+    const xManglar = aspecto < 0.85 ? 0.50
+                   : aspecto > 1.50 ? 0.705
+                   : 0.50 + ((aspecto - 0.85) / 0.65) * 0.205;
+    mar.colocarManglar(xManglar);
+
+    // Después del manglar: el posadero se calcula a partir de su caja.
+    colocarGarzas(w, h, desdeArriba);
+  }
+
+  /* Sonda real de rendimiento. `hardwareConcurrency >= 8` no sirve:
+     Helio G85 y Unisoc T606 son octa-core y se arrastran. Se dibuja
+     de verdad y se mide con reloj de pared. */
+  function sondear() {
+    mar.redimensionar(64, 64, 1);
+    const t0 = performance.now();
+    for (let i = 0; i < 30; i++) { estado.t = i * 0.033; mar.dibujar(estado); }
+    const ms = (performance.now() - t0) / 30;
+    if (ms > 4.0)      escala = 0.6;
+    else if (ms > 1.6) escala = Math.min(devicePixelRatio || 1, 1.0);
+    console.info(`[mar] sonda: ${ms.toFixed(2)} ms/cuadro → escala ${escala}`);
+  }
+
+  sondear();
+  medidas();
+  addEventListener('resize', medidas, { passive: true });
+
+  /* Paralaje de puntero: solo en escritorio, solo con puntero fino. */
+  if (matchMedia('(min-width: 700px) and (pointer: fine)').matches) {
+    addEventListener('pointermove', (e) => {
+      punteroObjetivo = (e.clientX / innerWidth - 0.5) * 0.06;
+    }, { passive: true });
+  }
+
+  /* Pausar cuando el mar sale de pantalla: batería real en gama media. */
+  new IntersectionObserver(([e]) => {
+    visible = e.isIntersecting;
+    if (visible && !quieto.matches) bucle();
+  }, { threshold: 0.02 }).observe(hero);
+
+  function cuadro(ms) {
+    const dt = ultimoCuadro ? (ms - ultimoCuadro) / 1000 : 1 / 60;
+    ultimoCuadro = ms;
+    estado.t = ms / 1000;
+    punteroX += (punteroObjetivo - punteroX) * 0.06;
+    /* Deriva autónoma: el mundo vive solo, nadie tiene que arrastrarlo.
+       Con un componente sinusoidal lento encima, para que se sienta
+       barco y no scroll. Nada avanza lineal. */
+    deriva += 0.00040 * (1 + 0.38 * Math.sin(estado.t * 0.11));
+    estado.deriva = deriva + punteroX;
+    /* Paralaje ACOTADO para lo discreto. El manglar y las garzas son
+       objetos únicos: con la deriva acumulativa se iban caminando fuera
+       de cuadro y no volvían. Aquí solo entra puntero y scroll. */
+    estado.paralaje = punteroX + Math.min(1, Math.max(0, scrollY / innerHeight)) * 0.10;
+
+    /* PARALAJE DE LA SEGUNDA SECCIÓN. El mar se queda atrás mientras las
+       herramientas suben por encima: al 35 % del scroll, así que la
+       lámina no se despega del todo pero sí cede el primer plano.
+       El ave viaja con el mar, no con la página. */
+    const rezago = Math.min(innerHeight, scrollY) * 0.35;
+    lienzo.style.transform = `translate3d(0, ${rezago.toFixed(1)}px, 0)`;
+    if (contenedorGarzas) contenedorGarzas.style.transform = lienzo.style.transform;
+    // El paralaje vertical entra al salir del hero.
+    const salida = Math.min(1, Math.max(0, scrollY / innerHeight));
+    estado.horizonte = horizonte + salida * 0.06;
+    estado.luz = L;
+    mar.dibujar(estado);
+    calibrarLavado();
+    /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito
+       del agua y arrastraba al ave fuera de cuadro igual que hacía con
+       el manglar. El ave tiene que moverse con el ÁRBOL, no con el mar. */
+    animarGarzas(estado.t, estado.paralaje, dt);
+  }
+
+  /* ── EL LAVADO ADAPTATIVO ────────────────────────────────────────
+     La fuente de luz viaja por el cielo, así que tarde o temprano el
+     disco del sol o de la luna pasa por detrás del título. Se midió: a
+     las 4:12 la luna caía dentro del lockup y el peor contraste bajaba
+     a 3.43:1.
+
+     No se arregla moviendo el texto ni fijando la luna —sería mentir
+     sobre dónde está—. Se arregla midiendo cada tanto lo que realmente
+     quedó pintado detrás del texto y lavando encima lo justo para
+     llegar al umbral. Un lavado es un gesto de acuarela, no un parche.  */
+  /* Margen sobre el 4.5:1 exigido. Con papel de verdad el grano añade
+     motas claras que se comen el margen: medido, con objetivo 4.8 el
+     peor píxel quedaba en 4.51 — pasa, pero por un pelo. */
+  const OBJETIVO = 5.4;
+  let lavadoActual = 0, contadorLavado = 14, primeraCalibracion = true;
+  lavadoAdaptativo = true;
+
+  const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  const lumRel = (c) => 0.2126 * linz(c[0]) + 0.7152 * linz(c[1]) + 0.0722 * linz(c[2]);
+  const hexArr = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16) / 255);
+
+  function calibrarLavado() {
+    if (++contadorLavado % 15 !== 0) return;         // ~2 Hz a 30 fps
+    const texto = document.querySelector('.hero__texto');
+    if (!texto) return;
+    const caja = hero.getBoundingClientRect();
+    const r = texto.getBoundingClientRect();
+    const k = lienzo.width / Math.max(1, caja.width);
+    // readPixels tiene el origen abajo-izquierda.
+    const zona = mar.medirZona(
+      Math.round(r.left * k),
+      Math.round(lienzo.height - (r.bottom - caja.top) * k),
+      Math.round(r.width * k),
+      Math.round(r.height * k));
+    if (!zona) return;
+
+    const tintaClara = document.documentElement.dataset.tinta === 'clara';
+    const lt     = lumRel(hexArr(tintaClara ? '#E8EEF2' : '#1C2A30'));
+    const lavCol = hexArr(tintaClara ? '#0B141A' : '#F6F9FA');
+
+    /* El peor píxel es el que manda, y cuál es el peor depende de la
+       tinta: con tinta clara, el fondo más CLARO; con tinta oscura, el
+       más OSCURO. */
+    const peor = tintaClara ? zona.max : zona.min;
+    const gFondo = peor <= 0.0031308 ? peor * 12.92
+                 : 1.055 * Math.pow(peor, 1 / 2.4) - 0.055;
+
+    // Alfa mínimo que alcanza el objetivo. Se mezcla en sRGB, que es
+    // como lo va a componer el navegador.
+    let necesario = 0.62;
+    for (let a = 0; a <= 0.62; a += 0.02) {
+      const lf = lumRel(lavCol.map((c) => gFondo * (1 - a) + c * a));
+      const [hi, lo] = [lt, lf].sort((p, q) => q - p);
+      if ((hi + 0.05) / (lo + 0.05) >= OBJETIVO) { necesario = a; break; }
+    }
+    /* La primera vez se fija de golpe. Con movimiento apagado se dibuja
+       UN solo cuadro, y con suavizado el lavado se quedaría a un cuarto
+       de camino para siempre — justo en el modo de quien pidió calma. */
+    if (primeraCalibracion) { lavadoActual = necesario; primeraCalibracion = false; }
+    else lavadoActual += (necesario - lavadoActual) * 0.25;
+    document.documentElement.style.setProperty('--lavado', lavadoActual.toFixed(3));
+    document.documentElement.style.setProperty('--lavado-color',
+      tintaClara ? '#0B141A' : '#F6F9FA');
+  }
+
+  function bucle() {
+    if (corriendo) return;
+    corriendo = true;
+    const paso = (ms) => {
+      if (!visible || quieto.matches) { corriendo = false; return; }
+      /* El MAR va a 30 fps porque cada cuadro es un render WebGL de
+         pantalla completa. El AVE va a la tasa del monitor: son cinco
+         transforms de CSS, no cuesta nada, y es justo lo que hace que
+         el vuelo se sienta fluido. Dos relojes, dos costos. */
+      if (ms - ultimo >= CUADRO) { ultimo = ms; cuadro(ms); }
+      else {
+        const dtAve = ultimoAve ? (ms - ultimoAve) / 1000 : 1 / 60;
+        animarGarzas(ms / 1000, estado.paralaje, dtAve);
+      }
+      ultimoAve = ms;
+      requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  }
+
+  // Un cuadro siempre, incluso con movimiento apagado: el mar quieto
+  // tiene que ser bonito por sí solo. Es también la versión gama baja.
+  cuadro(performance.now());
+  hero.setAttribute('data-mar', 'listo');
+  if (PARAMS.has('dev'))
+    window.__galene = { estado, cuadro, mar, luz: () => L, calcularPosadero, vuelo: () => vuelo };
+
+  /* Las láminas llegan después del primer cuadro. La ayuda nunca espera
+     al arte: si no cargan, el mar sigue siendo procedural y el sitio
+     entero sigue funcionando. */
+  mar.ventana('Lejano', 0.10, 0.86);   // recorta el margen de papel
+  mar.cargar({
+    lejano:       'arte/mar-lejano.webp',
+    medio:        'arte/mar-medio.webp',
+    medioCalmo:   'arte/mar-medio-calmo.webp',
+    cercano:      'arte/mar-cercano.webp',
+    cercanoCalmo: 'arte/mar-cercano-calmo.webp',
+    manglar:      'arte/manglar-arco-a.webp',
+    papel:        'arte/papel.webp',
+    grafito:      'arte/grafito.webp',
+    nubes:        'arte/nubes.webp',
+    /* Las garzas ya NO se pintan en el shader: allí estaban paradas en
+       mar abierto, y una garza vadea en somero. Ahora hay una sola, en
+       el DOM, que llega volando y se posa sobre la copa del manglar. */
+  }).then((n) => {
+    console.info('[mar] láminas conectadas:', n.join(', '));
+    /* Con papel de verdad el grano se modula contra su propia media.
+       0.55, no 1.15: a fuerza alta el papel deja de ser soporte y pasa
+       a ser un filtro de textura encima de todo. */
+    if (n.includes('papel')) estado.papel = 0.55;
+    cuadro(performance.now());
+  }).catch((e) => console.warn('[mar] sin láminas:', e.message));
+  if (!quieto.matches) bucle();
+  quieto.addEventListener('change', () => { if (!quieto.matches) bucle(); else cuadro(performance.now()); });
+}
+
+/* ── GARZAS ────────────────────────────────────────────────────────
+   Andamiaje: siluetas en el DOM, máximo 15, para reemplazar por
+   láminas PNG por pose (arte/laminas.md · lámina 08).
+
+   Reglas: nunca en apuros, nunca una sola en cuadro, y el sitio nunca
+   afirma quiénes son. Ave calmada: se para, se acicala, duerme. Sin
+   clavados — un picotazo que sale con un pez es depredación.        */
+
+/* Las tres láminas de vuelo NO vienen registradas: distintos aspectos y
+   centroides en 0.463, 0.565 y 0.565. Intercaladas tal cual, el pájaro
+   pega un salto en cada cuadro.
+
+   Se alinean por CENTROIDE de la tinta —que sigue al cuerpo, porque el
+   cuerpo, el cuello y las patas concentran la masa— y se normaliza la
+   ENVERGADURA, para que tampoco pulse de tamaño al abrir las alas.
+   Medidos con el arnés; si se regeneran las láminas, hay que remedirlos. */
+/* Todas las láminas del ave, por NOMBRE. Los índices numéricos ya se me
+   desplazaron dos veces al insertar poses; con claves eso no puede pasar.
+   cx/cy = centroide de la tinta · ancho = envergadura relativa.
+   Todo medido con pruebas/lamina.html: si se regenera una lámina, hay
+   que volver a medirla o el ave pega un salto en ese cuadro. */
+const VUELO = {
+  a: { src: 'arte/garza-vuelo-a.webp', cx: 0.463, cy: 0.469, ancho: 0.853, aspecto: 1.000 },
+  b: { src: 'arte/garza-vuelo-b.webp', cx: 0.565, cy: 0.511, ancho: 0.824, aspecto: 1.500 },
+  c: { src: 'arte/garza-vuelo-c.webp', cx: 0.565, cy: 0.480, ancho: 0.959, aspecto: 1.000 },
+  d: { src: 'arte/garza-vuelo-d.webp', cx: 0.529, cy: 0.411, ancho: 0.824, aspecto: 1.500 },
+  e: { src: 'arte/garza-vuelo-e.webp', cx: 0.537, cy: 0.565, ancho: 0.854, aspecto: 1.500 },
+  f: { src: 'arte/garza-vuelo-f.webp', cx: 0.498, cy: 0.520, ancho: 0.861, aspecto: 1.500 },
+  g: { src: 'arte/garza-vuelo-g.webp', cx: 0.473, cy: 0.504, ancho: 0.854, aspecto: 1.500 },
+  /* Frenado. Se dimensiona por ALTURA contra la posada, no por
+     envergadura: medido con envergadura salía 2.4 veces más alta que el
+     ave posada y perdía toda la proporción. */
+  frena: { src: 'arte/garza-llegando.webp', cx: 0.528, cy: 0.418, ancho: 0.934,
+           aspecto: 0.667, altoTinta: 0.971, factor: 1.7 },
+  posada: { src: 'arte/garza-cerca.webp', cx: 0.523, cy: 0.477, ancho: 0.683,
+            aspecto: 1.000, pies: [0.580, 0.999], altoTinta: 0.997 },
+};
+
+/* La travesía completa, en segundos. Rara y lenta a propósito: el mundo
+   no está poblado de pájaros, pasa uno de vez en cuando y se queda un
+   buen rato. Siempre vuela HACIA LA IZQUIERDA —que es hacia donde miran
+   las láminas— así que nunca hay que espejarla y nunca vuela de espaldas. */
+/* LLEGA Y SE QUEDA. No hay ciclo: el ave entra una vez, se posa y no se
+   va nunca. Compañía que no se marcha — que es lo que el sitio promete
+   sin decirlo. Los tiempos se cuentan desde que se carga la página. */
+const FASES = [
+  ['crucero',   16.0],   // entra por la derecha, alto, cruzando
+  ['aproxima',   7.0],   // baja en arco hacia el manglar, aleteo más lento
+  ['frena',      1.8],   // alas abiertas, se endereza, se posa
+];
+const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
+/* Ciclo a → b → c → b: la garza es un ave de aleteo lento, ~1.5 por
+   segundo. Animado a dos, que es como se anima a mano y por eso se
+   siente hecho por una persona en vez de interpolado. */
+/* El batido completo, diez pasos con siete poses. El orden salió de
+   MEDIR el centroide de la tinta dentro de la familia que comparte
+   aspecto 3:2 —el peso baja a medida que el ala baja—:
+       d 0.411 · g 0.504 · b 0.511 · f 0.520 · e 0.565
+   Con 'a' arriba del todo. Bajada y subida usan las mismas láminas, que
+   es lo que pasa de verdad: el ala cruza dos veces cada posición. */
+const CICLO = ['a', 'd', 'g', 'b', 'f', 'e', 'f', 'b', 'g', 'd'];
+const MS_CUADRO = 130;  // 10 pasos × 130 ms ≈ 0.77 batidos/s — garza, no colibrí
+
+const contenedor = document.getElementById('garzas');
+let vuelo = null;
+
+if (contenedor) {
+  contenedor.innerHTML = '';
+  const capas = {};
+  for (const [clave, v] of Object.entries(VUELO)) {
+    const img = new Image();
+    img.src = v.src;
+    img.alt = '';
+    img.className = 'vuelo';
+    img.decoding = 'async';
+    // La posada gira sobre sus PIES; las de vuelo, sobre su centro.
+    img.style.transformOrigin = v.pies
+      ? `${(v.pies[0] * 100).toFixed(1)}% ${(v.pies[1] * 100).toFixed(1)}%`
+      : '50% 50%';
+    contenedor.appendChild(img);
+    capas[clave] = img;
+  }
+  vuelo = { capas, w: 0, h: 0, envergadura: 0, px: 0, py: 0, vx: 0, vy: 0, arrancado: false };
+}
+
+/* Dónde se posa, en coordenadas de la LÁMINA del manglar: 42 % a lo
+   ancho, 16 % desde arriba. O sea, sobre la copa. */
+const POSADERO = [0.42, 0.16];
+
+/* Calcula el posadero con la MISMA geometría que usa el shader para
+   dibujar el manglar. Es la única forma de que la garza caiga sobre la
+   rama en cualquier pantalla: el manglar se mide en unidades de ALTO
+   (su ancho es alto × aspecto de la lámina) mientras que su centro se
+   mide en ancho. Con fracciones sueltas de w y h, móvil y escritorio se
+   separan y el ave aterriza en el aire. */
+export function calcularPosadero(caja, w, h, lineaPx) {
+  const [cxRel, altoRel, hundir, aspLam] = caja;
+  const altoPx  = altoRel * h;
+  const anchoPx = altoPx * aspLam;
+  const abajo   = lineaPx + hundir * h;       // los pies del manglar
+  const centroX = cxRel * w;                  // q → px se multiplica por h,
+                                              // y cxRel·aspecto·h = cxRel·w
+  return {
+    x: centroX + (POSADERO[0] - 0.5) * anchoPx,
+    y: abajo - (1 - POSADERO[1]) * altoPx,
+    altoManglar: altoPx,
+  };
+}
+
+function colocarGarzas(w, h, horDesdeArriba) {
+  if (!vuelo) return;
+  vuelo.w = w; vuelo.h = h;
+  vuelo.linea = h * horDesdeArriba;
+
+  const p = calcularPosadero(mar.cajaManglar(), w, h, vuelo.linea);
+  /* Tamaños proporcionales al MANGLAR, no a la ventana: así el ave
+     guarda su escala frente al árbol en cualquier pantalla.
+     Bajados: a 0.34 y 0.44 el ave competía con el árbol. Una garza
+     posada mide como un quinto del manglar, no como un tercio. */
+  vuelo.altoPosada  = p.altoManglar * 0.20;
+  vuelo.envergadura = p.altoManglar * 0.30;
+
+  /* UN SOLO PUNTO DE REFERENCIA para todo el recorrido: el centroide.
+     Antes el vuelo se anclaba por el centroide y la posada por los pies,
+     así que al aterrizar el cuerpo pegaba un brinco hacia arriba del
+     tamaño de las patas. Aquí se calcula dónde debe ir el CENTROIDE
+     para que los PIES caigan exactamente sobre la rama. */
+  const pos = VUELO.posada;
+  const altoPx = vuelo.altoPosada / pos.altoTinta;
+  vuelo.posX = p.x - (pos.pies[0] - pos.cx) * (altoPx * pos.aspecto);
+  vuelo.posY = p.y - (pos.pies[1] - pos.cy) * altoPx;
+
+  /* Altitud de crucero, RELATIVA AL POSADERO — y calculada DESPUÉS de
+     él, o sale NaN. Con una fracción fija del alto y el manglar al 46 %
+     de pantalla, la copa quedaba casi al nivel del crucero y el ave
+     subía antes de aterrizar en vez de bajar. Así siempre vuela por
+     encima de la rama y el descenso es monótono. */
+  vuelo.alto = Math.max(h * 0.05, vuelo.posY - h * 0.155);
+
+  // El frenado empieza donde termina la aproximación. Exactamente, y a
+  // media altura entre el crucero y la rama.
+  vuelo.frenaX = vuelo.posX + w * 0.055;
+  vuelo.frenaY = vuelo.posY - (vuelo.posY - vuelo.alto) * 0.42;
+}
+
+const suave3 = (p) => p * p * (3 - 2 * p);
+const salida3 = (p) => 1 - Math.pow(1 - p, 3);
+
+function animarGarzas(t, paralaje, dt) {
+  if (!vuelo || !vuelo.envergadura) return;
+  const { w, h, posX, posY, alto } = vuelo;
+  const K = vuelo.envergadura;
+  // Paso de integración acotado: una pestaña en segundo plano o un
+  // salto del reloj no pueden lanzar al ave al infinito.
+  dt = Math.min(0.05, Math.max(0.001, dt || 1 / 60));
+
+  // ¿En qué fase vamos? Sin módulo: pasado el frenado, se queda posada.
+  let tt = t, fase = 'posada', p = 1;
+  if (tt < HASTA_POSADA) {
+    for (const [nombre, dur] of FASES) {
+      if (tt < dur) { fase = nombre; p = tt / dur; break; }
+      tt -= dur;
+    }
+  }
+
+  /* ── FÍSICA ────────────────────────────────────────────────────
+     El recorrido ya no son interpolaciones guionadas sino una
+     integración: el ave tiene posición y VELOCIDAD, y persigue un
+     objetivo con un muelle amortiguado. Por eso la aproximación no se
+     siente forzada — no hay una curva dibujada a mano, hay un cuerpo
+     que se deja caer y frena. Y la inclinación sale del vector de
+     velocidad, que es lo que hace un pájaro de verdad: el cuerpo se
+     alinea con la trayectoria.                                     */
+  const xEntra = w * 1.22, xEspera = w * 0.90;
+  let plato = null, mezcla = 0, escala = 1;
+  let ritmo = MS_CUADRO / 1000;           // segundos por paso de aleteo
+
+  if (!vuelo.arrancado) {
+    vuelo.px = xEntra; vuelo.py = alto;
+    vuelo.vx = -w * 0.028; vuelo.vy = 0;
+    vuelo.arrancado = true;
+  }
+
+  let objX, objY, k, amort;
+  if (fase === 'crucero') {
+    /* El crucero se rige por VELOCIDAD, no por un punto de destino. Con
+       un muelle posicional el ave llegaba a su objetivo y se quedaba
+       colgada en el aire —medido: vx bajaba a 3 px/s—, que es lo que
+       hace un globo, no un pájaro. Un ave en crucero mantiene rumbo. */
+    // 0.024 del ancho por segundo: cruza la pantalla en ~40 s. A 0.052
+    // se sentía disparada; una garza planea, no corre.
+    const vDeseada = -w * 0.024;
+    vuelo.vx += (vDeseada - vuelo.vx) * Math.min(1, dt * 0.8);
+    vuelo.vy += ((alto - vuelo.py) * 0.9 - vuelo.vy) * Math.min(1, dt * 1.6);
+    vuelo.px += vuelo.vx * dt;
+    vuelo.py += vuelo.vy * dt;
+    objX = null;
+  } else if (fase === 'aproxima') {
+    objX = vuelo.frenaX; objY = vuelo.frenaY;
+    k = 0.9 + 1.8 * p; amort = 2.6;
+    ritmo = MS_CUADRO / 1000 + p * 0.07;  // el aleteo se abre al descender
+  } else if (fase === 'frena') {
+    plato = 'frena';
+    objX = posX; objY = posY;
+    // Alas abiertas: mucha resistencia. Frena de verdad, no interpola.
+    k = 16; amort = 7.5;
+    escala = 1.06 - 0.06 * salida3(p);
+    mezcla = p > 0.70 ? (p - 0.70) / 0.30 : 0;
+  } else {
+    plato = 'posada';
+    objX = posX; objY = posY;
+    k = 90; amort = 18;                   // clavada en la rama
+  }
+
+  // Integración semiimplícita: estable con pasos grandes.
+  if (objX !== null) {
+    const ax = (objX - vuelo.px) * k - vuelo.vx * amort;
+    const ay = (objY - vuelo.py) * k - vuelo.vy * amort;
+    vuelo.vx += ax * dt; vuelo.vy += ay * dt;
+    vuelo.px += vuelo.vx * dt; vuelo.py += vuelo.vy * dt;
+  }
+
+  let x = vuelo.px, y = vuelo.py;
+
+  /* Actitud desde la trayectoria: si baja, morro abajo; si frena, se
+     endereza. Suavizada, porque un cuerpo con inercia no cambia de
+     ángulo de golpe. */
+  const avance = Math.max(60, Math.abs(vuelo.vx));
+  const objGiro = plato === 'posada' ? 0
+    : Math.max(-26, Math.min(14, -(Math.atan2(vuelo.vy, avance) * 180 / Math.PI) * 0.85));
+  vuelo.giro = (vuelo.giro || 0) + (objGiro - (vuelo.giro || 0)) * Math.min(1, dt * 4.5);
+  let giro = vuelo.giro;
+
+  if (plato === 'posada') {
+    // Vida en reposo: balanceo lentísimo, nunca quieta del todo.
+    giro = Math.sin(t * 0.31) * 0.55 + Math.sin(t * 0.13) * 0.35;
+  }
+
+  /* Aleteo. Se cruza SOLO el último tramo de cada paso: el salto duro
+     desaparece pero el escalón se conserva, que es lo que hace que se
+     lea animado a mano y no interpolado. Y una disolvencia entre dos
+     aguadas es un gesto de acuarela, no un efecto. */
+  const enVuelo = plato === null;
+  vuelo.fase = (vuelo.fase || 0) + dt / ritmo;      // avanza con el reloj real
+  const pos = vuelo.fase % CICLO.length;
+  const iA = Math.floor(pos), frac = pos - iA;
+  const iB = (iA + 1) % CICLO.length;
+  /* Se cruza solo el último tramo de cada paso: el salto duro
+     desaparece pero el escalón se conserva, que es lo que lo mantiene
+     animado a mano. Con diez pasos el tramo puede ser más corto. */
+  const cruce = frac < 0.70 ? 0 : (frac - 0.70) / 0.30;
+  /* El cuerpo sube en la BAJADA del ala, no en fase con ella: el empuje
+     va medio ciclo por delante de la posición. Ese desfase es lo que
+     distingue un pájaro de un muñeco que sube y baja. */
+  const bat = Math.sin((pos / CICLO.length) * Math.PI * 2 - Math.PI * 0.5);
+  if (enVuelo) { y += bat * K * 0.042; giro += bat * 1.6; }
+
+  /* EL MISMO PARALAJE QUE EL MANGLAR, exactamente. El shader mueve el
+     árbol 0.45·paralaje en unidades de q —que son alto de pantalla— y
+     yo movía el ave 130 px: al mover el puntero se separaban y el ave
+     se resbalaba de la rama. Es el mismo error que tenía el árbol con
+     la deriva del agua, un piso más abajo. */
+  x -= paralaje * 0.45 * h;
+
+  const visibles = enVuelo
+    ? (cruce > 0 && CICLO[iA] !== CICLO[iB]
+        ? [[CICLO[iA], 1 - cruce], [CICLO[iB], cruce]]
+        : [[CICLO[iA], 1]])
+    : mezcla > 0 ? [['frena', 1 - mezcla], ['posada', mezcla]]
+    : [[plato, 1]];
+
+  for (const [clave, el] of Object.entries(vuelo.capas)) {
+    const enc = visibles.find(([c]) => c === clave);
+    if (!enc) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
+    const v = VUELO[clave];
+    /* Todo se ancla por el CENTROIDE, incluida la posada: el sitio de
+       los pies ya viene resuelto en vuelo.posY. Un único punto de
+       referencia en todo el recorrido es lo que evita el brinco. */
+    const altoPx = v.altoTinta
+      ? (vuelo.altoPosada * (v.factor || 1) / v.altoTinta) * escala   // posada / frenado
+      : (K / v.ancho) * escala / v.aspecto;                          // vuelo
+    const anchoPx = altoPx * v.aspecto;
+    const izq = x - v.cx * anchoPx;
+    const arr = y - v.cy * altoPx;
+    el.style.opacity = enc[1].toFixed(3);
+    el.style.width = anchoPx.toFixed(1) + 'px';
+    el.style.transform =
+      `translate3d(${izq.toFixed(1)}px, ${arr.toFixed(1)}px, 0) rotate(${giro.toFixed(2)}deg)`;
+  }
+}
+
+/* ── ARRANQUE ──────────────────────────────────────────────────────
+   Al final: el mar es lo último que se enciende, después de que los
+   reflejos, la hora y las garzas ya existen. */
+const mar = crear(lienzo);
+if (!mar) {
+  lienzo.remove();                 // el respaldo CSS ya es un mar
+  hero?.setAttribute('data-mar', 'sin-webgl');
+} else {
+  arrancar(mar);
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Galene · medidor de láminas</title>
+<style>
+  body { margin:0; padding:1.5rem; background:#14202a; color:#e8eef2;
+         font:14px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; }
+  h1 { font-size:1rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+       color:#8fb4c0; margin:0 0 1rem; }
+  .marco { background:#0d171e; padding:.75rem; border-radius:3px; overflow:auto; }
+  img { display:block; max-width:100%; height:auto; image-rendering:auto; }
+  table { border-collapse:collapse; margin-top:1.25rem; width:100%; max-width:60rem; }
+  td { padding:.3rem .75rem .3rem 0; vertical-align:top; border-bottom:1px solid #ffffff12; }
+  td:first-child { color:#8fb4c0; white-space:nowrap; }
+  .ok { color:#7fd6a8; } .mal { color:#f08a7a; }
+  .veredicto { margin-top:1.25rem; padding:.75rem 1rem; border-radius:3px; font-weight:600; }
+  .veredicto.si { background:#12402c; color:#7fd6a8; }
+  .veredicto.no { background:#43201c; color:#f08a7a; }
+  .ayuda { color:#6f8b96; margin-top:2rem; }
+  pre { white-space:pre-wrap; word-break:break-all; }
+</style>
+</head>
+<body>
+<h1>Medidor de láminas</h1>
+<div class="marco"><img id="vista" alt=""></div>
+<div id="salida"></div>
+<p class="ayuda">Uso: <code>pruebas/lamina.html?src=../arte/mar-lejano.png</code></p>
+
+<script type="module">
+import { medir } from './lamina.js';
+
+const src = new URLSearchParams(location.search).get('src');
+const salida = document.getElementById('salida');
+
+if (!src) {
+  salida.innerHTML = '<p class="mal">Falta ?src=</p>';
+} else {
+  document.getElementById('vista').src = src;
+  try {
+    const r = await medir(src);
+    window.__medida = r;                       // para leerlo desde fuera
+
+    const fila = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+    let html = '<table>';
+    for (const [k, v] of Object.entries(r)) {
+      if (k === 'pruebas' || k === 'pasa') continue;
+      html += fila(k, Array.isArray(v) ? v.join('  ') : v);
+    }
+    html += '</table><table>';
+    for (const [k, [ok, det]] of Object.entries(r.pruebas)) {
+      html += fila(`<span class="${ok ? 'ok' : 'mal'}">${ok ? '✓' : '✗'}</span> ${k}`,
+                   `<span class="${ok ? 'ok' : 'mal'}">${det}</span>`);
+    }
+    html += '</table>';
+    html += `<div class="veredicto ${r.pasa ? 'si' : 'no'}">${
+      r.pasa ? 'PASA — se puede conectar al shader'
+             : 'NO PASA — ver las filas en rojo'}</div>`;
+    salida.innerHTML = html;
+  } catch (e) {
+    salida.innerHTML = `<p class="mal">${e.message}</p>`;
+  }
+}
+</script>
+</body>
+</html>
