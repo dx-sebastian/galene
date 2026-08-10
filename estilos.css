@@ -121,16 +121,14 @@ body {
 /* ═══════════════════════════════════════════════════════════════════
    HERO — planos 0 y 1
    ═══════════════════════════════════════════════════════════════════ */
-.hero {
-  position: relative;
-  min-height: 100svh;
-  min-height: 100dvh;
-  display: grid;
-  grid-template-rows: auto 1fr auto auto;
-  padding: clamp(1.25rem, 4vw, 3rem);
-  padding-bottom: calc(var(--alto-reflejos) + 1.25rem);
+/* EL MUNDO — fijo al viewport, detrás de todo. El paralaje real: la
+   página se desliza por encima y el mar se queda donde está. */
+.mundo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   overflow: hidden;
-  isolation: isolate;
+  pointer-events: none;
 
   /* Respaldo sin WebGL: cielo, horizonte y agua. Sigue siendo un mar. */
   background:
@@ -144,10 +142,19 @@ body {
     );
 }
 
+.hero {
+  position: relative;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  padding-bottom: calc(var(--alto-reflejos) + 1.25rem);
+}
+
 .hero__lienzo {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
-  z-index: -1;
   display: block;
 }
 
@@ -258,15 +265,14 @@ body {
    HERRAMIENTAS — DOM plano, cero canvas, cero JS necesario
    ═══════════════════════════════════════════════════════════════════ */
 .herramientas {
+  position: relative;             /* se desliza POR ENCIMA del mar fijo */
   padding: clamp(2rem, 7vw, 4.5rem) clamp(1.25rem, 4vw, 3rem);
   padding-bottom: calc(var(--alto-reflejos) + 3rem);
-  background: #F3F5F4;
   color: #16222E;
-
-  /* Franja de acuarela estática arriba: el link que la gente comparte
-     es esta página, no el home. Reemplazar por lámina 07. */
-  border-top: 0;
-  background-image: linear-gradient(to bottom, #DCE7E8 0, #F3F5F4 7rem);
+  /* Opaca: el instrumento no compite con el mundo. Y el borde superior
+     entra desde el agua, para que el paso no sea un corte. */
+  background: linear-gradient(to bottom, #E7EDEC 0, #F3F5F4 9rem);
+  box-shadow: 0 -24px 48px -24px #16222E40;
 }
 .herramientas__titulo {
   font-family: var(--tipo-titulo);

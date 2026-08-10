@@ -43,13 +43,18 @@
        PLANO 0 y 1 — el mar y la lámina.
        El texto vive sobre el cielo. El botón trae su propio fondo.
        ══════════════════════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════════
+       EL MUNDO, fijo al viewport. Está FUERA del hero a propósito: así
+       las herramientas se deslizan por encima del mar en vez de
+       arrastrarlo consigo. Ese es el paralaje de verdad — el mundo se
+       queda, la página pasa.
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="mundo" aria-hidden="true">
+    <canvas class="hero__lienzo" id="lienzo"></canvas>
+    <div class="garzas" id="garzas"></div>
+  </div>
+
   <section class="hero" id="mar">
-
-    <canvas class="hero__lienzo" id="lienzo" aria-hidden="true"></canvas>
-
-    <!-- Garzas. Andamiaje: siluetas SVG en el DOM, para reemplazar por
-         láminas PNG (arte/laminas.md · lámina 08). Máximo 15. -->
-    <div class="garzas" id="garzas" aria-hidden="true"></div>
 
     <div class="hero__texto">
       <h1 class="titulo">Galene</h1>

@@ -153,12 +153,12 @@ function arrancar(mar) {
        de cuadro y no volvían. Aquí solo entra puntero y scroll. */
     estado.paralaje = punteroX + Math.min(1, Math.max(0, scrollY / innerHeight)) * 0.10;
 
-    /* PARALAJE DE LA SEGUNDA SECCIÓN. El mar se queda atrás mientras las
-       herramientas suben por encima: al 35 % del scroll, así que la
-       lámina no se despega del todo pero sí cede el primer plano.
-       El ave viaja con el mar, no con la página. */
-    const rezago = Math.min(innerHeight, scrollY) * 0.35;
-    lienzo.style.transform = `translate3d(0, ${rezago.toFixed(1)}px, 0)`;
+    /* PARALAJE. El mundo está fijo al viewport, así que las herramientas
+       ya se deslizan por encima del mar. Encima de eso, el mar se hunde
+       un poco al bajar —18 % del scroll— y se apaga hacia el fondo: no
+       desaparece, se queda respirando debajo del instrumento. */
+    const s = Math.min(1, scrollY / innerHeight);
+    lienzo.style.transform = `translate3d(0, ${(s * innerHeight * 0.18).toFixed(1)}px, 0)`;
     if (contenedorGarzas) contenedorGarzas.style.transform = lienzo.style.transform;
     // El paralaje vertical entra al salir del hero.
     const salida = Math.min(1, Math.max(0, scrollY / innerHeight));
@@ -470,7 +470,8 @@ function animarGarzas(t, paralaje, dt) {
      que se deja caer y frena. Y la inclinación sale del vector de
      velocidad, que es lo que hace un pájaro de verdad: el cuerpo se
      alinea con la trayectoria.                                     */
-  const xEntra = w * 1.22, xEspera = w * 0.90;
+  // Entra justo por el borde y se queda cerca del manglar: recorre poco.
+  const xEntra = w * 1.08, xEspera = vuelo.posX + w * 0.14;
   let plato = null, mezcla = 0, escala = 1;
   let ritmo = MS_CUADRO / 1000;           // segundos por paso de aleteo
 
@@ -552,7 +553,10 @@ function animarGarzas(t, paralaje, dt) {
      va medio ciclo por delante de la posición. Ese desfase es lo que
      distingue un pájaro de un muñeco que sube y baja. */
   const bat = Math.sin((pos / CICLO.length) * Math.PI * 2 - Math.PI * 0.5);
-  if (enVuelo) { y += bat * K * 0.042; giro += bat * 1.6; }
+  /* Cabeceo mínimo. Un ave grande en vuelo de crucero casi no sube ni
+     baja: la sustentación se reparte y el cuerpo va estable. Lo que se
+     mueve son las alas. A 0.042 el cuerpo daba tumbos. */
+  if (enVuelo) { y += bat * K * 0.016; giro += bat * 0.7; }
 
   /* EL MISMO PARALAJE QUE EL MANGLAR, exactamente. El shader mueve el
      árbol 0.45·paralaje en unidades de q —que son alto de pantalla— y
