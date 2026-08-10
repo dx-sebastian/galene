@@ -135,8 +135,11 @@ function arrancar(mar) {
     if (visible && !quieto.matches) bucle();
   }, { threshold: 0.02 }).observe(hero);
 
-  function cuadro(ms) {
-    const dt = ultimoCuadro ? (ms - ultimoCuadro) / 1000 : 1 / 60;
+  function cuadro(ms, dtAve) {
+    // dtAve viene del bucle y es el del AVE. Si no viene (arranque o
+    // pruebas), se calcula desde el último cuadro del mar.
+    const dt = dtAve !== undefined ? dtAve
+             : (ultimoCuadro ? (ms - ultimoCuadro) / 1000 : 1 / 60);
     ultimoCuadro = ms;
     estado.t = ms / 1000;
     punteroX += (punteroObjetivo - punteroX) * 0.06;
@@ -243,12 +246,16 @@ function arrancar(mar) {
          pantalla completa. El AVE va a la tasa del monitor: son cinco
          transforms de CSS, no cuesta nada, y es justo lo que hace que
          el vuelo se sienta fluido. Dos relojes, dos costos. */
-      if (ms - ultimo >= CUADRO) { ultimo = ms; cuadro(ms); }
-      else {
-        const dtAve = ultimoAve ? (ms - ultimoAve) / 1000 : 1 / 60;
-        animarGarzas(ms / 1000, estado.paralaje, dtAve);
-      }
+      /* dt del AVE = tiempo desde el último cuadro DEL AVE, siempre.
+         Antes, en los cuadros donde también se dibujaba el mar, se le
+         pasaba el dt del mar (33 ms) aunque ya se hubiera avanzado en
+         los cuadros intermedios: 1470 ms de animación por cada segundo
+         real. Todo el vuelo iba 1.47× rápido —aleteo, avance y física—
+         y por eso se veía irreal. */
+      const dtAve = ultimoAve ? (ms - ultimoAve) / 1000 : 1 / 60;
       ultimoAve = ms;
+      if (ms - ultimo >= CUADRO) { ultimo = ms; cuadro(ms, dtAve); }
+      else animarGarzas(ms / 1000, estado.paralaje, dtAve);
       requestAnimationFrame(paso);
     };
     requestAnimationFrame(paso);
