@@ -112,7 +112,15 @@ function arrancar(mar) {
     const xManglar = aspecto < 0.85 ? 0.50
                    : aspecto > 1.50 ? 0.705
                    : 0.50 + ((aspecto - 0.85) / 0.65) * 0.205;
-    mar.colocarManglar(xManglar);
+
+    /* Y NO PUEDE OCUPAR TODA LA PANTALLA. El manglar se mide en unidades
+       de ALTO, así que en un móvil vertical su ancho —alto x aspecto de
+       la lámina— se salía por los dos lados: a 0.62 de alto con una
+       lámina 3:2 daba 0.93 del alto de ancho, casi el doble del ancho de
+       un teléfono. Aquí se le pone techo por ANCHO. */
+    const aspLam = mar.cajaManglar()[3] || 1.5;
+    const altoManglar = Math.min(0.62, (0.74 * w) / (aspLam * h));
+    mar.colocarManglar(xManglar, altoManglar);
 
     // Después del manglar: el posadero se calcula a partir de su caja.
     colocarGarzas(w, h, desdeArriba);
@@ -230,7 +238,11 @@ function arrancar(mar) {
     /* Paralaje ACOTADO para lo discreto. El manglar y las garzas son
        objetos únicos: con la deriva acumulativa se iban caminando fuera
        de cuadro y no volvían. Aquí solo entra puntero y scroll. */
-    estado.paralaje = punteroX + Math.min(1, Math.max(0, scrollY / innerHeight)) * 0.10;
+    /* SOLO el puntero. El scroll movía el manglar y el ave con la
+       página, y un objeto que se desplaza al bajar delata que es una
+       calcomanía sobre un fondo. El mundo está fijo al viewport: las
+       herramientas pasan por encima y el paisaje se queda donde está. */
+    estado.paralaje = punteroX;
 
     /* PARALAJE. El mundo está fijo al viewport, así que las herramientas
        ya se deslizan por encima del mar. Encima de eso, el mar se hunde
@@ -482,27 +494,45 @@ if (contenedor) {
   vuelo = { capas, w: 0, h: 0, envergadura: 0, px: 0, py: 0, vx: 0, vy: 0, arrancado: false };
 }
 
-/* Dónde se posa, en coordenadas de la LÁMINA del manglar: 42 % a lo
-   ancho, 16 % desde arriba. O sea, sobre la copa. */
-const POSADERO = [0.42, 0.16];
+/* DOS POSADEROS, y por ahora solo se usa uno.
 
-/* Calcula el posadero con la MISMA geometría que usa el shader para
-   dibujar el manglar. Es la única forma de que la garza caiga sobre la
-   rama en cualquier pantalla: el manglar se mide en unidades de ALTO
-   (su ancho es alto × aspecto de la lámina) mientras que su centro se
-   mide en ancho. Con fracciones sueltas de w y h, móvil y escritorio se
-   separan y el ave aterriza en el aire. */
+   El ave que LLEGA se posa en la copa del manglar principal: esa
+   trayectoria —crucero, descenso en arco, frenado— es el acontecimiento
+   de la portada y no se toca.
+
+   La rama del manglar CERCANO queda reservada para el ave protagonista,
+   la que representa a quien visita. Entra cuando existan las láminas del
+   ave en reposo, junto con la bandada del árbol grande.
+
+   Coordenadas medidas: en el manglar lejano, 42 % a lo ancho y 16 % desde
+   arriba, o sea sobre la copa. En el cercano, (0.27, 0.455), que es el
+   tramo sólido de la rama —más a la derecha la pintura ya se desvanece y
+   el ave parecía flotar sobre nada. */
+const POSADERO = [0.42, 0.16];
+const POSADERO_CERCA = [0.27, 0.455];
+const GROSOR_RAMA = 0.076;
+
 export function calcularPosadero(caja, w, h, lineaPx) {
   const [cxRel, altoRel, hundir, aspLam] = caja;
   const altoPx  = altoRel * h;
   const anchoPx = altoPx * aspLam;
-  const abajo   = lineaPx + hundir * h;       // los pies del manglar
-  const centroX = cxRel * w;                  // q → px se multiplica por h,
-                                              // y cxRel·aspecto·h = cxRel·w
+  const abajo   = lineaPx + hundir * h;
   return {
-    x: centroX + (POSADERO[0] - 0.5) * anchoPx,
+    x: cxRel * w + (POSADERO[0] - 0.5) * anchoPx,
     y: abajo - (1 - POSADERO[1]) * altoPx,
     altoManglar: altoPx,
+  };
+}
+
+/* Para la bandada, cuando llegue: un punto sobre la rama del fragmento
+   cercano, en la misma geometría que usa el shader. */
+export function posaderoCercano(caja, w, h) {
+  const [xRel, alto, , aspLam] = caja;
+  const anchoQ = alto * aspLam;
+  return {
+    x: xRel * w + POSADERO_CERCA[0] * anchoQ * h,
+    y: (1 - (caja[2] + (1 - POSADERO_CERCA[1]) * alto)) * h,
+    grosorRama: GROSOR_RAMA * alto * h,
   };
 }
 
@@ -516,6 +546,8 @@ function colocarGarzas(w, h, horDesdeArriba) {
      guarda su escala frente al árbol en cualquier pantalla.
      Bajados: a 0.34 y 0.44 el ave competía con el árbol. Una garza
      posada mide como un quinto del manglar, no como un tercio. */
+  /* Tamaños proporcionales al GROSOR DE LA RAMA en la que se posa: es
+     la única referencia honesta de escala que hay en el cuadro. */
   vuelo.altoPosada  = p.altoManglar * 0.135;
   vuelo.envergadura = p.altoManglar * 0.20;
 

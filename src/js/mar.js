@@ -791,6 +791,7 @@ export function crear(lienzo) {
        posa— calcule su sitio con los MISMOS números y no con fracciones
        paralelas que se separan al cambiar de pantalla. */
     cajaManglar: () => manglarCaja.slice(),
+    cajaCerca: () => cercaCaja.slice(),
     redimensionar(w, h, escala) {
       ancho = Math.max(1, Math.round(w * escala));
       alto  = Math.max(1, Math.round(h * escala));
