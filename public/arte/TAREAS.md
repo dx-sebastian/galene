@@ -192,17 +192,22 @@ reutilizan, el vuelo se ve mecánico — que es justo lo que pasa ahora.
 
 ---
 
-# D bis · El aterrizaje — 8 cuadros en rejilla · **lo siguiente**
+# D bis · El aterrizaje — 8 cuadros en rejilla
 
-El aterrizaje se siente pausado por algo medible: la fase `frena` dura
-**2,4 s con una sola lámina**. Es un cuadro congelado en medio de un vuelo
-animado a 150 ms. No es la curva ni la física — es que no hay cuadros.
+**HECHO.** Antes la fase `frena` duraba **2,4 s con una sola lámina**: un
+cuadro congelado en medio de un vuelo animado a 150 ms. Ahora son ocho
+cuadros repartidos desigual —frenar es violento y dura poco, asentarse es
+lento— sobre 3,2 s, y el último ya es el ave parada, así que la
+disolvencia hacia la posada no tiene nada que salvar.
 
-Y como el descenso ya lo calcula la física del sitio, **las láminas no
-deben bajar**: el torso se queda clavado y solo se mueven alas, cuello y
-patas. Ese fue el error de las primeras láminas de vuelo.
+Vinieron **sin registrar**, cada ave con su encuadre y su tamaño. El
+registro lo puso la medición, y la pieza que lo resuelve es un peso `w`
+por cuadro: el vuelo se mide por envergadura y gira sobre el centroide, la
+posada se mide por altura y se planta sobre los pies, y estos ocho están
+justo en medio. `w` va de 0 a 1 e interpola las dos reglas a la vez —el
+tamaño y el ancla— así que ninguno de los dos empalmes salta.
 
-- [ ] **`aterriza-rejilla.png`** — 4:3 apaisada, 2400×1800, celdas de 600×900
+- [x] **`aterriza-rejilla.png`** — 4:3 apaisada, 2400×1800, celdas de 600×900
 
 ```
 A single watercolour painting on rough cotton paper, containing a GRID of
@@ -274,6 +279,13 @@ cells, bird moving position between cells, cropped wings.
 
 El octavo cuadro tiene que leerse igual que la garza en reposo: es el que
 se disuelve hacia la hoja de posadas y si no coincide, se nota el corte.
+
+**Lo que pasó al procesarla**: llegó con transparencia real, pero el RGB
+bajo el alfa cero era casi negro y eso sangra al escalar, así que hubo que
+extender el color hacia afuera 14 pasos antes de tocar nada. Y el corte
+por proyección de tinta no sirvió —las alas de una celda invaden la
+vecina—; se separó por componentes conexas sobre la tinta dilatada, que
+además vuelve a unir las patas cuando la acuarela las rompe en trozos.
 
 ---
 
