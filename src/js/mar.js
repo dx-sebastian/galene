@@ -296,8 +296,8 @@ void main(){
         vec2 cu = vec2(q.x / (cAlto * u_coralesCaja.z) + vaiven * profC,
                        1.0 - cv);
         vec4 tc = texture(u_corales, cu);
-        vec3 pc = mix(col, tc.rgb, 0.55);
-        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.55;
+        vec3 pc = mix(col, tc.rgb, 0.82);
+        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.85;
         /* Nunca una cinta continua: se desvanece por arriba —el corte
            recto se veía— y se abre en claros con una onda lenta, para
            que haya agua limpia entre las matas. La paz es el vacío. */
@@ -305,7 +305,7 @@ void main(){
            así que no hay que abrirle claros por código: eso la borraba.
            Solo se desvanece por arriba, para que no haya canto recto. */
         float entra = smoothstep(0.0, 0.30, cv);
-        col = mix(col, pc, tc.a * mix(0.45, 0.92, profC) * entra);
+        col = mix(col, pc, tc.a * mix(0.62, 1.0, profC) * entra);
       }
     }
   }
@@ -419,12 +419,11 @@ void main(){
     vec2 mc = vec2((q.x - kx) / kAncho, (uv.y - u_cercaCaja.z) / kAlto);
     if (mc.x > 0.0 && mc.x < 1.0 && mc.y > 0.0 && mc.y < 1.0) {
       vec4 tk = texture(u_manglarCerca, mc);
-      /* La lámina llega llena hasta sus bordes —se pidió así— y al
-         recortarla en su caja se veía el canto recto. Aquí se desvanece
-         en sus propios bordes: deja de ser un recorte pegado y pasa a
-         perderse fuera de cuadro. */
-      tk.a *= smoothstep(0.0, 0.13, mc.x) * (1.0 - smoothstep(0.86, 1.0, mc.x))
-            * smoothstep(0.0, 0.10, mc.y) * (1.0 - smoothstep(0.82, 1.0, mc.y));
+      /* La derecha se desvanece sola: la lámina trae ese final PINTADO.
+         Pero su borde SUPERIOR sí lleva tinta hasta el canto, y ahí se
+         veía la línea recta. Solo ese lado se ablanda, y ancho, para que
+         no parezca niebla sino que se pierda por arriba de cuadro. */
+      tk.a *= 1.0 - smoothstep(0.74, 1.0, mc.y);
       vec3 oscuroC = mix(vec3(0.085, 0.082, 0.090), u_agua * 0.30, 0.35);
       vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
       vec3 pk = duotono(tk.rgb, oscuroC, claroC);
@@ -556,7 +555,7 @@ export function crear(lienzo) {
   /* El manglar cercano tiene que DOMINAR la esquina inferior izquierda:
      es el primer plano y es el posadero. A 0.52 de alto quedaba como una
      mancha en el canto. */
-  const cercaCaja = [-0.16, 0.62, -0.26, 1.5];
+  const cercaCaja = [-0.02, 0.92, -0.34, 1.5];
   const coralesCaja = [0.30, 0.30, 4.0];
   gl.uniform4fv(u.u_cercaCaja, cercaCaja);
   gl.uniform3fv(u.u_coralesCaja, coralesCaja);
