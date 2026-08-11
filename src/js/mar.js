@@ -293,11 +293,16 @@ void main(){
     vec2 m = vec2((q.x - (cx - Sx * 0.5)) / Sx, (uv.y - base) / S);
     if (m.x > 0.0 && m.x < 1.0 && m.y > 0.0 && m.y < 1.0) {
       vec4 t = texture(u_manglar, m);
-      /* Las hebras casi blancas de la lámina (2.8 % de sus píxeles) se
-         quedarían como hilos brillantes sobre el agua nocturna: se
-         recorta el extremo claro del duotono. */
       vec3 pm = duotono(t.rgb, oscuroM, claroM);
-      col = mix(col, pm, t.a * 0.92);
+      /* El manglar conserva su propio pigmento, como el agua: en duotono
+         puro la copa salía gris contra un cielo cálido y leía recorte. */
+      pm += (t.rgb - vec3(valor(t.rgb))) * u_croma * 0.85;
+      /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
+         y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
+         el último tramo, así que el árbol se disuelve en el agua en vez
+         de terminar en una línea. */
+      float bajoAgua = smoothstep(0.0, 0.16, m.y);
+      col = mix(col, pm, t.a * 0.92 * bajoAgua);
     }
 
     /* El reflejo. A calma baja está partido en tajos; a calma alta el
@@ -504,7 +509,7 @@ export function crear(lienzo) {
      más hundimiento las raíces entran en agua más cercana, que es lo que
      lo acerca de verdad — un objeto próximo se mete por debajo del
      horizonte, no se queda posado encima de la línea. */
-  const manglarCaja = [0.705, 0.46, 0.055, 1.0];
+  const manglarCaja = [0.705, 0.50, 0.150, 1.0];
   gl.uniform4fv(u.u_manglarCaja, manglarCaja);
 
   /* Repeticiones de cada lámina a lo ancho. MENOS repeticiones = marcas

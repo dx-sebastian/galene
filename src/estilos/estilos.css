@@ -20,14 +20,14 @@
    ═══════════════════════════════════════════════════════════════════ */
 @font-face {
   font-family: "Atkinson Hyperlegible Next";
-  src: url("fuentes/Atkinson-Hyperlegible-Regular.woff2") format("woff2");
+  src: url("/galene/fuentes/Atkinson-Hyperlegible-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Atkinson Hyperlegible Next";
-  src: url("fuentes/Atkinson-Hyperlegible-Bold.woff2") format("woff2");
+  src: url("/galene/fuentes/Atkinson-Hyperlegible-Bold.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -85,40 +85,6 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PLANO 2 — los reflejos
-   Fijos, en la zona del pulgar, fuera de toda animación y de todo
-   estado. No entran en ninguna transición. Nunca se ocultan.
-   ═══════════════════════════════════════════════════════════════════ */
-.reflejos {
-  position: fixed;
-  inset: auto 0 0 0;
-  z-index: 100;
-  display: flex;
-  gap: 1px;
-  padding-bottom: var(--borde-seguro-abajo);
-  background: #0E1A20;
-  font-size: 0.95rem;
-}
-.reflejos > * {
-  flex: 1;
-  min-height: 3.25rem;
-  display: flex; align-items: center; justify-content: center; gap: 0.5em;
-  color: #F2F6F7;
-  background: #0E1A20;
-  border: 0;
-  font: inherit;
-  text-decoration: none;
-  cursor: pointer;
-}
-.reflejos > *:focus-visible { outline: 3px solid #F2F6F7; outline-offset: -3px; }
-.reflejos__esc {
-  font-size: 0.7em; letter-spacing: 0.06em;
-  border: 1px solid #F2F6F766; border-radius: 3px;
-  padding: 0.1em 0.35em;
-}
-@media (max-width: 380px) { .reflejos__esc { display: none; } }
-
-/* ═══════════════════════════════════════════════════════════════════
    HERO — planos 0 y 1
    ═══════════════════════════════════════════════════════════════════ */
 /* EL MUNDO — fijo al viewport, detrás de todo. El paralaje real: la
@@ -149,7 +115,7 @@ body {
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   padding: clamp(1.25rem, 4vw, 3rem);
-  padding-bottom: calc(var(--alto-reflejos) + 1.25rem);
+  padding-bottom: clamp(1.25rem, 4vw, 3rem);
 }
 
 .hero__lienzo {
@@ -247,7 +213,10 @@ body {
 }
 
 /* Garzas — andamiaje DOM, máx 15. Reemplazar por láminas PNG. */
-.garzas { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* Delante del lienzo, no detrás. Al mover el mundo a su propio
+   contenedor el canvas dejó de tener z-index y pasaba por encima
+   de un contenedor en -1: el ave existía y no se veía. */
+.garzas { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 /* La garza en vuelo: tres láminas superpuestas, una visible por cuadro.
    El filtro la lleva a la luz de la hora — la lámina ya es casi
    monocroma (12–14 % de saturación), así que basta con el brillo. */
@@ -267,7 +236,7 @@ body {
 .herramientas {
   position: relative;             /* se desliza POR ENCIMA del mar fijo */
   padding: clamp(2rem, 7vw, 4.5rem) clamp(1.25rem, 4vw, 3rem);
-  padding-bottom: calc(var(--alto-reflejos) + 3rem);
+  padding-bottom: clamp(3rem, 8vw, 6rem);
   color: #16222E;
   /* Opaca: el instrumento no compite con el mundo. Y el borde superior
      entra desde el agua, para que el paso no sea un corte. */
@@ -455,52 +424,6 @@ body {
 
 .ramas { display: grid; gap: 0.75rem; margin-top: 2.5rem; }
 .ramas a { color: #16222E; font-size: 1.05rem; }
-
-/* ═══════════════════════════════════════════════════════════════════
-   EL MARCO DE CINTA — 9-slice
-   Las cuatro esquinas quedan fijas y los lados se estiran, así que la
-   cinta conserva sus roturas y su esquina levantada en cualquier
-   proporción de ventana. Medido sobre la lámina: la tira ocupa de 55 a
-   165 px desde cada borde, con margen transparente por fuera; el corte
-   a ~208 px se lleva margen y tira enteros, y al escalarse a 40 px de
-   borde la cinta queda separada del canto de la pantalla, como está
-   pegada de verdad sobre una mesa.
-   ═══════════════════════════════════════════════════════════════════ */
-.cinta {
-  position: fixed;
-  inset: 0;
-  z-index: 60;                 /* por debajo de los reflejos (100) */
-  pointer-events: none;
-  border-style: solid;
-  border-width: 40px;
-  border-image-source: url("arte/cinta-32.webp");
-  border-image-slice: 208 210 199 208;   /* arriba der abajo izq */
-  border-image-repeat: stretch;
-  border-image-width: 1;
-}
-/* En pantallas pequeñas, la cinta también viene del juego de 1024:
-   es la única lámina que no puede elegirlo desde JavaScript, porque la
-   sirve border-image. El slice va en píxeles de la fuente, así que se
-   divide entre dos junto con ella. */
-@media (max-width: 720px) {
-  .cinta {
-    border-width: 26px;
-    border-image-source: url("arte/1024/cinta-32.webp");
-    border-image-slice: 139 140 133 139;
-  }
-}
-@media (max-width: 420px) { .cinta { border-width: 20px; } }
-/* Si el navegador no entiende border-image, no aparece nada y no pasa
-   nada: el marco es identidad, no estructura. */
-@supports not (border-image-source: url("")) { .cinta { display: none; } }
-
-/* El contenido respira por dentro del marco. */
-.hero { padding-left: max(clamp(1.25rem, 4vw, 3rem), 3.5rem); }
-.herramientas { padding-left: max(clamp(1.25rem, 4vw, 3rem), 3.5rem);
-                padding-right: max(clamp(1.25rem, 4vw, 3rem), 3.5rem); }
-@media (max-width: 720px) {
-  .hero, .herramientas { padding-left: 2.4rem; padding-right: 2.4rem; }
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    prefers-reduced-motion APAGA. No reduce.

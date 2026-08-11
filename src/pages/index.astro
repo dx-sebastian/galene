@@ -1,0 +1,65 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — la portada.
+
+   El sitio pasó a Astro: cero JavaScript por defecto en las páginas de
+   contenido, y el mar entra como ISLA. Aquí no hay framework de UI —
+   el mundo es un canvas y un canvas no se beneficia de uno—, pero sí
+   hay build: rutas con base, bundling, hashing y un sitio que puede
+   crecer a blog y rutas sin escribir cuarenta HTML a mano.
+
+   La barra de urgencia salió del sitio: esa parte se traslada a una app
+   móvil y volverá aquí de otra forma.
+   ═══════════════════════════════════════════════════════════════════ */
+import '../estilos/estilos.css';
+import Mundo from '../componentes/Mundo.astro';
+import Herramientas from '../componentes/Herramientas.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>Galene — Sumisión química: qué hacer, y hasta cuándo</title>
+  <meta name="description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo. Ventanas de tiempo y rutas de atención en Colombia." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo" />
+  <meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo." />
+  <meta name="theme-color" content="#2E4256" />
+
+  {/* BORRADOR: mientras las ventanas médicas no estén verificadas contra
+      fuente primaria, esto no debe ser encontrable. */}
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+</head>
+
+<body>
+  <Mundo />
+
+  <main>
+    <section class="hero" id="mar">
+      <div class="hero__texto">
+        <h1 class="titulo">Galene</h1>
+        <p class="lockup">Sumisión química: qué hacer, y hasta cuándo.</p>
+      </div>
+
+      <a class="cta" href="#herramientas">Qué puedo hacer ahora</a>
+
+      <p class="hero__nota" id="nota-hora"></p>
+    </section>
+
+    <Herramientas />
+  </main>
+
+  <script>
+    import '../js/main.js';
+    import '../js/herramientas.js';
+  </script>
+</body>
+</html>

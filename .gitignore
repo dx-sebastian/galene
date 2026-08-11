@@ -6,3 +6,5 @@ Thumbs.db
 # Láminas fuente en PNG/JPG. El sitio sirve los WebP; los originales
 # pesan 83 MB y no tienen por qué viajar en el repo.
 arte/fuente/
+dist/
+.astro/

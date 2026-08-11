@@ -1,0 +1,11 @@
+---
+/* EL MUNDO — fijo al viewport, detrás de todo. El paralaje real: la
+   página se desliza por encima y el mar se queda donde está.
+   Es una isla: todo su JavaScript lo carga index.astro, y si no llega,
+   el respaldo CSS del contenedor sigue siendo un mar. */
+---
+
+<div class="mundo" aria-hidden="true">
+  <canvas class="hero__lienzo" id="lienzo"></canvas>
+  <div class="garzas" id="garzas"></div>
+</div>

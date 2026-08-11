@@ -1,76 +1,9 @@
-<!doctype html>
-<html lang="es" data-tinta="oscura">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+---
+/* Las herramientas: DOM plano, cero canvas. La imperfección vive en
+   el mar; el instrumento es exacto. */
+---
 
-<title>Galene — Sumisión química: qué hacer, y hasta cuándo</title>
-<meta name="description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo. Ventanas de tiempo, rutas de atención y líneas en Colombia. No hace falta denunciar para recibir atención médica.">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo">
-<meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo.">
-<meta name="theme-color" content="#2E4256">
-<!-- BORRADOR: mientras las ventanas médicas y las líneas no estén
-     verificadas contra fuente primaria, este sitio NO debe ser
-     encontrable por alguien que lo necesite de verdad. Quitar estas dos
-     líneas el día que el aviso de borrador desaparezca. -->
-<meta name="robots" content="noindex, nofollow">
-
-<link rel="stylesheet" href="estilos.css">
-</head>
-<body>
-
-<!-- ══════════════════════════════════════════════════════════════════
-     PLANO 2 — los reflejos. Primero en el HTML, fuera de toda
-     animación, nunca dependen de JS ni del canvas.
-     ══════════════════════════════════════════════════════════════════ -->
-<div class="reflejos">
-  <!-- PENDIENTE VERIFICAR (sección 14): número, horario, cobertura y
-       qué atiende realmente. Verificar llamando y anotar la fecha
-       antes de publicar. No publicar con estos valores. -->
-  <a class="reflejos__linea" href="tel:155" data-verificar="pendiente">
-    <span aria-hidden="true">☎</span> Línea de atención
-  </a>
-  <button class="reflejos__salir" type="button" id="salir">
-    Salir <span class="reflejos__esc" aria-hidden="true">esc</span>
-  </button>
-</div>
-
-<main>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       PLANO 0 y 1 — el mar y la lámina.
-       El texto vive sobre el cielo. El botón trae su propio fondo.
-       ══════════════════════════════════════════════════════════════ -->
-  <!-- ══════════════════════════════════════════════════════════════
-       EL MUNDO, fijo al viewport. Está FUERA del hero a propósito: así
-       las herramientas se deslizan por encima del mar en vez de
-       arrastrarlo consigo. Ese es el paralaje de verdad — el mundo se
-       queda, la página pasa.
-       ══════════════════════════════════════════════════════════════ -->
-  <div class="mundo" aria-hidden="true">
-    <canvas class="hero__lienzo" id="lienzo"></canvas>
-    <div class="garzas" id="garzas"></div>
-  </div>
-
-  <section class="hero" id="mar">
-
-    <div class="hero__texto">
-      <h1 class="titulo">Galene</h1>
-      <p class="lockup">Sumisión química: qué hacer, y hasta cuándo.</p>
-    </div>
-
-    <a class="cta" href="#herramientas">Qué puedo hacer ahora</a>
-
-    <p class="hero__nota" id="nota-hora"></p>
-  </section>
-
-
-  <!-- ══════════════════════════════════════════════════════════════
-       Inmediatamente después del home. DOM plano, sin canvas.
-       ══════════════════════════════════════════════════════════════ -->
-  <section class="herramientas" id="herramientas">
+<section class="herramientas" id="herramientas">
 
     <div class="aviso" id="aviso-borrador">
       <strong>Borrador.</strong> <span id="aviso-cuantos">6</span> datos de
@@ -118,7 +51,7 @@
         Que alguien venga por mí
       </button>
 
-      <div class="salida" id="vengan-salida" hidden>
+      <div class="salida" id="vengan-salida" hidden="hidden">
         <label class="visualmente-oculto" for="vengan-texto">Mensaje</label>
         <textarea id="vengan-texto" rows="5" readonly></textarea>
         <div class="salida__acciones">
@@ -140,7 +73,7 @@
       <p class="bloque__intro">Arrastra la aguja, o usa las flechas del
         teclado. Cada anillo es una cosa que se puede hacer; se apaga
         cuando su plazo pasa. Los anillos completos no caducan nunca.</p>
-      <div class="resultado" id="resultado" hidden></div>
+      <div class="resultado" id="resultado" hidden="hidden"></div>
 
       <noscript><p class="bloque__intro">Sin JavaScript no se puede girar
         el reloj. Lo que nunca depende de JavaScript es el teléfono y el
@@ -173,10 +106,10 @@
         <strong>Nada de esto sale de tu teléfono.</strong> No hay servidor
         detrás de este formulario.</p>
       <form id="recuerdo" onsubmit="return false">
-        <label><span>Dónde estabas</span><input type="text" autocomplete="off"></label>
-        <label><span>A qué hora, más o menos</span><input type="text" autocomplete="off"></label>
-        <label><span>Qué estabas tomando</span><input type="text" autocomplete="off"></label>
-        <label><span>Con quién estabas</span><input type="text" autocomplete="off"></label>
+        <label><span>Dónde estabas</span><input type="text" autocomplete="off" /></label>
+        <label><span>A qué hora, más o menos</span><input type="text" autocomplete="off" /></label>
+        <label><span>Qué estabas tomando</span><input type="text" autocomplete="off" /></label>
+        <label><span>Con quién estabas</span><input type="text" autocomplete="off" /></label>
         <label><span>Lo último que recuerdas</span><textarea rows="3"></textarea></label>
         <label><span>Cómo te sientes ahora</span><textarea rows="3"></textarea></label>
         <label><span>Fotos, chats, recibos o nombres que quieras recordar</span><textarea rows="2"></textarea></label>
@@ -200,7 +133,7 @@
         <div class="mapa__ciudades" role="group" aria-label="Ciudad"></div>
         <div class="mapa__lienzo" role="application"
              aria-label="Mapa de lugares de atención"></div>
-        <p class="mapa__aviso" hidden></p>
+        <p class="mapa__aviso" hidden="hidden"></p>
         <div class="mapa__barra">
           <div class="mapa__capas"></div>
           <button type="button" class="boton mapa__aqui">Dónde estoy</button>
@@ -246,18 +179,3 @@
       </ul>
     </section>
   </section>
-
-</main>
-
-<!-- ══════════════════════════════════════════════════════════════════
-     EL MARCO DE CINTA. Fijo a la pantalla, nunca se anima, nunca
-     participa de ningún estado. Convierte el sitio en una lámina
-     clavada a una mesa — un objeto de taller, no de spa. Va por debajo
-     de los reflejos: la ayuda no se tapa con nada.
-     ══════════════════════════════════════════════════════════════════ -->
-<div class="cinta" aria-hidden="true"></div>
-
-<script type="module" src="js/main.js"></script>
-<script type="module" src="js/herramientas.js"></script>
-</body>
-</html>

@@ -3,10 +3,10 @@
   "configurations": [
     {
       "name": "galene",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
       "port": 5177,
-      "autoPort": true
+      "url": "http://localhost:5177"
     }
   ]
 }

@@ -11,14 +11,9 @@
 import { luz, aplicar, horaAhora, notaAmanecer } from './hora.js';
 import { crear } from './mar.js';
 
-/* ── 1 · REFLEJOS ─────────────────────────────────────────────────── */
-
-function salidaRapida() {
-  // Reemplaza la página para no dejar rastro en el historial.
-  location.replace('https://www.google.com');
-}
-document.getElementById('salir')?.addEventListener('click', salidaRapida);
-addEventListener('keydown', (e) => { if (e.key === 'Escape') salidaRapida(); });
+/* La barra de reflejos —salida rápida y línea de atención— salió del
+   sitio: la urgencia se traslada a una app móvil, y aquí volverá más
+   adelante de una forma menos literal. */
 
 /* ── 2 · LA HORA ──────────────────────────────────────────────────── */
 
@@ -54,7 +49,10 @@ setInterval(refrescarHora, 30_000);
    cuatro de la mañana con mala señal y el 3 % de batería. */
 const ANCHO_REAL = Math.min(2048, innerWidth * Math.min(devicePixelRatio || 1, 2));
 const LAMINAS_CHICAS = ANCHO_REAL <= 1100;
-const ARTE = LAMINAS_CHICAS ? 'arte/1024/' : 'arte/';
+/* BASE_URL lo resuelve Vite en compilación: '/' en local y '/galene/'
+   en producción. Nunca se escribe la ruta a mano. */
+const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const ARTE = BASE + (LAMINAS_CHICAS ? 'arte/1024/' : 'arte/');
 const ANCHO_MAX = LAMINAS_CHICAS ? 1024 : 2048;
 
 /* ── 3 · EL MAR ───────────────────────────────────────────────────── */
@@ -425,9 +423,9 @@ const VUELO = {
    va nunca. Compañía que no se marcha — que es lo que el sitio promete
    sin decirlo. Los tiempos se cuentan desde que se carga la página. */
 const FASES = [
-  ['crucero',   16.0],   // entra por la derecha, alto, cruzando
-  ['aproxima',   7.0],   // baja en arco hacia el manglar, aleteo más lento
-  ['frena',      1.8],   // alas abiertas, se endereza, se posa
+  ['crucero',   26.0],   // entra por la derecha, alto, cruzando
+  ['aproxima',  11.0],   // baja en arco hacia el manglar, aleteo más lento
+  ['frena',      2.4],   // alas abiertas, se endereza, se posa
 ];
 const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
 /* Ciclo a → b → c → b: la garza es un ave de aleteo lento, ~1.5 por
@@ -440,7 +438,7 @@ const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
    Con 'a' arriba del todo. Bajada y subida usan las mismas láminas, que
    es lo que pasa de verdad: el ala cruza dos veces cada posición. */
 const CICLO = ['a', 'd', 'g', 'b', 'f', 'e', 'f', 'b', 'g', 'd'];
-const MS_CUADRO = 130;  // 10 pasos × 130 ms ≈ 0.77 batidos/s — garza, no colibrí
+const MS_CUADRO = 210;  // 10 pasos × 210 ms ≈ 0.48 batidos/s — planea más que aletea
 
 const contenedor = document.getElementById('garzas');
 let vuelo = null;
@@ -498,8 +496,8 @@ function colocarGarzas(w, h, horDesdeArriba) {
      guarda su escala frente al árbol en cualquier pantalla.
      Bajados: a 0.34 y 0.44 el ave competía con el árbol. Una garza
      posada mide como un quinto del manglar, no como un tercio. */
-  vuelo.altoPosada  = p.altoManglar * 0.20;
-  vuelo.envergadura = p.altoManglar * 0.30;
+  vuelo.altoPosada  = p.altoManglar * 0.135;
+  vuelo.envergadura = p.altoManglar * 0.20;
 
   /* UN SOLO PUNTO DE REFERENCIA para todo el recorrido: el centroide.
      Antes el vuelo se anclaba por el centroide y la posada por los pies,
@@ -571,21 +569,21 @@ function animarGarzas(t, paralaje, dt) {
        hace un globo, no un pájaro. Un ave en crucero mantiene rumbo. */
     // 0.024 del ancho por segundo: cruza la pantalla en ~40 s. A 0.052
     // se sentía disparada; una garza planea, no corre.
-    const vDeseada = -w * 0.024;
-    vuelo.vx += (vDeseada - vuelo.vx) * Math.min(1, dt * 0.8);
+    const vDeseada = -w * 0.012;
+    vuelo.vx += (vDeseada - vuelo.vx) * Math.min(1, dt * 0.5);
     vuelo.vy += ((alto - vuelo.py) * 0.9 - vuelo.vy) * Math.min(1, dt * 1.6);
     vuelo.px += vuelo.vx * dt;
     vuelo.py += vuelo.vy * dt;
     objX = null;
   } else if (fase === 'aproxima') {
     objX = vuelo.frenaX; objY = vuelo.frenaY;
-    k = 0.9 + 1.8 * p; amort = 2.6;
-    ritmo = MS_CUADRO / 1000 + p * 0.07;  // el aleteo se abre al descender
+    k = 0.45 + 1.1 * p; amort = 2.9;
+    ritmo = MS_CUADRO / 1000 + p * 0.09;  // el aleteo se abre al descender
   } else if (fase === 'frena') {
     plato = 'frena';
     objX = posX; objY = posY;
     // Alas abiertas: mucha resistencia. Frena de verdad, no interpola.
-    k = 16; amort = 7.5;
+    k = 11; amort = 6.4;
     escala = 1.06 - 0.06 * salida3(p);
     mezcla = p > 0.70 ? (p - 0.70) / 0.30 : 0;
   } else {
@@ -638,7 +636,7 @@ function animarGarzas(t, paralaje, dt) {
   /* Cabeceo mínimo. Un ave grande en vuelo de crucero casi no sube ni
      baja: la sustentación se reparte y el cuerpo va estable. Lo que se
      mueve son las alas. A 0.042 el cuerpo daba tumbos. */
-  if (enVuelo) { y += bat * K * 0.016; giro += bat * 0.7; }
+  if (enVuelo) { y += bat * K * 0.011; giro += bat * 0.45; }
 
   /* EL MISMO PARALAJE QUE EL MANGLAR, exactamente. El shader mueve el
      árbol 0.45·paralaje en unidades de q —que son alto de pantalla— y
