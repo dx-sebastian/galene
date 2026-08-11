@@ -166,7 +166,12 @@ export function aplicar(L, escribirLavado = true) {
   r.style.setProperty('--acento',     aCss(L.acento));
   // La garza en vuelo vive en el DOM: se lleva a la luz de la hora
   // con brillo, no con color — la lámina ya es casi monocroma.
-  r.style.setProperty('--vuelo-brillo', (0.42 + 0.58 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-brillo', (0.55 + 0.5 * L.int).toFixed(3));
+  /* Cuanta más luz, más aire entre el ave y quien mira: de día se lava
+     más que de noche, igual que el agua lejana. */
+  r.style.setProperty('--vuelo-sat', (0.34 - 0.12 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-contraste', (0.80 - 0.16 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-velo', (0.20 + 0.16 * L.int).toFixed(3));
   r.dataset.tinta = L.tinta;
 }
 

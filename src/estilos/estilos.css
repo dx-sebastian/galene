@@ -220,13 +220,32 @@ body {
 /* La garza en vuelo: tres láminas superpuestas, una visible por cuadro.
    El filtro la lleva a la luz de la hora — la lámina ya es casi
    monocroma (12–14 % de saturación), así que basta con el brillo. */
+/* Capa de tinte: la misma silueta rellena del color de la bruma,
+   superpuesta al ave. Es lo que la mete DENTRO de la paleta de la hora
+   en vez de dejarla flotando en la suya. */
+.vuelo__tinte {
+  position: absolute; top: 0; left: 0; height: auto;
+  will-change: transform;
+  background: var(--bruma, #cdd);
+  opacity: 0;
+  pointer-events: none;
+}
+
 .vuelo {
   position: absolute;
   top: 0; left: 0;
   height: auto;
   will-change: transform;
   transform-origin: 50% 50%;
-  filter: saturate(0.55) brightness(var(--vuelo-brillo, 1));
+  /* PERSPECTIVA AÉREA. El ave es lo único que no pasa por el duotono del
+     shader, así que si no se la vela conserva su gris pardo mientras el
+     mundo se ha ido al color de la hora — y canta. Aquí se le baja el
+     contraste, se le sube el brillo hacia la bruma y se le quita
+     saturación propia: el aire que hay entre ella y quien mira.
+     Los valores los escribe js/hora.js con la luz del momento. */
+  filter: saturate(var(--vuelo-sat, 0.3))
+          contrast(var(--vuelo-contraste, 0.72))
+          brightness(var(--vuelo-brillo, 1));
   opacity: 0;
 }
 

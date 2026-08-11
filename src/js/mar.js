@@ -192,14 +192,24 @@ void main(){
       float d = distance(q, tk.xy);
       float r = 0.115;
       aplanado = max(aplanado, tk.z * exp(-(d * d) / (r * r)));
-      float rr = r * (1.0 - clamp(tk.w, 0.0, 1.0));   // se encoge
-      anillo = max(anillo, (1.0 - smoothstep(0.0, 0.007, abs(d - rr)))
-                           * (1.0 - tk.w) * tk.z);
+
+      /* LA GOTA AL REVÉS. Tres anillos que nacen en el borde exterior y
+         VIAJAN HACIA EL CENTRO, uno tras otro mientras se sostiene. Una
+         onda que se expande desde un punto es una gota cayendo en un
+         líquido, y esa es la escena que este sitio no re-escenifica.
+         Aquí el agua recoge en vez de derramar. */
+      for (int k = 0; k < 3; k++) {
+        float fase = fract(u_t * 0.40 + float(k) * 0.3333);
+        float rr = r * (1.0 - fase);          // 1 → 0: de fuera a dentro
+        float aparece = sin(fase * 3.14159);  // nace y se apaga solo
+        anillo = max(anillo, (1.0 - smoothstep(0.0, 0.009, abs(d - rr)))
+                             * aparece * (1.0 - tk.w) * tk.z);
+      }
     }
 
-    float amp  = (1.0 - cn) * mix(0.0022, 0.034, pp) * (1.0 - aplanado * 0.92);
+    float amp  = (1.0 - cn) * mix(0.0026, 0.041, pp) * (1.0 - aplanado * 0.92);
     float frec = mix(120.0, 9.0, pp);
-    float vel  = mix(0.50, 0.22, pp);
+    float vel  = mix(0.60, 0.26, pp);
     float onda =
         sin((q.x + u_deriva * mix(0.05, 0.55, pp)) * frec        + u_t * vel) * 0.52
       + sin((q.x * 1.618 - uv.y * 24.0) * frec * 0.311 - u_t * vel * 1.37) * 0.31
@@ -213,7 +223,7 @@ void main(){
        vivo sin agitarse. El oleaje da textura; esto da vida. */
     duv += vec2(ruido(vec2(q.x * 0.7,        u_t * 0.045)) - 0.5,
                 ruido(vec2(q.x * 0.5 + 31.0, u_t * 0.037)) - 0.5)
-           * mix(0.005, 0.020, pp);
+           * mix(0.006, 0.024, pp);
 
     // Endpoints del duotono para esta hora.
     /* Rango del duotono. Estaba estrecho (0.55 → altas) y de día la
@@ -277,7 +287,7 @@ void main(){
     /* El anillo que se cierra. Muy tenue: es agua que se aquieta, no un
        efecto. Y el sitio donde se sostuvo queda un punto más claro,
        como una aguada que se secó más fina. */
-    col = mix(col, u_altas, anillo * 0.22);
+    col = mix(col, u_altas, anillo * 0.34);
     col = mix(col, mix(col, u_altas, 0.35), aplanado * 0.16);
 
     /* ===== LOS CORALES =========================================
