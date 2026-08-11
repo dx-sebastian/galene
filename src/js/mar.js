@@ -60,6 +60,10 @@ uniform sampler2D u_papelTex;
 uniform float u_hayPapel, u_papelTam, u_papelMedia;
 uniform sampler2D u_nubes;
 uniform float u_hayNubes;
+uniform sampler2D u_manglarCerca, u_corales, u_luces;
+uniform float u_hayCerca, u_hayCorales, u_hayLuces;
+uniform vec4  u_cercaCaja;      // x, alto, base, ancho/alto
+uniform vec3  u_coralesCaja;    // alto, base, ancho/alto
 uniform sampler2D u_grafitoTex;
 uniform float u_hayGrafito, u_grafitoMedia;
 uniform vec3  u_grafito;        // ancla v del horizonte dibujado, escala, fuerza
@@ -149,6 +153,21 @@ void main(){
       col -= bordeDeMancha(m, 0.54, 0.045) * 0.018;
     }
 
+    /* ===== LAS LUCES DE NOCHE ==================================
+       De noche el sitio no puede quedarse a oscuras. Un pueblo lejano en
+       la orilla y algun destello en el agua: nada urbano, nada que rompa
+       el mundo. Aparecen con la noche y se apagan con el dia. */
+    if (u_hayLuces > 0.5) {
+      float noche = 1.0 - smoothstep(0.15, 0.55, u_int);
+      if (noche > 0.01) {
+        vec2 lu = vec2(q.x * 0.55 + u_deriva * 0.04,
+                       1.0 - (uv.y - horX) / max(1.0 - horX, 0.001) * 2.6);
+        vec4 tl = texture(u_luces, lu);
+        float titila = 0.86 + 0.14 * sin(u_t * 0.9 + q.x * 31.0);
+        col = mix(col, mix(col, tl.rgb, 0.9), tl.a * noche * titila * 0.85);
+      }
+    }
+
     // La luz tiene fuente: disco con halo apretado, jamás resplandor.
     vec2 f = vec2(u_fuente.x * aspecto, u_fuente.y);
     float d = length(q - f);
@@ -222,8 +241,8 @@ void main(){
       // El par revuelto ↔ calmo: acá se VE que el mar se calma.
       vec3 pC = mix(pCr, pCc, cn);
 
-      float wM = smoothstep(0.18, 0.30, prof);
-      float wC = smoothstep(0.52, 0.66, prof);
+      float wM = smoothstep(0.08, 0.44, prof);
+      float wC = smoothstep(0.40, 0.82, prof);
       pintura = mix(mix(pL, pM, wM), pC, wC);
     } else {
       float m = fbm(q * vec2(1.0, mix(3.4, 1.0, pp)) * mix(5.0, 2.0, pp) + duv);
@@ -260,6 +279,34 @@ void main(){
        como una aguada que se secó más fina. */
     col = mix(col, u_altas, anillo * 0.22);
     col = mix(col, mix(col, u_altas, 0.35), aplanado * 0.16);
+
+    /* ===== LOS CORALES =========================================
+       Van en el fondo del mar, vistos A TRAVES del agua: se tinen
+       velados por el agua que tienen encima. Y SE MECEN: un vaiven
+       lento y horizontal que crece hacia abajo, porque lo cercano se
+       mueve mas. No es oleaje, es vegetacion cediendo a una corriente
+       que no se ve. */
+    if (u_hayCorales > 0.5) {
+      float cAlto = u_coralesCaja.x, cBase = u_coralesCaja.y;
+      float cv = (uv.y - (cBase - cAlto)) / cAlto;
+      if (cv > 0.0 && cv < 1.0) {
+        float profC = 1.0 - cv;
+        float vaiven = sin(u_t * 0.28 + q.x * 2.1 + cv * 3.4) * 0.0075
+                     + sin(u_t * 0.17 - q.x * 1.3) * 0.0042;
+        vec2 cu = vec2(q.x / (cAlto * u_coralesCaja.z) + vaiven * profC,
+                       1.0 - cv);
+        vec4 tc = texture(u_corales, cu);
+        vec3 pc = mix(col, tc.rgb, 0.55);
+        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.55;
+        /* Nunca una cinta continua: se desvanece por arriba —el corte
+           recto se veía— y se abre en claros con una onda lenta, para
+           que haya agua limpia entre las matas. La paz es el vacío. */
+        float entra = smoothstep(0.0, 0.42, cv);
+        float claros = 0.55 + 0.45 * smoothstep(0.35, 0.75,
+                        fbm(vec2(q.x * 0.9 + 3.0, 0.0)));
+        col = mix(col, pc, tc.a * mix(0.16, 0.62, profC) * entra * claros);
+      }
+    }
   }
 
   /* ═══ HORIZONTE ═══════════════════════════════════════════════
@@ -358,6 +405,27 @@ void main(){
     }
   }
 
+  /* ===== EL MANGLAR CERCANO ====================================
+     Lo mas proximo del cuadro y lo ultimo que se pinta. No es paisaje:
+     es donde se posa el ave protagonista. Por eso lleva su propio
+     paralaje, el mas fuerte de todos: lo cercano se mueve mas. */
+  if (u_hayCerca > 0.5) {
+    float kAlto = u_cercaCaja.y, kAncho = kAlto * u_cercaCaja.w;
+    /* Anclado por su BORDE IZQUIERDO: es un fragmento que entra por la
+       esquina, no un objeto centrado. Con el centro se salía de cuadro
+       en cuanto cambiaba la proporción de la ventana. */
+    float kx = u_cercaCaja.x * aspecto - u_paralaje * 1.35;
+    vec2 mc = vec2((q.x - kx) / kAncho, (uv.y - u_cercaCaja.z) / kAlto);
+    if (mc.x > 0.0 && mc.x < 1.0 && mc.y > 0.0 && mc.y < 1.0) {
+      vec4 tk = texture(u_manglarCerca, mc);
+      vec3 oscuroC = mix(vec3(0.085, 0.082, 0.090), u_agua * 0.30, 0.35);
+      vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
+      vec3 pk = duotono(tk.rgb, oscuroC, claroC);
+      pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
+      col = mix(col, pk, tk.a * 0.96);
+    }
+  }
+
   /* ═══ EL GRAFITO ═══════════════════════════════  ← LÁMINA 11 ═══
      El dibujo previo, FIJO AL PLANO DEL CUADRO: no lleva u_deriva, así
      que el agua se desliza por debajo y la pintura se corre de su propio
@@ -443,7 +511,8 @@ export function crear(lienzo) {
                    'u_vLejano','u_vMedio','u_vCercano',
                    'u_hayManglar','u_manglarCaja','u_escalas','u_croma',
                    'u_papelTex','u_hayPapel','u_papelTam','u_papelMedia',
-                   'u_nubes','u_hayNubes',
+                   'u_nubes','u_hayNubes','u_manglarCerca','u_corales','u_luces',
+                   'u_hayCerca','u_hayCorales','u_hayLuces','u_cercaCaja','u_coralesCaja',
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
                    'u_garzaCercaCaja','u_garzaLejosCaja','u_toques']) {
@@ -464,11 +533,26 @@ export function crear(lienzo) {
                 manglar: texturaVacia(), papel: texturaVacia(),
                 grafito: texturaVacia(), garzaCerca: texturaVacia(),
                 garzaLejos: texturaVacia(), medioCalmo: texturaVacia(),
-                nubes: texturaVacia() };
+                nubes: texturaVacia(), manglarCerca: texturaVacia(),
+                corales: texturaVacia(), luces: texturaVacia() };
 
   const unidades = { lejano: 0, medio: 1, cercano: 2, cercanoCalmo: 3,
                      manglar: 4, papel: 5, grafito: 6,
-                     garzaCerca: 7, garzaLejos: 8, medioCalmo: 9, nubes: 10 };
+                     garzaCerca: 7, garzaLejos: 8, medioCalmo: 9, nubes: 10,
+                     manglarCerca: 11, corales: 12, luces: 13 };
+  gl.uniform1i(u.u_manglarCerca, 11);
+  gl.uniform1i(u.u_corales, 12);
+  gl.uniform1i(u.u_luces, 13);
+  gl.uniform1f(u.u_hayCerca, 0);
+  gl.uniform1f(u.u_hayCorales, 0);
+  gl.uniform1f(u.u_hayLuces, 0);
+  /* El manglar cercano tiene que DOMINAR la esquina inferior izquierda:
+     es el primer plano y es el posadero. A 0.52 de alto quedaba como una
+     mancha en el canto. */
+  const cercaCaja = [-0.10, 0.86, -0.30, 1.5];
+  const coralesCaja = [0.26, 0.245, 3.0];
+  gl.uniform4fv(u.u_cercaCaja, cercaCaja);
+  gl.uniform3fv(u.u_coralesCaja, coralesCaja);
   gl.uniform1i(u.u_medioCalmo, 9);
   gl.uniform1i(u.u_nubes, 10);
   gl.uniform1f(u.u_hayNubes, 0);
@@ -560,7 +644,21 @@ export function crear(lienzo) {
       /* Las bandas de agua se repiten espejadas: así una costura se
          vuelve simetría en vez de corte. El manglar es un objeto
          suelto, se recorta en los bordes. */
-      if (n === 'nubes') {
+      if (n === 'manglarCerca' || n === 'corales' || n === 'luces') {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
+          n === 'corales' ? gl.MIRRORED_REPEAT : gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        const anchoF = fuente.width || fuente.naturalWidth;
+        const altoF = fuente.height || fuente.naturalHeight;
+        if (n === 'manglarCerca') {
+          cercaCaja[3] = anchoF / altoF;
+          gl.uniform4fv(u.u_cercaCaja, cercaCaja);
+        }
+        if (n === 'corales') {
+          coralesCaja[2] = anchoF / altoF;
+          gl.uniform3fv(u.u_coralesCaja, coralesCaja);
+        }
+      } else if (n === 'nubes') {
         // Espejada en X: derivan sin costura visible.
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -622,6 +720,9 @@ export function crear(lienzo) {
     if (cargadas.has('manglar')) gl.uniform1f(u.u_hayManglar, 1);
     if (cargadas.has('papel'))   gl.uniform1f(u.u_hayPapel, 1);
     if (cargadas.has('nubes'))   gl.uniform1f(u.u_hayNubes, 1);
+    if (cargadas.has('manglarCerca')) gl.uniform1f(u.u_hayCerca, 1);
+    if (cargadas.has('corales'))      gl.uniform1f(u.u_hayCorales, 1);
+    if (cargadas.has('luces'))        gl.uniform1f(u.u_hayLuces, 1);
     if (cargadas.has('grafito')) gl.uniform1f(u.u_hayGrafito, 1);
     if (cargadas.has('garzaCerca') || cargadas.has('garzaLejos'))
       gl.uniform1f(u.u_hayGarzas, 1);

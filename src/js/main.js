@@ -358,10 +358,13 @@ function arrancar(mar) {
     medioCalmo:   ARTE + 'mar-medio-calmo.webp',
     cercano:      ARTE + 'mar-cercano.webp',
     cercanoCalmo: ARTE + 'mar-cercano-calmo.webp',
-    manglar:      ARTE + 'manglar-enterrado-a.webp',
+    manglar:      ARTE + 'manglar-lejos.webp',
+    manglarCerca: ARTE + 'manglar-cerca.webp',
+    corales:      ARTE + 'corales.webp',
+    luces:        ARTE + 'luces.webp',
     papel:        ARTE + 'papel.webp',
     grafito:      ARTE + 'grafito.webp',
-    nubes:        ARTE + 'nubes.webp',
+    nubes:        ARTE + 'cielo-nubes.webp',
     /* Las garzas ya NO se pintan en el shader: allí estaban paradas en
        mar abierto, y una garza vadea en somero. Ahora hay una sola, en
        el DOM, que llega volando y se posa sobre la copa del manglar. */
@@ -399,16 +402,30 @@ function arrancar(mar) {
    Todo medido con pruebas/lamina.html: si se regenera una lámina, hay
    que volver a medirla o el ave pega un salto en ese cuadro. */
 const VUELO = {
-  a: { src: ARTE + 'garza-vuelo-a.webp', cx: 0.463, cy: 0.469, ancho: 0.853, aspecto: 1.000 },
-  b: { src: ARTE + 'garza-vuelo-b.webp', cx: 0.565, cy: 0.511, ancho: 0.824, aspecto: 1.500 },
-  c: { src: ARTE + 'garza-vuelo-c.webp', cx: 0.565, cy: 0.480, ancho: 0.959, aspecto: 1.000 },
-  d: { src: ARTE + 'garza-vuelo-d.webp', cx: 0.529, cy: 0.411, ancho: 0.824, aspecto: 1.500 },
-  e: { src: ARTE + 'garza-vuelo-e.webp', cx: 0.537, cy: 0.565, ancho: 0.854, aspecto: 1.500 },
-  f: { src: ARTE + 'garza-vuelo-f.webp', cx: 0.498, cy: 0.520, ancho: 0.861, aspecto: 1.500 },
-  g: { src: ARTE + 'garza-vuelo-g.webp', cx: 0.473, cy: 0.504, ancho: 0.854, aspecto: 1.500 },
-  /* Frenado. Se dimensiona por ALTURA contra la posada, no por
-     envergadura: medido con envergadura salía 2.4 veces más alta que el
-     ave posada y perdía toda la proporción. */
+  /* Once cuadros del MISMO batido, generados como ediciones sobre una
+     maestra: por eso comparten aspecto (1.499) y ancho de tinta (0.82–0.86)
+     y el cuerpo no salta al intercalarlos.
+
+     El centroide vertical traza el batido y lo confirma:
+       01 0.431 · 02 0.437 · 03 0.429 · 04 0.453 · 05 0.481 · 06 0.533
+       07 0.482 · 08 0.513 · 09 0.515 · 11 0.451
+     Baja hasta el 06, que es el fondo del golpe, y vuelve a subir.
+     (La 10 salió idéntica a la 09 y no se usa.)
+
+     Vinieron sobre fondo opaco —blanco unas, papel crema otras— y se
+     recortaron por relleno desde el borde, no por clave de luminancia:
+     la clave le habría hecho agujeros a la panza clara del ave, que es
+     igual de clara pero está encerrada. */
+  f01: { src: ARTE + 'aves/ave01.webp', cx: 0.522, cy: 0.431, ancho: 0.828, aspecto: 1.499 },
+  f02: { src: ARTE + 'aves/ave02.webp', cx: 0.536, cy: 0.437, ancho: 0.828, aspecto: 1.499 },
+  f03: { src: ARTE + 'aves/ave03.webp', cx: 0.541, cy: 0.429, ancho: 0.828, aspecto: 1.499 },
+  f04: { src: ARTE + 'aves/ave04.webp', cx: 0.523, cy: 0.453, ancho: 0.861, aspecto: 1.499 },
+  f05: { src: ARTE + 'aves/ave05.webp', cx: 0.517, cy: 0.481, ancho: 0.853, aspecto: 1.499 },
+  f06: { src: ARTE + 'aves/ave06.webp', cx: 0.526, cy: 0.533, ancho: 0.853, aspecto: 1.499 },
+  f07: { src: ARTE + 'aves/ave07.webp', cx: 0.490, cy: 0.482, ancho: 0.853, aspecto: 1.499 },
+  f08: { src: ARTE + 'aves/ave08.webp', cx: 0.512, cy: 0.513, ancho: 0.824, aspecto: 1.499 },
+  f09: { src: ARTE + 'aves/ave09.webp', cx: 0.539, cy: 0.515, ancho: 0.824, aspecto: 1.499 },
+  f11: { src: ARTE + 'aves/ave11.webp', cx: 0.527, cy: 0.451, ancho: 0.824, aspecto: 1.499 },
   frena: { src: ARTE + 'garza-llegando.webp', cx: 0.528, cy: 0.418, ancho: 0.934,
            aspecto: 0.667, altoTinta: 0.971, factor: 1.7 },
   posada: { src: ARTE + 'garza-cerca.webp', cx: 0.523, cy: 0.477, ancho: 0.683,
@@ -437,8 +454,8 @@ const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
        d 0.411 · g 0.504 · b 0.511 · f 0.520 · e 0.565
    Con 'a' arriba del todo. Bajada y subida usan las mismas láminas, que
    es lo que pasa de verdad: el ala cruza dos veces cada posición. */
-const CICLO = ['a', 'd', 'g', 'b', 'f', 'e', 'f', 'b', 'g', 'd'];
-const MS_CUADRO = 210;  // 10 pasos × 210 ms ≈ 0.48 batidos/s — planea más que aletea
+const CICLO = ['f01','f02','f03','f04','f05','f06','f07','f08','f09','f11'];
+const MS_CUADRO = 150;  // 10 pasos x 150 ms = 0.67 batidos/s
 
 const contenedor = document.getElementById('garzas');
 let vuelo = null;
