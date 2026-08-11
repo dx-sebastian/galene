@@ -440,9 +440,81 @@ const VUELO = {
   f11: { src: ARTE + 'aves/ave11.webp', cx: 0.527, cy: 0.451, ancho: 0.824, aspecto: 1.499 },
   frena: { src: ARTE + 'garza-llegando.webp', cx: 0.528, cy: 0.418, ancho: 0.934,
            aspecto: 0.667, altoTinta: 0.971, factor: 1.7 },
-  posada: { src: ARTE + 'garza-cerca.webp', cx: 0.523, cy: 0.477, ancho: 0.683,
-            aspecto: 1.000, pies: [0.580, 0.999], altoTinta: 0.997 },
+  /* LAS SEIS POSADAS. Vinieron en una sola rejilla 3×2, así que comparten
+     papel, pigmento y tamaño de ave: por eso se pueden intercambiar sin
+     que cambie de garza. La lámina traía halo blanco y motas rojas y
+     cianes de la codificación; se corrigieron desaturando todo píxel con
+     saturación > 0.40 —el ave es casi monocroma, cualquier color saturado
+     es basura— y apagando el alfa parcial de lo casi blanco.
+
+     `factor` es lo que hace que NO se normalicen todas al mismo alto: la
+     alerta estira el cuello y mide más, la encogida se hunde y mide menos.
+     Es la altura de tinta de cada una dividida por la de reposo (562 px).
+     Sin esto, cambiar de pose sería cambiar de talla de ave. */
+  posada:   { src: ARTE + 'posada/reposo.webp',     cx: 0.609, cy: 0.467,
+              aspecto: 0.692, pies: [0.596, 0.988], altoTinta: 0.979, factor: 1.000 },
+  pAlerta:  { src: ARTE + 'posada/alerta.webp',     cx: 0.572, cy: 0.480,
+              aspecto: 0.682, pies: [0.553, 0.989], altoTinta: 0.980, factor: 1.069 },
+  pEncoge:  { src: ARTE + 'posada/encogida.webp',   cx: 0.568, cy: 0.412,
+              aspecto: 0.881, pies: [0.548, 0.984], altoTinta: 0.973, factor: 0.774 },
+  pUnaPata: { src: ARTE + 'posada/una-pata.webp',   cx: 0.590, cy: 0.388,
+              aspecto: 0.726, pies: [0.578, 0.987], altoTinta: 0.978, factor: 0.952 },
+  pMira:    { src: ARTE + 'posada/mira-abajo.webp', cx: 0.471, cy: 0.416,
+              aspecto: 0.687, pies: [0.448, 0.988], altoTinta: 0.979, factor: 0.984 },
+  pAlas:    { src: ARTE + 'posada/alas.webp',       cx: 0.480, cy: 0.438,
+              aspecto: 0.716, pies: [0.513, 0.987], altoTinta: 0.979, factor: 0.973 },
 };
+
+/* ── LA VIDA EN REPOSO ──────────────────────────────────────────────
+   El ave pasa casi todo el tiempo posada. Balancearse no basta: se lee
+   como un adorno que oscila. Lo que la hace parecer viva es que HAGA
+   COSAS, y sobre todo que las haga a destiempo.
+
+   Por eso las esperas son largas y desiguales (7–19 s) y nunca se repite
+   la pose anterior. Un patrón regular se detecta en dos ciclos y vuelve
+   a leerse como máquina; uno irregular no se detecta nunca.
+
+   Los pesos importan: encogerse y recoger una pata son posturas de
+   descanso y duran; mirar abajo y abrir las alas son gestos y pasan. */
+const GESTOS = [
+  { clave: 'pEncoge',  peso: 3, dura: [4.0, 9.0] },
+  { clave: 'pUnaPata', peso: 3, dura: [5.0, 12.0] },
+  { clave: 'pAlerta',  peso: 2, dura: [2.0, 5.0] },
+  { clave: 'pMira',    peso: 2, dura: [1.6, 3.4] },
+  { clave: 'pAlas',    peso: 1, dura: [1.1, 2.2] },
+];
+const PESO_TOTAL = GESTOS.reduce((s, g) => s + g.peso, 0);
+const DISUELVE = 0.42;          // segundos de disolvencia entre poses
+const entre = (a, b) => a + Math.random() * (b - a);
+const reposo = { actual: 'posada', previa: 'posada', desde: 0, hasta: 9 };
+
+/* Devuelve [claveAnterior, claveActual, mezcla]. La mezcla es una
+   disolvencia de acuarela, no un corte: dos aguadas superpuestas es un
+   gesto que el medio admite; un salto de cuadro, no. */
+function gestoPosado(t) {
+  const g = reposo;
+  /* Al aterrizar se queda quieta un rato. Sin esto el primer gesto salta
+     en el mismo instante en que toca la rama —el reloj lleva 39 s
+     corriendo— y el aterrizaje pierde su reposo. */
+  if (!g.arrancado) {
+    g.arrancado = true; g.desde = t; g.hasta = t + entre(3.0, 6.5);
+  }
+  if (t >= g.hasta) {
+    g.previa = g.actual;
+    if (g.actual !== 'posada') {                    // vuelve a la calma
+      g.actual = 'posada';
+      g.hasta = t + entre(7.0, 19.0);
+    } else {
+      let r = Math.random() * PESO_TOTAL, elegido = GESTOS[0];
+      for (const c of GESTOS) { r -= c.peso; if (r <= 0) { elegido = c; break; } }
+      g.actual = elegido.clave;
+      g.hasta = t + entre(elegido.dura[0], elegido.dura[1]);
+    }
+    g.desde = t;
+  }
+  const m = Math.min(1, (t - g.desde) / DISUELVE);
+  return [g.previa, g.actual, m * m * (3 - 2 * m)];
+}
 
 /* La travesía completa, en segundos. Rara y lenta a propósito: el mundo
    no está poblado de pájaros, pasa uno de vez en cuando y se queda un
@@ -605,6 +677,7 @@ function animarGarzas(t, paralaje, dt) {
   // Entra justo por el borde y se queda cerca del manglar: recorre poco.
   const xEntra = w * 1.08, xEspera = vuelo.posX + w * 0.14;
   let plato = null, mezcla = 0, escala = 1;
+  let poseA = 'posada', poseB = 'posada', poseM = 1;
   let ritmo = MS_CUADRO / 1000;           // segundos por paso de aleteo
 
   if (!vuelo.arrancado) {
@@ -642,6 +715,7 @@ function animarGarzas(t, paralaje, dt) {
     plato = 'posada';
     objX = posX; objY = posY;
     k = 90; amort = 18;                   // clavada en la rama
+    [poseA, poseB, poseM] = gestoPosado(t);
   }
 
   // Integración semiimplícita: estable con pasos grandes.
@@ -702,21 +776,35 @@ function animarGarzas(t, paralaje, dt) {
         ? [[CICLO[iA], 1 - cruce], [CICLO[iB], cruce]]
         : [[CICLO[iA], 1]])
     : mezcla > 0 ? [['frena', 1 - mezcla], ['posada', mezcla]]
+    : plato === 'posada'
+      ? (poseM < 1 && poseA !== poseB
+          ? [[poseA, 1 - poseM], [poseB, poseM]]
+          : [[poseB, 1]])
     : [[plato, 1]];
+
+  /* EL PUNTO FIJO DE LAS POSES SON LOS PIES, NO EL CENTROIDE. En vuelo
+     el centroide es lo correcto —el ave gira alrededor de su masa—, pero
+     una garza que se encoge o levanta una pata mueve su centro de masa y
+     deja los pies donde están. Si anclara por centroide, al cambiar de
+     postura el ave se deslizaría por la rama. Así que traduzco la
+     posición del centroide de reposo al punto donde están los pies, y
+     desde ahí coloco cada pose por los suyos. */
+  const ref = VUELO.posada;
+  const refAlto = (vuelo.altoPosada / ref.altoTinta) * escala;
+  const pieX = x + (ref.pies[0] - ref.cx) * (refAlto * ref.aspecto);
+  const pieY = y + (ref.pies[1] - ref.cy) * refAlto;
 
   for (const [clave, el] of Object.entries(vuelo.capas)) {
     const enc = visibles.find(([c]) => c === clave);
     if (!enc) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
     const v = VUELO[clave];
-    /* Todo se ancla por el CENTROIDE, incluida la posada: el sitio de
-       los pies ya viene resuelto en vuelo.posY. Un único punto de
-       referencia en todo el recorrido es lo que evita el brinco. */
     const altoPx = v.altoTinta
       ? (vuelo.altoPosada * (v.factor || 1) / v.altoTinta) * escala   // posada / frenado
       : (K / v.ancho) * escala / v.aspecto;                          // vuelo
     const anchoPx = altoPx * v.aspecto;
-    const izq = x - v.cx * anchoPx;
-    const arr = y - v.cy * altoPx;
+    const porPies = plato === 'posada' && v.pies;
+    const izq = porPies ? pieX - v.pies[0] * anchoPx : x - v.cx * anchoPx;
+    const arr = porPies ? pieY - v.pies[1] * altoPx : y - v.cy * altoPx;
     el.style.opacity = enc[1].toFixed(3);
     el.style.width = anchoPx.toFixed(1) + 'px';
     el.style.transform =
