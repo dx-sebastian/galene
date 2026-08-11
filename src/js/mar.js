@@ -301,10 +301,11 @@ void main(){
         /* Nunca una cinta continua: se desvanece por arriba —el corte
            recto se veía— y se abre en claros con una onda lenta, para
            que haya agua limpia entre las matas. La paz es el vacío. */
-        float entra = smoothstep(0.0, 0.42, cv);
-        float claros = 0.55 + 0.45 * smoothstep(0.35, 0.75,
-                        fbm(vec2(q.x * 0.9 + 3.0, 0.0)));
-        col = mix(col, pc, tc.a * mix(0.16, 0.62, profC) * entra * claros);
+        /* La lámina nueva ya trae el vacío —cuatro matas y mucha arena—,
+           así que no hay que abrirle claros por código: eso la borraba.
+           Solo se desvanece por arriba, para que no haya canto recto. */
+        float entra = smoothstep(0.0, 0.30, cv);
+        col = mix(col, pc, tc.a * mix(0.45, 0.92, profC) * entra);
       }
     }
   }
@@ -418,6 +419,12 @@ void main(){
     vec2 mc = vec2((q.x - kx) / kAncho, (uv.y - u_cercaCaja.z) / kAlto);
     if (mc.x > 0.0 && mc.x < 1.0 && mc.y > 0.0 && mc.y < 1.0) {
       vec4 tk = texture(u_manglarCerca, mc);
+      /* La lámina llega llena hasta sus bordes —se pidió así— y al
+         recortarla en su caja se veía el canto recto. Aquí se desvanece
+         en sus propios bordes: deja de ser un recorte pegado y pasa a
+         perderse fuera de cuadro. */
+      tk.a *= smoothstep(0.0, 0.13, mc.x) * (1.0 - smoothstep(0.86, 1.0, mc.x))
+            * smoothstep(0.0, 0.10, mc.y) * (1.0 - smoothstep(0.82, 1.0, mc.y));
       vec3 oscuroC = mix(vec3(0.085, 0.082, 0.090), u_agua * 0.30, 0.35);
       vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
       vec3 pk = duotono(tk.rgb, oscuroC, claroC);
@@ -549,8 +556,8 @@ export function crear(lienzo) {
   /* El manglar cercano tiene que DOMINAR la esquina inferior izquierda:
      es el primer plano y es el posadero. A 0.52 de alto quedaba como una
      mancha en el canto. */
-  const cercaCaja = [-0.10, 0.86, -0.30, 1.5];
-  const coralesCaja = [0.26, 0.245, 3.0];
+  const cercaCaja = [-0.16, 0.62, -0.26, 1.5];
+  const coralesCaja = [0.30, 0.30, 4.0];
   gl.uniform4fv(u.u_cercaCaja, cercaCaja);
   gl.uniform3fv(u.u_coralesCaja, coralesCaja);
   gl.uniform1i(u.u_medioCalmo, 9);

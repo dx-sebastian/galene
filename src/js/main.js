@@ -421,7 +421,7 @@ const VUELO = {
   f03: { src: ARTE + 'aves/ave03.webp', cx: 0.541, cy: 0.429, ancho: 0.828, aspecto: 1.499 },
   f04: { src: ARTE + 'aves/ave04.webp', cx: 0.523, cy: 0.453, ancho: 0.861, aspecto: 1.499 },
   f05: { src: ARTE + 'aves/ave05.webp', cx: 0.517, cy: 0.481, ancho: 0.853, aspecto: 1.499 },
-  f06: { src: ARTE + 'aves/ave06.webp', cx: 0.526, cy: 0.533, ancho: 0.853, aspecto: 1.499 },
+  f06: { src: ARTE + 'aves/ave06.webp', cx: 0.490, cy: 0.667, ancho: 0.826, aspecto: 1.500 },
   f07: { src: ARTE + 'aves/ave07.webp', cx: 0.490, cy: 0.482, ancho: 0.853, aspecto: 1.499 },
   f08: { src: ARTE + 'aves/ave08.webp', cx: 0.512, cy: 0.513, ancho: 0.824, aspecto: 1.499 },
   f09: { src: ARTE + 'aves/ave09.webp', cx: 0.539, cy: 0.515, ancho: 0.824, aspecto: 1.499 },
@@ -454,6 +454,9 @@ const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
        d 0.411 · g 0.504 · b 0.511 · f 0.520 · e 0.565
    Con 'a' arriba del todo. Bajada y subida usan las mismas láminas, que
    es lo que pasa de verdad: el ala cruza dos veces cada posición. */
+/* ave06 regenerada: ahora tiene exactamente dos alas —la cercana abajo
+   y la lejana oculta tras el cuerpo— y su centroide baja a 0.667, el más
+   bajo de las diez. Es el fondo del batido y vuelve al ciclo. */
 const CICLO = ['f01','f02','f03','f04','f05','f06','f07','f08','f09','f11'];
 const MS_CUADRO = 150;  // 10 pasos x 150 ms = 0.67 batidos/s
 
