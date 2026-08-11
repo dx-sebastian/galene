@@ -5,6 +5,10 @@ Thumbs.db
 
 # Láminas fuente en PNG/JPG. El sitio sirve los WebP; los originales
 # pesan 83 MB y no tienen por qué viajar en el repo.
-arte/fuente/
+#
+# Iba escrito `arte/fuente/`, y un patrón CON barra queda anclado a la
+# carpeta del .gitignore: solo cubría ./arte/fuente/, que no existe. Las
+# láminas viven en public/arte/fuente/ y se estaban colando todas.
+**/arte/fuente/
 dist/
 .astro/
