@@ -14,8 +14,10 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 const A = {
-  h03: { cieloAlto:'#1A2436', cieloBajo:'#2E4256', agua:'#16222E', altas:'#2C4A57',
-         reguero:'#C8D6E0', bruma:'#243444', acento:'#B06A4A', elev:12, int:0.35 },
+  /* La noche no es negra: es azul de tinta con una insinuación malva
+     abajo. Lo que la hace fría es el valor, no la falta de color. */
+  h03: { cieloAlto:'#1B2942', cieloBajo:'#3A3D5C', agua:'#17252F', altas:'#2F5060',
+         reguero:'#CBD5E6', bruma:'#28354A', acento:'#B06A4A', elev:12, int:0.35 },
   /* Los anclas de día llevaban el agua a un turquesa que el cielo nunca
      tenía: medido, 23.6 % de saturación contra 8.6 % del cielo, y el
      cuadro se partía en dos láminas distintas. Agrisados hacia el mismo
@@ -24,17 +26,23 @@ const A = {
      subiendo la saturación del agua: eso volvía a partir el cuadro en
      dos. El cielo gana azul arriba y calor abajo —que es lo que hace un
      cielo de verdad— y el agua se queda mineral. */
-  h09: { cieloAlto:'#AECBDD', cieloBajo:'#E9E6DC', agua:'#5E828B', altas:'#9DB8BA',
-         reguero:'#FFF4E2', bruma:'#D2DCD9', acento:'#C4703F', elev:38, int:0.70 },
-  h15: { cieloAlto:'#84B7CC', cieloBajo:'#EEDFC4', agua:'#537F8A', altas:'#A9BDB8',
-         reguero:'#E8B96A', bruma:'#DCD4BE', acento:'#B4552E', elev:52, int:1.00 },
-  h21: { cieloAlto:'#141C2C', cieloBajo:'#2B3350', agua:'#132430', altas:'#3B5A6A',
-         reguero:'#CFC9E4', bruma:'#26304A', acento:'#A8664C', elev:60, int:0.50 },
+  /* Azul cielo de verdad arriba y un rosa polvoriento abajo. El rosa
+     está JUSTIFICADO: cerca del horizonte la luz atraviesa más aire y
+     se enrojece. Por eso puede ser color sin volverse decoración. */
+  h09: { cieloAlto:'#9CC6E4', cieloBajo:'#F0DFDC', agua:'#5E858F', altas:'#A6C0C2',
+         reguero:'#FFF4E2', bruma:'#DCDCDC', acento:'#C4703F', elev:38, int:0.70 },
+  h15: { cieloAlto:'#7FBAD8', cieloBajo:'#F2DCCE', agua:'#4E8391', altas:'#AFC4BE',
+         reguero:'#E8B96A', bruma:'#E0D6CA', acento:'#B4552E', elev:52, int:1.00 },
+  h21: { cieloAlto:'#161F35', cieloBajo:'#3B3757', agua:'#142631', altas:'#3E5F70',
+         reguero:'#D3CBE8', bruma:'#2A3350', acento:'#A8664C', elev:60, int:0.50 },
 };
 
 /* PENDIENTE (sección 14): sustituir por cálculo real por latitud antes
    de mostrar la hora en pantalla. Si el sitio dice una hora, tiene que
    ser cierta. Estos valores son el promedio colombiano aproximado. */
+/* El rosa vive en los crepúsculos, y por eso hay dos anclas más: sin
+   ellas la transición pasaba de noche azul a día azul sin rosa por el
+   medio, que es justo donde el cielo se pone rosa de verdad. */
 export const AMANECER  = 5.9;
 export const ATARDECER = 18.1;
 

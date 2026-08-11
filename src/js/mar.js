@@ -301,7 +301,7 @@ void main(){
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
          de terminar en una línea. */
-      float bajoAgua = smoothstep(0.0, 0.16, m.y);
+      float bajoAgua = smoothstep(0.0, 0.06, m.y);
       col = mix(col, pm, t.a * 0.92 * bajoAgua);
     }
 
@@ -509,7 +509,7 @@ export function crear(lienzo) {
      más hundimiento las raíces entran en agua más cercana, que es lo que
      lo acerca de verdad — un objeto próximo se mete por debajo del
      horizonte, no se queda posado encima de la línea. */
-  const manglarCaja = [0.705, 0.50, 0.150, 1.0];
+  const manglarCaja = [0.705, 0.62, 0.230, 1.0];
   gl.uniform4fv(u.u_manglarCaja, manglarCaja);
 
   /* Repeticiones de cada lámina a lo ancho. MENOS repeticiones = marcas

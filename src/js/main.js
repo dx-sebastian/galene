@@ -358,7 +358,7 @@ function arrancar(mar) {
     medioCalmo:   ARTE + 'mar-medio-calmo.webp',
     cercano:      ARTE + 'mar-cercano.webp',
     cercanoCalmo: ARTE + 'mar-cercano-calmo.webp',
-    manglar:      ARTE + 'manglar-arco-a.webp',
+    manglar:      ARTE + 'manglar-enterrado-a.webp',
     papel:        ARTE + 'papel.webp',
     grafito:      ARTE + 'grafito.webp',
     nubes:        ARTE + 'nubes.webp',
