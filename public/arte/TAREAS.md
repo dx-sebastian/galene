@@ -192,13 +192,109 @@ reutilizan, el vuelo se ve mecánico — que es justo lo que pasa ahora.
 
 ---
 
+# D bis · El aterrizaje — 8 cuadros en rejilla · **lo siguiente**
+
+El aterrizaje se siente pausado por algo medible: la fase `frena` dura
+**2,4 s con una sola lámina**. Es un cuadro congelado en medio de un vuelo
+animado a 150 ms. No es la curva ni la física — es que no hay cuadros.
+
+Y como el descenso ya lo calcula la física del sitio, **las láminas no
+deben bajar**: el torso se queda clavado y solo se mueven alas, cuello y
+patas. Ese fue el error de las primeras láminas de vuelo.
+
+- [ ] **`aterriza-rejilla.png`** — 4:3 apaisada, 2400×1800, celdas de 600×900
+
+```
+A single watercolour painting on rough cotton paper, containing a GRID of
+EIGHT separate cells: 4 columns across and 2 rows down. Overall image
+4:3 landscape, 2400x1800 pixels. Each cell is an identical portrait
+rectangle, 600x900 pixels. Cells are laid out edge to edge with NO
+borders, NO frames, NO dividing lines, NO numbers, NO labels, NO text of
+any kind anywhere in the image.
+
+THE SUBJECT — the same single grey heron in all eight cells: a watercolour
+gesture painted fast on rough paper, cool grey-white with slate washes and
+a trace of raw umber. Strict side profile, ALWAYS FACING LEFT, in every
+single cell without exception. It is A GESTURE, NOT A CHARACTER: no eye,
+no face, no feather detail, no outline.
+
+THE MOST IMPORTANT RULE — REGISTRATION. This is a frame-by-frame animation
+sheet. In all eight cells the bird's TORSO must be the SAME SIZE and in
+EXACTLY the SAME POSITION within its cell: same centre, same scale, same
+angle. The body must not drift, grow, shrink, rotate or move up or down
+between cells. Imagine the torso pinned in place; only the WINGS, the NECK
+and the LEGS move. If the body shifts even slightly between cells the
+sheet is unusable.
+
+The torso sits at the centre of each cell and occupies only 40% of the
+cell height, leaving generous empty paper above and below so the wings can
+go fully up and the legs fully down without ever touching a cell edge.
+Nothing may be cropped in any cell.
+
+THE EIGHT CELLS — read left to right, top row first. This is one heron
+landing, from the last seconds of glide to standing still:
+
+1. Gliding in. Wings fully spread and held slightly above the body,
+   angled forward, still. Neck folded back. Legs trailing straight behind.
+2. Braking begins. Wings sweeping forward and deeply cupped, the trailing
+   edges curled. Neck starting to extend forward. Legs unfolding, dropping
+   below the body.
+3. The flare. Wings thrown high above the back, wide open. Neck extended
+   forward and slightly down. Legs swinging forward under the body.
+4. Wings held wide and high, spread to their fullest, almost still. Body
+   upright. Legs fully forward and extended, toes reaching down toward the
+   bottom of the cell.
+5. Wings beginning to rise and shorten as they fold at the wrist. Body
+   vertical. Toes at the lowest point of the cell, about to touch.
+6. Contact. Wings raised high and half folded above the shoulders. Body
+   upright and settled over the feet. Legs straight and taking the weight.
+7. Settling. Wings almost fully closed against the sides, one still barely
+   open. Neck beginning to draw back into the shoulders.
+8. At rest. Wings completely closed. Neck folded down into the shoulders,
+   beak level, standing on both legs. This LAST cell must read as a heron
+   standing at rest, doing nothing.
+
+PAINTING — painted wet and fast, in one pass, and left alone. Few strokes,
+none corrected. Bare paper wherever the brush skipped. The wing edges stay
+dry and broken, dissolving into the paper. Flat even diffuse light.
+
+BACKGROUND — fully transparent, true alpha, in every cell and between the
+cells. NO white, NO cream, NO paper tone behind the bird, NO halo or pale
+fringe around the bird, NO coloured speckles or stray pixels. Nothing else
+in the image: no perch, no branch, no water, no reflection, no shadow, no
+ground, no horizon, no motion lines, no other birds.
+
+NEGATIVE: white background, cream background, halo, fringe, outline, grid
+lines, borders, panel separators, numbers, labels, captions, text, cute,
+cartoon, character, eyes, detailed feathers, motion blur, speed lines,
+sparkles, storybook, vector, 3D, photorealistic, saturated, polished,
+finished, bird facing right, mirrored bird, bird changing size between
+cells, bird moving position between cells, cropped wings.
+```
+
+El octavo cuadro tiene que leerse igual que la garza en reposo: es el que
+se disuelve hacia la hoja de posadas y si no coincide, se nota el corte.
+
+---
+
 # D · La garza en reposo — que esté viva sin volar
 
-Pasa la mayor parte del tiempo posada. Ahora solo se balancea, y por eso
-se siente un adorno. Con estas cinco tiene vida propia: se alternan
-despacio, con pausas largas y nunca dos seguidas.
+**HECHO** — llegaron en una rejilla 3×2 (`final final.png`) y ya están
+montadas: reposo, alerta, encogida, una pata, mira abajo y alas abiertas.
+Se alternan con esperas de 7 a 19 s, nunca dos seguidas, y se disuelven
+en 0,42 s en vez de cortar.
 
-**Mismo método**: genera `posada-00-maestro.png` y edita sobre ella.
+Faltaron dos de las nueve pedidas —**rascarse** y **sacudirse**—, y la
+hoja vino cuadrada en vez de 2:3. No urge: con seis ya no se lee como
+adorno. Si se regeneran, misma rejilla y mismo tamaño de ave.
+
+La hoja traía halo blanco y motas rojas y cianes. Se limpiaron
+desaturando todo píxel con saturación > 0,40 —el ave es casi monocroma,
+cualquier color saturado es basura de codificación— y apagando el alfa
+parcial de lo casi blanco: 19.435 motas y 54.225 píxeles de halo.
+
+**Método original**, por si hay que repetirlo: genera
+`posada-00-maestro.png` y edita sobre ella.
 
 - [ ] **D0 · `posada-00-maestro.png`**
 
