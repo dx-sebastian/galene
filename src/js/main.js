@@ -438,8 +438,44 @@ const VUELO = {
   f08: { src: ARTE + 'aves/ave08.webp', cx: 0.512, cy: 0.513, ancho: 0.824, aspecto: 1.499 },
   f09: { src: ARTE + 'aves/ave09.webp', cx: 0.539, cy: 0.515, ancho: 0.824, aspecto: 1.499 },
   f11: { src: ARTE + 'aves/ave11.webp', cx: 0.527, cy: 0.451, ancho: 0.824, aspecto: 1.499 },
-  frena: { src: ARTE + 'garza-llegando.webp', cx: 0.528, cy: 0.418, ancho: 0.934,
-           aspecto: 0.667, altoTinta: 0.971, factor: 1.7 },
+  /* EL ATERRIZAJE, OCHO CUADROS. Antes era UNA lámina sostenida 2,4 s en
+     medio de un vuelo animado a 150 ms: no era un problema de curva ni de
+     física, era un cuadro congelado.
+
+     Estas ocho vinieron en una rejilla sin registrar —cada ave con su
+     encuadre y su tamaño—, así que el registro lo pone la medición: cada
+     cuadro sabe dónde tiene el centroide, dónde los pies, y cuánta tinta
+     ocupa a lo ancho y a lo alto.
+
+     `w` mueve EL PUNTO DE ANCLAJE, de 0 a 1. Un ave en vuelo gira y se
+     sujeta por su centroide, que es donde tiene la masa; un ave parada
+     se sujeta por los pies, que es lo único que no se mueve cuando
+     cambia de postura. Estos ocho cuadros van de lo uno a lo otro, así
+     que el ancla también. Sin eso, al entrar en la posada el ave daría
+     un brinco del tamaño de sus patas.
+
+     (El TAMAÑO no se cruza: se mide siempre por altura. Cruzarlo fue un
+     error mío y está explicado abajo, donde se calcula.)
+
+     `factor` es su altura de tinta dividida por la de a08 —la que está
+     parada en reposo, la que empata con la hoja de posadas—. Por eso
+     sube a 1.285 en el flare: un ave con las alas en alto ES más alta. */
+  l01: { src: ARTE + 'aterriza/a01.webp', cx: 0.514, cy: 0.509, aspecto: 1.089,
+         pies: [0.931, 0.984], ancho: 0.986, altoTinta: 0.969, factor: 0.974, w: 0.00 },
+  l02: { src: ARTE + 'aterriza/a02.webp', cx: 0.633, cy: 0.371, aspecto: 0.720,
+         pies: [0.728, 0.983], ancho: 0.977, altoTinta: 0.971, factor: 1.055, w: 0.20 },
+  l03: { src: ARTE + 'aterriza/a03.webp', cx: 0.694, cy: 0.424, aspecto: 0.676,
+         pies: [0.608, 0.983], ancho: 0.963, altoTinta: 0.971, factor: 1.217, w: 0.45 },
+  l04: { src: ARTE + 'aterriza/a04.webp', cx: 0.573, cy: 0.367, aspecto: 0.729,
+         pies: [0.439, 0.988], ancho: 0.963, altoTinta: 0.975, factor: 1.225, w: 0.70 },
+  l05: { src: ARTE + 'aterriza/a05.webp', cx: 0.602, cy: 0.354, aspecto: 0.584,
+         pies: [0.541, 0.988], ancho: 0.963, altoTinta: 0.976, factor: 1.285, w: 0.85 },
+  l06: { src: ARTE + 'aterriza/a06.webp', cx: 0.581, cy: 0.334, aspecto: 0.579,
+         pies: [0.550, 0.987], ancho: 0.959, altoTinta: 0.974, factor: 1.188, w: 0.95 },
+  l07: { src: ARTE + 'aterriza/a07.webp', cx: 0.580, cy: 0.392, aspecto: 0.628,
+         pies: [0.543, 0.988], ancho: 0.947, altoTinta: 0.976, factor: 1.071, w: 1.00 },
+  l08: { src: ARTE + 'aterriza/a08.webp', cx: 0.580, cy: 0.397, aspecto: 0.662,
+         pies: [0.556, 0.987], ancho: 0.950, altoTinta: 0.972, factor: 1.000, w: 1.00 },
   /* LAS SEIS POSADAS. Vinieron en una sola rejilla 3×2, así que comparten
      papel, pigmento y tamaño de ave: por eso se pueden intercambiar sin
      que cambie de garza. La lámina traía halo blanco y motas rojas y
@@ -525,8 +561,27 @@ function gestoPosado(t) {
    sin decirlo. Los tiempos se cuentan desde que se carga la página. */
 const FASES = [
   ['crucero',   26.0],   // entra por la derecha, alto, cruzando
-  ['aproxima',  11.0],   // baja en arco hacia el manglar, aleteo más lento
-  ['frena',      2.4],   // alas abiertas, se endereza, se posa
+  ['aproxima',  10.2],   // baja en arco hacia el manglar, aleteo más lento
+  ['frena',      3.2],   // los ocho cuadros del aterrizaje
+];
+
+/* El REPARTO del aterrizaje, en fracciones de la fase. Deliberadamente
+   desigual, porque un aterrizaje lo es: frenar es violento y dura poco,
+   asentarse es lento. Repartido en ocho partes iguales se leería como un
+   metrónomo, que es la otra manera de verse mecánico.
+
+   Y termina acelerando HACIA LA QUIETUD en vez de congelarse: el último
+   cuadro es el más largo y ya es el ave parada, así que la disolvencia
+   hacia la posada no tiene nada que salvar. */
+const ATERRIZA = [
+  ['l01', 0.07],   // planea, alas arriba, patas atrás
+  ['l02', 0.08],   // frena, las patas bajan
+  ['l03', 0.09],   // alas altas, las patas buscan
+  ['l04', 0.13],   // el flare: alas abiertas del todo
+  ['l05', 0.14],   // contacto, el cuerpo sobre las patas
+  ['l06', 0.15],   // las alas se recogen
+  ['l07', 0.16],   // se asienta
+  ['l08', 0.18],   // quieta: ya es la misma pose que la posada
 ];
 const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
 /* Ciclo a → b → c → b: la garza es un ave de aleteo lento, ~1.5 por
@@ -556,10 +611,14 @@ if (contenedor) {
     img.alt = '';
     img.className = 'vuelo';
     img.decoding = 'async';
-    // La posada gira sobre sus PIES; las de vuelo, sobre su centro.
-    img.style.transformOrigin = v.pies
-      ? `${(v.pies[0] * 100).toFixed(1)}% ${(v.pies[1] * 100).toFixed(1)}%`
-      : '50% 50%';
+    /* La posada gira sobre sus PIES; las de vuelo, sobre su centro. Y el
+       aterrizaje, sobre el mismo punto por el que se ancla —el que cruza
+       de uno a otro con `w`—, porque girar alrededor de un punto distinto
+       del que sujeta la lámina es exactamente lo que la haría resbalar. */
+    const wv = v.w === undefined ? (v.altoTinta ? 1 : 0) : v.w;
+    const ox = v.pies ? v.cx + (v.pies[0] - v.cx) * wv : 0.5;
+    const oy = v.pies ? v.cy + (v.pies[1] - v.cy) * wv : 0.5;
+    img.style.transformOrigin = `${(ox * 100).toFixed(1)}% ${(oy * 100).toFixed(1)}%`;
     contenedor.appendChild(img);
     capas[clave] = img;
   }
@@ -647,7 +706,6 @@ function colocarGarzas(w, h, horDesdeArriba) {
 }
 
 const suave3 = (p) => p * p * (3 - 2 * p);
-const salida3 = (p) => 1 - Math.pow(1 - p, 3);
 
 function animarGarzas(t, paralaje, dt) {
   if (!vuelo || !vuelo.envergadura) return;
@@ -676,8 +734,9 @@ function animarGarzas(t, paralaje, dt) {
      alinea con la trayectoria.                                     */
   // Entra justo por el borde y se queda cerca del manglar: recorre poco.
   const xEntra = w * 1.08, xEspera = vuelo.posX + w * 0.14;
-  let plato = null, mezcla = 0, escala = 1;
+  let plato = null, mezcla = 0;
   let poseA = 'posada', poseB = 'posada', poseM = 1;
+  let aterA = null, aterB = null, aterM = 0, entra = 1;
   let ritmo = MS_CUADRO / 1000;           // segundos por paso de aleteo
 
   if (!vuelo.arrancado) {
@@ -707,10 +766,34 @@ function animarGarzas(t, paralaje, dt) {
   } else if (fase === 'frena') {
     plato = 'frena';
     objX = posX; objY = posY;
-    // Alas abiertas: mucha resistencia. Frena de verdad, no interpola.
-    k = 11; amort = 6.4;
-    escala = 1.06 - 0.06 * salida3(p);
-    mezcla = p > 0.70 ? (p - 0.70) / 0.30 : 0;
+    /* Alas abiertas: mucha resistencia. Frena de verdad, no interpola.
+       Pero la resistencia ENTRA, no aparece: pasar de golpe del muelle
+       flojo de la aproximación (1.55) a este (11) daba una aceleración
+       instantánea, y como la actitud sale del vector de velocidad, el
+       ave se torcía 12° en 170 ms. Un cuerpo con inercia no hace eso. */
+    k = 1.6 + 9.4 * suave3(Math.min(1, p / 0.30)); amort = 6.4;
+    /* El cuadro sale del reparto desigual, no de dividir la fase en
+       ocho. Y se cruza solo el último tramo de cada uno: el escalón se
+       conserva —sigue leyéndose animado a mano— pero el salto duro no. */
+    let acc = 0, i = ATERRIZA.length - 1, dentro = 1;
+    for (let j = 0; j < ATERRIZA.length; j++) {
+      if (p < acc + ATERRIZA[j][1]) { i = j; dentro = (p - acc) / ATERRIZA[j][1]; break; }
+      acc += ATERRIZA[j][1];
+    }
+    aterA = ATERRIZA[i][0];
+    aterB = ATERRIZA[Math.min(i + 1, ATERRIZA.length - 1)][0];
+    aterM = dentro < 0.72 ? 0 : (dentro - 0.72) / 0.28;
+    /* La entrada al aterrizaje era el ÚNICO corte seco de toda la
+       animación: el ciclo de vuelo terminaba en el cuadro que le tocara
+       y el primero del aterrizaje aparecía encima. Todo lo demás se
+       disuelve, así que ese salto se notaba precisamente por ser el
+       único. Ahora también se cruza, y desde el cuadro de vuelo que
+       toque —que sigue avanzando por debajo. */
+    if (i === 0) entra = suave3(Math.min(1, dentro / 0.60));
+    /* La disolvencia hacia la posada vive DENTRO del último cuadro, que
+       ya es el ave parada. Antes cruzaba desde una lámina de alas
+       abiertas y por eso se notaba. */
+    if (i === ATERRIZA.length - 1) mezcla = suave3(Math.min(1, dentro / 0.85));
   } else {
     plato = 'posada';
     objX = posX; objY = posY;
@@ -731,8 +814,15 @@ function animarGarzas(t, paralaje, dt) {
   /* Actitud desde la trayectoria: si baja, morro abajo; si frena, se
      endereza. Suavizada, porque un cuerpo con inercia no cambia de
      ángulo de golpe. */
+  /* Y durante el ATERRIZAJE, cero. La actitud sale del vector de
+     velocidad, que es lo correcto para un cuerpo en el aire: si baja,
+     morro abajo. Pero al frenar el ave cae casi a plomo sobre la rama,
+     así que la fórmula la inclinaba hasta -11° justo en el flare —y en
+     un flare un ave cabecea hacia ARRIBA, no hacia abajo. La actitud del
+     aterrizaje ya viene pintada en las ocho láminas; el código solo
+     tiene que dejar de estorbar. */
   const avance = Math.max(60, Math.abs(vuelo.vx));
-  const objGiro = plato === 'posada' ? 0
+  const objGiro = plato === 'posada' || plato === 'frena' ? 0
     : Math.max(-26, Math.min(14, -(Math.atan2(vuelo.vy, avance) * 180 / Math.PI) * 0.85));
   vuelo.giro = (vuelo.giro || 0) + (objGiro - (vuelo.giro || 0)) * Math.min(1, dt * 4.5);
   let giro = vuelo.giro;
@@ -775,7 +865,12 @@ function animarGarzas(t, paralaje, dt) {
     ? (cruce > 0 && CICLO[iA] !== CICLO[iB]
         ? [[CICLO[iA], 1 - cruce], [CICLO[iB], cruce]]
         : [[CICLO[iA], 1]])
-    : mezcla > 0 ? [['frena', 1 - mezcla], ['posada', mezcla]]
+    : aterA
+      ? (entra < 1 ? [[CICLO[iA], 1 - entra], [aterA, entra]]
+         : mezcla > 0 ? [[aterA, 1 - mezcla], ['posada', mezcla]]
+         : aterM > 0 && aterA !== aterB
+           ? [[aterA, 1 - aterM], [aterB, aterM]]
+           : [[aterA, 1]])
     : plato === 'posada'
       ? (poseM < 1 && poseA !== poseB
           ? [[poseA, 1 - poseM], [poseB, poseM]]
@@ -790,7 +885,7 @@ function animarGarzas(t, paralaje, dt) {
      posición del centroide de reposo al punto donde están los pies, y
      desde ahí coloco cada pose por los suyos. */
   const ref = VUELO.posada;
-  const refAlto = (vuelo.altoPosada / ref.altoTinta) * escala;
+  const refAlto = vuelo.altoPosada / ref.altoTinta;
   const pieX = x + (ref.pies[0] - ref.cx) * (refAlto * ref.aspecto);
   const pieY = y + (ref.pies[1] - ref.cy) * refAlto;
 
@@ -798,18 +893,43 @@ function animarGarzas(t, paralaje, dt) {
     const enc = visibles.find(([c]) => c === clave);
     if (!enc) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
     const v = VUELO[clave];
+    /* EL TAMAÑO SIEMPRE POR ALTURA cuando la lámina la trae medida. Lo
+       intenté cruzando las dos reglas con `w` y estaba mal: la regla de
+       vuelo normaliza por ANCHO de tinta, y eso solo significa algo en
+       poses anchas —ave con las alas extendidas—. Aplicada a a02..a06,
+       que son poses altas y estrechas, las inflaba hasta 1.75× y el
+       aterrizaje se leía como un zoom hacia la cámara.
+       Las ocho vienen de una sola hoja, así que sus tamaños relativos ya
+       son ciertos entre sí; medirlas por altura las deja consistentes
+       entre ellas Y con la posada, que es donde termina todo. */
+    const w0 = v.w === undefined ? (v.altoTinta ? 1 : 0) : v.w;
     const altoPx = v.altoTinta
-      ? (vuelo.altoPosada * (v.factor || 1) / v.altoTinta) * escala   // posada / frenado
-      : (K / v.ancho) * escala / v.aspecto;                          // vuelo
+      ? vuelo.altoPosada * (v.factor || 1) / v.altoTinta
+      : (K / v.ancho) / v.aspecto;
     const anchoPx = altoPx * v.aspecto;
-    const porPies = plato === 'posada' && v.pies;
-    const izq = porPies ? pieX - v.pies[0] * anchoPx : x - v.cx * anchoPx;
-    const arr = porPies ? pieY - v.pies[1] * altoPx : y - v.cy * altoPx;
+    /* Y el ancla se cruza igual. Los pies son el punto fijo del ave
+       parada; el centroide, el del ave en vuelo. Interpolar entre los
+       dos es lo que hace que ni el despegue del ciclo de vuelo ni la
+       entrada en la posada peguen un brinco. */
+    const anclaX = x + (pieX - x) * w0, anclaY = y + (pieY - y) * w0;
+    const refX = v.pies ? v.cx + (v.pies[0] - v.cx) * w0 : v.cx;
+    const refY = v.pies ? v.cy + (v.pies[1] - v.cy) * w0 : v.cy;
+    const izq = anclaX - refX * anchoPx;
+    const arr = anclaY - refY * altoPx;
     el.style.opacity = enc[1].toFixed(3);
     el.style.width = anchoPx.toFixed(1) + 'px';
     el.style.transform =
       `translate3d(${izq.toFixed(1)}px, ${arr.toFixed(1)}px, 0) rotate(${giro.toFixed(2)}deg)`;
   }
+}
+
+/* Asidero de medición, SOLO en desarrollo. El ave tarda 39 s en llegar y
+   el navegador estrangula los temporizadores cuando la pestaña no está
+   delante, así que esperar al reloj no sirve para medir: hay que poder
+   pisarlo y avanzar la animación paso a paso. No viaja al sitio
+   publicado — import.meta.env.DEV lo borra en la compilación. */
+if (import.meta.env.DEV) {
+  window.__galene = { animarGarzas, VUELO, ATERRIZA, FASES, vuelo: () => vuelo };
 }
 
 /* ── ARRANQUE ──────────────────────────────────────────────────────
