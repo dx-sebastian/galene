@@ -680,7 +680,24 @@ function colocarGarzas(w, h, horDesdeArriba) {
   /* Tamaños proporcionales al GROSOR DE LA RAMA en la que se posa: es
      la única referencia honesta de escala que hay en el cuadro. */
   vuelo.altoPosada  = p.altoManglar * 0.135;
-  vuelo.envergadura = p.altoManglar * 0.20;
+
+  /* 0.20 -> 0.17. La hoja de vuelo y las de aterrizaje y posada vienen
+     de generaciones distintas y dibujan la garza con OTRAS PROPORCIONES:
+     la de vuelo es larguirucha, con el pico largo y el cuerpo delgado;
+     la de aterrizaje es rechoncha, de pico corto y cuerpo grueso.
+
+     Lo intenté medir cuatro veces —caja envolvente, registro de
+     siluetas, largo del pico, perfil de grosor— y salieron 0.725, 0.92,
+     0.52 y 0.40, con las validaciones fallando en 1.05 y 1.13 donde
+     tenían que dar 1.00. No es que midiera mal: es que NO EXISTE una
+     escala en la que las dos sean la misma ave. Igualando el tramo de
+     pico a dedos el cuerpo se queda pequeño; igualando el cuerpo, el
+     tramo se alarga un tercio.
+
+     Así que 0.17 es un juicio, no una medida, y está dicho: quita la
+     mayor parte del desajuste de tramo sin dejar al ave volando
+     pequeña. Si hay que moverlo, es este número y solo este. */
+  vuelo.envergadura = p.altoManglar * 0.17;
 
   /* UN SOLO PUNTO DE REFERENCIA para todo el recorrido: el centroide.
      Antes el vuelo se anclaba por el centroide y la posada por los pies,
