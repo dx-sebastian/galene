@@ -16,8 +16,24 @@
 const A = {
   /* La noche no es negra: es azul de tinta con una insinuación malva
      abajo. Lo que la hace fría es el valor, no la falta de color. */
-  h03: { cieloAlto:'#1B2942', cieloBajo:'#453A5E', agua:'#17252F', altas:'#2F5060',
-         reguero:'#CBD5E6', bruma:'#28354A', acento:'#B06A4A', elev:12, int:0.35 },
+  /* LA NOCHE NO ES LA AUSENCIA DEL DÍA. Estaba resuelta como un día
+     con el brillo bajado —azul de tinta y poco más— y por eso se leía
+     triste. Una noche de verdad tiene MÁS color que un mediodía, no
+     menos: el cenit se va a un añil profundo, la banda media a violeta
+     y abajo queda el rescoldo cálido de la luz que se fue y de las
+     luces de la orilla.
+
+     Lo que NO se toca es la luminancia, y está medido: `cieloAlto` va
+     de 0.0221 a 0.0226 y `cieloBajo` de 0.0510 a 0.0508 — cuatro
+     diezmilésimas arriba y dos abajo. La luminancia de la banda del
+     texto pasa de 0.0308 a 0.0310, o sea que sigue igual de lejos del
+     cruce de tinta (0.175) y la tinta sigue siendo clara.
+
+     El color sube, el valor se queda. Así la noche se vuelve hermosa
+     sin que nadie pierda legibilidad a las cuatro de la mañana, que es
+     la hora que manda en este proyecto. */
+  h03: { cieloAlto:'#14294C', cieloBajo:'#4C3568', agua:'#132630', altas:'#2C5567',
+         reguero:'#D6DCEE', bruma:'#243855', acento:'#B06A4A', elev:12, int:0.35 },
   /* Los anclas de día llevaban el agua a un turquesa que el cielo nunca
      tenía: medido, 23.6 % de saturación contra 8.6 % del cielo, y el
      cuadro se partía en dos láminas distintas. Agrisados hacia el mismo
@@ -47,8 +63,13 @@ const A = {
          reguero:'#FFF4E2', bruma:'#DEDFE2', acento:'#C4703F', elev:38, int:0.70 },
   h15: { cieloAlto:'#79B2D2', cieloBajo:'#F6D6B6', agua:'#4E7F86', altas:'#B6C2B4',
          reguero:'#E8B96A', bruma:'#E2D6C4', acento:'#B4552E', elev:52, int:1.00 },
-  h21: { cieloAlto:'#161F35', cieloBajo:'#4A3A5C', agua:'#142631', altas:'#3E5F70',
-         reguero:'#D3CBE8', bruma:'#2A3350', acento:'#A8664C', elev:60, int:0.50 },
+  /* La primera noche, la de las nueve, conserva rescoldo del ocaso: su
+     banda baja tira a ciruela cálida y no al malva frío de las tres.
+     Que las dos noches sean distintas es la misma ley que obligó a
+     separar la mañana de la tarde — si no, todas las horas oscuras son
+     la misma imagen. */
+  h21: { cieloAlto:'#131F3C', cieloBajo:'#553A63', agua:'#122630', altas:'#3B6274',
+         reguero:'#DCCFEE', bruma:'#26355A', acento:'#A8664C', elev:60, int:0.50 },
 };
 
 /* PENDIENTE (sección 14): sustituir por cálculo real por latitud antes
@@ -96,6 +117,33 @@ function paleta(a, b, t) {
   return o;
 }
 
+/** En qué punto del ciclo de cielos cae una hora, de 0 a 4.
+
+    0 = alba · 1 = día · 2 = ocaso · 3 = noche · 4 ≡ 0 otra vez.
+
+    Devuelve un número CONTINUO a propósito: 1.5 no es un cielo, es
+    medio camino entre el día y el ocaso, y el shader mezcla las dos
+    láminas con esa fracción. Así el cielo no cambia nunca de golpe —
+    va cambiando toda la tarde, que es lo que hace de verdad.
+
+    Los anclajes son las horas reales del sitio: el alba en AMANECER y
+    el ocaso en ATARDECER, no en números redondos. El mediodía cae
+    donde cae. */
+export function cicloCielo(h) {
+  const hh = ((h % 24) + 24) % 24;
+  const MEDIODIA = (AMANECER + ATARDECER) / 2;
+  const nodos = [
+    [AMANECER, 0], [MEDIODIA, 1], [ATARDECER, 2],
+    [ATARDECER + (24 - ATARDECER + AMANECER) / 2, 3], [AMANECER + 24, 4],
+  ];
+  const t = hh < AMANECER ? hh + 24 : hh;
+  for (let i = 0; i < nodos.length - 1; i++) {
+    const [h0, v0] = nodos[i], [h1, v1] = nodos[i + 1];
+    if (t >= h0 && t <= h1) return v0 + ((t - h0) / (h1 - h0)) * (v1 - v0);
+  }
+  return 0;
+}
+
 /** Estado de luz para una hora decimal (0–24). */
 export function luz(horaDecimal) {
   const h = ((horaDecimal % 24) + 24) % 24;
@@ -121,6 +169,7 @@ export function luz(horaDecimal) {
   L.elev = deNoche.elev * (1 - dia) + deDia.elev * dia;
   L.int  = deNoche.int  * (1 - dia) + deDia.int  * dia;
   L.dia  = dia;
+  L.cielo = cicloCielo(h);
 
   /* La banda donde vive el texto es la parte alta del cielo. */
   const lumTexto = luminancia(L.cieloAlto) * 0.7 + luminancia(L.cieloBajo) * 0.3;

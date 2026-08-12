@@ -1,22 +1,96 @@
 /* ═══════════════════════════════════════════════════════════════════
-   mapa.js — cartografía real: se arrastra, hace zoom y admite puntero.
+   mapa.js — tres mapas, no uno con tres capas.
 
-   Leaflet + OpenStreetMap, cargados en DIFERIDO y solo cuando el mapa
-   entra en pantalla. Nada de esto puede retrasar la ayuda: si la red se
-   cae o el CDN no responde, la sección se degrada a una lista y el resto
-   del sitio ni se entera.
+   Emergencia (dónde hay una puerta abierta), Luz (dónde estaré hoy) y
+   Sombra (dónde no ir). Cada uno tiene su cartografía, su color y su
+   forma de hablar, y se cambia entre ellos con una pestaña. El de
+   emergencia es el que sale primero y es el único que no depende de
+   que nadie haya escrito nada antes.
 
-   PRIVACIDAD: las teselas las sirve openstreetmap.org, así que ese
-   servidor ve una petición desde su IP. No se le manda su ubicación ni
-   ningún dato del caso. La geolocalización solo ocurre si ella pulsa
-   «dónde estoy», se usa para centrar el mapa y no se guarda ni se envía.
+   ── LA CARTOGRAFÍA, Y POR QUÉ NO LLEVA NOMBRES ───────────────────
+   Las teselas son las de CARTO sin etiquetas: calles, manzanas, agua y
+   verde, sin un solo topónimo. Tres razones, en este orden:
+
+     1. El nombre de la calle en un mapa de emergencia es ruido. Quien
+        lo abre no está leyendo, está buscando un punto de color y una
+        dirección que copiar. Lo que hace falta leer va en la ficha de
+        abajo, en la tipografía del sitio, a tamaño de lectura y con
+        contraste medido — no en una etiqueta gris de 9 px encima de
+        una carretera.
+
+     2. Un mapa de sombra CON nombres es otra cosa. «Aquí pasó algo»
+        sobre un letrero con el nombre del bar convierte una nota
+        privada en una acusación publicable. Sin topónimos, el punto
+        dice dónde, no a quién.
+
+     3. Sin nombres, el mapa puede teñirse. Toda la sección está
+        pintada a dos tintas sobre papel, y una capa de etiquetas de
+        Google-gris dentro rompe eso más que cualquier otra cosa. Lo
+        que se ve es una carta dibujada, no una captura de pantalla.
+
+   El teñido se hace con `filter` sobre el panel de teselas y una
+   aguada encima (ver estilos.css → CARTOGRAFÍA). Los puntos van por
+   encima de la aguada, sin filtro: la ley de la casa —la imperfección
+   vive en el mundo, el instrumento es exacto— también aplica aquí. El
+   papel puede estar teñido; el punto que dice dónde hay urgencias,
+   no.
+
+   ── LO QUE NO PUEDE PASAR ────────────────────────────────────────
+   Nada de esto puede retrasar la ayuda. Leaflet se carga en diferido y
+   solo cuando el mapa se acerca a la pantalla; si el CDN no responde,
+   la sección se degrada a una lista con el 123 arriba y el resto del
+   sitio ni se entera.
+
+   ── PRIVACIDAD ───────────────────────────────────────────────────
+   · Las teselas las sirve CARTO y los puntos de emergencia los sirve
+     Overpass: esos dos servidores ven una petición desde su IP. No se
+     les manda su ubicación ni nada del caso.
+   · «Dónde estoy» pide geolocalización, la usa para centrar y la
+     descarta. No se guarda y no se envía.
+   · Sus marcas se quedan en su aparato (ver js/marcas.js). Este sitio
+     no tiene servidor donde ponerlas.
    ═══════════════════════════════════════════════════════════════════ */
 
-import { CIUDADES, CAPAS, porCiudad, verificados } from './lugares.js';
+import {
+  MODOS, modoPor, CIUDADES, ciudadPor, ciudadDeAqui, buscarCiudades,
+  CAPAS, capaPor, tiposDe, tipoPor, porCiudad,
+} from './lugares.js';
+import * as marcas from './marcas.js';
+import { buscarAyuda } from './ayuda.js';
 
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const LEAFLET_JS  = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
+/* Teselas SIN ETIQUETAS. Dos juegos, uno por tinta: con papel claro va
+   el mapa claro y con papel oscuro el oscuro, porque el mapa es papel
+   —tiene que invertirse con la página, como todo lo demás—. La hora
+   local cambia `data-tinta` sola a lo largo del día y el mapa la
+   sigue (ver el observador del final).
+
+   `{r}` lo resuelve Leaflet con detectRetina: en pantallas densas pide
+   la tesela @2x y el trazo no se ve pastoso. */
+const TESELAS = {
+  oscura: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+  clara:  'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+};
+const CREDITO = '© OpenStreetMap · © CARTO';
+
+const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const cerca = (m) => m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+
+const enHoras = (t) => {
+  const min = Math.round((t - Date.now()) / 60000);
+  if (min <= 0) return 'ya pasó';
+  if (min < 60) return `${min} min`;
+  const h = Math.round(min / 60);
+  return h < 36 ? `${h} h` : `${Math.round(h / 24)} días`;
+};
+
+/* ── CARGA DIFERIDA DE LEAFLET ───────────────────────────────────── */
 const cargar = (() => {
   let promesa = null;
   return () => promesa || (promesa = new Promise((ok, mal) => {
@@ -37,104 +111,767 @@ const cargar = (() => {
 
 export function montarMapa(host) {
   if (!host) return;
-  const lienzo = host.querySelector('.mapa__lienzo');
-  const selector = host.querySelector('.mapa__ciudades');
-  const filtros = host.querySelector('.mapa__capas');
-  const listado = host.querySelector('.mapa__listado');
-  const aviso = host.querySelector('.mapa__aviso');
 
-  selector.innerHTML = CIUDADES.map((c, i) =>
-    `<button type="button" class="ficha" data-id="${c.id}"
-       aria-pressed="${i === 0}">${c.nombre}</button>`).join('');
-  filtros.innerHTML = CAPAS.map((c) =>
-    `<label class="capa"><input type="checkbox" checked data-capa="${c.id}">
-       <span>${c.nombre}</span></label>`).join('');
+  const $ = (s) => host.querySelector(s);
+  const lienzo    = $('.mapa__lienzo');
+  const pestanas  = $('.mapa__modos');
+  const pie       = $('.mapa__pie');
+  const urgente   = $('.mapa__urgente');
+  const fichas    = $('.mapa__ciudades');
+  const otras     = $('.mapa__otras');
+  const otrasLista= $('.mapa__otras-lista');
+  const buscador  = $('.mapa__buscar input');
+  const capasCaja = $('.mapa__capas');
+  const listado   = $('.mapa__listado');
+  const aviso     = $('.mapa__aviso');
+  const estado    = $('.mapa__estado');
+  const nueva     = $('.mapa__nueva');
+  const bMarcar   = $('.mapa__marcar');
+  const bCompartir= $('.mapa__compartir');
+  const bAqui     = $('.mapa__aqui');
+  const permiso   = $('.mapa__permiso');
 
-  let mapa = null, L = null, grupo = null;
-  let ciudad = CIUDADES[0];
-  const activas = new Set(CAPAS.map((c) => c.id));
+  let L = null, mapa = null, capaTeselas = null, grupo = null;
+  let marcaAqui = null;                // el punto de «estás aquí», si lo hay
+  let peticion = null;                 // aborta la consulta de Overpass en curso
 
-  function pintarListado() {
-    const lista = porCiudad(ciudad.id).filter((l) => activas.has(l.capa));
-    if (!lista.length) {
-      listado.innerHTML = `<p class="mapa__vacio">
-        Todavía no hay lugares verificados en ${ciudad.nombre}.
-        <strong>No inventamos direcciones:</strong> una puerta equivocada a
-        las cuatro de la mañana es peor que no tener mapa. Cuando estén
-        comprobadas —dirección, horario y qué atienden de verdad— aparecen aquí.
-      </p>`;
-      return;
+  const est = {
+    modo: host.dataset.modo || MODOS[0].id,
+    ciudad: ciudadPor(host.dataset.ciudad) || CIUDADES[0],
+    capas: new Set(CAPAS.map((c) => c.id)),
+    osm: [],                           // lo último que trajo Overpass
+    truncado: false,                   // ¿se llenó el tope de la consulta?
+    fallo: null,
+    cargando: false,
+    marcando: false,
+    punto: null,                       // dónde va a caer la marca nueva
+    /* Dónde está ella, si lo concedió. Vive en esta variable y en
+       ningún sitio más: ni localStorage, ni sessionStorage, ni una
+       petición. Muere con la pestaña. */
+    aqui: null,
+    /* Hasta que la sección no se acerca a la pantalla no se pide NADA
+       a la red: ni Leaflet, ni teselas, ni Overpass. Alguien que entra
+       y no baja hasta aquí no genera una sola petición de mapa. */
+    despierto: false,
+  };
+
+  /* ── MOVER EL MAPA ───────────────────────────────────────────────
+     prefers-reduced-motion APAGA el vuelo, no lo acorta: quien lo pide
+     no quiere un viaje más corto, quiere no viajar. */
+  const ir = (ll, zoom) => {
+    if (!mapa) return;
+    if (quieto.matches) mapa.setView(ll, zoom);
+    else mapa.flyTo(ll, zoom, { duration: 0.9 });
+  };
+
+  const decir = (texto, malo = false) => {
+    estado.textContent = texto || '';
+    estado.hidden = !texto;
+    estado.classList.toggle('mapa__estado--malo', !!malo);
+  };
+
+  /* ═══ 1 · LOS PUNTOS ═══════════════════════════════════════════ */
+
+  /* Un punto es una aguada con un aro de tinta encima: la mancha da el
+     color de la capa y el aro le devuelve el borde exacto, que es lo
+     que lo hace legible sobre cualquier tesela. El pigmento entra por
+     variable para que el CSS no repita cuatro veces la misma regla. */
+  const icono = (pigmento, clase = '') => L.divIcon({
+    className: `punto ${clase}`,
+    html: `<span class="punto__gota" style="--pigmento:${pigmento}"></span>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -12],
+  });
+
+  function globoAyuda(l) {
+    const capa = capaPor(l.capa);
+    return `<div class="globo">
+      <p class="globo__que" style="--pigmento:${capa.pigmento}">${esc(capa.nombre)}</p>
+      <p class="globo__nombre">${esc(l.nombre)}</p>
+      ${l.direccion ? `<p class="globo__dato">${esc(l.direccion)}</p>` : ''}
+      ${l.horario ? `<p class="globo__dato">${esc(l.horario)}</p>` : ''}
+      ${l.telefono ? `<p class="globo__dato"><a href="tel:${esc(l.telefono.replace(/\s/g, ''))}">${esc(l.telefono)}</a></p>` : ''}
+      <p class="globo__fuente">${l.verificado
+        ? `Verificado por Galene el ${esc(l.verificado)}`
+        : 'Dato de OpenStreetMap. Nadie de Galene lo ha comprobado.'}</p>
+    </div>`;
+  }
+
+  function globoMarca(m) {
+    const modo = modoPor(m.modo);
+    return `<div class="globo">
+      <p class="globo__que" style="--pigmento:${modo.pigmento}">${esc(tipoPor(m.modo, m.tipo).nombre)}</p>
+      ${m.nota ? `<p class="globo__nombre">${esc(m.nota)}</p>` : ''}
+      <p class="globo__dato">${m.ajena ? 'Te lo compartieron' : 'Tuyo'} · se borra en ${esc(enHoras(m.caduca))}</p>
+      <p class="globo__fuente"><button type="button" class="globo__borrar" data-borrar="${esc(m.id)}">Borrar este punto</button></p>
+    </div>`;
+  }
+
+  function puntosEmergencia() {
+    /* Los verificados por nosotros van SIEMPRE, aunque su capa esté
+       apagada nunca se esconden por error: se filtran igual que el
+       resto, pero se dibujan encima y con otra marca. */
+    const propios = porCiudad(est.ciudad.id).filter((l) => est.capas.has(l.capa));
+    const ajenos  = est.osm.filter((l) => est.capas.has(l.capa));
+    for (const l of ajenos) {
+      L.marker(l.ll, { icon: icono(capaPor(l.capa).pigmento), keyboard: true,
+        alt: `${capaPor(l.capa).nombre}: ${l.nombre}` })
+        .addTo(grupo).bindPopup(globoAyuda(l));
     }
-    listado.innerHTML = `<ul class="enlaces">${lista.map((l) => `
-      <li><strong>${l.nombre}</strong>
-        <span>${l.direccion} · ${l.horario}</span>
-        ${l.telefono ? `<span><a href="tel:${l.telefono}">${l.telefono}</a></span>` : ''}
-        <span class="mapa__fuente">Verificado ${l.verificado}</span></li>`).join('')}</ul>`;
+    for (const l of propios) {
+      L.marker(l.ll, { icon: icono(capaPor(l.capa).pigmento, 'punto--firme'),
+        alt: `${capaPor(l.capa).nombre}: ${l.nombre}` })
+        .addTo(grupo).bindPopup(globoAyuda(l));
+    }
+  }
+
+  function puntosMarcas() {
+    const modo = modoPor(est.modo);
+    for (const m of marcas.listar(est.modo)) {
+      L.marker(m.ll, { icon: icono(modo.pigmento, m.ajena ? 'punto--ajeno' : ''),
+        alt: tipoPor(m.modo, m.tipo).nombre })
+        .addTo(grupo).bindPopup(globoMarca(m));
+    }
   }
 
   function pintarPuntos() {
     if (!mapa) return;
     grupo.clearLayers();
-    for (const l of verificados()) {
-      if (!activas.has(l.capa)) continue;
-      L.marker(l.ll).addTo(grupo).bindPopup(
-        `<strong>${l.nombre}</strong><br>${l.direccion}<br>${l.horario}`);
+    if (est.modo === 'emergencia') puntosEmergencia();
+    else puntosMarcas();
+  }
+
+  /* ═══ 2 · LA LISTA DE ABAJO ════════════════════════════════════
+     El mapa dice DÓNDE; la lista dice QUÉ, y es la que se puede leer
+     sin ver, copiar y marcar por teléfono. Todo lo que está en el
+     mapa está aquí: si algo solo existiera como punto de color, el
+     sitio sería inservible con lector de pantalla. */
+
+  /* Cómo se nombra el centro de la búsqueda. Cuando es ella, el mapa
+     habla de «tu zona» y las distancias son «de ti»: la diferencia
+     entre «a 400 m del centro» y «a 400 m de ti» es la diferencia
+     entre un dato y una indicación. */
+  const donde = () => (est.ciudad.propia ? 'tu zona' : est.ciudad.nombre);
+  const desde = () => (est.ciudad.propia ? 'de ti' : 'del centro');
+
+  function listaEmergencia() {
+    const propios = porCiudad(est.ciudad.id).filter((l) => est.capas.has(l.capa));
+    const ajenos  = est.osm.filter((l) => est.capas.has(l.capa)).slice(0, 40);
+
+    if (est.cargando) {
+      return `<p class="mapa__vacio">Preguntando a OpenStreetMap qué hay en
+        ${esc(donde())}… <strong>puede tardar unos segundos.</strong>
+        El 123 de arriba funciona ya.</p>`;
     }
+    if (est.fallo && !propios.length) {
+      return `<p class="mapa__vacio mapa__vacio--malo">
+        No se pudo traer el listado de ${esc(donde())}: ${esc(est.fallo)}.
+        <strong>El 123 funciona igual</strong>, y en cualquier urgencia de un
+        hospital tienen que atenderte sin denuncia y sin cita.</p>`;
+    }
+    if (!propios.length && !ajenos.length) {
+      return `<p class="mapa__vacio">No aparece nada en ${esc(donde())}
+        con las capas encendidas. Prueba a encender todas, o mueve el mapa:
+        <strong>que OpenStreetMap no lo tenga no significa que no exista.</strong></p>`;
+    }
+
+    /* «Cómo llegar» sale a Google Maps y es la única concesión de esta
+       sección, hecha a ojos abiertos: es un enlace que ella pulsa, se
+       abre fuera, va sin referente y lo único que viaja es la
+       coordenada de un hospital. A cambio, es el enlace que un taxista
+       entiende a las cuatro de la mañana. Un enrutador libre que nadie
+       sabe usar no ayuda a nadie. */
+    const ficha = (l, verificado) => `
+      <li class="lugar${verificado ? ' lugar--firme' : ''}" style="--pigmento:${capaPor(l.capa).pigmento}">
+        <p class="lugar__capa">${esc(capaPor(l.capa).nombre)}</p>
+        <p class="lugar__nombre">${esc(l.nombre)}</p>
+        ${l.direccion ? `<p class="lugar__dato">${esc(l.direccion)}</p>` : ''}
+        ${l.horario ? `<p class="lugar__dato">${esc(l.horario)}</p>` : ''}
+        <p class="lugar__dato">
+          ${l.telefono ? `<a href="tel:${esc(l.telefono.replace(/\s/g, ''))}">${esc(l.telefono)}</a> · ` : ''}
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${l.ll[0]},${l.ll[1]}"
+             rel="noopener noreferrer" target="_blank">Cómo llegar</a>
+          ${l.distancia != null ? ` · a ${esc(cerca(l.distancia))} ${desde()}` : ''}
+        </p>
+        <p class="lugar__fuente">${verificado
+          ? `Verificado por Galene el ${esc(l.verificado)}`
+          : 'OpenStreetMap · sin verificar por Galene'}</p>
+      </li>`;
+
+    return `
+      <p class="mapa__cuenta">${est.osm.length > ajenos.length
+          ? `Los ${ajenos.length} sitios más cercanos ${est.ciudad.propia ? 'a ti' : 'al centro'}, de ${est.osm.length} en ${esc(donde())}`
+          : `${propios.length + ajenos.length} sitios en ${esc(donde())}`}.
+        Están todos en el mapa.
+        <strong>Llama antes de ir si puedes</strong>: los horarios de
+        OpenStreetMap los pone gente voluntaria y pueden estar viejos.
+        ${est.truncado ? 'Y puede faltar alguno: la zona tiene más de los que caben en una consulta.' : ''}</p>
+      <ul class="lugares">
+        ${propios.map((l) => ficha(l, true)).join('')}
+        ${ajenos.map((l) => ficha(l, false)).join('')}
+      </ul>`;
+  }
+
+  function listaMarcas() {
+    const modo = modoPor(est.modo);
+    const mias = marcas.listar(est.modo);
+    if (!mias.length) {
+      return `<p class="mapa__vacio">
+        ${est.modo === 'luz'
+          ? `Todavía no has dejado ningún punto. <strong>Deja uno donde vayas a
+             estar</strong> y comparte el enlace con quien quieras que lo sepa:
+             se borra solo al final del día.`
+          : `Todavía no has marcado ningún sitio. <strong>Marca el lugar, no a
+             la persona</strong> — sin nombres y sin apodos.`}
+      </p>`;
+    }
+    return `<ul class="lugares">${mias.map((m) => `
+      <li class="lugar lugar--marca" style="--pigmento:${modo.pigmento}">
+        <p class="lugar__capa">${esc(tipoPor(m.modo, m.tipo).nombre)}</p>
+        ${m.nota ? `<p class="lugar__nombre">${esc(m.nota)}</p>` : ''}
+        <p class="lugar__dato">${m.ajena ? 'Te lo compartieron' : 'Tuyo'} ·
+          se borra en ${esc(enHoras(m.caduca))}</p>
+        <p class="lugar__dato">
+          <button type="button" class="enlace-boton" data-ver="${esc(m.id)}">Verlo en el mapa</button> ·
+          <button type="button" class="enlace-boton" data-borrar="${esc(m.id)}">Borrar</button>
+        </p>
+      </li>`).join('')}</ul>
+      <p class="mapa__cuenta">${mias.length} punto${mias.length > 1 ? 's' : ''} en este
+        aparato. <button type="button" class="enlace-boton" data-limpiar="1">Borrarlos todos</button></p>`;
+  }
+
+  function pintarListado() {
+    listado.innerHTML = est.modo === 'emergencia' ? listaEmergencia() : listaMarcas();
+  }
+
+  /* ═══ 3 · CAPAS Y LEYENDA ══════════════════════════════════════
+     En emergencia son interruptores —encender y apagar tipos de sitio—
+     y a la vez la leyenda del color. En luz y sombra no hay nada que
+     filtrar, así que la fila explica qué significa cada punto. */
+  function pintarCapas() {
+    if (est.modo === 'emergencia') {
+      capasCaja.innerHTML = CAPAS.map((c) => `
+        <label class="capa" title="${esc(c.pie)}">
+          <input type="checkbox" ${est.capas.has(c.id) ? 'checked' : ''} data-capa="${c.id}">
+          <span class="capa__gota" style="--pigmento:${c.pigmento}"></span>
+          <span>${esc(c.nombre)}</span>
+        </label>`).join('');
+    } else {
+      const modo = modoPor(est.modo);
+      capasCaja.innerHTML = `
+        <span class="capa capa--leyenda">
+          <span class="capa__gota" style="--pigmento:${modo.pigmento}"></span>
+          <span>Tuyos</span></span>
+        <span class="capa capa--leyenda">
+          <span class="capa__gota capa__gota--ajena" style="--pigmento:${modo.pigmento}"></span>
+          <span>Compartidos contigo</span></span>`;
+    }
+  }
+
+  /* ═══ 4 · CAMBIAR DE MAPA ══════════════════════════════════════ */
+  function aplicarModo(id) {
+    est.modo = id;
+    host.dataset.modo = id;
+    const modo = modoPor(id);
+
+    for (const b of pestanas.querySelectorAll('[data-modo]')) {
+      const activa = b.dataset.modo === id;
+      b.setAttribute('aria-selected', String(activa));
+      b.tabIndex = activa ? 0 : -1;
+    }
+    pie.textContent = modo.pie;
+    lienzo.setAttribute('aria-label', `Mapa de ${modo.nombre.toLowerCase()}: ${modo.lema}`);
+
+    urgente.hidden = id !== 'emergencia';
+    bMarcar.hidden = id === 'emergencia';
+    bCompartir.hidden = id === 'emergencia';
+    bMarcar.textContent = id === 'luz' ? 'Dejar dónde estaré' : 'Marcar un sitio';
+    cancelarMarca();
+
+    pintarCapas();
+    pintarPuntos();
+    pintarListado();
+    if (id === 'emergencia') traerAyuda();
+  }
+
+  /* ═══ 5 · EMERGENCIA: TRAER LOS SITIOS ═════════════════════════ */
+  async function traerAyuda() {
+    if (est.modo !== 'emergencia' || !est.despierto) return;
+    peticion?.abort();
+    peticion = new AbortController();
+    est.cargando = true; est.fallo = null;
+    decir(`Buscando sitios de atención en ${donde()}…`);
+    pintarListado();
+    try {
+      const { lugares, truncado } = await buscarAyuda(est.ciudad, { signal: peticion.signal });
+      est.osm = lugares;
+      est.truncado = truncado;
+      est.cargando = false;
+      decir('');
+    } catch (e) {
+      if (peticion.signal.aborted) return;      // cambió de ciudad, no es un fallo
+      est.osm = [];
+      est.cargando = false;
+      est.fallo = e.message === 'sin red' ? 'no hay conexión' : 'el servicio no respondió';
+      decir('No se pudo traer el listado. Abajo queda lo que sí tenemos.', true);
+    }
+    pintarPuntos();
+    pintarListado();
+  }
+
+  /* ═══ 5 bis · DÓNDE ESTÁ ELLA ═════════════════════════════════
+     El mapa de emergencia solo sirve si está centrado donde ella está:
+     los hospitales de la capital de al lado no son ayuda. Por eso se
+     pide la ubicación de entrada, con la razón por delante y con la
+     salida al lado.
+
+     Lo que se hace con el dato, entero: se centra el mapa, se pide a
+     Overpass qué hay en seis kilómetros a la redonda y se pinta un
+     punto para que sepa dónde está mirando. No se guarda en el
+     aparato, no se mete en ninguna caché y no se envía a este sitio,
+     que no tiene servidor. Al cerrar la pestaña no queda nada. */
+
+  const cerrarPermiso = () => { permiso.hidden = true; };
+
+  function ubicar() {
+    return new Promise((ok, mal) => {
+      if (!navigator.geolocation) { mal(new Error('sin geolocalización')); return; }
+      navigator.geolocation.getCurrentPosition(
+        (p) => ok([p.coords.latitude, p.coords.longitude]),
+        mal,
+        { timeout: 12000, maximumAge: 60000, enableHighAccuracy: false });
+    });
+  }
+
+  /* El punto de «estás aquí» va FUERA del grupo de puntos: ese grupo se
+     vacía cada vez que se repinta, y su sitio en el mapa no es un dato
+     más que se borra al cambiar de pestaña. */
+  function pintarAqui(ll) {
+    if (!mapa) return;
+    marcaAqui?.remove();
+    marcaAqui = L.marker(ll, {
+      icon: L.divIcon({ className: 'punto punto--aqui', html: '<span class="punto__gota"></span>',
+        iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -12] }),
+      alt: 'Donde estás', keyboard: false, zIndexOffset: -100,
+    }).addTo(mapa).bindPopup(
+      '<div class="globo"><p class="globo__nombre">Estás por aquí</p>' +
+      '<p class="globo__fuente">Solo lo sabe este navegador. No se guarda ni se envía.</p></div>');
+  }
+
+  /* Centra, busca alrededor y deja de mandar la ciudad: a partir de
+     aquí el centro es ella. Las fichas de ciudad se quedan sin marcar
+     porque ninguna es la respuesta correcta. */
+  function usarUbicacion(ll, { buscar = true } = {}) {
+    est.aqui = ll;
+    pintarAqui(ll);
+    ir(ll, 15);
+    if (!buscar) return;
+    est.ciudad = ciudadDeAqui(ll);
+    host.dataset.ciudad = 'aqui';
+    for (const b of host.querySelectorAll('.ficha[data-id]')) b.setAttribute('aria-pressed', 'false');
+    if (est.modo === 'emergencia') { est.osm = []; pintarPuntos(); traerAyuda(); }
+    else pintarListado();
+  }
+
+  async function pedirUbicacion({ desdePermiso = false } = {}) {
+    decir('Buscando dónde estás…');
+    try {
+      const ll = await ubicar();
+      cerrarPermiso();
+      usarUbicacion(ll);
+      decir('');
+      return ll;
+    } catch (e) {
+      /* Que diga que no es una respuesta válida y no puede dejarla en
+         peor sitio que antes: se cierra el panel y quedan las ciudades,
+         que llevan al mismo mapa. */
+      cerrarPermiso();
+      decir(e.code === 1
+        ? 'Sin ubicación no pasa nada: elige tu ciudad ahí arriba.'
+        : 'No se pudo saber dónde estás. Elige tu ciudad ahí arriba.', !desdePermiso);
+      return null;
+    }
+  }
+
+  /* Si ya lo había concedido en otra visita, no se le vuelve a
+     preguntar: se centra y ya. Preguntar dos veces lo mismo, en esta
+     página, se lee como que el sitio no la escuchó. */
+  async function tantearPermiso() {
+    try {
+      const p = await navigator.permissions?.query({ name: 'geolocation' });
+      if (p?.state === 'granted') { cerrarPermiso(); await pedirUbicacion(); }
+      else if (p?.state === 'denied') cerrarPermiso();
+    } catch { /* sin Permissions API se queda el panel, que es lo suyo */ }
+  }
+
+  /* ═══ 6 · CIUDADES ═════════════════════════════════════════════ */
+  function irACiudad(ciudad) {
+    est.ciudad = ciudad;
+    host.dataset.ciudad = ciudad.id;
+    cerrarPermiso();      // eligió a mano: ya respondió a la pregunta
+    for (const b of host.querySelectorAll('.ficha[data-id]'))
+      b.setAttribute('aria-pressed', String(b.dataset.id === ciudad.id));
+    ir(ciudad.ll, ciudad.zoom);
+    /* Los puntos de la ciudad anterior se van SIEMPRE, aunque ahora
+       mismo se esté mirando otro mapa: si no, al volver a emergencia
+       aparecían los hospitales de Bogotá encima de Pasto. */
+    est.osm = []; est.truncado = false;
+    pintarPuntos();
+    if (est.modo === 'emergencia') traerAyuda();
+    else pintarListado();
+  }
+
+  /* «Otra» despliega el resto del país con un buscador. No es una lista
+     escondida por vergüenza: es que treinta y ocho botones de entrada
+     son treinta y ocho decisiones, y ocho ya son bastantes. */
+  function pintarOtras(filtro = '') {
+    const lista = buscarCiudades(filtro);
+    otrasLista.innerHTML = lista.length
+      ? lista.map((c) => `<button type="button" class="ficha" data-id="${c.id}"
+           aria-pressed="${c.id === est.ciudad.id}">${esc(c.nombre)}</button>`).join('')
+      : `<p class="mapa__vacio">No está en la lista. <strong>El mapa se mueve
+          igual</strong>: arrástralo hasta donde estés y los puntos aparecen.</p>`;
+  }
+
+  /* ═══ 7 · DEJAR UN PUNTO ═══════════════════════════════════════
+     Dos caminos hasta el mismo sitio, porque no todo el mundo puede
+     apuntar con precisión a un mapa: tocar el mapa, o usar el centro
+     del encuadre (que se maneja con las flechas del teclado). */
+  function empezarMarca() {
+    est.marcando = true;
+    est.punto = null;
+    host.classList.add('mapa--marcando');
+    decir('Toca el mapa donde quieras dejar el punto, o usa el centro del encuadre.');
+    nueva.hidden = true;
+    bMarcar.setAttribute('aria-expanded', 'true');
+  }
+
+  function cancelarMarca() {
+    est.marcando = false;
+    est.punto = null;
+    host.classList.remove('mapa--marcando');
+    nueva.hidden = true;
+    nueva.innerHTML = '';
+    bMarcar.setAttribute('aria-expanded', 'false');
+    decir('');
+  }
+
+  function pintarFormulario() {
+    const modo = modoPor(est.modo);
+    const [lat, lng] = est.punto;
+    nueva.innerHTML = `
+      <p class="nueva__donde">Punto en <b>${lat.toFixed(5)}, ${lng.toFixed(5)}</b>
+        · <button type="button" class="enlace-boton" data-mover="1">cambiar de sitio</button></p>
+
+      <fieldset class="nueva__tipos">
+        <legend>${est.modo === 'luz' ? '¿Qué es este sitio?' : '¿Qué pasa aquí?'}</legend>
+        ${tiposDe(est.modo).map((t, i) => `
+          <label class="nueva__tipo">
+            <input type="radio" name="tipo" value="${t.id}" ${i === 0 ? 'checked' : ''}>
+            <span>${esc(t.nombre)}</span></label>`).join('')}
+      </fieldset>
+
+      ${est.modo === 'luz' ? `
+      <fieldset class="nueva__tipos">
+        <legend>¿Hasta cuándo?</legend>
+        ${marcas.HORAS_LUZ.map((h, i) => `
+          <label class="nueva__tipo">
+            <input type="radio" name="horas" value="${h.id}" ${i === 1 ? 'checked' : ''}>
+            <span>${esc(h.nombre)}</span></label>`).join('')}
+      </fieldset>` : ''}
+
+      <label class="nueva__nota">
+        <span>Una nota, si quieres (opcional)</span>
+        <input type="text" name="nota" maxlength="140" autocomplete="off"
+          placeholder="${est.modo === 'luz' ? 'Estoy en el segundo piso' : 'Sin luz desde la esquina'}">
+      </label>
+
+      <p class="nueva__cuidado">${est.modo === 'sombra'
+        ? '<strong>No escribas nombres, ni apodos, ni matrículas.</strong> Marca el sitio. Un nombre en una nota compartida deja de ser tuyo en cuanto la reenvían.'
+        : '<strong>Esto se queda en tu teléfono.</strong> Solo lo ve quien tú decidas, cuando le pases el enlace de compartir.'}</p>
+
+      <div class="salida__acciones">
+        <button type="submit" class="boton boton--firme" style="--pigmento:${modo.pigmento}">
+          ${est.modo === 'luz' ? 'Dejar el punto' : 'Marcar el sitio'}</button>
+        <button type="button" class="boton" data-cancelar="1">Cancelar</button>
+      </div>`;
+    nueva.hidden = false;
+    nueva.querySelector('input')?.focus();
+  }
+
+  function ponerPunto(ll) {
+    est.punto = [ll.lat ?? ll[0], ll.lng ?? ll[1]];
+    decir('');
+    pintarFormulario();
+    /* Una gota fantasma mientras se rellena: hay que ver dónde va a
+       caer antes de decidir qué es. */
+    if (mapa) {
+      const viejas = [];
+      grupo.eachLayer((c) => { if (c._fantasma) viejas.push(c); });
+      for (const c of viejas) grupo.removeLayer(c);
+      const f = L.marker(est.punto, { icon: icono(modoPor(est.modo).pigmento, 'punto--fantasma') });
+      f._fantasma = true;
+      f.addTo(grupo);
+    }
+  }
+
+  /* ═══ 8 · COMPARTIR ════════════════════════════════════════════ */
+  async function compartir() {
+    const mias = marcas.listar(est.modo).filter((m) => !m.ajena);
+    if (!mias.length) { decir('No hay puntos tuyos que compartir todavía.', true); return; }
+    const enlace = marcas.enlaceCon(mias);
+    const texto = est.modo === 'luz'
+      ? `Voy a estar aquí. El enlace abre un mapa con mis puntos y se borra solo:\n${enlace}`
+      : `Sitios que mejor evitar. El enlace abre un mapa con los puntos:\n${enlace}`;
+    try {
+      if (navigator.share) await navigator.share({ text: texto });
+      else { await navigator.clipboard.writeText(texto); decir('Enlace copiado. Pégalo donde quieras.'); }
+    } catch { /* canceló el diálogo de compartir: no hay nada que decir */ }
+  }
+
+  /* Si la página se abrió con un enlace de alguien, NO se importa solo.
+     Un enlace no puede escribir en el aparato de nadie sin que se vea
+     lo que trae y sin que se diga que sí. */
+  function ofrecerImportar() {
+    const traidas = marcas.delEnlace();
+    if (!traidas.length) return;
+    const modo = traidas[0].modo;
+    aviso.innerHTML = `Alguien te compartió <strong>${traidas.length}
+      punto${traidas.length > 1 ? 's' : ''}</strong> en el mapa de
+      ${esc(modoPor(modo).nombre.toLowerCase())}.
+      <button type="button" class="boton" data-importar="1">Ponerlos en mi mapa</button>
+      <button type="button" class="enlace-boton" data-descartar="1">No, gracias</button>`;
+    aviso.hidden = false;
+    aviso.dataset.pendiente = '1';
+    aviso._traidas = traidas;
+  }
+
+  /* ═══ 9 · ARRANQUE DEL MAPA ════════════════════════════════════ */
+  function teselasDe() {
+    const tinta = document.documentElement.dataset.tinta === 'clara' ? 'clara' : 'oscura';
+    return TESELAS[tinta];
   }
 
   async function arrancar() {
+    est.despierto = true;
     try {
       L = await cargar();
     } catch {
+      /* Sin Leaflet no hay mapa, y no pasa nada: la lista de abajo es
+         la que lleva la información, y sigue entera. */
       lienzo.remove();
-      aviso.textContent = 'El mapa necesita conexión. La lista de abajo funciona igual.';
+      aviso.textContent = 'El mapa necesita conexión. Todo lo de abajo funciona igual.';
       aviso.hidden = false;
+      if (est.modo === 'emergencia') traerAyuda();
       return;
     }
-    mapa = L.map(lienzo, { scrollWheelZoom: false, attributionControl: true })
-            .setView(ciudad.ll, ciudad.zoom);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© colaboradores de OpenStreetMap',
+
+    mapa = L.map(lienzo, {
+      scrollWheelZoom: false,      // la página no se queda atrapada al bajar
+      zoomControl: true,
+      attributionControl: true,
+      /* Colombia entera cabe entre estos límites con margen. Evita que
+         un arrastre despistado acabe en mitad del Pacífico sin saber
+         cómo volver. */
+      maxBounds: [[-6, -84], [15, -63]],
+      maxBoundsViscosity: 0.6,
+    }).setView(est.ciudad.ll, est.ciudad.zoom);
+
+    capaTeselas = L.tileLayer(teselasDe(), {
+      maxZoom: 19, minZoom: 5, detectRetina: true,
+      subdomains: 'abcd', attribution: CREDITO, crossOrigin: true,
     }).addTo(mapa);
+
+    L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(mapa);
     grupo = L.layerGroup().addTo(mapa);
-    // El scroll de la página no debe quedarse atrapado en el mapa.
+
     mapa.on('focus', () => mapa.scrollWheelZoom.enable());
     mapa.on('blur',  () => mapa.scrollWheelZoom.disable());
+    mapa.on('click', (e) => { if (est.marcando) ponerPunto(e.latlng); });
+
+    /* El globo trae un botón de borrar dentro; Leaflet lo mete en su
+       propio panel, así que el clic se escucha en el panel. */
+    mapa.on('popupopen', (e) => {
+      e.popup.getElement()?.addEventListener('click', (ev) => {
+        const id = ev.target.closest('[data-borrar]')?.dataset.borrar;
+        if (!id) return;
+        marcas.borrar(id);
+        mapa.closePopup();
+        pintarPuntos(); pintarListado();
+      });
+    });
+
+    /* La tinta cambia sola con la hora local. El mapa es papel: se
+       invierte con la página, sin recargar y sin parpadeo. */
+    new MutationObserver(() => {
+      const url = teselasDe();
+      if (capaTeselas && capaTeselas._url !== url) capaTeselas.setUrl(url);
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-tinta'] });
+
     pintarPuntos();
+    await tantearPermiso();
+    /* Mientras el panel del permiso sigue abierto no se pregunta nada a
+       Overpass: si va a decir que sí, la consulta buena es la de su
+       zona, y lanzar antes la de Bogotá es gastar veinte segundos de
+       cola ajena en una respuesta que nadie va a mirar. */
+    if (est.modo === 'emergencia' && !est.aqui && permiso.hidden) traerAyuda();
   }
 
-  selector.addEventListener('click', (e) => {
-    const b = e.target.closest('.ficha');
-    if (!b) return;
-    ciudad = CIUDADES.find((c) => c.id === b.dataset.id);
-    for (const o of selector.querySelectorAll('.ficha'))
-      o.setAttribute('aria-pressed', String(o === b));
-    if (mapa) mapa.flyTo(ciudad.ll, ciudad.zoom, { duration: 0.9 });
-    pintarListado();
+  /* ═══ 10 · ESCUCHAS ════════════════════════════════════════════ */
+
+  pestanas.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-modo]');
+    if (b) aplicarModo(b.dataset.modo);
   });
 
-  filtros.addEventListener('change', (e) => {
-    const c = e.target.dataset.capa;
+  /* Pestañas de verdad: flechas para moverse entre ellas, como manda
+     el patrón de tablist. Quien navega con teclado no tiene por qué
+     tabular cuatro veces para ver el tercer mapa. */
+  pestanas.addEventListener('keydown', (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    const bs = [...pestanas.querySelectorAll('[data-modo]')];
+    const i = bs.indexOf(document.activeElement);
+    if (i < 0) return;
+    e.preventDefault();
+    const j = e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : -1) + bs.length) % bs.length;
+    bs[j].focus();
+    aplicarModo(bs[j].dataset.modo);
+  });
+
+  host.addEventListener('click', (e) => {
+    const ficha = e.target.closest('.ficha[data-id]');
+    if (ficha) {
+      irACiudad(ciudadPor(ficha.dataset.id));
+      if (otras.contains(ficha)) cerrarOtras();
+      return;
+    }
+    const otra = e.target.closest('.ficha--otra');
+    if (otra) { otras.hidden ? abrirOtras() : cerrarOtras(); return; }
+
+    const ver = e.target.closest('[data-ver]')?.dataset.ver;
+    if (ver) {
+      const m = marcas.listar(est.modo).find((x) => x.id === ver);
+      if (m) ir(m.ll, 16);
+      return;
+    }
+    const borrar = e.target.closest('[data-borrar]')?.dataset.borrar;
+    if (borrar && !e.target.closest('.leaflet-popup')) {
+      marcas.borrar(borrar); pintarPuntos(); pintarListado(); return;
+    }
+    if (e.target.closest('[data-limpiar]')) {
+      marcas.limpiar(est.modo); pintarPuntos(); pintarListado(); return;
+    }
+    if (e.target.closest('[data-mover]')) { empezarMarca(); return; }
+    if (e.target.closest('[data-cancelar]')) { cancelarMarca(); pintarPuntos(); return; }
+    if (e.target.closest('[data-importar]')) {
+      const n = marcas.adoptar(aviso._traidas || []);
+      marcas.olvidarEnlace();
+      aviso.hidden = true; aviso.textContent = '';
+      aplicarModo((aviso._traidas || [])[0]?.modo || est.modo);
+      decir(`${n} punto${n === 1 ? '' : 's'} añadido${n === 1 ? '' : 's'} a tu mapa.`);
+      return;
+    }
+    if (e.target.closest('[data-descartar]')) {
+      marcas.olvidarEnlace();
+      aviso.hidden = true; aviso.textContent = '';
+    }
+  });
+
+  function abrirOtras() {
+    pintarOtras(buscador.value);
+    otras.hidden = false;
+    host.querySelector('.ficha--otra').setAttribute('aria-expanded', 'true');
+    buscador.focus();
+  }
+  function cerrarOtras() {
+    otras.hidden = true;
+    host.querySelector('.ficha--otra').setAttribute('aria-expanded', 'false');
+  }
+
+  buscador.addEventListener('input', () => pintarOtras(buscador.value));
+  buscador.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { cerrarOtras(); host.querySelector('.ficha--otra').focus(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const primera = otrasLista.querySelector('.ficha');
+      if (primera) { irACiudad(ciudadPor(primera.dataset.id)); cerrarOtras(); }
+    }
+  });
+
+  capasCaja.addEventListener('change', (e) => {
+    const c = e.target.dataset?.capa;
     if (!c) return;
-    e.target.checked ? activas.add(c) : activas.delete(c);
+    e.target.checked ? est.capas.add(c) : est.capas.delete(c);
     pintarPuntos(); pintarListado();
   });
 
-  host.querySelector('.mapa__aqui')?.addEventListener('click', async (e) => {
-    const b = e.currentTarget;
-    b.disabled = true;
-    try {
-      const p = await new Promise((ok, mal) =>
-        navigator.geolocation.getCurrentPosition(ok, mal, { timeout: 12000 }));
-      /* Se usa para centrar y se descarta. No se guarda ni se envía. */
-      if (mapa) mapa.flyTo([p.coords.latitude, p.coords.longitude], 14, { duration: 0.9 });
-    } catch { /* sin permiso, el mapa sigue donde estaba */ }
-    b.disabled = false;
+  bMarcar.addEventListener('click', () => {
+    if (est.marcando || !nueva.hidden) { cancelarMarca(); pintarPuntos(); return; }
+    if (!mapa) { decir('El mapa todavía no ha cargado.', true); return; }
+    empezarMarca();
+    /* Sin ratón fino y sin ganas de apuntar: el centro del encuadre
+       vale, y se coloca con las flechas. Se ofrece de entrada. */
+    setTimeout(() => { if (est.marcando && !est.punto) ponerPunto(mapa.getCenter()); }, 0);
   });
 
+  bCompartir.addEventListener('click', compartir);
+
+  nueva.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!est.punto) return;
+    const datos = new FormData(nueva);
+    marcas.guardar({
+      modo: est.modo,
+      tipo: datos.get('tipo'),
+      ll: est.punto,
+      nota: datos.get('nota'),
+      ciudad: est.ciudad.id,
+      horas: Number(datos.get('horas')) || null,
+    });
+    cancelarMarca();
+    pintarPuntos(); pintarListado();
+    decir('Punto guardado en este aparato.');
+  });
+
+  bAqui.addEventListener('click', async () => {
+    bAqui.disabled = true;
+    /* Si está poniendo una marca, la ubicación es PARA la marca y no
+       para cambiar de encuadre: quien está diciendo «voy a estar aquí»
+       no quiere que el mapa se le vaya a buscar hospitales. */
+    if (est.marcando) {
+      decir('Buscando dónde estás…');
+      const ll = await ubicar().catch(() => null);
+      if (ll) { usarUbicacion(ll, { buscar: false }); ponerPunto(ll); }
+      else decir('No se pudo saber dónde estás. Toca el mapa a mano.', true);
+    } else {
+      await pedirUbicacion();
+    }
+    bAqui.disabled = false;
+  });
+
+  permiso.querySelector('.permiso__si').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    await pedirUbicacion({ desdePermiso: true });
+    e.currentTarget.disabled = false;
+  });
+  permiso.querySelector('.permiso__no').addEventListener('click', () => {
+    cerrarPermiso();
+    traerAyuda();          // con la ciudad de entrada, para que haya algo
+    host.querySelector('.mapa__ciudades .ficha')?.focus();
+  });
+
+  /* ═══ 11 · PRIMER PINTADO ══════════════════════════════════════ */
+  marcas.purgar();
+  pintarCapas();
   pintarListado();
-  // Carga diferida: el mapa no existe hasta que se acerca a la pantalla.
+  pintarOtras('');
+  ofrecerImportar();
+  aplicarModo(est.modo);
+
+  /* El mapa no existe hasta que se acerca a la pantalla: en un móvil
+     lento, cargar Leaflet arriba del todo retrasa lo que sí importa. */
   new IntersectionObserver((ent, obs) => {
     if (!ent[0].isIntersecting) return;
     obs.disconnect();

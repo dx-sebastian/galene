@@ -808,3 +808,21 @@ por el borde inferior** para poder enterrarlo, cambiando solo esa línea.
 3. **B1** — el agua con pigmento vivo.
 4. **D0 + D1, D2, D3** — la garza deja de ser un adorno cuando está posada.
 5. El resto.
+
+---
+
+# G · Lo que pidió la sesión del 12 de agosto
+
+Vive en su propio documento, **autónomo**: no hace falta leer este
+archivo antes que aquel.
+
+👉 **[`LAMINAS-PEDIDAS.md`](LAMINAS-PEDIDAS.md)**
+
+Cinco láminas, cada una con su prompt completo y con el problema
+concreto que ya está en pantalla:
+
+- **L1 `luna.png`** — la luna sale como un pompón. *Urgente.*
+- **L2 `estrellas.png`** — las estrellas de ahora son procedurales.
+- **L3 `amago-01..04.png`** — el amago usa cuadros del aterrizaje del revés.
+- **L4 `arbol-seccion2.png`** — el ente de humo se posa en el aire.
+- **L5 `pasto-matas.png`** — el pasto sigue siendo una cinta continua.
