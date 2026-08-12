@@ -96,6 +96,32 @@ float bordeDeMancha(float m, float umbral, float grosor){
 }
 float valor(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
 
+/* EL PAPEL. En acuarela no existe la pintura blanca: lo más claro del
+   cuadro es papel sin tocar, y de ahí sale TODA la luz. Medido antes de
+   esto: cero píxeles por encima de 0.80 de luminancia a cualquier hora.
+   Ni uno. Por eso la imagen se sentía impresa en vez de pintada — la luz
+   no venía de ningún sitio, estaba repartida.
+
+   El papel se tiñe un poco con la luz de la hora, pero poco: una hoja
+   sigue siendo una hoja de noche. */
+vec3 papelBlanco(){
+  return mix(vec3(0.965, 0.958, 0.945), u_altas, 0.28);
+}
+
+/* APLANAR. Una aguada seca PLANA: se posa, se seca y deja un campo de un
+   solo tono. Lo que había era degradado continuo, que es la firma del
+   aerógrafo. Esto cuantiza el VALOR en unos pocos escalones y deja el
+   color en paz; dureza decide si el escalón es un canto seco (bajo) o
+   una transición perdida (alto). */
+vec3 aplanar(vec3 c, float pasos, float dureza){
+  float v = valor(c);
+  if (v < 0.0005) return c;
+  float e = v * pasos;
+  float f = floor(e);
+  float vq = (f + smoothstep(0.5 - dureza, 0.5 + dureza, e - f)) / pasos;
+  return c * clamp(vq / v, 0.55, 1.8);
+}
+
 /* Duotono: la lámina entrega estructura de valor; la hora entrega el
    color. Se expande el rango pintado para no perder los extremos. */
 vec3 duotono(vec3 pintura, vec3 oscuro, vec3 claro){
@@ -121,6 +147,13 @@ void main(){
   float cn = clamp((u_calma - 0.35) / 0.5, 0.0, 1.0);
   vec3 col;
 
+  /* LA RESERVA se acumula aqui y se aplica al FINAL de cada capa. La
+     primera version la aplicaba en medio del agua y la bruma del
+     horizonte se la comia entera, que es justo donde mas falta hacia.
+     Papel reservado es papel que nunca se pinto: nada de lo que venga
+     despues dentro de su capa puede taparlo. */
+  float reservaPapel = 0.0;
+
   /* EL HORIZONTE NO ES UNA REGLA. Un corte perfectamente recto entre dos
      bandas lee como collage, no como cuadro. Se le da una ondulación
      mínima —el pulso de una mano, no olas— y con eso deja de ser un
@@ -135,6 +168,26 @@ void main(){
     float gy = (uv.y - horX) / max(1.0 - horX, 0.001);
     gy = mix(0.5, gy, u_comp);              // compresión del crepúsculo
     col = mix(u_cieloBajo, u_cieloAlto, pow(gy, 0.85));
+
+    /* De degradado a AGUADA. Cuatro escalones con la transición medio
+       perdida: quedan campos planos de verdad, que es lo que hace una
+       aguada, en vez de una rampa continua de arriba abajo. */
+    col = mix(col, aplanar(col, 4.0, 0.26), 0.80);
+
+    /* Y SE ABRE EL PAPEL junto al horizonte. Está justificado: el cielo
+       es más pálido cerca del horizonte porque la luz atraviesa más aire.
+       Pero no en una franja pareja de lado a lado —eso sería otra recta—
+       sino abriéndose y cerrándose con un ruido de periodo largo, como
+       una reserva hecha a mano con el pincel seco. */
+    /* La frecuencia importa mas que el umbral. A q.x*0.85 el ruido no
+       completaba ni un periodo en todo el ancho: la boca abria entera o
+       no abria nada, y como el valor caia por debajo del umbral, no
+       abria nunca. A 3.1 caben dos o tres bocas, que es lo que se
+       pidio. */
+    float bocaCielo = smoothstep(0.45, 0.57,
+                        fbm(vec2(q.x * 3.1 + 12.0, 3.7)));
+    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.0, 0.17, gy))
+                           * bocaCielo * mix(0.30, 1.0, u_int) * 0.94);
 
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
@@ -193,6 +246,7 @@ void main(){
     float disco = 1.0 - smoothstep(0.012, 0.020, d);
     float halo  = exp(-d * 9.0) * 0.55 + exp(-d * 2.6) * 0.16;
     col = mix(col, u_reguero, clamp((disco * 0.85 + halo * 0.5) * u_int, 0.0, 0.92));
+    col = mix(col, papelBlanco(), reservaPapel);
   }
 
   /* ═══ AGUA — las tres bandas pintadas ═════════════════════════ */
@@ -226,13 +280,25 @@ void main(){
       }
     }
 
-    float amp  = (1.0 - cn) * mix(0.0026, 0.041, pp) * (1.0 - aplanado * 0.92);
+    /* Subido un tercio. La amplitud crece con la cercania, que es lo que
+       pasa de verdad: lo lejano se aplana por perspectiva. */
+    float amp  = (1.0 - cn) * mix(0.0035, 0.055, pp) * (1.0 - aplanado * 0.92);
     float frec = mix(120.0, 9.0, pp);
-    float vel  = mix(0.60, 0.26, pp);
+    float vel  = mix(0.74, 0.33, pp);
+    /* LA FASE VA CON RUIDO. Los dos terminos diagonales eran rejillas
+       rectas cruzandose, y al subir la amplitud se veian como un galon
+       de espiga repitiendose: el patron mecanico que mata cualquier
+       sensacion de agua. Metiendoles una fase de periodo largo la trama
+       deambula, nunca cierra un ciclo dentro de la pantalla, y se lee
+       como oleaje en vez de como tejido. */
+    float fase1 = fbm(vec2(q.x * 0.9 + 3.0, uv.y * 2.2)) * 7.0;
+    float fase2 = fbm(vec2(q.x * 0.6 - 9.0, uv.y * 1.4 + 21.0)) * 9.0;
     float onda =
         sin((q.x + u_deriva * mix(0.05, 0.55, pp)) * frec        + u_t * vel) * 0.52
-      + sin((q.x * 1.618 - uv.y * 24.0) * frec * 0.311 - u_t * vel * 1.37) * 0.31
-      + sin((q.x * 0.734 + uv.y * 11.0) * frec * 0.157 + u_t * vel * 0.61) * 0.17;
+      + sin((q.x * 1.618 - uv.y * 13.0) * frec * 0.311 - u_t * vel * 1.37
+            + fase1) * 0.31
+      + sin((q.x * 0.734 + uv.y *  7.0) * frec * 0.157 + u_t * vel * 0.61
+            + fase2) * 0.17;
 
     vec2 duv = vec2(onda * amp * 0.35, onda * amp);
 
@@ -242,7 +308,7 @@ void main(){
        vivo sin agitarse. El oleaje da textura; esto da vida. */
     duv += vec2(ruido(vec2(q.x * 0.7,        u_t * 0.045)) - 0.5,
                 ruido(vec2(q.x * 0.5 + 31.0, u_t * 0.037)) - 0.5)
-           * mix(0.006, 0.024, pp);
+           * mix(0.010, 0.036, pp);
 
     // Endpoints del duotono para esta hora.
     /* Rango del duotono. Estaba estrecho (0.55 → altas) y de día la
@@ -280,15 +346,66 @@ void main(){
 
     col = duotono(pintura, oscuro, claro);
 
+    /* RESERVAR EL BRILLO. Esto es lo que hace un acuarelista de verdad:
+       las facetas más claras del agua NO se pintan de blanco, se dejan
+       sin tocar desde el principio. Así que donde la lámina trae su valor
+       más alto, aquí no hay pintura: hay papel.
+
+       El umbral va alto y con canto duro a propósito. Son cuatro o cinco
+       manchas grandes, no un espolvoreado — un brillo espolvoreado es
+       purpurina, y la reservaPapel es silencio. */
+    float faceta = smoothstep(0.70, 0.86, valor(pintura));
+    reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.28, 0.80, prof))
+                           * mix(0.22, 1.0, u_int) * 0.88);
+
+    /* Y el agua también se aplana. Menos escalones que el cielo y con el
+       canto más seco, porque el agua lejana en una acuarela son dos o
+       tres tiras planas y nada más. */
+    col = mix(col, aplanar(col, 5.0, 0.20), mix(0.72, 0.30, pp));
+
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
        mitad de lo que hace que algo lea acuarela en vez de fotografía. */
-    col += (pintura - vec3(valor(pintura))) * u_croma;
+    col += (pintura - vec3(valor(pintura))) * u_croma * 1.45;
+
+    /* CRESTA FRIA, SENO CALIDO. Esto es lo que hace que un mar de
+       acuarela se vea colorido sin estar saturado, y es ademas lo que
+       pasa de verdad: la cara de la onda que mira arriba refleja el
+       cielo y sale fria; el seno deja ver el cuerpo del agua y sale
+       calido. Dos pigmentos que se separan, no un color mas fuerte.
+
+       Y como va montado sobre la onda, subir el movimiento sube el
+       color: las dos cosas son el mismo cambio. La saturacion media
+       apenas se mueve; lo que crece es la VARIEDAD de matiz dentro de
+       la misma aguada, que es de donde sale la sensacion de pintura. */
+    float cara = clamp(onda * 0.55 + 0.5, 0.0, 1.0);
+    vec3 frio   = mix(col, mix(u_cieloAlto, u_altas, 0.35), 0.185);
+    vec3 calido = mix(col, mix(u_reguero, u_bruma, 0.30),   0.155);
+    col = mix(calido, frio, cara);
+
+    /* Y una segunda separacion, mucho mas lenta y grande, que no sigue
+       la onda sino la mancha: son los pigmentos apartandose mientras la
+       aguada se seca. Periodo largo a proposito — se ve como zonas del
+       agua que tiran a verde y otras a violeta, no como rayas. */
+    float aparta = fbm(vec2(q.x * 1.35 + u_deriva * 0.03, uv.y * 3.2 + 7.0));
+    col = mix(col, mix(col, u_agua, 0.24), smoothstep(0.58, 0.86, aparta) * 0.55);
+    col = mix(col, mix(col, u_reguero, 0.20), smoothstep(0.42, 0.16, aparta) * 0.42);
 
     /* Perspectiva aérea: el agua lejana se lava hacia la bruma, pero
        SIEMPRE por debajo de ella. Con la bruma pareja el salto del
        horizonte se midió en 0.0024 y la línea desaparecía. */
-    col = mix(u_bruma * 0.82, col, smoothstep(0.0, 0.22, prof) * 0.75 + 0.25);
+    /* CANTO PERDIDO Y ENCONTRADO. El horizonte era una bruma pareja que
+       lo suavizaba de lado a lado por igual, y un borde de dureza
+       uniforme lee como aerógrafo. En acuarela el horizonte está DURO
+       donde el charco se paró y PERDIDO donde la bruma se lo comió, y
+       esa alternancia es la firma del medio.
+
+       perdido es un ruido de periodo largo: dos o tres tramos anchos
+       donde el agua y el cielo se funden, y el resto con el canto seco. */
+    float perdido = smoothstep(0.42, 0.78, fbm(vec2(q.x * 0.62 - 5.0, 8.3)));
+    float anchoBruma = mix(0.035, 0.30, perdido);
+    col = mix(u_bruma * 0.82, col,
+              smoothstep(0.0, anchoBruma, prof) * 0.75 + 0.25);
     col = mix(col, col * 0.90, smoothstep(0.60, 1.0, prof));
 
     /* EL REGUERO: angosto y continuo con calma, disperso con oleaje.
@@ -362,6 +479,10 @@ void main(){
         col = mix(col, pc, tc.a * mix(0.34, 0.78, profC) * entra);
       }
     }
+
+    /* Y aqui, con el agua ya entera: la bruma, el reguero y el pasto ya
+       pasaron, asi que lo reservado se queda reservado. */
+    col = mix(col, papelBlanco(), reservaPapel);
   }
 
   /* ═══ HORIZONTE ═══════════════════════════════════════════════
@@ -478,7 +599,12 @@ void main(){
          veía la línea recta. Solo ese lado se ablanda, y ancho, para que
          no parezca niebla sino que se pierda por arriba de cuadro. */
       tk.a *= 1.0 - smoothstep(0.74, 1.0, mc.y);
-      vec3 oscuroC = mix(vec3(0.085, 0.082, 0.090), u_agua * 0.30, 0.35);
+      /* Subido de valor. A 0.085 era una silueta casi negra pegada al
+         borde, con un salto de valor que no tenía nada que ver con el
+         resto del cuadro: parecía recortada de otra pintura. Un primer
+         término en acuarela es más oscuro que el fondo, sí, pero sigue
+         siendo la misma aguada. */
+      vec3 oscuroC = mix(vec3(0.165, 0.160, 0.178), u_agua * 0.42, 0.35);
       vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
       vec3 pk = duotono(tk.rgb, oscuroC, claroC);
       pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
@@ -516,6 +642,19 @@ void main(){
        nativo cabía menos de una repetición en pantalla, así que lo que
        se veía no era el diente del papel sino sus nubes grandes: por eso
        leía forzado. Se repite ~3 veces a lo ancho y el diente aparece. */
+  /* LA NOCHE TENÍA MÁS COLOR QUE EL DÍA, que es justo al revés de como
+     se ve una noche. Medido: 0.41 de saturación media a las 19:00 contra
+     0.17 a las 15:00, y el 98 % del cuadro por debajo de 0.10 de
+     luminancia. Mucho color en un rango de nada. Se desatura y se le
+     abre algo de recorrido para que el ojo tenga dónde moverse. */
+  {
+    float dNoche = 1.0 - smoothstep(0.02, 0.34, u_int);
+    if (dNoche > 0.001) {
+      col = mix(col, vec3(valor(col)), dNoche * 0.30);
+      col = mix(col, clamp((col - 0.018) * 1.30, 0.0, 1.0), dNoche * 0.55);
+    }
+  }
+
     float g = valor(texture(u_papelTex, gl_FragCoord.xy / (u_papelTam * 0.30)).rgb);
     col *= 1.0 + (g - u_papelMedia) * u_papel;
   } else {
