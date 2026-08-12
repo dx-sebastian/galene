@@ -95,7 +95,12 @@ function arrancar() {
 
   /* ── El cuadro ─────────────────────────────────────────────────── */
   function cuadro(ms) {
-    const dt = Math.min(0.05, ultimo ? (ms - ultimo) / 1000 : 1 / 60);
+    /* Paso acotado POR LOS DOS LADOS, como el del ave: una pestaña en
+       segundo plano no puede dar un paso gigante, y un reloj que se
+       pisa hacia atrás (pruebas, throttling) no puede dar uno negativo
+       — con dt < 0 el amortiguador se vuelve amplificador y el muelle
+       revienta. Medido: pisando el reloj se fue a 3468. */
+    const dt = Math.min(0.05, Math.max(0.001, ultimo ? (ms - ultimo) / 1000 : 1 / 60));
     ultimo = ms;
     const t = ms / 1000;
 
@@ -179,4 +184,9 @@ function arrancar() {
   });
 
   if (!quieto.matches) bucle();
+
+  /* Asidero de auditoría, solo en desarrollo — el mismo patrón que
+     __mar: el panel de verificación corre con la pestaña oculta y el
+     navegador congela los rAF, así que el reloj se pisa a mano. */
+  if (import.meta.env.DEV) window.__plx = { cuadro, apagar, estado: () => ({ curX, curY, s }) };
 }
