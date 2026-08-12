@@ -52,6 +52,36 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       <div class="hero__texto">
         <p class="titulo">Galene</p>
         <h1 class="lockup">Sumisión química: qué hacer, y hasta cuándo.</h1>
+        {/* ── QUIÉNES SON LAS GARZAS ────────────────────────────────────
+            Sin esta línea, la bandada del árbol es decoración bonita. Con
+            ella, es el argumento entero del sitio dicho sin decirlo: no
+            estás sola.
+
+            SIN NÚMERO, Y NO POR ESTILO. Decir «doce personas han estado
+            aquí» convierte la frase en un recuento de víctimas, que es lo
+            único que la regla 9 de este proyecto prohíbe expresamente. Y
+            además sería mentira: no hay servidor, así que el sitio no
+            puede saber cuántas fueron. Lo que sí es cierto es que hubo
+            otras, y eso es exactamente lo que dice.
+
+            EN DOS FRASES Y EN ESTE ORDEN. Primero las otras, después la
+            suya. Al revés —«esta eres tú, y esas son las demás»— la
+            primera mitad suena a que el sitio la señala a ella. Así, la
+            segunda frase llega cuando ya sabe que hay compañía, y lo que
+            hace es meterla dentro.
+
+            «La de abajo es la tuya» funciona porque es LITERALMENTE
+            cierto: esa garza cae en la rama cercana en los primeros
+            segundos porque es quien acaba de abrir el sitio. No se está
+            inventando nada — se está nombrando algo que ya pasa en
+            pantalla y que hasta ahora nadie podía entender.
+
+            Va en el plano más cercano, con la nota de la hora, y se va
+            con ella al bajar: es un susurro, no un cartel. */}
+        <p class="hero__garzas">
+          Las garzas del árbol son de otras personas que entraron antes.
+          <span>La de la rama de abajo es la tuya.</span>
+        </p>
       </div>
 
       {/* Aquí vivía un <img> con manglar-enterrado-a.webp, encima del
@@ -69,6 +99,55 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <Herramientas />
   </main>
 
+  {/* EL ENTE, Y POR QUÉ VA AQUÍ ABAJO Y NO ANTES DE <main>.
+
+      Tiene que pintarse POR ENCIMA de las aguadas del fondo de la
+      sección 2 —si no, queda enterrado detrás de un fondo opaco y no se
+      ve— y POR DEBAJO de cada palabra que se lee.
+
+      Esas dos capas son `z-index: 0` (.herramientas__fondo) y
+      `z-index: 1` (todo el contenido), y las tres viven en el mismo
+      contexto de apilado porque .herramientas es `relative` con
+      `z-index: auto`. Entre dos elementos con el MISMO z-index gana el
+      que va después en el documento: por eso el lienzo va con z-index 0
+      y detrás de </main>. Ahí queda cosido exactamente entre el fondo y
+      la letra.
+
+      No es una preferencia estética. Estuvo un rato por encima del
+      texto, en z-index 2, apoyado en que `multiply` conserva el
+      contraste — y al medirlo el peor píxel bajaba de 14.73:1 a
+      5.56:1. Pasa el 4.5:1 exigido, pero por un margen más fino que el
+      que este proyecto se exige a sí mismo en el hero (5.4), y sobre un
+      texto que alguien va a leer de madrugada. Puesto debajo, la
+      garantía deja de ser un número que hay que volver a medir cada vez
+      que se toque una opacidad: es la estructura. */}
+  <canvas id="humo" class="humo" aria-hidden="true"></canvas>
+
+  {/* EL SEGUNDO PLANO DEL ENTE, y la razón por la que hacen falta dos.
+
+      El lienzo de arriba vive DEBAJO de todo lo que se lee. Eso protege
+      el texto —y esa garantía no se toca— pero tiene un precio que se
+      veía sin saber nombrarlo: si una cosa está siempre detrás de todo,
+      nunca tapa nada, y lo que nunca tapa nada no se lee como que está
+      AQUÍ. Se lee como fondo. El ente era un decorado.
+
+      La profundidad no la da el paralaje: la da la OCLUSIÓN. Basta con
+      que algo pase por delante de una cosa y por detrás de otra para
+      que el ojo construya el espacio entero solo.
+
+      Así que el ente se reparte en dos planos. Las manchas grandes
+      —las que estarían más cerca del ojo— se pintan aquí, por ENCIMA de
+      las tarjetas; el resto sigue detrás. Al viajar, unas se meten bajo
+      el texto y otras le pasan por delante, y la página deja de tener
+      dos capas para tener tres.
+
+      LO QUE VA DELANTE VA MUCHO MÁS FLOJO Y MÁS DESENFOCADO, y no es
+      timidez: es perspectiva aérea al revés. Lo cercano se ve menos
+      definido porque está fuera del plano de foco, exactamente como en
+      una lente. Y de paso es lo que mantiene el contraste del texto
+      donde tiene que estar — medido, no supuesto. */}
+  <canvas id="humo-cerca" class="humo humo--cerca" aria-hidden="true"></canvas>
+
   {/* TRES ISLAS SEPARADAS, NO UNA.
 
       Estaban los tres en un mismo <script>, y eso los ataba: si el mar
@@ -81,8 +160,14 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       enhancement, y si falla el sitio sigue sirviendo. Con un <script>
       por módulo cada uno tiene su propio grafo: el que se rompa se
       rompe solo. La ayuda no depende de que la pintura compile. */}
+  {/* La entrada va PRIMERA para que la clase se ponga antes de que
+      el mar pinte su primer cuadro. Si llegara después, el mundo
+      aparecería montado y luego se desharía para volver a montarse. */}
+  <script>import '../js/entrada.js';</script>
   <script>import '../js/main.js';</script>
   <script>import '../js/paralaje.js';</script>
   <script>import '../js/herramientas.js';</script>
+  <script>import '../js/humo.js';</script>
+  <script>import '../js/decidir.js';</script>
 </body>
 </html>

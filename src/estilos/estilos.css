@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════════
    GALENE — estilos
    Tokens de luz: los escribe js/hora.js sobre :root, interpolados
    desde las cuatro horas ancla. El CSS nunca los codifica a mano.
@@ -44,10 +44,119 @@
   --bruma:       #CDDCDE;
   --acento:      #C4703F;
 
+
+/* ── EL RITMO MANDA TAMBIÉN SOBRE EL NAVEGADOR ─────────────────────
+   Al medir el resultado quedaban doce valores de margen en vez de los
+   ocho de la escalera, y cuatro de ellos coincidían EXACTAMENTE con los
+   tamaños de letra: 14.1, 16, 18.1. No era casualidad — es el margen
+   por defecto que el navegador le pone a un párrafo, que vale `1em` y
+   por tanto cambia con el cuerpo de cada bloque.
+
+   O sea que el ritmo de la página lo estaba decidiendo a medias el
+   agente de usuario, y encima de una forma que se descuadra sola cada
+   vez que un componente cambia de tamaño de letra. Un sistema que solo
+   gobierna lo que uno declaró a mano no es un sistema.
+
+   Aquí se le quita el volante: los párrafos y los campos toman su aire
+   de la escalera, y el último de un bloque no arrastra hueco al final.
+*/
+p { margin-block: 0 var(--e-4); }
+p:last-child { margin-bottom: 0; }
+input, select, textarea { margin: 0; }
+
+/* `hidden` GANA SIEMPRE. El atributo lo apaga el navegador con
+   `display: none`, pero cualquier regla nuestra con `display` —y hay
+   muchas: .boton es inline-flex, los paneles son grid— lo pisa por
+   especificidad sin que nadie se dé cuenta. El resultado eran botones
+   ocultos que se veían y un panel de aviso vacío pintado debajo del
+   mapa. Un elemento marcado como oculto no se ve, y punto. */
+[hidden] { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA ESCALA — una sola, y todo sale de ella
+   ═══════════════════════════════════════════════════════════════════
+   Antes había VEINTICINCO tamaños de letra distintos en la página, y
+   muchos separados por décimas de píxel: 12.8, 13.1, 13.6, 13.7, 14.1,
+   14.4, 14.7… Eso no es jerarquía, es ruido. Pasaba por lo de siempre:
+   cada componente eligió su `clamp()` por su cuenta y ninguno miró a
+   los demás. El ojo no lee 13.6 y 13.7 como dos niveles; los lee como
+   un error de imprenta.
+
+   Ahora hay NUEVE pasos, en razón 1.25 —la tercera mayor, que es el
+   intervalo más usado en tipografía editorial porque separa lo
+   suficiente sin dar saltos—. Cada paso es fluido entre su valor de
+   móvil y el de escritorio, así que la escala entera respira con la
+   ventana sin que ningún componente tenga que decidirlo.
+
+   La regla a partir de aquí: NINGÚN `font-size` en píxeles ni en rem
+   sueltos. Si un tamaño no está en la escala, o falta un paso o el
+   componente está mal.                                                */
+  --t-xs:      clamp(0.80rem, 0.30vw + 0.72rem, 0.88rem);
+  --t-sm:      clamp(0.92rem, 0.35vw + 0.83rem, 1.00rem);
+  --t-md:      clamp(1.00rem, 0.45vw + 0.89rem, 1.13rem);   /* el cuerpo */
+  --t-lg:      clamp(1.18rem, 0.90vw + 0.96rem, 1.45rem);
+  --t-xl:      clamp(1.40rem, 1.80vw + 0.95rem, 1.95rem);
+  --t-2xl:     clamp(1.70rem, 3.20vw + 0.90rem, 2.70rem);
+  --t-3xl:     clamp(2.10rem, 5.60vw + 0.70rem, 3.80rem);
+  --t-4xl:     clamp(2.50rem, 8.50vw + 0.30rem, 4.75rem);
+  --t-display: clamp(3.50rem, 16.0vw, 9.00rem);   /* solo el SI */
+
+/* ── EL RITMO ───────────────────────────────────────────────────────
+   Y quince valores de margen distintos, ninguno derivado de nada. Un
+   ritmo vertical no se nota cuando está —esa es la gracia— pero cuando
+   falta, la página se siente montada a mano aunque cada bloque esté
+   bien.
+
+   La escalera NO dobla, y esa fue una corrección sobre la marcha. Con
+   pasos dobles (0.25, 0.5, 1, 2) el valor más usado de toda la hoja
+   —1.25rem, el aire entre párrafos, siete apariciones— no caía en
+   ningún escalón: había que empujarlo a 1 o a 1.5 y eso desajustaba la
+   página entera para que la tabla quedara bonita. La escalera se hizo
+   para el texto, no al revés, así que `--e-4` ES ese valor y el resto
+   se ordenó a su alrededor con razón ~1.5. */
+  --e-1: 0.25rem;
+  --e-2: 0.5rem;
+  --e-3: 0.75rem;
+  --e-4: 1.25rem;                      /* el paso de parrafo */
+  --e-5: 2rem;
+  --e-6: clamp(2rem, 4vw, 3rem);
+  --e-7: clamp(3rem, 6vw, 4.5rem);
+  --e-8: clamp(4rem, 9vw, 7rem);
+
+  /* ── LA SUPERFICIE DE LA SECCIÓN DE LECTURA ────────────────────
+     El hero cambia de luz con la hora y la letra se invierte con él
+     —eso ya funcionaba—, pero el papel de las herramientas era un
+     degradado claro FIJO. A las 20:00 la tinta se volvía clara y el
+     papel seguía blanco: la sección donde está toda la ayuda quedaba
+     ilegible justo a la hora en la que más gente la abre.
+
+     Ahora el papel se invierte con la tinta. Y de noche no se va al
+     negro: se va a un morado azulado profundo. Un negro puro sobre una
+     pantalla a oscuras es un agujero, y este sitio no puede sentirse
+     tenebroso a las cuatro de la mañana — tiene que sentirse como la
+     noche del cuadro de arriba, que es otra cosa.
+
+     `--letra-rgb` va en componentes sueltas para poder pedir la misma
+     tinta con cualquier transparencia sin duplicar el color. */
+  --papel:        #F3F5F4;
+  --papel-arriba: #E7EDEC;
+  --papel-alto:   #FFFFFF;   /* tarjetas y campos, lo que sobresale */
+  /* ESTOS DOS ESTABAN ROTOS: `--papel-hondo: var(--papel-hondo)` es una
+     variable definida como sí misma, o sea inválida en tiempo de
+     cálculo, o sea que TODO lo que pedía un panel hundido o la letra
+     del botón principal se quedaba sin valor con papel claro. Se veía
+     poco porque casi todos esos fondos caen sobre papel claro de todas
+     formas; el mapa, que se apoya en los dos, lo destapó. */
+  --papel-hondo:  #EAEFEE;   /* paneles hundidos */
+  --letra-rgb:    22 34 46;
+  --letra:        rgb(var(--letra-rgb));
+  --contra:       #FFFFFF;   /* letra sobre el botón principal */
+  --aviso-fondo:  #F6E9E5;
+
   --tinta:         #1C2A30;
   --tinta-suave:   #1C2A30b3;
   --lamina:        #10202699;
-  --lamina-tinta:  #F4F7F7;
+  --lamina-tinta:  var(--contra);
 
   --horizonte: 56%;
 
@@ -60,10 +169,23 @@
 }
 
 :root[data-tinta="clara"] {
+  /* La noche de la sección de lectura. Morado, azul y muy poco negro:
+     #141428 no es negro, es añil apagado, y por eso descansa en vez de
+     agujerear la pantalla. Las tarjetas suben un paso de valor para
+     que sigan leyéndose como algo que sobresale del papel. */
+  --papel:        #1A1832;
+  --papel-arriba: #141428;
+  --papel-alto:   #242040;
+  --papel-hondo:  #1E1B38;
+  --letra-rgb:    232 238 242;
+  --letra:        rgb(var(--letra-rgb));
+  --contra:       #171428;
+  --aviso-fondo:  #3A2436;
+
   --tinta:        #E8EEF2;
   --tinta-suave:  #E8EEF2c0;
   --lamina:       #E9EFF2f0;
-  --lamina-tinta: #16222E;
+  --lamina-tinta: var(--letra);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -163,16 +285,16 @@ body {
   /* Bajado de 11vw/5.5rem: a ese tamaño el nombre competía con el
      manglar, y el protagonista es la pintura. El título presenta, no
      preside. */
-  font-size: clamp(2.5rem, 8.5vw, 4.75rem);
+  font-size: var(--t-4xl);
   line-height: 0.98;
   letter-spacing: 0.02em;
   margin: 0;
 }
 
 .lockup {
-  font-size: clamp(1rem, 3.4vw, 1.3rem);
+  font-size: var(--t-lg);
   line-height: 1.45;
-  margin: 0.9em 0 0;
+  margin: var(--e-3) 0 0;
   max-width: 24ch;
   text-wrap: balance;
 }
@@ -196,7 +318,7 @@ body {
   border-radius: 2px;
   background: var(--lamina);
   color: var(--lamina-tinta);
-  font-size: clamp(1rem, 4vw, 1.15rem);
+  font-size: var(--t-md);
   font-weight: 700;
   letter-spacing: 0.01em;
   text-decoration: none;
@@ -224,8 +346,8 @@ body {
 
 .hero__nota {
   grid-row: 4;
-  margin: 1rem 0 0;
-  font-size: 0.9rem;
+  margin: var(--e-4) 0 0;
+  font-size: var(--t-xs);
   color: var(--tinta-suave);
   min-height: 1.2em;
 }
@@ -267,6 +389,18 @@ body {
   opacity: 0;
 }
 
+/* LA BANDADA DEL MANGLAR LEJANO. Lleva el mismo velo aéreo que la garza
+   que llega —está en el mismo árbol, al mismo aire de distancia— pero
+   SIN `will-change`.
+
+   Diez aves por diez láminas serían cien capas de composición extra en
+   la GPU, y una capa promovida ocupa memoria de vídeo aunque su
+   contenido esté quieto. Estas se balancean medio grado: no hay nada
+   que promover. El sitio se abre a las cuatro de la mañana en un
+   teléfono de gama baja con el 3 % de batería, y ese es el aparato que
+   manda aquí, no el que tengo delante. */
+.vuelo--bandada { will-change: auto; }
+
 /* LA VISITANTE. Va delante de todo lo pintado porque se posa en el
    primer termino, y sin el velo aereo que lleva la garza lejana: lo
    cercano no se vela, esa es justamente la diferencia. */
@@ -295,11 +429,11 @@ body {
   padding-block: clamp(2rem, 7vw, 4.5rem);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
   padding-bottom: clamp(3rem, 8vw, 6rem);
-  color: #16222E;
+  color: var(--letra);
   /* Opaca: el instrumento no compite con el mundo. Y el borde superior
      entra desde el agua, para que el paso no sea un corte. */
-  background: linear-gradient(to bottom, #E7EDEC 0, #F3F5F4 9rem);
-  box-shadow: 0 -24px 48px -24px #16222E40;
+  background: linear-gradient(to bottom, var(--papel-arriba) 0, var(--papel) 9rem);
+  box-shadow: 0 -24px 48px -24px rgb(var(--letra-rgb) / 25%);
 }
 /* Todo lo que no sea el fondo va POR ENCIMA de él. Sin esto las aguadas
    se pintarían sobre el texto en vez de debajo. */
@@ -339,8 +473,17 @@ body {
   background-image: url("/galene/arte/1024/papel.webp");
   background-size: 520px;
   background-repeat: repeat;
+  /* MULTIPLY DE DÍA, SCREEN DE NOCHE. Un grano de papel multiplicado
+     sobre un papel oscuro no se ve —negro sobre negro— y encima roba
+     lo poco que queda. Sobre oscuro, el grano tiene que ACLARAR: es la
+     misma textura vista al revés, que es lo que pasa de verdad cuando
+     miras papel con poca luz. */
   mix-blend-mode: multiply;
   opacity: 0.5;
+}
+:root[data-tinta="clara"] .fondo__papel {
+  mix-blend-mode: screen;
+  opacity: 0.16;
 }
 
 /* LAS CAPAS. js/paralaje.js les escribe `translate`; el factor de
@@ -358,6 +501,14 @@ body {
   mix-blend-mode: multiply;
   will-change: translate;
 }
+/* De noche las aguadas aclaran en vez de oscurecer, por lo mismo que el
+   grano: pigmento oscuro sobre papel oscuro no es una aguada, es una
+   mancha que se traga la pantalla. Y con menos fuerza, porque sobre
+   fondo oscuro el ojo detecta mucho antes una diferencia de valor. */
+:root[data-tinta="clara"] .fondo__capa { mix-blend-mode: screen; }
+:root[data-tinta="clara"] .fondo__capa--alta    { opacity: 0.22; }
+:root[data-tinta="clara"] .fondo__capa--media   { opacity: 0.26; }
+:root[data-tinta="clara"] .fondo__capa--cercana { opacity: 0.20; }
 
 /* NINGUNA LÁMINA ENSEÑA SU CANTO.
    Una lámina rectangular puesta sobre el papel se lee como una foto
@@ -388,75 +539,116 @@ body {
   position: absolute;
   inset: -10%;
   background-repeat: no-repeat;
+  /* ── DOS AGUADAS, NO TRES, Y SIN ANILLO ──────────────────────────
+     Aquí había tres charcos por capa con el canto más cargado que el
+     centro. La idea era correcta —al secarse, el agua arrastra el
+     pigmento a la orilla— pero a ESTE tamaño el resultado no fue una
+     aguada: fue una POMPA. Nueve círculos con el borde marcado y el
+     medio claro es, exactamente, el dibujo de una burbuja, y había
+     nueve flotando por detrás de un texto que hay que poder leer.
+
+     Dos cosas cambian y las dos van en la misma dirección:
+
+     1 · MENOS Y MÁS GRANDES. Dos por capa, y las dos DESBORDAN su
+         propia caja (128 % y 96 %). Un charco cuyo borde no cabe en la
+         pantalla no tiene borde: deja de ser una forma y pasa a ser
+         atmósfera. Lo que convierte una mancha en objeto no es su
+         color, es que se le vea el canto.
+
+     2 · SIN EL ANILLO. El pigmento sigue subiendo hacia fuera, pero
+         muy despacio y muriendo mucho antes del final, así que ya no
+         hay una línea que seguir con el ojo. Fluido, no dibujado.
+
+     El resultado es agua quieta vista de lejos, que es lo que esta
+     sección tiene que ser: algo que se siente y no se mira. */
   background-image:
-    radial-gradient(closest-side circle at 50% 50%,
-      var(--charco-a) 0%, var(--charco-b) 56%,
-      var(--charco-c) 78%, var(--charco-a) 90%, transparent 100%),
-    radial-gradient(closest-side circle at 50% 50%,
-      var(--charco-a) 0%, var(--charco-b) 60%,
-      var(--charco-c) 82%, transparent 100%),
-    radial-gradient(closest-side circle at 50% 50%,
-      var(--charco-b) 0%, var(--charco-c) 72%, transparent 100%);
-  background-size: 58% 46%, 37% 52%, 26% 30%;
-  background-position: 18% 34%, 66% 58%, 42% 78%;
+    radial-gradient(closest-side ellipse at 50% 50%,
+      var(--charco-a) 0%, var(--charco-b) 38%,
+      var(--charco-c) 68%, transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      var(--charco-a) 0%, var(--charco-b) 46%,
+      var(--charco-c) 74%, transparent 100%);
+  background-size: 128% 104%, 96% 82%;
+  background-position: 12% 26%, 78% 72%;
 }
 
-/* Las nubes, arriba y casi quietas: es lo más lejano que hay. También
-   sin lámina, y por lo mismo: nubes.webp son tres jirones HORIZONTALES
-   y cualquiera de ellos vuelve a leerse como cinta. Un cielo aquí es
-   una veladura, no un dibujo. */
-.fondo__capa--nubes {
+/* ═══════════════════════════════════════════════════════════════════
+   LAS TRES AGUADAS — azul, azul y rojo. Los pigmentos del ente.
+
+   Antes eran el paisaje del hero repetido en pequeño: nubes, mar y
+   manglar, todo en un verde azulado. Fallaba por dos motivos y los dos
+   se veían a simple vista.
+
+   1 · SIN SUJETO, UNA MANCHA GRIS ES SUCIEDAD. Los charcos no dibujaban
+       nada reconocible, así que no se leían como agua ni como cielo: se
+       leían como manchas grises en mitad de un texto. Una aguada
+       abstracta necesita COLOR para ser una decisión; sin él parece que
+       la pantalla está sucia.
+   2 · Y LA CERCANA TRAÍA LÁMINA: manglar-lejos.webp otra vez, o sea el
+       mismo árbol que ya protagoniza el hero, aquí abajo y a media
+       tinta, asomando por la esquina como un fantasma. El mismo dibujo
+       dos veces en la misma página no es un eco, es una repetición.
+
+   Ahora no representan nada y no lo disimulan: son aguadas, en el azul
+   y el rojo del ente, sobre el papel. La sección entera queda en esos
+   dos pigmentos —el humo, el realce de la frase, el pájaro del reloj y
+   el fondo— y por eso se lee como una sola pintura en vez de como un
+   texto con adornos encima.
+
+   EL REPARTO ES EL DE UNA ACUARELA: mucho azul, poco rojo, y el rojo
+   siempre abajo y al flanco. El rojo es el color del daño en este sitio
+   y está reservado; aquí entra como el rescoldo que asoma por debajo de
+   una veladura fría, no como la mitad del cuadro. */
+
+/* La más alta y la más quieta: es lo más lejano que hay. Azul lavado,
+   apenas una veladura. */
+.fondo__capa--alta {
   top: 0vh; height: 78vh;
-  --charco-a: #2E8A990e;
-  --charco-b: #2E8A9916;
-  --charco-c: #4A7C9430;
-  opacity: 0.44;
+  --charco-a: #5B93AC12;
+  --charco-b: #3E6E8E1e;
+  --charco-c: #2C4E7432;
+  opacity: 0.42;
 }
 
-/* EL AGUA, SIN LÁMINA.
-   Aquí iba mar-lejano.webp y hubo que sacarlo. La máscara elíptica le
-   quitó los cantos rectos, sí, pero el problema no eran los cantos:
-   esa lámina ES una banda horizontal —así está pintada, un horizonte
-   de lado a lado— y difuminarle los bordes solo daba una banda con
-   los bordes difuminados. La cinta seguía ahí porque la cinta estaba
-   dentro del dibujo, no en cómo lo recortaba.
-
-   Se queda solo con sus charcos: manchas redondas, sin una sola
-   horizontal, que es lo único que aquí puede leerse como agua sin
-   leerse como recorte. */
-.fondo__capa--mar {
+/* La media, ancha y desbordada por los dos lados para que no se le vea
+   ningún canto. Es el azul con más cuerpo del conjunto. */
+.fondo__capa--media {
   top: 26vh; height: 84vh;
   width: 128%; margin-left: -64%;
-  --charco-a: #2E8A9914;
-  --charco-b: #2E8A9922;
-  --charco-c: #1F6E7C3e;
-  opacity: 0.5;
+  --charco-a: #3E6E8E16;
+  --charco-b: #2C4E7426;
+  --charco-c: #2C4E743c;
+  opacity: 0.46;
 }
 
-/* El manglar: lo más cercano, y por eso lo que más se mueve. Al flanco
-   derecho, fuera del ancho de lectura para no pasar nunca por debajo
-   de un párrafo. */
-.fondo__capa--manglar {
-  top: 72vh; height: 84vh;
+/* La cercana, y la única roja. Al flanco derecho y fuera del ancho de
+   lectura, así que no pasa nunca por debajo de un párrafo — que es la
+   condición para que un rojo pueda estar aquí sin restarle contraste a
+   una sola palabra. Sin lámina: se fue el árbol. */
+.fondo__capa--cercana {
+  /* Sube a 44vh —estaba en 72— porque a esa altura el rojo entraba en
+     pantalla cuando ya no quedaba nada que leer: aparecía y se iba sin
+     que nadie lo viera. Aquí acompaña al bloque de la definición por
+     su flanco, que es donde el reparto de una acuarela pone el
+     rescoldo cálido: abajo y a un lado, nunca en el centro. */
+  top: 44vh; height: 96vh;
   left: auto; right: -8%;
   width: min(620px, 64%); margin-left: 0;
-  --charco-a: #4A7A5410;
-  --charco-b: #3F6E4a1c;
-  --charco-c: #2F5B3c30;
-  background-image: url("/galene/arte/1024/manglar-lejos.webp");
-  background-position: bottom center;
-  opacity: 0.22;
+  --charco-a: #CC5F4A14;
+  --charco-b: #C4553F22;
+  --charco-c: #B8556A38;
+  opacity: 0.36;
 }
 
 @media (max-width: 900px) {
-  /* En móvil el texto ocupa todo el ancho: el manglar se va casi del
+  /* En móvil el texto ocupa todo el ancho: la roja se retira casi del
      todo para no quedar nunca debajo de una línea. */
-  .fondo__capa--manglar { opacity: 0.13; right: -24%; }
+  .fondo__capa--cercana { opacity: 0.26; right: -30%; }
 }
 .herramientas__titulo {
   font-family: var(--tipo-titulo);
   font-weight: 400;
-  font-size: clamp(2rem, 8vw, 3.25rem);
+  font-size: var(--t-3xl);
   margin: 0;
 }
 
@@ -479,43 +671,80 @@ body {
    lector de pantalla siguen siendo definición → lema → matiz →
    pregunta. Solo cambia dónde se pinta cada cosa.
    ═══════════════════════════════════════════════════════════════════ */
-/* 1240, no 1100. A 1100 la columna de la derecha salía de 437 px y el
-   lema no cabía en una línea; partirse ahí no rompe nada —el realce ya
-   sabe partirse— pero la cita quedaba en tres renglones cortos y perdía
-   la contundencia que justifica sacarla al margen. Por debajo de este
-   ancho, una sola columna: es mejor maqueta que dos columnas apretadas. */
-@media (min-width: 1240px) {
-  .cabecera {
-    display: grid;
-    /* La derecha algo MÁS ancha que la izquierda: ahí va el lema, que
-       es texto grande, y el cuerpo de la izquierda ya tiene su tope de
-       medida en 56 caracteres y no aprovecharía el sitio de más. */
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-    column-gap: clamp(2.5rem, 4vw, 4.5rem);
-    align-items: start;
-  }
-  .cabecera > .herramientas__titulo { grid-column: 1 / -1; }
-  /* Los dos párrafos de cuerpo, apilados en la columna izquierda. */
-  .cabecera > .herramientas__intro { grid-column: 1; }
-  /* El lema ocupa la derecha y se alinea con el primer párrafo, no con
-     el título: es un comentario al margen del texto, no otro titular. */
-  .cabecera > .lema {
-    grid-column: 2;
-    grid-row: 2 / span 2;
-    margin-top: 0;
-    padding-left: clamp(1rem, 2vw, 2rem);
-    border-left: 2px solid #16222E1a;
-    max-width: none;
-  }
-  /* La pregunta cruza las dos y hace de puente hacia las puertas. */
-  .cabecera > .herramientas__pregunta { grid-column: 1 / -1; }
+/* (Aquí vivía la rejilla a dos columnas, con su media query de 1240 px
+   para que el lema al margen tuviera sitio. Se fue entera: ahora hay
+   una sola columna a todos los anchos, así que no hay punto de ruptura
+   que ajustar ni una maqueta distinta que probar en cada tamaño.)   */
+
+  /* UNA COLUMNA, CENTRADA. Estuvo a dos columnas y el problema no era
+     que estuviera mal maquetada: era que había DOS SITIOS por los que
+     empezar a leer. En una página que alguien abre asustada, elegir por
+     dónde entrar ya es trabajo — y el lema, que es la frase que sostiene
+     la sección entera, quedaba de comentario al margen en vez de ser lo
+     que manda.
+
+     En columna única el orden de lectura es el único que hay, y la
+     jerarquía la ponen el cuerpo y el aire: título, definición, LEMA
+     grande y centrado, matiz, pregunta. Se lee de arriba abajo y no hay
+     nada que decidir.
+
+     Y es la misma maquetación en móvil que en escritorio, que es la
+     otra mitad del encargo: lo que cambia entre las dos es el ancho de
+     la medida, no la estructura. Nada se recoloca al girar el teléfono. */
+.cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+/* EL BLOQUE SE CENTRA, EL PÁRRAFO NO. Centrar renglones de cuerpo deja
+   los dos cantos dentados y obliga al ojo a buscar dónde empieza cada
+   línea: en un texto de cuatro renglones eso se paga en velocidad de
+   lectura, y aquí la lectura es la ayuda. Así que se centra la CAJA y
+   el texto sigue alineado a la izquierda dentro de ella.
+   Lo corto —título, lema, pregunta— sí va centrado: ahí no hay
+   renglones que buscar. */
+.cabecera > .herramientas__intro {
+  text-align: left;
+  margin-inline: auto;
+}
+.cabecera > .lema {
+  margin-inline: auto;
+  max-width: 28ch;
+}
+.cabecera > .herramientas__pregunta {
+  margin-inline: auto;
+}
+
+/* LA FRASE QUE AHORA REALZA EL ENTE.
+   Lleva el mismo tratamiento tipográfico que la aguada de al lado
+   —versalitas, peso y prosa espaciada— y NINGÚN color de fondo: el
+   color lo pone js/humo.js por detrás, con pigmento que respira.
+
+   Y esto es lo que se ve si el ente no llega: una frase en negrita,
+   espaciada, en el cuerpo del lema. Sigue siendo lo más marcado de la
+   sección sin depender de que un script cargue, que es la regla de esta
+   página. El realce nunca fue el color; el color era el añadido.
+
+   El aire de los lados no es estético: es el sitio por donde el
+   pigmento se desvanece antes del canto. Sin él, la mancha del ente
+   terminaría justo en la letra y parecería un rectángulo. */
+.realce-vivo {
+  padding: 0.10em 0.42em 0.14em;
+  margin: 0 -0.10em;
+  color: var(--letra);
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 /* `pretty` en vez de nada: el navegador evita dejar una palabra huérfana
    en la última línea y reparte mejor las últimas dos. Es la diferencia
    entre un párrafo que se lee y uno que se tropieza al final. */
 .herramientas__intro {
   max-width: 56ch;
-  font-size: clamp(1.05rem, 1.35vw, 1.18rem);
+  font-size: var(--t-md);
   line-height: 1.6;
   text-wrap: pretty;
 }
@@ -569,6 +798,15 @@ body {
      aguada se comía la coma que va delante. */
   padding: 0.26em 0.6em 0.32em;
   margin: 0 -0.12em;
+  /* ESTE COLOR NO SIGUE A LA HORA, y es la única excepción de la
+     sección. Todo lo demás invierte con el papel; esta palabra no
+     puede, porque su fondo NO es el papel: es una aguada rosa clara
+     que se pinta igual a las tres de la tarde que a las cuatro de la
+     mañana. Al tokenizarlo todo de golpe se le puso tinta clara encima
+     de esa aguada clara y la palabra se volvió ilegible de noche.
+
+     Lo que manda el color de un texto es el fondo que tiene DEBAJO, no
+     la hora del sitio. */
   color: #16222E;
   font-weight: 700;
   letter-spacing: 0.055em;
@@ -678,7 +916,7 @@ body {
    afirmación. No es un párrafo corto: es lo que queda si alguien lee
    una sola cosa de toda la sección. */
 .lema {
-  margin: 2.25rem 0 0;
+  margin: var(--e-5) 0 0;
   /* 46ch, no 30: a 30 la frase partía justo por el medio del realce y
      el trazo quedaba serrado en dos. El ancho lo manda la frase. */
   max-width: 46ch;
@@ -688,7 +926,7 @@ body {
      y la jerarquía SE INVERTÍA: el lema quedaba en 21px y la pregunta
      en 22px. Medido en un móvil de 390. Una escala tipográfica tiene
      que ser monótona en todos los anchos, no solo en el del diseño. */
-  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  font-size: var(--t-2xl);
   line-height: 1.4;
   text-wrap: balance;
 }
@@ -698,9 +936,9 @@ body {
    partiría en dos una sección que es una sola idea (qué es → qué hago).
    El aire de arriba es lo que hace la pausa. */
 .herramientas__pregunta {
-  margin-top: 2.75rem;
+  margin-top: var(--e-6);
   padding-top: 1.75rem;
-  border-top: 1px solid #16222E1f;
+  border-top: 1px solid rgb(var(--letra-rgb) / 12%);
   max-width: 56ch;
 }
 /* Nivel 3 de la sección: por debajo del título (nivel 1) y del lema
@@ -708,25 +946,25 @@ body {
    lee como parte de la misma voz— y se separa por cuerpo, no por
    color: el color aquí ya significa otra cosa. */
 .pregunta__titulo {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--e-2);
   font-family: var(--tipo-titulo);
   /* Un nivel se reconoce por el salto, no por el tamaño absoluto: tiene
      que quedar por debajo del lema y por encima del cuerpo EN TODOS los
      anchos, así que su suelo va por debajo del suelo del lema. */
-  font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+  font-size: var(--t-xl);
   line-height: 1.25;
-  color: #16222E;
+  color: var(--letra);
 }
 .herramientas__pregunta .herramientas__intro { margin-top: 0; }
 
 /* Aviso de borrador. Grande y feo a propósito: mientras esté, el sitio
    no está listo para que lo use alguien de verdad. */
 .aviso {
-  margin: 0 0 2rem; padding: 0.9rem 1.1rem;
-  border-left: 4px solid #A33B2A; background: #F6E9E5;
-  color: #5B1F14; font-size: 0.95rem; line-height: 1.45; max-width: 46rem;
+  margin: 0 0 var(--e-5); padding: 0.9rem 1.1rem;
+  border-left: 4px solid #A33B2A; background: var(--aviso-fondo);
+  color: #5B1F14; font-size: var(--t-sm); line-height: 1.45; max-width: 46rem;
 }
-.sinfuente { color: #A33B2A; font-style: normal; font-size: 0.9em; }
+.sinfuente { color: #A33B2A; font-style: normal; font-size: var(--t-xs); }
 
 /* ── Las cuatro puertas ─────────────────────────────────────────────
    La primera es la más grande y va primera en orden de lectura: quien
@@ -739,7 +977,7 @@ body {
    debajo, que es el orden de lectura que ya tenían. */
 .puertas {
   display: grid; gap: 0.7rem;
-  margin: 2rem 0 3.5rem;
+  margin: var(--e-5) 0 var(--e-7);
   /* 72rem = la misma columna de contenido que centra la sección. A
      62rem las puertas quedaban 160 px más cortas que la cabecera de
      arriba y el bloque se veía descuadrado por la derecha en un
@@ -752,37 +990,37 @@ body {
 }
 .puerta {
   display: grid; gap: 0.25rem; padding: 1.15rem 1.25rem;
-  border: 1px solid #16222E26; border-radius: 2px;
-  background: #fff; color: #16222E; text-decoration: none;
+  border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
+  background: var(--papel-alto); color: var(--letra); text-decoration: none;
   transition: border-color 140ms linear, transform 140ms ease-out;
 }
-.puerta:hover, .puerta:focus-visible { border-color: #16222E; }
-.puerta:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
-.puerta__titulo { font-size: 1.15rem; font-weight: 500; }
-.puerta__pie { font-size: 0.95rem; color: #16222Eb0; line-height: 1.4; }
-.puerta--primera { background: #16222E; color: #F4F7F7; border-color: #16222E; }
-.puerta--primera .puerta__titulo { font-size: clamp(1.25rem, 5vw, 1.6rem); }
-.puerta--primera .puerta__pie { color: #F4F7F7b8; }
+.puerta:hover, .puerta:focus-visible { border-color: var(--letra); }
+.puerta:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.puerta__titulo { font-size: var(--t-lg); font-weight: 500; }
+.puerta__pie { font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 69%); line-height: 1.4; }
+.puerta--primera { background: var(--letra); color: var(--contra); border-color: var(--letra); }
+.puerta--primera .puerta__titulo { font-size: var(--t-lg); }
+.puerta--primera .puerta__pie { color: var(--contra)b8; }
 
 /* ── Bloques ────────────────────────────────────────────────────── */
-.bloque { max-width: 54rem; margin: 0 0 3.5rem; scroll-margin-top: 1.5rem; }
+.bloque { max-width: 54rem; margin: 0 0 var(--e-7); scroll-margin-top: var(--e-5); }
 .bloque h3 {
   font-family: var(--tipo-titulo); font-weight: 400;
-  font-size: clamp(1.5rem, 6vw, 2.1rem); margin: 0 0 0.6rem;
+  font-size: var(--t-2xl); margin: 0 0 var(--e-2);
 }
 .bloque p { line-height: 1.6; max-width: 58ch; text-wrap: pretty; }
-.bloque__intro { color: #16222Ec0; font-size: 0.98rem; }
+.bloque__intro { color: rgb(var(--letra-rgb) / 75%); font-size: var(--t-sm); }
 
 .boton {
   display: inline-flex; align-items: center; justify-content: center;
-  min-height: 3.25rem; padding: 0 1.4rem; border: 1px solid #16222E;
-  border-radius: 2px; background: #fff; color: #16222E;
-  font: inherit; font-size: 1rem; text-decoration: none; cursor: pointer;
+  min-height: 3.25rem; padding: 0 1.4rem; border: 1px solid var(--letra);
+  border-radius: 2px; background: var(--papel-alto); color: var(--letra);
+  font: inherit; font-size: var(--t-md); text-decoration: none; cursor: pointer;
 }
-.boton:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+.boton:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
 .boton--grande {
   min-height: 4rem; width: 100%; max-width: 26rem;
-  background: #16222E; color: #F4F7F7; font-size: 1.15rem;
+  background: var(--letra); color: var(--contra); font-size: var(--t-lg);
 }
 .boton[disabled] { opacity: 0.6; cursor: progress; }
 
@@ -823,7 +1061,7 @@ body {
   background: transparent;
   color: #F7FAF9;
   font: inherit;
-  font-size: 1rem;
+  font-size: var(--t-md);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -889,11 +1127,11 @@ body {
 /* Al pulsar, el pigmento se asienta: se encoge y se satura. */
 .acuarela:active::after { opacity: 1; transform: scale(1.01, 1.02) skew(-9deg, 1.6deg); }
 
-.acuarela:focus-visible { outline: 3px solid #16222E; outline-offset: 4px; }
+.acuarela:focus-visible { outline: 3px solid var(--letra); outline-offset: 4px; }
 .acuarela[disabled] { opacity: 0.6; cursor: progress; }
 
 /* Variante ancha, para la acción principal de un bloque. */
-.acuarela--grande { min-height: 4rem; width: 100%; max-width: 26rem; font-size: 1.1rem; }
+.acuarela--grande { min-height: 4rem; width: 100%; max-width: 26rem; font-size: var(--t-lg); }
 
 /* Sobre fondo oscuro el multiply no tiene papel que oscurecer, así que
    la aguada desaparece. Ahí se pinta en `screen`: aclara en vez de
@@ -910,129 +1148,526 @@ body {
   .acuarela:hover::after  { transform: scale(1.03, 1.06) translate(0, 1px) skew(-9deg, 1.6deg); }
 }
 
-.salida { margin-top: 1.25rem; }
+.salida { margin-top: var(--e-4); }
 .salida textarea {
   width: 100%; max-width: 34rem; padding: 0.8rem;
-  border: 1px solid #16222E33; border-radius: 2px;
-  font: inherit; font-size: 0.98rem; line-height: 1.45; resize: vertical;
+  border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
+  font: inherit; font-size: var(--t-sm); line-height: 1.45; resize: vertical;
 }
-.salida__acciones { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem; }
+.salida__acciones { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: var(--e-3); }
 
 /* ── LA ESFERA ──────────────────────────────────────────────────────
    Un reloj de 72 horas, no una lista de opciones. Se arrastra la aguja
    y los anillos se apagan a su paso. Interfaz exacta: tipografía plana,
    líneas limpias, cero temblor — la imperfección vive en el mar. */
-.esfera { margin: 1.75rem 0 0; max-width: 26rem; }
+.esfera { margin: var(--e-5) 0 0; max-width: 26rem; }
 .esfera svg {
   width: 100%; height: auto; display: block;
   touch-action: none; cursor: grab; overflow: visible;
 }
 .esfera svg:active { cursor: grabbing; }
-.esfera svg:focus-visible { outline: 3px solid #16222E; outline-offset: 6px; border-radius: 4px; }
+.esfera svg:focus-visible { outline: 3px solid var(--letra); outline-offset: 6px; border-radius: 4px; }
 
-.esfera__marca { stroke: #16222E40; stroke-width: 1; }
-.esfera__marca--mayor { stroke: #16222E; stroke-width: 1.6; }
+.esfera__marca { stroke: rgb(var(--letra-rgb) / 25%); stroke-width: 1; }
+.esfera__marca--mayor { stroke: var(--letra); stroke-width: 1.6; }
 .esfera__hora {
-  fill: #16222E9c; font-size: 12px; text-anchor: middle;
+  fill: rgb(var(--letra-rgb) / 61%); font-size: 12px; text-anchor: middle;
   dominant-baseline: middle; font-variant-numeric: tabular-nums;
 }
 
 .pista { stroke-width: 7; stroke-linecap: round; transition: stroke 180ms linear, opacity 180ms linear; }
 .pista--abierta { stroke: #2F6B4F; opacity: 1; }
 .pista--quizas  { stroke: #4A6274; opacity: 0.75; }
-.pista--cerrada { stroke: #16222E; opacity: 0.13; }
+.pista--cerrada { stroke: var(--letra); opacity: 0.13; }
 .pista--eterna  { stroke-dasharray: none; }
 
 .aguja { stroke: #A33B2A; stroke-width: 2.5; stroke-linecap: round; }
 .aguja--oculta { opacity: 0.18; }
 .aguja__eje { fill: #A33B2A; }
 .esfera__lectura {
-  fill: #16222E; font-size: 19px; text-anchor: middle;
+  fill: var(--letra); font-size: 19px; text-anchor: middle;
   font-variant-numeric: tabular-nums;
 }
 .esfera__nose {
-  margin-top: 1rem; min-height: 3rem; padding: 0 1.2rem;
-  border: 1px solid #16222E33; border-radius: 2px;
-  background: #EDF1F0; color: #16222E; font: inherit; font-size: 1rem; cursor: pointer;
+  margin-top: var(--e-4); min-height: 3rem; padding: 0 1.2rem;
+  border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
+  background: var(--papel-hondo); color: var(--letra); font: inherit; font-size: var(--t-md); cursor: pointer;
 }
-.esfera__nose[aria-pressed="true"] { border-color: #16222E; box-shadow: 0 0 0 1px #16222E; }
-.esfera__nose:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+.esfera__nose[aria-pressed="true"] { border-color: var(--letra); box-shadow: 0 0 0 1px var(--letra); }
+.esfera__nose:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
 
-.resultado { margin-top: 2rem; }
-.reloj__nota { padding: 0.8rem 1rem; background: #EDF1F0; border-radius: 2px; }
-.reloj__pie { margin-top: 1.5rem; color: #16222Ec0; font-size: 0.98rem; }
-.ventanas { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.resultado { margin-top: var(--e-5); }
+.reloj__nota { padding: 0.8rem 1rem; background: var(--papel-hondo); border-radius: 2px; }
+.reloj__pie { margin-top: var(--e-5); color: rgb(var(--letra-rgb) / 75%); font-size: var(--t-sm); }
+.ventanas { list-style: none; margin: var(--e-4) 0 0; padding: 0; display: grid; gap: 0.6rem; }
 .ventana {
   padding: 1rem 1.15rem; border-radius: 2px;
-  border: 1px solid #16222E1f; border-left-width: 4px; background: #fff;
+  border: 1px solid rgb(var(--letra-rgb) / 12%); border-left-width: 4px; background: var(--papel-alto);
 }
 .ventana--abierta { border-left-color: #2F6B4F; }
 .ventana--quizas  { border-left-color: #4A6274; }
-.ventana--cerrada { border-left-color: #16222E33; background: #F0F2F1; color: #16222E9c; }
-.ventana__titulo { font-weight: 500; margin: 0 0 0.3rem; font-size: 1.05rem; }
+.ventana--cerrada { border-left-color: rgb(var(--letra-rgb) / 20%); background: var(--papel-hondo); color: rgb(var(--letra-rgb) / 61%); }
+.ventana__titulo { font-weight: 500; margin: 0 0 var(--e-1); font-size: var(--t-md); }
 .ventana__texto { margin: 0; line-height: 1.5; }
-.ventana__detalle { margin: 0.4rem 0 0; font-size: 0.95rem; color: #16222Eb0; }
-.ventana__plazo { margin: 0.4rem 0 0; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
-.ventana__sinfuente { margin: 0.5rem 0 0; font-size: 0.85rem; color: #A33B2A; }
+.ventana__detalle { margin: var(--e-2) 0 0; font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 69%); }
+.ventana__plazo { margin: var(--e-2) 0 0; font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+.ventana__sinfuente { margin: var(--e-2) 0 0; font-size: var(--t-xs); color: #A33B2A; }
 
 /* ── Guardar lo que recuerdo ────────────────────────────────────── */
-#recuerdo { display: grid; gap: 0.9rem; margin-top: 1.25rem; max-width: 34rem; }
+#recuerdo { display: grid; gap: 0.9rem; margin-top: var(--e-4); max-width: 34rem; }
 #recuerdo label { display: grid; gap: 0.3rem; }
-#recuerdo span { font-size: 0.95rem; color: #16222Ec0; }
+#recuerdo span { font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 75%); }
 #recuerdo input, #recuerdo textarea {
-  padding: 0.7rem 0.8rem; border: 1px solid #16222E33; border-radius: 2px;
-  font: inherit; font-size: 1rem; resize: vertical;
+  padding: 0.7rem 0.8rem; border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
+  font: inherit; font-size: var(--t-md); resize: vertical;
 }
 
-/* ── CARTOGRAFÍA ────────────────────────────────────────────────── */
-.bloque--mapa { max-width: 56rem; }
-.mapa { margin-top: 1.25rem; }
-.mapa__ciudades { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+/* ═══════════════════════════════════════════════════════════════════
+   CARTOGRAFÍA — tres mapas sobre el mismo dibujo
+   ═══════════════════════════════════════════════════════════════════
+   LA CARTA ESTÁ DIBUJADA, NO CAPTURADA. Las teselas llegan sin un solo
+   topónimo (ver js/mapa.js) y aquí se las trata como lo que tienen que
+   parecer: una lámina más de esta sección. Tres cosas hacen ese trabajo,
+   y ninguna toca los puntos:
+
+     1. `filter` sobre el panel de teselas — cada mapa tiene su viraje.
+        Emergencia se queda casi neutro y con más contraste, porque ahí
+        lo que importa es distinguir una manzana de otra a las cuatro de
+        la mañana. Luz vira a crema. Sombra vira a gris violeta.
+     2. El grano del papel encima, en multiply de día y screen de noche,
+        exactamente igual que `.fondo__papel`.
+     3. Una viñeta que apaga los bordes contra el papel de la página, para
+        que el mapa no sea un rectángulo pegado sino una mancha que
+        termina.
+
+   Y LO QUE NO SE TIÑE: los puntos, las fichas y el texto. La ley de la
+   casa —la imperfección vive en el mundo, el instrumento es exacto—
+   también manda aquí. El papel puede estar virado; el punto que dice
+   dónde hay urgencias, no.
+
+   EL TRUCO DEL z-index, que hay que entender antes de tocarlo: Leaflet
+   apila sus paneles dentro del lienzo con z-index propios (teselas 200,
+   trazos 400, marcadores 600, globos 700). `.mapa__lienzo` va en
+   `position: relative` SIN z-index, así que no abre contexto de apilado
+   y esos paneles conviven con los hermanos del marco. Por eso el grano
+   (450) cae encima de las teselas y por debajo de los marcadores. Si
+   alguien le pone un z-index al lienzo, el grano se come los puntos.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.bloque--mapa { max-width: 60rem; }
+.mapa { margin-top: var(--e-4); }
+
+/* ── LAS TRES PESTAÑAS ───────────────────────────────────────────
+   Nombre grande y lema debajo: «Sombra» a secas no significa nada, y
+   nadie debería tener que pulsar para averiguar qué hay dentro. La
+   activa se levanta del papel y se subraya con su pigmento — el mismo
+   color que van a tener sus puntos, así que la pestaña es también la
+   primera línea de la leyenda. */
+.mapa__modos {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem;
+  margin-bottom: var(--e-3);
+}
+.modo {
+  display: grid; gap: 0.15rem; align-content: start;
+  min-height: 3.6rem; padding: 0.55rem 0.7rem; text-align: left;
+  border: 1px solid rgb(var(--letra-rgb) / 14%);
+  border-bottom: 3px solid rgb(var(--letra-rgb) / 14%);
+  border-radius: 2px 2px 0 0;
+  background: var(--papel-hondo); color: rgb(var(--letra-rgb) / 72%);
+  font: inherit; cursor: pointer;
+}
+.modo__nombre { font-size: var(--t-md); font-weight: 700; }
+.modo__lema   { font-size: var(--t-xs); line-height: 1.3; }
+.modo[aria-selected="true"] {
+  background: var(--papel-alto); color: var(--letra);
+  border-color: rgb(var(--letra-rgb) / 22%);
+  border-bottom-color: var(--pigmento-modo);
+}
+.modo:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* El pigmento de cada mapa, en un solo sitio. Lo leen la pestaña, los
+   puntos, las fichas y el botón de guardar. */
+.mapa[data-modo="emergencia"] { --pigmento-modo: #A33B2A; }
+.mapa[data-modo="luz"]        { --pigmento-modo: #2F6B4F; }
+.mapa[data-modo="sombra"]     { --pigmento-modo: #4A3A63; }
+.modo--emergencia { --pigmento-modo: #A33B2A; }
+.modo--luz        { --pigmento-modo: #2F6B4F; }
+.modo--sombra     { --pigmento-modo: #4A3A63; }
+
+.mapa__pie {
+  margin: 0 0 var(--e-3); max-width: 46rem;
+  font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 78%); line-height: 1.5;
+}
+
+/* ── EL 123 ──────────────────────────────────────────────────────
+   Dentro del mapa de emergencia y por encima de él. Si alguien llegó
+   hasta aquí buscando un hospital, la llamada va antes que el mapa. */
+.mapa__urgente {
+  display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+  margin: 0 0 var(--e-4); padding: 0.7rem 1rem;
+  background: var(--aviso-fondo); border-radius: 2px;
+  border-left: 4px solid #A33B2A;
+}
+.mapa__linea {
+  font-size: var(--t-xl); font-weight: 700; line-height: 1;
+  color: var(--letra); text-decoration: none;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+}
+.mapa__linea:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+.mapa__urgente span { font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 80%); flex: 1 1 14rem; }
+
+/* ── CIUDADES ────────────────────────────────────────────────────
+   Ocho fichas y «Otra». El panel de las otras es un desplegable con
+   buscador: treinta y ocho botones a la vista serían treinta y ocho
+   decisiones encima de alguien que ya no puede tomar ninguna. */
+.mapa__ciudades { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: var(--e-3); }
 .ficha {
   min-height: 2.75rem; padding: 0 0.95rem;
-  border: 1px solid #16222E26; border-radius: 2px;
-  background: #fff; color: #16222E; font: inherit; font-size: 0.98rem; cursor: pointer;
+  border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
+  background: var(--papel-alto); color: var(--letra); font: inherit; font-size: var(--t-sm); cursor: pointer;
 }
-.ficha[aria-pressed="true"] { background: #16222E; color: #F4F7F7; border-color: #16222E; }
-.ficha:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
+.ficha[aria-pressed="true"] { background: var(--letra); color: var(--contra); border-color: var(--letra); }
+.ficha:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.ficha--otra { border-style: dashed; background: transparent; }
+.ficha--otra[aria-expanded="true"] { border-style: solid; background: var(--papel-hondo); }
 
+.mapa__otras {
+  margin: 0 0 var(--e-3); padding: 0.9rem 1rem;
+  background: var(--papel-hondo); border-radius: 2px;
+  border: 1px solid rgb(var(--letra-rgb) / 12%);
+}
+.mapa__buscar input {
+  width: min(100%, 22rem); min-height: 2.75rem; padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(var(--letra-rgb) / 22%); border-radius: 2px;
+  background: var(--papel-alto); color: var(--letra); font: inherit; font-size: var(--t-md);
+}
+.mapa__otras-lista {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: var(--e-3);
+  max-height: 13rem; overflow-y: auto;
+}
+.mapa__otras-nota { margin: var(--e-3) 0 0; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 72%); }
+
+/* ── EL MARCO ────────────────────────────────────────────────────── */
+.mapa__marco {
+  position: relative; overflow: hidden;
+  border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
+  background: var(--papel-hondo);
+  box-shadow: inset 0 1px 3px rgb(var(--letra-rgb) / 8%);
+}
 .mapa__lienzo {
-  height: clamp(18rem, 52vw, 30rem);
-  border: 1px solid #16222E26; border-radius: 2px;
-  background: #E7EDEC;
+  /* SIN z-index. Ver la nota de arriba: el grano depende de ello. */
+  position: relative;
+  height: clamp(20rem, 58vw, 34rem);
+  background: var(--papel-hondo);
 }
-.mapa__lienzo:focus-visible { outline: 3px solid #16222E; outline-offset: 2px; }
-.mapa__aviso { margin: 0.8rem 0 0; color: #A33B2A; font-size: 0.95rem; }
+.mapa__lienzo:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; }
 
+/* El viraje de cada mapa, sobre las teselas y solo sobre ellas. */
+.mapa[data-modo="emergencia"] .leaflet-tile-pane {
+  filter: saturate(0.55) contrast(1.16) brightness(0.99);
+}
+.mapa[data-modo="luz"] .leaflet-tile-pane {
+  filter: grayscale(1) sepia(0.55) saturate(0.8) brightness(1.04) contrast(0.96);
+}
+.mapa[data-modo="sombra"] .leaflet-tile-pane {
+  filter: grayscale(1) sepia(0.7) hue-rotate(200deg) saturate(0.75) brightness(0.95) contrast(1.02);
+}
+/* De noche el papel es añil y las teselas llegan oscuras: el viraje se
+   invierte —hay que LEVANTAR el valor, no bajarlo— o el mapa se
+   convierte en el agujero negro que la sección entera evita. */
+:root[data-tinta="clara"] .mapa[data-modo="emergencia"] .leaflet-tile-pane {
+  filter: saturate(0.55) contrast(0.95) brightness(1.18);
+}
+:root[data-tinta="clara"] .mapa[data-modo="luz"] .leaflet-tile-pane {
+  filter: grayscale(1) sepia(0.5) hue-rotate(-12deg) saturate(0.85) brightness(1.24);
+}
+:root[data-tinta="clara"] .mapa[data-modo="sombra"] .leaflet-tile-pane {
+  filter: grayscale(1) sepia(0.6) hue-rotate(212deg) saturate(0.8) brightness(1.06);
+}
+
+/* El grano del papel, mordiendo las teselas y nada más. */
+.mapa__grano {
+  position: absolute; inset: 0; z-index: 450; pointer-events: none;
+  background-image: url("/galene/arte/1024/papel.webp");
+  background-size: 380px;
+  opacity: 0.26; mix-blend-mode: multiply;
+}
+:root[data-tinta="clara"] .mapa__grano { mix-blend-mode: screen; opacity: 0.18; }
+
+/* La viñeta: el mapa no termina en una línea, se apaga contra el papel
+   de la página. Va por encima del grano y por debajo de los puntos. */
+.mapa__marco::after {
+  content: ''; position: absolute; inset: 0; z-index: 455; pointer-events: none;
+  /* Medido contra pantalla: la primera versión empezaba a apagar al 58 %
+     del radio y dejaba el mapa lavado de lado a lado — parecía un mapa
+     roto, no un mapa que termina. El apagado vive en el último tercio y
+     solo se cierra del todo en la esquina. */
+  background: radial-gradient(135% 125% at 50% 45%,
+    transparent 68%, color-mix(in srgb, var(--papel) 40%, transparent) 90%, var(--papel) 100%);
+}
+
+/* La rosa de los vientos. Decoración honesta: un mapa sin nombres
+   necesita decir por lo menos dónde está el norte. */
+.mapa__rosa {
+  position: absolute; top: 0.7rem; right: 0.7rem; z-index: 700;
+  width: 3rem; height: 3rem; pointer-events: none;
+  fill: none; stroke: rgb(var(--letra-rgb) / 45%); stroke-width: 1;
+  opacity: 0.75;
+}
+.mapa__rosa text {
+  fill: rgb(var(--letra-rgb) / 65%); stroke: none;
+  font-family: var(--tipo-texto); font-size: 8px; text-anchor: middle;
+}
+.mapa__rosa path { fill: rgb(var(--letra-rgb) / 30%); stroke: none; }
+.mapa__rosa .mapa__rosa-norte { fill: var(--pigmento-modo); }
+
+/* ── EL PERMISO ──────────────────────────────────────────────────
+   Tapa el mapa entero, y a propósito: es la primera pregunta y no una
+   sugerencia al margen. Pero tapa un mapa, no la página — el 123, las
+   ciudades y todo el listado siguen encima y debajo, así que quien no
+   quiera contestar no pierde nada.
+
+   El fondo va translúcido y con desenfoque: se ve que detrás hay un
+   mapa esperando. Un panel opaco parecería un muro. */
+.mapa__permiso {
+  position: absolute; inset: 0; z-index: 900;
+  display: grid; place-items: center; padding: 1rem;
+  background: color-mix(in srgb, var(--papel) 78%, transparent);
+  backdrop-filter: blur(3px);
+}
+.permiso__caja {
+  max-width: 26rem; padding: 1.1rem 1.25rem;
+  background: var(--papel-alto); border-radius: 2px;
+  border: 1px solid rgb(var(--letra-rgb) / 15%);
+  border-left: 4px solid var(--pigmento-modo);
+  box-shadow: 0 6px 22px rgb(var(--letra-rgb) / 18%);
+}
+.permiso__titulo { margin: 0 0 var(--e-2); font-size: var(--t-lg); font-weight: 700; line-height: 1.2; }
+.permiso__texto { margin: 0 0 var(--e-3); font-size: var(--t-sm); line-height: 1.5; }
+.permiso__acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* El estado: cargando, sin red, «toca el mapa». Cinta sobre el mapa,
+   no un cartel que empuja la maqueta hacia abajo cada vez que habla. */
+.mapa__estado {
+  position: absolute; left: 50%; bottom: 0.8rem; translate: -50% 0; z-index: 800;
+  margin: 0; max-width: min(90%, 30rem); padding: 0.5rem 0.9rem;
+  background: var(--papel-alto); color: var(--letra);
+  border: 1px solid rgb(var(--letra-rgb) / 18%); border-radius: 2px;
+  box-shadow: 0 2px 10px rgb(var(--letra-rgb) / 12%);
+  font-size: var(--t-sm); text-align: center;
+}
+.mapa__estado--malo { border-left: 4px solid #A33B2A; }
+
+/* Marcando: el cursor cambia y el mapa baja un punto de valor, para que
+   se note que ahora tocar el mapa hace algo. */
+.mapa--marcando .mapa__lienzo { cursor: crosshair; }
+.mapa--marcando .mapa__marco { box-shadow: inset 0 0 0 2px var(--pigmento-modo); }
+
+/* ── LOS PUNTOS ──────────────────────────────────────────────────
+   Una aguada y un núcleo. La aguada es blanda, irregular y
+   semitransparente —es la mancha—; el núcleo es un círculo exacto con
+   un aro de papel alrededor, que es lo que lo hace legible encima de
+   una calle, de un parque o del agua. Otra vez la misma ley: el mundo
+   imperfecto, el instrumento exacto. */
+.punto__gota { position: relative; display: block; width: 26px; height: 26px; }
+.punto__gota::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 54% 46% 57% 43% / 47% 56% 44% 53%;
+  background: radial-gradient(circle at 40% 36%,
+    var(--pigmento) 0%, color-mix(in srgb, var(--pigmento) 55%, transparent) 58%,
+    color-mix(in srgb, var(--pigmento) 0%, transparent) 78%);
+  opacity: 0.55;
+}
+.punto__gota::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%;
+  background: var(--pigmento);
+  box-shadow: 0 0 0 2px var(--papel-alto), 0 0 0 3px rgb(var(--letra-rgb) / 45%);
+}
+/* Verificado por nosotros: doble aro. Es la única diferencia visual que
+   hay entre «lo dice OpenStreetMap» y «lo comprobamos», y tiene que
+   verse sin leer. */
+.punto--firme .punto__gota::after {
+  box-shadow: 0 0 0 2px var(--papel-alto), 0 0 0 3px var(--letra),
+              0 0 0 5px var(--papel-alto), 0 0 0 6px rgb(var(--letra-rgb) / 45%);
+}
+/* Compartido contigo: el núcleo va hueco. No es tuyo. */
+.punto--ajeno .punto__gota::after {
+  background: var(--papel-alto);
+  box-shadow: inset 0 0 0 3px var(--pigmento), 0 0 0 2px var(--papel-alto),
+              0 0 0 3px rgb(var(--letra-rgb) / 35%);
+}
+/* «Estás aquí»: sin pigmento de capa y sin aguada. Es tinta pura, más
+   pequeño que los demás y por debajo de ellos — es la referencia, no
+   uno de los sitios a los que se puede ir. */
+.punto--aqui .punto__gota::before { display: none; }
+.punto--aqui .punto__gota::after {
+  width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px;
+  background: var(--letra);
+  box-shadow: 0 0 0 3px var(--papel-alto), 0 0 0 4px rgb(var(--letra-rgb) / 35%),
+              0 0 0 10px rgb(var(--letra-rgb) / 10%);
+}
+.punto--fantasma .punto__gota { opacity: 0.55; }
+.punto--fantasma .punto__gota::after { box-shadow: 0 0 0 2px var(--papel-alto), 0 0 0 3px var(--letra); }
+.leaflet-marker-icon:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* ── BARRA, CAPAS Y LEYENDA ─────────────────────────────────────── */
+.mapa__aviso {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  margin: var(--e-3) 0 0; padding: 0.7rem 0.9rem;
+  background: var(--aviso-fondo); border-radius: 2px; border-left: 4px solid #4A6274;
+  font-size: var(--t-sm);
+}
 .mapa__barra {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.2rem;
-  margin-top: 0.9rem;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 0.8rem 1.2rem; margin-top: var(--e-3);
 }
 .mapa__capas { display: flex; flex-wrap: wrap; gap: 0.9rem; }
-.capa { display: flex; align-items: center; gap: 0.45rem; font-size: 0.98rem; cursor: pointer; }
-.capa input { width: 1.05rem; height: 1.05rem; accent-color: #16222E; }
+.mapa__acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.capa { display: flex; align-items: center; gap: 0.45rem; font-size: var(--t-sm); cursor: pointer; }
+.capa--leyenda { cursor: default; color: rgb(var(--letra-rgb) / 78%); }
+.capa input { width: 1.05rem; height: 1.05rem; accent-color: var(--letra); }
+.capa__gota {
+  width: 0.85rem; height: 0.85rem; border-radius: 50%; background: var(--pigmento);
+  box-shadow: 0 0 0 1px rgb(var(--letra-rgb) / 30%);
+}
+.capa__gota--ajena { background: var(--papel-alto); box-shadow: inset 0 0 0 3px var(--pigmento), 0 0 0 1px rgb(var(--letra-rgb) / 30%); }
 
-.mapa__listado { margin-top: 1.25rem; }
+/* ── DEJAR UN PUNTO ─────────────────────────────────────────────── */
+.mapa__nueva {
+  display: grid; gap: var(--e-3); margin-top: var(--e-4);
+  padding: 1rem 1.15rem; max-width: 34rem;
+  background: var(--papel-alto); border: 1px solid rgb(var(--letra-rgb) / 14%);
+  border-left: 4px solid var(--pigmento-modo); border-radius: 2px;
+}
+.nueva__donde { margin: 0; font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+.nueva__tipos { margin: 0; padding: 0; border: 0; display: grid; gap: 0.35rem; }
+.nueva__tipos legend { padding: 0 0 0.3rem; font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 78%); }
+.nueva__tipo { display: flex; align-items: center; gap: 0.5rem; min-height: 2.2rem; font-size: var(--t-md); cursor: pointer; }
+.nueva__tipo input { width: 1.05rem; height: 1.05rem; accent-color: var(--pigmento-modo); }
+.nueva__nota { display: grid; gap: 0.3rem; }
+.nueva__nota span { font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 75%); }
+.nueva__nota input {
+  padding: 0.7rem 0.8rem; border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
+  font: inherit; font-size: var(--t-md); background: var(--papel); color: var(--letra);
+}
+.nueva__cuidado {
+  margin: 0; padding: 0.7rem 0.85rem; background: var(--papel-hondo); border-radius: 2px;
+  font-size: var(--t-sm); line-height: 1.5;
+}
+.boton--firme { background: var(--pigmento-modo); color: #FFF; border-color: var(--pigmento-modo); }
+
+/* ── EL LISTADO ──────────────────────────────────────────────────
+   Todo lo que está en el mapa está aquí, en tipografía de lectura. El
+   mapa dice dónde; esto dice qué, y es lo que se puede oír con un
+   lector de pantalla, copiar y marcar por teléfono. */
+.mapa__listado { margin-top: var(--e-5); }
+.mapa__cuenta { margin: 0 0 var(--e-3); font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 78%); max-width: 46rem; }
+.lugares { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+@media (min-width: 42rem) {
+  .lugares { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+}
+.lugar {
+  padding: 0.85rem 1rem; background: var(--papel-alto); border-radius: 2px;
+  border: 1px solid rgb(var(--letra-rgb) / 12%);
+  border-left: 4px solid var(--pigmento, #4A6274);
+}
+.lugar--firme { background: var(--papel-hondo); box-shadow: inset 0 0 0 1px rgb(var(--letra-rgb) / 10%); }
+.lugar__capa {
+  margin: 0 0 0.2rem; font-size: var(--t-xs); font-weight: 700;
+  color: var(--pigmento); letter-spacing: 0.02em;
+}
+.lugar__nombre { margin: 0 0 0.25rem; font-size: var(--t-md); font-weight: 700; line-height: 1.3; }
+.lugar__dato { margin: 0 0 0.2rem; font-size: var(--t-sm); line-height: 1.45; }
+.lugar__fuente { margin: 0.35rem 0 0; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 65%); }
+.lugar--firme .lugar__fuente { color: #2F6B4F; }
+
 .mapa__vacio {
-  padding: 1rem 1.15rem; background: #EDF1F0; border-radius: 2px;
+  padding: 1rem 1.15rem; background: var(--papel-hondo); border-radius: 2px;
   border-left: 4px solid #4A6274; line-height: 1.55; max-width: 46rem;
 }
-.mapa__fuente { color: #2F6B4F; font-size: 0.88rem; }
+.mapa__vacio--malo { border-left-color: #A33B2A; }
+.mapa__fuente { color: #2F6B4F; font-size: var(--t-xs); }
+.mapa__creditos {
+  margin: var(--e-4) 0 0; max-width: 46rem;
+  font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 65%); line-height: 1.5;
+}
+
+/* Un botón que es un enlace: acciones de texto dentro de una ficha
+   —ver, borrar— que no merecen el peso visual de un botón. */
+.enlace-boton {
+  border: 0; padding: 0; background: none; color: var(--letra);
+  font: inherit; font-size: inherit; text-decoration: underline; cursor: pointer;
+}
+.enlace-boton:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* ── LEAFLET, VESTIDO DE ESTA CASA ───────────────────────────────
+   Lo que viene del CDN trae su propia tipografía, sus botones azules y
+   sus esquinas redondas. Nada de eso puede aparecer en esta página. */
+.leaflet-container { font-family: var(--tipo-texto); background: var(--papel-hondo); }
+.leaflet-container a { color: var(--letra); }
+.leaflet-bar,
+.leaflet-bar a {
+  border-radius: 2px; border-color: rgb(var(--letra-rgb) / 20%);
+  background: var(--papel-alto); color: var(--letra);
+}
+.leaflet-bar a:hover { background: var(--papel-hondo); color: var(--letra); }
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--papel-alto) 80%, transparent); color: rgb(var(--letra-rgb) / 70%);
+  font-size: 0.7rem; padding: 0 0.4rem;
+}
+.leaflet-control-scale-line {
+  background: color-mix(in srgb, var(--papel-alto) 75%, transparent); color: var(--letra);
+  border-color: rgb(var(--letra-rgb) / 45%); font-size: 0.7rem;
+}
+.leaflet-popup-content-wrapper {
+  background: var(--papel-alto); color: var(--letra);
+  border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
+  box-shadow: 0 3px 14px rgb(var(--letra-rgb) / 18%);
+}
+/* El pico es un cuadrado girado: si lleva borde, se le ven las dos
+   aristas de más. Solo color. */
+.leaflet-popup-tip { background: var(--papel-alto); box-shadow: none; }
+.leaflet-popup-content { margin: 0.8rem 0.95rem; font-size: var(--t-sm); line-height: 1.45; }
+.globo__que { margin: 0 0 0.2rem; font-size: var(--t-xs); font-weight: 700; color: var(--pigmento); }
+.globo__nombre { margin: 0 0 0.3rem; font-size: var(--t-md); font-weight: 700; line-height: 1.3; }
+.globo__dato { margin: 0 0 0.2rem; }
+.globo__fuente { margin: 0.4rem 0 0; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 65%); }
+.globo__borrar {
+  border: 0; padding: 0; background: none; color: #A33B2A;
+  font: inherit; font-size: var(--t-xs); text-decoration: underline; cursor: pointer;
+}
+
+/* prefers-reduced-motion APAGA. Leaflet anima el zoom y el vuelo por su
+   cuenta; el vuelo ya se desactiva en js/mapa.js, y esto se lleva por
+   delante lo que quede de transición. */
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-fade-anim .leaflet-tile,
+  .leaflet-zoom-anim .leaflet-zoom-animated { transition: none !important; }
+}
+
+/* En pantallas estrechas las tres pestañas en fila dejan cada lema en
+   dos palabras por renglón. Se apilan. */
+@media (max-width: 34rem) {
+  .mapa__modos { grid-template-columns: 1fr; }
+  .modo { border-radius: 2px; border-bottom-width: 3px; }
+  .mapa__barra { flex-direction: column; align-items: flex-start; }
+}
 
 /* El guion del acompañante: frases, no párrafos. Se lee de pie. */
-.guion { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: 0.75rem; max-width: 44rem; }
+.guion { list-style: none; padding: 0; margin: var(--e-4) 0 0; display: grid; gap: 0.75rem; max-width: 44rem; }
 .guion li {
-  padding: 0.85rem 1.05rem; background: #fff;
-  border: 1px solid #16222E1f; border-left: 4px solid #4A6274; border-radius: 2px;
+  padding: 0.85rem 1.05rem; background: var(--papel-alto);
+  border: 1px solid rgb(var(--letra-rgb) / 12%); border-left: 4px solid #4A6274; border-radius: 2px;
   line-height: 1.5;
 }
 
-.enlaces { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.9rem; }
-.enlaces a { color: #16222E; font-size: 1.05rem; }
-.enlaces span { display: block; font-size: 0.92rem; color: #16222Eb0; }
+.enlaces { list-style: none; padding: 0; margin: var(--e-4) 0 0; display: grid; gap: 0.9rem; }
+.enlaces a { color: var(--letra); font-size: var(--t-md); }
+.enlaces span { display: block; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%); }
 
-.ramas { display: grid; gap: 0.75rem; margin-top: 2.5rem; }
-.ramas a { color: #16222E; font-size: 1.05rem; }
+.ramas { display: grid; gap: 0.75rem; margin-top: var(--e-6); }
+.ramas a { color: var(--letra); font-size: var(--t-md); }
 
 /* ═══════════════════════════════════════════════════════════════════
    ESTÁS AQUÍ — el reloj de rescate (componentes/RelojRescate.astro)
@@ -1064,11 +1699,11 @@ body {
 .bloque--rescate {
   max-width: 60rem;
   margin-bottom: 0;
-  margin-top: 1rem;
+  margin-top: var(--e-4);
   padding-top: 2.75rem;
   /* La misma línea que separa la pregunta de la cabecera. Es una pausa,
      no un cambio de tema: lo que viene es el cierre de lo anterior. */
-  border-top: 1px solid #16222E1f;
+  border-top: 1px solid rgb(var(--letra-rgb) / 12%);
 }
 .rr__entrada { max-width: 46ch; }
 
@@ -1078,11 +1713,11 @@ body {
    NO se pierde: se dibuja sobre la ficha con :focus-visible del input.
    Y el teclado sigue siendo el de un grupo de radios de toda la vida —
    flechas para moverse—, porque no se ha reinventado el control. */
-.rr__eleccion { margin: 2rem 0 0; padding: 0; border: 0; min-width: 0; }
+.rr__eleccion { margin: var(--e-5) 0 0; padding: 0; border: 0; min-width: 0; }
 .rr__pregunta {
-  padding: 0; margin: 0 0 0.85rem;
+  padding: 0; margin: 0 0 var(--e-3);
   font-family: var(--tipo-titulo);
-  font-size: clamp(1.15rem, 3vw, 1.35rem);
+  font-size: var(--t-lg);
 }
 .rr__chips {
   display: grid;
@@ -1096,21 +1731,21 @@ body {
   display: grid; align-content: center; gap: 0.12rem;
   min-height: 3.5rem;              /* muy por encima del mínimo de WCAG */
   padding: 0.65rem 0.9rem;
-  border: 1px solid #16222E26; border-radius: 2px;
-  background: #fff; color: #16222E; cursor: pointer;
+  border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
+  background: var(--papel-alto); color: var(--letra); cursor: pointer;
   transition: background-color 140ms linear, border-color 140ms linear;
 }
-.rr__chip__nombre { font-size: 1rem; line-height: 1.25; }
+.rr__chip__nombre { font-size: var(--t-md); line-height: 1.25; }
 .rr__chip__rango {
-  font-size: 0.82rem; color: #16222Eb0;
+  font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%);
   font-variant-numeric: tabular-nums;
 }
-.rr__chip:hover { border-color: #16222E; }
+.rr__chip:hover { border-color: var(--letra); }
 .rr__radio:checked + .rr__chip {
-  background: #16222E; color: #F4F7F7; border-color: #16222E;
+  background: var(--letra); color: var(--contra); border-color: var(--letra);
 }
-.rr__radio:checked + .rr__chip .rr__chip__rango { color: #F4F7F7b8; }
-.rr__radio:focus-visible + .rr__chip { outline: 3px solid #16222E; outline-offset: 2px; }
+.rr__radio:checked + .rr__chip .rr__chip__rango { color: var(--contra)b8; }
+.rr__radio:focus-visible + .rr__chip { outline: 3px solid var(--letra); outline-offset: 2px; }
 
 /* ── El cuerpo: disco y acción ──────────────────────────────────────
    Una columna en móvil —disco, luego acción— y dos en cuanto hay sitio.
@@ -1118,7 +1753,7 @@ body {
    disco es lo que se mira. */
 .rr__cuerpo {
   display: grid; gap: clamp(1.5rem, 4vw, 2.75rem);
-  margin-top: 2rem; align-items: center;
+  margin-top: var(--e-5); align-items: center;
 }
 /* 760 y no 800: a 768 —una tableta en vertical, que es de los anchos
    más comunes que llegan— el disco se quedaba solo en una columna con
@@ -1175,20 +1810,20 @@ body {
 .rr__eco {
   display: none;
   font-family: var(--tipo-titulo);
-  font-size: clamp(1.05rem, 4.2vw, 1.35rem);
+  font-size: var(--t-lg);
   line-height: 1.2; text-wrap: balance;
 }
 .rr__centro__pie {
-  display: block; margin-top: 0.35rem;
-  font-size: clamp(0.7rem, 2.2vw, 0.8rem);
-  line-height: 1.3; color: #16222Eb0;
+  display: block; margin-top: var(--e-1);
+  font-size: var(--t-xs);
+  line-height: 1.3; color: rgb(var(--letra-rgb) / 69%);
 }
 
 /* ── El anillo ──────────────────────────────────────────────────── */
-.rr__marca { stroke: #16222E33; stroke-width: 1.2; }
-.rr__marca--borde { stroke: #16222E; stroke-width: 1.8; }
+.rr__marca { stroke: rgb(var(--letra-rgb) / 20%); stroke-width: 1.2; }
+.rr__marca--borde { stroke: var(--letra); stroke-width: 1.8; }
 .rr__arco {
-  fill: none; stroke: #16222E; stroke-width: 9; stroke-linecap: round;
+  fill: none; stroke: var(--letra); stroke-width: 9; stroke-linecap: round;
   opacity: 0.13; transition: opacity 220ms linear, stroke 220ms linear;
 }
 /* La aguada del tramo elegido: el mismo trazo, cuatro veces más ancho y
@@ -1209,7 +1844,7 @@ body {
   opacity: 0.4; transition: opacity 220ms linear;
 }
 .rr__etiqueta {
-  fill: #16222Eb0; font-family: var(--tipo-texto); font-size: 15px;
+  fill: rgb(var(--letra-rgb) / 69%); font-family: var(--tipo-texto); font-size: 15px;
   text-anchor: middle; dominant-baseline: middle;
   transition: fill 220ms linear;
 }
@@ -1225,12 +1860,12 @@ body {
 .rr:has(#rr-ayer:checked)   .rr__aguada--c { opacity: 0.2; }
 .rr:has(#rr-horas:checked)  .rr__etiqueta--a,
 .rr:has(#rr-anoche:checked) .rr__etiqueta--b,
-.rr:has(#rr-ayer:checked)   .rr__etiqueta--c { fill: #16222E; }
+.rr:has(#rr-ayer:checked)   .rr__etiqueta--c { fill: var(--letra); }
 
 /* «No sé» enciende los tres tramos a la vez. No es un estado vacío: es
    la respuesta que devuelve más opciones, y el disco tiene que decirlo. */
 .rr:has(#rr-nose:checked) .rr__arco { stroke: #4A6274; opacity: 0.6; }
-.rr:has(#rr-nose:checked) .rr__etiqueta { fill: #16222Ec4; }
+.rr:has(#rr-nose:checked) .rr__etiqueta { fill: rgb(var(--letra-rgb) / 77%); }
 .rr:has(#rr-nose:checked) .rr__cola,
 .rr:has(#rr-nose:checked) .rr__punta { opacity: 0.8; }
 
@@ -1256,20 +1891,20 @@ body {
 
 .rr__accion {
   margin: 0; font-family: var(--tipo-titulo);
-  font-size: clamp(1.35rem, 3.6vw, 1.85rem);
+  font-size: var(--t-xl);
   line-height: 1.3; text-wrap: balance;
 }
 .rr__matiz {
   margin: 0; max-width: 42ch;
-  color: #16222Ec0; font-size: 1rem; line-height: 1.55;
+  color: rgb(var(--letra-rgb) / 75%); font-size: var(--t-md); line-height: 1.55;
 }
 .rr__salidas {
   display: flex; flex-wrap: wrap; align-items: center;
-  gap: 0.7rem 1.2rem; margin-top: 0.6rem;
+  gap: 0.7rem 1.2rem; margin-top: var(--e-2);
 }
 .rr__otra {
   display: inline-flex; align-items: center; min-height: 3rem;
-  color: #16222E; font-size: 1rem;
+  color: var(--letra); font-size: var(--t-md);
 }
 
 /* ── LOS HORIZONTES ─────────────────────────────────────────────────
@@ -1282,11 +1917,11 @@ body {
    dos columnas: así no hay maquetación que se rompa cuando el nombre
    ocupa dos renglones en un móvil estrecho. */
 .rr__subtitulo {
-  margin: 3rem 0 0; font-family: var(--tipo-titulo); font-weight: 400;
-  font-size: clamp(1.2rem, 3.2vw, 1.5rem);
+  margin: var(--e-6) 0 0; font-family: var(--tipo-titulo); font-weight: 400;
+  font-size: var(--t-lg);
 }
 .rr__horizontes {
-  list-style: none; margin: 1.4rem 0 0; padding: 0;
+  list-style: none; margin: var(--e-4) 0 0; padding: 0;
   display: grid; gap: 1.1rem; max-width: 44rem;
 }
 .rr__horizonte {
@@ -1294,15 +1929,15 @@ body {
   align-items: baseline; gap: 0.15rem 0.9rem;
   transition: opacity 220ms linear;
 }
-.rr__horizonte__nombre { font-size: 1rem; line-height: 1.35; }
+.rr__horizonte__nombre { font-size: var(--t-md); line-height: 1.35; }
 .rr__horizonte__plazo {
-  font-size: 0.88rem; color: #16222Eb0;
+  font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .rr__riel {
   grid-column: 1 / -1; position: relative;
-  height: 8px; margin-top: 0.35rem;
-  border-radius: 999px; background: #16222E14;
+  height: 8px; margin-top: var(--e-1);
+  border-radius: 999px; background: rgb(var(--letra-rgb) / 8%);
 }
 .rr__riel__pigmento {
   position: absolute; inset: 0 auto 0 0; width: var(--ancho, 0%);
@@ -1328,7 +1963,7 @@ body {
 .rr__horizonte--eterna .rr__riel::after {
   content: "→"; position: absolute; right: 0; top: 50%;
   transform: translateY(-50%);
-  color: #2F6B4F; font-size: 0.95rem; line-height: 1;
+  color: #2F6B4F; font-size: var(--t-sm); line-height: 1;
 }
 
 /* Lo que ya pasó, y lo que no se sabe. Tres señales que no son el
@@ -1342,7 +1977,7 @@ body {
    pieza, y el texto no se apaga. */
 .rr__cerrado, .rr__quizas {
   display: none; grid-column: 1 / -1;
-  font-size: 0.85rem; line-height: 1.4; color: #16222Eb0;
+  font-size: var(--t-xs); line-height: 1.4; color: rgb(var(--letra-rgb) / 69%);
 }
 .rr:has(#rr-ayer:checked) .rr__horizonte[data-cierra="12"] .rr__cerrado,
 .rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="12"] .rr__cerrado,
@@ -1357,7 +1992,7 @@ body {
 .rr:has(#rr-ayer:checked) .rr__horizonte[data-cierra="12"] .rr__riel__pigmento,
 .rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="12"] .rr__riel__pigmento,
 .rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="72"] .rr__riel__pigmento {
-  background-color: #16222E; opacity: 0.22;
+  background-color: var(--letra); opacity: 0.22;
 }
 
 /* Los plazos que caen DENTRO del momento elegido. Ni verde ni apagado:
@@ -1371,12 +2006,142 @@ body {
   display: block;
 }
 
-.rr__nota { margin: 1.25rem 0 0; }
+.rr__nota { margin: var(--e-4) 0 0; }
 
 /* El cierre de la página. Sin aguada: el realce de este sitio es el
    color del daño y está reservado para las frases que describen uno.
    Esta dice lo contrario. */
-.rr__cierre { margin-top: 3rem; max-width: 34ch; }
+.rr__cierre { margin-top: var(--e-6); max-width: 34ch; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL HUMO — el ente
+   ═══════════════════════════════════════════════════════════════════
+   Fijo al viewport y por debajo del contenido. `pointer-events: none`
+   porque no es un control: se le acerca cuando pasas la mano, pero no
+   se puede pulsar y nunca se come un toque que iba a un enlace.
+
+   SIN `contrast()`, y esa es la corrección importante. La receta
+   habitual del efecto «gooey» es desenfoque más contraste alto: el
+   contraste empuja el alfa de las zonas donde dos manchas se solapan y
+   las funde con un canto duro. Aquí se probó y estaba mal por dos
+   razones: el contraste no toca solo el alfa, también el COLOR, así
+   que los azules y los rojos se iban a neón y el centro de la masa
+   salía blanco; y el canto duro que produce es exactamente lo que se
+   pidió que no hubiera — «translúcido y con poca forma».
+
+   Lo que cose las manchas aquí es el propio apilado de aguadas —cada
+   una con su halo diluido, ver humo.js— y el desenfoque. El resultado
+   no tiene borde de vinilo: tiene borde de mancha.
+
+   Y el `opacity` general va bajo a propósito. Este ente acompaña la
+   página, no la protagoniza — el protagonista es el cielo. */
+.humo {
+  position: fixed;
+  inset: 0;
+  /* ENTRE EL FONDO Y LA LETRA. El z-index es 0, el mismo que
+     `.herramientas__fondo`, y el desempate lo pone el orden del
+     documento: el lienzo va después de `</main>`, así que pinta encima
+     de las aguadas del fondo y debajo del contenido, que va en 1. Ver
+     el comentario largo de index.astro, donde está la medición que
+     obligó a bajarlo.
+
+     El recorte a la sección lo hace humo.js con `clip()`, no el CSS: el
+     lienzo está fijo al viewport y tiene que seguir estándolo para que
+     la física de las manchas viva en coordenadas de pantalla — un
+     lienzo del alto de la sección serían diez mil píxeles de búfer. */
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Arranca apagado. Lo enciende humo.js según cuánta sección haya en
+     pantalla, y en el hero vale cero: ahí no existe. */
+  opacity: 0;
+  mix-blend-mode: multiply;
+  /* Valor de arranque solamente: humo.js reescribe este filtro en cada
+     cuadro, porque el desenfoque es lo que cuenta que el ente está
+     tomando forma —trece píxeles cuando es humo suelto, cuatro cuando
+     ya es el pájaro—. Aquí queda el extremo difuso, que es como
+     empieza. */
+  filter: blur(13px) saturate(1.04);
+  /* Aísla el filtro: sin esto el navegador puede intentar componerlo
+     contra lo que hay detrás y en algunos Android eso repinta el mundo
+     entero cada cuadro. */
+  isolation: isolate;
+  will-change: opacity;
+}
+/* En un teléfono el desenfoque de pantalla completa es lo más caro que
+   hay: se baja el radio, que es el parámetro que cuesta, no el número
+   de manchas —esas ya son menos—. */
+@media (max-width: 700px) {
+  .humo { filter: blur(10px) saturate(1.03); }
+}
+
+/* EL MODO DE FUSIÓN SÍ DEPENDE DE LA HORA, y este comentario llegó a
+   decir lo contrario: que el papel de las herramientas era claro a
+   todas horas porque su fondo era un degradado fijo. Lo era, y ese era
+   justamente el fallo — a las 20:00 la tinta se invertía y el papel no,
+   así que la sección quedaba ilegible. Al arreglarlo, el papel pasó a
+   invertirse también, y con él tiene que invertirse el modo de fusión
+   del ente: pigmento que OSCURECE sobre papel claro, pigmento que
+   ACLARA sobre papel oscuro. Es la misma aguada; lo que cambia es
+   contra qué se mide. */
+:root[data-tinta="clara"] .humo { mix-blend-mode: screen; }
+/* Quieto es quieto: el módulo pinta un solo cuadro y aquí no hay
+   transición que lo delate. */
+@media (prefers-reduced-motion: reduce) {
+  .humo { will-change: auto; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   OBJETIVOS TÁCTILES — el dedo, no el ratón
+   ═══════════════════════════════════════════════════════════════════
+   Medido en una ventana de 375 px: los enlaces de las herramientas
+   miden 22 px de alto y las casillas del reloj 17×17. La recomendación
+   de accesibilidad es 44, y en este sitio no es una recomendación.
+
+   Quien abre esto lo hace de madrugada, en un teléfono, con una mano,
+   a veces temblando y a veces sin ver bien. Fallar el toque dos o tres
+   veces es una razón perfectamente buena para cerrar la página, y
+   cerrar la página aquí significa no llegar a urgencias. El 67.5 % del
+   tráfico del país es móvil: esto no es un caso raro, es el caso.
+
+   SE AGRANDA EL ÁREA, NO EL DIBUJO. Un pseudoelemento absoluto extiende
+   la zona sensible once píxeles arriba y abajo sin ocupar sitio en la
+   maquetación: ni el texto cambia de tamaño, ni las líneas se separan,
+   ni un enlace en mitad de un párrafo rompe el renglón. Lo que cambia
+   es dónde hay que acertar.
+
+   Solo con puntero grueso: con ratón el área de más no hace falta y
+   solaparía enlaces vecinos sin motivo. */
+@media (pointer: coarse) {
+  .bloque a,
+  .bloque label:not(.rr__chip),
+  .bloque summary {
+    position: relative;
+  }
+  .bloque a::after,
+  .bloque label:not(.rr__chip)::after,
+  .bloque summary::after {
+    content: '';
+    position: absolute;
+    inset: -11px -8px;
+    /* Detrás del texto y sin pintar nada: solo recoge el toque. */
+    z-index: 0;
+  }
+  /* Las casillas del reloj son 17×17 de dibujo. El dibujo se queda —es
+     el control nativo, y el nativo es el que sabe anunciarse a un lector
+     de pantalla— pero su zona crece hasta los 44. */
+  .bloque input[type="checkbox"],
+  .bloque input[type="radio"]:not(.rr__radio) {
+    position: relative;
+  }
+  .bloque input[type="checkbox"]::after,
+  .bloque input[type="radio"]:not(.rr__radio)::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    prefers-reduced-motion APAGA. No reduce.
@@ -1390,4 +2155,537 @@ body {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ¿PUDISTE DECIDIR? — la sección de tres tiempos
+   ═══════════════════════════════════════════════════════════════════
+   El alto de la sección ES la duración: tres pantallas de recorrido
+   para tres frases. La escena se queda pegada dentro y lo único que
+   cambia es cuánto se ve de cada pieza, según `--avance` (0 a 1), que
+   escribe js/decidir.js.
+
+   EL VALOR POR DEFECTO ES 1, Y ESO NO ES UN DETALLE: sin JavaScript la
+   variable no existe, el `var()` cae en su respaldo y la sección se ve
+   ENTERA, con las tres frases legibles a la vez. Lo mismo con
+   `prefers-reduced-motion`. No hay ningún estado en el que este bloque
+   esté vacío esperando a un script.
+
+   TAMPOCO SE OCULTA NADA DEL DOCUMENTO. Las tres frases están siempre
+   en el árbol y siempre accesibles: lo que la animación toca es
+   `opacity` y `transform`, nunca `display` ni `visibility`, así que un
+   lector de pantalla y un buscador lo recorren entero pase lo que
+   pase. */
+.decidir {
+  --avance: 0;
+  position: relative;
+  /* Tres pantallas. Menos y las frases se pisan; más y se hace larga
+     para alguien que solo quiere llegar a un teléfono. */
+  margin-block: var(--e-7);
+}
+.decidir__escena {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  text-align: center;
+  padding-inline: clamp(1.25rem, 5vw, 3rem);
+}
+
+/* ── 1 · LA PREGUNTA ────────────────────────────────────────────────
+   Mucho más grande que antes: era un subtítulo de párrafo y ahora es el
+   título de su propia sección. La jerarquía la da el cuerpo, no el
+   color — este sitio no tiene más de un realce por pantalla. */
+.decidir__pregunta {
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: var(--t-3xl);
+  line-height: 1.08;
+  margin: 0;
+  color: var(--tinta);
+  /* Se retira un poco cuando entra la refutación, para que no compitan
+     dos frases grandes a la vez. No se va del todo: la pregunta tiene
+     que seguir ahí cuando llega la respuesta, o la respuesta no
+     responde a nada. */
+  /* SIN `transition`. Tuvo una y estaba mal por dos motivos: el valor
+     ya lo gobierna el scroll —interpolar un valor que alguien está
+     moviendo a mano solo añade retraso— y ese retraso es exactamente la
+     sensación de «pesado» que hay que evitar. Lo que manda aquí es la
+     mano de quien lee, no un temporizador. */
+}
+
+/* ── 2 · EL SÍ, Y SU ROTURA ─────────────────────────────────────────
+   Aparece en el primer tercio y se rompe en el segundo. No se
+   desvanece: cada letra se va por su lado, gira y se aleja, porque lo
+   que le pasa a esa respuesta es que NO SE SOSTIENE.
+
+   Las dos letras salen a destiempo (`--i`), que es lo que hace que se
+   lea como algo que se cae y no como una transición. */
+.decidir__si {
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-display);
+  line-height: 1;
+  margin: 0;
+  display: flex;
+  gap: 0.04em;
+  color: var(--realce-tinte, #CC5F4A);
+}
+.decidir__letra {
+  display: inline-block;
+  /* Entra entre 0.10 y 0.30 del recorrido, se rompe entre 0.42 y 0.62.
+     Los `clamp` mantienen la letra quieta fuera de su tramo. */
+  --entra: clamp(0, calc((var(--avance) - 0.10) / 0.20), 1);
+  --rompe: clamp(0, calc((var(--avance) - 0.42 - var(--i) * 0.05) / 0.20), 1);
+}
+
+/* ── 3 · LA REFUTACIÓN ──────────────────────────────────────────────
+   Entra donde el SÍ se rompe, y en su sitio. Es la frase que sostiene
+   la sección: cuerpo de título, una sola idea por línea y medida corta,
+   porque quien está mal no lee párrafos. */
+.decidir__respuesta {
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-2xl);
+  line-height: 1.16;
+  max-width: 20ch;
+  margin: 0;
+  color: var(--tinta);
+}
+.decidir__respuesta b {
+  font-weight: 700;
+  /* Sin aguada: ya hay un realce de color en esta pantalla —el SÍ— y
+     dos realces seguidos no jerarquizan, se anulan. */
+}
+
+/* ── LA SALIDA ──────────────────────────────────────────────────────
+   Lo último, y en cuerpo de lectura: después de una frase así hay que
+   dejar aire antes de pedir nada. */
+.decidir__pie {
+  max-width: 46ch;
+  margin: var(--e-4) 0 0;
+  font-size: var(--t-md);
+  line-height: 1.6;
+  color: var(--tinta-suave);
+}
+
+/* MOVIMIENTO APAGADO: la sección deja de durar tres pantallas y se
+   convierte en un bloque normal con las tres frases a la vista. No es
+   una versión pobre — es la misma sección sin el tiempo. */
+@media (prefers-reduced-motion: reduce) {
+  .decidir { height: auto; }
+  .decidir__escena { position: static; height: auto; padding-block: 4rem; }
+  .decidir__pregunta,
+  .decidir__letra,
+  .decidir__respuesta,
+  .decidir__pie { opacity: 1 !important; transform: none !important; }
+}
+
+/* ── Y AQUÍ VIVE LA SECUENCIA ───────────────────────────────────────
+   Todo lo de arriba deja la sección legible y quieta: las cuatro frases
+   a la vista, en su orden, sin depender de nada. Lo que sigue solo se
+   aplica cuando js/decidir.js ha podido arrancar Y el movimiento está
+   permitido — entonces la sección se estira a tres pantallas, la escena
+   se queda pegada y el tiempo entra en juego.
+
+   Puesto así, el respaldo no es un cálculo que pueda salir mal: es la
+   ausencia de estas reglas. */
+.decidir--vivo { height: 300vh; }
+.decidir--vivo .decidir__escena { position: sticky; top: 0; height: 100vh; }
+.decidir--vivo .decidir__pregunta { opacity: calc(1 - var(--avance) * 0.45); }
+.decidir--vivo .decidir__pieza { opacity: var(--entra); }
+/* La letra entera se apaga JUSTO cuando entran las esquirlas: el ojo
+   ve una sola forma partiéndose, no una que desaparece y tres que
+   aparecen. Por eso el corte es seco y no un desvanecido. */
+.decidir--vivo .decidir__letra { opacity: calc(1 - var(--rompe)); }
+/* ── LAS TAJADAS ────────────────────────────────────────────────────
+   Cada una sale por su lado. Las direcciones no son simétricas ni
+   están repartidas en abanico: la de arriba se va alto y girando poco,
+   la del medio sale de lado, la de abajo cae. Un reparto regular se
+   lee como una animación; uno desigual, como algo que se rompió.
+
+   Y salen a DESTIEMPO —`--j` retrasa cada una— porque nada se parte
+   entero a la vez. */
+.decidir--vivo .decidir__jiron {
+  /* Y SE APAGAN AL IRSE. Sin esto las seis tajadas se quedaban
+     flotando alrededor a plena tinta durante el resto de la sección:
+     seis copias sueltas de una palabra que ya no está, justo detrás de
+     la frase que hay que leer. Un pedazo que sale despedido se pierde
+     de vista; no se queda ahí. */
+  --sedesvanece: clamp(0, calc((var(--avance) - 0.58) / 0.14), 1);
+  opacity: calc(var(--entra) * var(--rompe) * (1 - var(--sedesvanece)));
+  transform:
+    translate3d(calc(var(--rompe) * (var(--dx) * 1%)),
+                calc(var(--rompe) * (var(--dy) * 1%)), 0)
+    rotate(calc(var(--rompe) * var(--giro) * 1deg))
+    scale(calc(1 - var(--rompe) * 0.10));
+}
+.decidir--vivo .decidir__respuesta {
+  --sale: clamp(0, calc((var(--avance) - 0.50) / 0.18), 1);
+  opacity: var(--sale);
+  transform: translate3d(0, calc((1 - var(--sale)) * 0.5rem), 0);
+}
+.decidir--vivo .decidir__pie {
+  --sale: clamp(0, calc((var(--avance) - 0.68) / 0.16), 1);
+  opacity: var(--sale);
+}
+
+/* ── LA MECÁNICA DE LA ROTURA ───────────────────────────────────────
+   `--entra` y `--rompe` viven en la pieza y los heredan la letra y sus
+   tajadas, así que una sola cuenta gobierna las cuatro capas. */
+.decidir__pieza {
+  position: relative;
+  display: inline-block;
+  --entra: 1;
+  --rompe: 0;
+}
+.decidir--vivo .decidir__pieza {
+  --entra: clamp(0, calc((var(--avance) - 0.10) / 0.20), 1);
+  --rompe: clamp(0, calc((var(--avance) - 0.40 - var(--i) * 0.03) / 0.15), 1);
+}
+.decidir__letra { display: inline-block; }
+/* Los jirones se calcan exactamente encima de su letra y se recortan
+   con una mancha de borde blando, no con un polígono. */
+.decidir__jiron {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: var(--mancha);
+  mask-image: var(--mancha);
+  opacity: 0;
+  pointer-events: none;
+}
+/* Tres direcciones desiguales, y un retraso por tajada. */
+/* CINCO DERIVAS, Y CASI SIN GIRO. Girar mucho es lo que hace que algo
+   se lea como escombro: un trozo de material duro que da vueltas. Lo
+   que se deshace no gira, se va. Los ángulos bajaron de ±30° a ±9° y
+   el recorrido subió, que es el reparto contrario.
+
+   Y TODAS TIRAN HACIA ARRIBA menos una. Lo que cae es materia; lo que
+   sube es humo, ceniza, algo que dejó de pesar. Esa es la diferencia
+   entre una palabra rota y una palabra deshecha. */
+.decidir__jiron:nth-child(2) { --dx: -58; --dy: -96; --giro: -7; }
+.decidir__jiron:nth-child(3) { --dx:  46; --dy: -74; --giro:  5; }
+.decidir__jiron:nth-child(4) { --dx: 104; --dy: -28; --giro:  9; }
+.decidir__jiron:nth-child(5) { --dx: -76; --dy: -14; --giro: -4; }
+.decidir__jiron:nth-child(6) { --dx:  30; --dy:  46; --giro:  8; }
+.decidir--vivo .decidir__jiron {
+  --rompe: clamp(0, calc((var(--avance) - 0.40 - var(--i) * 0.03
+                          - var(--j) * 0.022) / 0.14), 1);
+}
+
+/* ── Y LA PANTALLA SE MUEVE ─────────────────────────────────────────
+   Un golpe seco de un par de píxeles, justo donde se parte, que se
+   apaga enseguida. No es un susto y no puede serlo: este sitio tiene
+   prohibido el terror, y una sacudida fuerte a las cuatro de la mañana
+   es exactamente eso. Es lo otro — el peso de algo que se rompe cerca,
+   que es lo que hace que la rotura se sienta en el cuerpo y no solo se
+   vea.
+
+   Va sobre la escena entera, no sobre el texto: si moviera solo la
+   palabra sería un efecto sobre una palabra; moviendo el encuadre, lo
+   que se ha movido es el sitio desde el que se mira. */
+.decidir--vivo .decidir__escena {
+  --sacude: clamp(0, calc(1 - (var(--avance) - 0.50) / 0.10), 1);
+  --golpe: clamp(0, calc((var(--avance) - 0.42) / 0.08), 1);
+  translate:
+    calc(var(--golpe) * var(--sacude) * 5px)
+    calc(var(--golpe) * var(--sacude) * -3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .decidir__jiron { display: none; }
+  .decidir__escena { translate: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LO QUE AYUDA — los consejos prácticos del reloj
+   ═══════════════════════════════════════════════════════════════════
+   Tres renglones por consejo y una jerarquía muy marcada dentro de cada
+   uno, porque esto se lee a saltos: qué (grande), por qué (normal), y
+   si ya lo hiciste (apagado, pero legible).
+
+   El tercero NO va escondido en un desplegable. Es lo que impide que
+   la lista se lea como una lista de reproches, y esconderlo detrás de
+   un clic sería esconder justo la parte que evita el daño. */
+.consejos { margin-top: var(--e-6); }
+.consejos__titulo {
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: var(--t-xl);
+  margin: 0 0 var(--e-2);
+}
+.consejos__aviso { max-width: 56ch; margin-bottom: var(--e-5); }
+.consejos__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+/* Dos columnas solo cuando de verdad caben sin apretar la medida. */
+@media (min-width: 900px) {
+  .consejos__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.consejo {
+  padding: 1rem 1.15rem;
+  background: var(--papel-alto);
+  border: 1px solid rgb(var(--letra-rgb) / 12%);
+  /* El filo de color es el mismo azul sereno que usan las notas del
+     reloj, no el rojo: esto no describe un daño, describe qué hacer. */
+  border-left: 4px solid #4A6274;
+  border-radius: 2px;
+}
+.consejo__que {
+  margin: 0 0 var(--e-1);
+  font-weight: 700;
+  line-height: 1.35;
+}
+.consejo__porque { margin: 0 0 var(--e-2); line-height: 1.55; }
+.consejo__ya {
+  margin: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgb(var(--letra-rgb) / 10%);
+  color: rgb(var(--letra-rgb) / 75%);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+
+/* LAS FUENTES. Cerradas por defecto —quien está en crisis no necesita
+   una bibliografía— pero presentes y a un clic, dentro del bloque del
+   dato y no en un pie de página. Un dato médico sin fuente a la vista
+   es un rumor con buena tipografía. */
+.fuentes { margin-top: var(--e-5); font-size: var(--t-sm); }
+.fuentes > summary {
+  cursor: pointer;
+  padding: 0.5rem 0;
+  color: rgb(var(--letra-rgb) / 75%);
+}
+.fuentes__lista { list-style: none; margin: var(--e-2) 0 var(--e-4); padding: 0; display: grid; gap: 0.75rem; }
+.fuentes__lista li { display: grid; gap: 0.15rem; }
+.fuentes__quien { color: rgb(var(--letra-rgb) / 61%); font-size: var(--t-xs); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL EFECTO ASTRAL — lo que rompe el SÍ es el ente, no la gravedad
+   ═══════════════════════════════════════════════════════════════════
+   La referencia es Aiden: algo invisible que atraviesa una cosa y la
+   deshace desde dentro. Aquí encaja sin forzar nada, porque el ente ya
+   existe en esta página y ya está sobre esa palabra cuando se rompe —
+   el humo llega antes justamente para esto.
+
+   Tres cosas lo hacen astral, y ninguna es un filtro puesto encima:
+
+   1 · LAS ESQUIRLAS SE ESTIRAN AL SALIR. Lo que separa un pedazo de
+       piedra de un jirón de energía es la ESTELA: la materia se rompe
+       en trozos que conservan su forma, la energía se rompe en trozos
+       que se alargan en la dirección en la que van. `--estira` escala
+       cada esquirla a lo largo de su fuga.
+
+   2 · SE ENCIENDEN AL ROMPERSE. Un resplandor azul —el mismo azul del
+       ente, no un azul nuevo— que sube con la rotura y se apaga con
+       ella. No es un brillo constante: es el instante en que algo pasa
+       a través.
+
+   3 · Y SE DESATURAN AL IRSE. Al alejarse pierden el color rojo del SÍ
+       y se van al azul: dejan de ser la palabra y pasan a ser el ente.
+       Ese cruce de color es el que cuenta quién ganó.
+
+   NO HAY ONDA EXPANSIVA, y no es un olvido: un anillo que crece desde
+   un punto es la figura que este sitio tiene prohibida —una gota
+   cayendo en un líquido— y lo está en todos lados, no solo en el agua.
+   El golpe se cuenta con la sacudida del encuadre, que ya está. */
+.decidir--vivo .decidir__jiron {
+  /* SE ESTIRA Y SE DESENFOCA AL IRSE, que es lo que lo hace de cine y
+     no de videojuego. Un trozo que se aleja nítido es un objeto; uno
+     que pierde el foco es algo que se está disolviendo. El desenfoque
+     es además la estela: a esta escala, cuatro píxeles de blur en la
+     dirección de la fuga se leen como movimiento, no como falta de
+     nitidez. */
+  --estira: calc(1 + var(--rompe) * 0.62);
+  transform:
+    translate3d(calc(var(--rompe) * (var(--dx) * 1%)),
+                calc(var(--rompe) * (var(--dy) * 1%)), 0)
+    rotate(calc(var(--rompe) * var(--giro) * 1deg))
+    scale(var(--estira), calc(1 - var(--rompe) * 0.18));
+  filter: blur(calc(var(--rompe) * 5px));
+  text-shadow:
+    0 0 calc(var(--rompe) * 16px) rgb(91 147 172 / calc(var(--rompe) * 0.8)),
+    0 0 calc(var(--rompe) * 48px) rgb(62 110 142 / calc(var(--rompe) * 0.5));
+  color: color-mix(in oklab,
+    var(--realce-tinte, #CC5F4A) calc((1 - var(--rompe)) * 100%),
+    #5B93AC);
+}
+/* La letra entera también se enciende un instante justo antes de
+   partirse: es el momento en que el ente ya está dentro y todavía no
+   se ha roto nada. Sube y baja en el mismo tramo, así que no queda
+   ningún brillo permanente. */
+.decidir--vivo .decidir__letra {
+  --fogonazo: clamp(0, calc(1 - abs(var(--rompe) - 0.18) / 0.18), 1);
+  text-shadow: 0 0 calc(var(--fogonazo) * 26px)
+               rgb(91 147 172 / calc(var(--fogonazo) * 0.7));
+}
+@media (prefers-reduced-motion: reduce) {
+  .decidir__jiron, .decidir__letra { text-shadow: none !important; }
+}
+
+/* La línea que nombra a las garzas.
+
+   VA DENTRO DE `.hero__texto`, Y ESO NO ES MAQUETACIÓN: es la única
+   zona del hero cuyo contraste está garantizado. `calibrarLavado()`
+   mide la caja de ese bloque cada medio segundo, lee lo que de verdad
+   quedó pintado detrás —la luna se pasea por ahí— y lava lo justo para
+   llegar al umbral. Al meter la línea dentro, la caja crece y el lavado
+   pasa a cubrirla solo.
+
+   Estuvo debajo del CTA y estaba mal: caía al 82.6 % del alto con el
+   horizonte al 60 %, o sea SOBRE EL AGUA, con tinta al 61 % y sin nada
+   que la protegiera. Justo el fallo que ese calibrador existe para
+   evitar, cometido a mano.
+
+   Tono de susurro: cuerpo pequeño y tinta floja. Si pesara más que el
+   lockup dejaría de ser un dato al margen y pasaría a ser una
+   explicación, y una explicación aquí sobra — lo que cuenta ya está
+   pasando en pantalla. La segunda frase va aparte y aún más floja: es
+   la que la mete a ella dentro, y tiene que llegar después. */
+.hero__garzas {
+  margin: var(--e-4) 0 0;
+  max-width: 34ch;
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--tinta-suave);
+}
+.hero__garzas span {
+  display: block;
+  opacity: 0.78;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FASE 2 — EL MATERIAL BAJA
+   ═══════════════════════════════════════════════════════════════════
+   El diagnóstico era este: el hero es una pintura y esto de abajo era
+   un documento con tarjetas de borde gris. No le faltaba espectáculo,
+   le faltaba EL MISMO MATERIAL. Tres láminas lo cosen.            */
+
+/* ── 1 · LA COSTURA ─────────────────────────────────────────────────
+   El canto de la hoja, justo donde la pintura acaba y empieza lo que
+   se lee. Era el borde recto más visible del sitio y ahora es papel:
+   la sección deja de ser un bloque que empieza y pasa a ser una hoja
+   puesta encima de otra.
+
+   Va en un pseudoelemento POR ENCIMA del contenido de fondo pero por
+   debajo del texto, y `pointer-events: none` para que no se coma
+   ningún toque. Se sube 1 px con el `translate` para que no quede un
+   pelo de fondo entre el canto y la sección. */
+.herramientas::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: clamp(28px, 4vw, 54px);
+  translate: 0 -1px;
+  background-image: url("/galene/arte/papel-barbas.webp");
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  background-position: top center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── 2 · LAS AGUADAS, PINTADAS ──────────────────────────────────────
+   Las dos capas de fondo dejan de ser `radial-gradient` y pasan a ser
+   una acuarela de verdad. Un degradado nunca va a tener el pigmento
+   acumulado en el canto ni el grano separándose; esta lámina lo trae
+   pintado.
+
+   Los charcos de CSS se apagan (el `::after` que los dibujaba) porque
+   ahora sobran: lo que hacían mal lo hace bien la lámina. */
+.fondo__capa--alta,
+.fondo__capa--media {
+  background-image: url("/galene/arte/aguadas-seccion2.webp");
+  background-size: cover;
+  background-position: center;
+}
+.fondo__capa--alta::after,
+.fondo__capa--media::after { content: none; }
+/* La lámina es una sola, así que la segunda capa se voltea: con la
+   misma imagen dos veces se vería el calco. */
+.fondo__capa--media { scale: -1 1; }
+
+/* ── 3 · LOS FILETES ────────────────────────────────────────────────
+   El canto izquierdo de las tarjetas deja de ser un `border-left` de
+   4 px —grosor constante, extremos exactos, la línea que dibuja un
+   ordenador— y pasa a ser un trazo de pincel: arranca seco, carga en
+   el medio y se levanta al final.
+
+   Se usa el filete 5, que es el que ondula: es el que más se aleja de
+   parecer una regla. Va girado 90°, así que el trazo horizontal de la
+   lámina se lee como vertical y conserva su variación de presión a lo
+   largo del alto de la tarjeta. */
+.consejo {
+  border-left: 0;
+  position: relative;
+}
+.consejo::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 4%; bottom: 4%;
+  width: 5px;
+  background-image: url("/galene/arte/filete-5.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.85;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .herramientas::before { translate: none; } }
+
+/* ── EL PLANO CERCANO DEL ENTE ──────────────────────────────────────
+   Por encima del contenido (z-index 3 contra el 1 de la letra), que es
+   lo que le permite tapar y por tanto lo que crea la profundidad.
+
+   Va al 30 % de la densidad del plano lejano. Puede ir por delante del
+   texto porque `multiply` oscurece tinta y papel en la misma
+   proporción, y a esta densidad el peor píxel medido deja el contraste
+   muy por encima del mínimo. El número está en el informe, no en la
+   intuición. */
+.humo--cerca {
+  z-index: 3;
+  opacity: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA ENTRADA — la pintura se seca
+   ═══════════════════════════════════════════════════════════════════
+   Lo que aparece es EL MUNDO: el lienzo y las garzas. El título, la
+   frase y el botón no están aquí y no es un olvido — están a plena
+   tinta desde el primer milisegundo y se pueden pulsar mientras el mar
+   todavía se está pintando. El espectáculo va en el arte; la ayuda no
+   espera. (Ver la cabecera de js/entrada.js.)
+
+   Y NO ES UN FUNDIDO. Un `opacity` de 0 a 1 es una cortina y se lee
+   como carga. Aquí la imagen entra DESENFOCADA Y LAVADA y se va
+   asentando: es lo que hace una aguada al secarse — primero es una
+   mancha sin filo y al final tiene canto. La saturación sube al final
+   porque el pigmento se concentra cuando el agua se va.
+
+   La curva es lenta al principio y rápida al final por lo mismo: el
+   agua tarda en irse y de golpe está seco.
+
+   VA SOBRE `.mundo`, Y ESO ESTUVO MAL UNA VEZ: la primera versión
+   apuntaba a `#mundo`, y ese elemento se llama por CLASE. El selector
+   no casaba con nada, así que la secuencia «funcionaba» —la clase se
+   ponía y se quitaba en su tiempo— sin animar un solo píxel. Se cazó
+   midiendo `animationName` en vez de mirando la pantalla, que con un
+   fallo de dos segundos es la única forma de cazarlo.
+
+   Y va sobre el contenedor, no sobre el lienzo y las garzas por
+   separado: son una sola pintura y tienen que secarse juntas. */
+.entrando .mundo {
+  animation: secarse 2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes secarse {
+  from { opacity: 0.55; filter: blur(18px) saturate(0.55); scale: 1.03; }
+  60%  { opacity: 0.92; filter: blur(4px)  saturate(0.86); }
+  to   { opacity: 1;    filter: blur(0)    saturate(1);    scale: 1; }
+}
+
+/* El lockup entra medio segundo antes y solo con un velo, no con un
+   desplazamiento: el texto de esta página no se mueve nunca. */
+.entrando .hero__texto { animation: aclararse 1.1s ease-out both; }
+@keyframes aclararse { from { opacity: 0.35; } to { opacity: 1; } }
+
+/* Ni el botón ni la salida rápida aparecen aquí. Están desde el
+   principio, y esa es la única línea de esta hoja que no se negocia. */
+
+@media (prefers-reduced-motion: reduce) {
+  .entrando .mundo, .entrando .hero__texto { animation: none !important; }
 }
