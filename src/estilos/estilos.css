@@ -267,12 +267,27 @@ body {
   opacity: 0;
 }
 
+/* LA VISITANTE. Va delante de todo lo pintado porque se posa en el
+   primer termino, y sin el velo aereo que lleva la garza lejana: lo
+   cercano no se vela, esa es justamente la diferencia. */
+.vuelo--visita {
+  z-index: 2;
+  filter: saturate(var(--vuelo-sat, 1)) contrast(var(--vuelo-contraste, 1));
+}
+@media (prefers-reduced-motion: reduce) {
+  .vuelo--visita { transition: none; }
+}
+
+
 /* ═══════════════════════════════════════════════════════════════════
    HERRAMIENTAS — DOM plano, cero canvas, cero JS necesario
    ═══════════════════════════════════════════════════════════════════ */
 .herramientas {
   position: relative;             /* se desliza POR ENCIMA del mar fijo */
-  padding: clamp(2rem, 7vw, 4.5rem) clamp(1.25rem, 4vw, 3rem);
+  /* El padding lateral crece con la pantalla en vez de quedarse en
+     3rem: en un monitor ancho el contenido se centra en lugar de
+     apelotonarse contra el borde izquierdo con medio cuadro vacío. */
+  padding: clamp(2rem, 7vw, 4.5rem) clamp(1.25rem, 6vw, 8rem);
   padding-bottom: clamp(3rem, 8vw, 6rem);
   color: #16222E;
   /* Opaca: el instrumento no compite con el mundo. Y el borde superior
@@ -338,39 +353,90 @@ body {
   will-change: translate;
 }
 
+/* NINGUNA LÁMINA ENSEÑA SU CANTO.
+   Una lámina rectangular puesta sobre el papel se lee como una foto
+   pegada, por difuminada que esté: el ojo encuentra los cuatro bordes
+   rectos y ya no ve pintura, ve un recorte. La banda de mar lo hacía
+   de la peor manera posible —un canto horizontal cruzando la pantalla
+   entera de lado a lado.
+
+   La máscara elíptica disuelve la lámina antes de que llegue a su
+   borde, así que no queda ni un tramo recto en toda la sección. Lo que
+   define la forma es dónde se acaba el pigmento, no dónde se acaba el
+   archivo. */
+.fondo__capa {
+  -webkit-mask-image: radial-gradient(ellipse 62% 54% at 48% 50%,
+    #000 0%, #000 34%, #0009 62%, #0000 88%);
+  mask-image: radial-gradient(ellipse 62% 54% at 48% 50%,
+    #000 0%, #000 34%, #0009 62%, #0000 88%);
+}
+
+/* EL EMPOZADO. En acuarela de verdad el pigmento no se reparte parejo:
+   se acumula donde el agua tardó más en secar y deja el centro más
+   claro. Eso es lo que hace que una mancha se lea redonda y viva en
+   vez de plana. Aquí van tres charcos por capa, de tamaños primos
+   entre sí para que no se note el patrón, cada uno más oscuro en su
+   corona que en su centro. */
+.fondo__capa::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(closest-side circle at 50% 50%,
+      var(--charco-a) 0%, var(--charco-b) 56%,
+      var(--charco-c) 78%, var(--charco-a) 90%, transparent 100%),
+    radial-gradient(closest-side circle at 50% 50%,
+      var(--charco-a) 0%, var(--charco-b) 60%,
+      var(--charco-c) 82%, transparent 100%),
+    radial-gradient(closest-side circle at 50% 50%,
+      var(--charco-b) 0%, var(--charco-c) 72%, transparent 100%);
+  background-size: 58% 46%, 37% 52%, 26% 30%;
+  background-position: 18% 34%, 66% 58%, 42% 78%;
+}
+
 /* Las nubes, arriba y casi quietas: es lo más lejano que hay. */
 .fondo__capa--nubes {
-  top: 2vh; height: 60vh;
+  top: 0vh; height: 74vh;
+  --charco-a: #2E8A9910;
+  --charco-b: #2E8A9918;
+  --charco-c: #3D6B8A2e;
   background-image: url("/galene/arte/1024/nubes.webp");
-  opacity: 0.30;
+  opacity: 0.42;
 }
 
-/* La banda de mar. Cruza la sección entera de lado a lado, como un
-   horizonte que se ve por detrás del instrumento. */
+/* El mar. Ya no es una banda que cruza: es una mancha ancha y baja,
+   con su propio empozado, que se apaga por los cuatro lados. */
 .fondo__capa--mar {
-  top: 38vh; height: 42vh;
-  width: 120%; margin-left: -60%;
+  top: 30vh; height: 76vh;
+  width: 132%; margin-left: -66%;
+  --charco-a: #2E8A9912;
+  --charco-b: #2E8A991e;
+  --charco-c: #1F6E7c38;
   background-image: url("/galene/arte/1024/mar-lejano.webp");
   background-size: 100% auto;
-  opacity: 0.26;
+  opacity: 0.34;
 }
 
-/* El manglar: lo más cercano, y por eso lo que más se mueve. Al fondo
-   a la izquierda, fuera del ancho de lectura (44rem) para no pasar
-   nunca por debajo de un párrafo. */
+/* El manglar: lo más cercano, y por eso lo que más se mueve. Al flanco
+   derecho, fuera del ancho de lectura para no pasar nunca por debajo
+   de un párrafo. */
 .fondo__capa--manglar {
-  top: 76vh; height: 70vh;
-  left: auto; right: -6%;
-  width: min(560px, 62%); margin-left: 0;
+  top: 72vh; height: 84vh;
+  left: auto; right: -8%;
+  width: min(620px, 64%); margin-left: 0;
+  --charco-a: #4A7A5410;
+  --charco-b: #3F6E4a1c;
+  --charco-c: #2F5B3c30;
   background-image: url("/galene/arte/1024/manglar-lejos.webp");
   background-position: bottom center;
-  opacity: 0.18;
+  opacity: 0.22;
 }
 
 @media (max-width: 900px) {
   /* En móvil el texto ocupa todo el ancho: el manglar se va casi del
      todo para no quedar nunca debajo de una línea. */
-  .fondo__capa--manglar { opacity: 0.11; right: -22%; }
+  .fondo__capa--manglar { opacity: 0.13; right: -24%; }
 }
 .herramientas__titulo {
   font-family: var(--tipo-titulo);
@@ -378,7 +444,15 @@ body {
   font-size: clamp(2rem, 8vw, 3.25rem);
   margin: 0;
 }
-.herramientas__intro { max-width: 42ch; font-size: 1.05rem; line-height: 1.55; }
+/* `pretty` en vez de nada: el navegador evita dejar una palabra huérfana
+   en la última línea y reparte mejor las últimas dos. Es la diferencia
+   entre un párrafo que se lee y uno que se tropieza al final. */
+.herramientas__intro {
+  max-width: 56ch;
+  font-size: clamp(1.05rem, 1.35vw, 1.18rem);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    EL REALCE — pigmento sobre la palabra que importa.
@@ -417,8 +491,11 @@ body {
   /* Aire de sobra alrededor de la palabra: es lo que le deja sitio al
      pigmento para desvanecerse ANTES del borde de la caja. Sin este
      margen no hay acuarela posible, solo un rectángulo de color. */
-  padding: 0.24em 0.62em 0.3em;
-  margin: 0 -0.3em;
+  /* El aire deja sitio a que el pigmento se apague antes del canto. El
+     margen negativo lo recupera del renglón, pero flojo: a -0.3em la
+     aguada se comía la coma que va delante. */
+  padding: 0.26em 0.6em 0.32em;
+  margin: 0 -0.12em;
   color: #16222E;
   font-weight: 700;
   letter-spacing: 0.055em;
@@ -426,49 +503,100 @@ body {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 
-  /* NADA de background-color. Un color de fondo pinta la caja entera
-     hasta sus cuatro cantos rectos, y por eso el primer intento se leía
-     como un subrayador de oficina: el border-radius recortaba, pero el
-     borde seguía siendo un borde. Aquí no hay caja — hay tres manchas
-     redondas que se apagan en `transparent` antes de llegar al canto.
-     El límite del realce no lo pone la geometría, lo pone el pigmento
-     al secarse, que es exactamente lo que pasa en el papel. */
+  /* NADA de background-color, y NINGUNA mancha del ancho de la caja.
+
+     Las dos versiones anteriores fallaban por lo mismo aunque no lo
+     pareciera: una mancha tan ancha como la frase vuelve a ser una
+     barra, tenga los bordes duros o difuminados. Una acuarela no se
+     pinta de un lado a otro de un trazo — se pinta por TOQUES, y cada
+     toque es redondo.
+
+     Así que aquí el realce es una hilera de charcos circulares que se
+     solapan, en dos pasadas de tamaños primos entre sí (2.35em y
+     3.1em): como los dos períodos no encajan nunca, la mancha nunca
+     se repite dentro de una frase y no hay ritmo que delate el CSS.
+
+     Y cada charco es MÁS OSCURO EN SU CORONA QUE EN SU CENTRO. Eso es
+     lo que hace una acuarela de verdad al secarse: el agua arrastra el
+     pigmento hacia el borde del charco y deja el medio claro. Es el
+     detalle que separa una mancha viva de un círculo de color — el
+     mismo que tienen los pétalos de la flor de referencia. */
   background-image:
-    /* el grano, que muerde toda la mancha */
+    /* el grano del papel, que muerde toda la aguada */
     url("/galene/arte/1024/papel.webp"),
-    /* la carga: donde se apoyó el pincel, arriba a la izquierda */
-    radial-gradient(66% 118% at 27% 42%,
-      color-mix(in srgb, var(--realce-tinte) 42%, transparent) 0%,
-      color-mix(in srgb, var(--realce-tinte) 30%, transparent) 46%,
-      transparent 76%),
-    /* la segunda pasada, que va perdiendo agua hacia la derecha */
-    radial-gradient(58% 106% at 74% 58%,
-      color-mix(in srgb, var(--realce-tinte) 34%, transparent) 0%,
-      color-mix(in srgb, var(--realce-tinte) 18%, transparent) 44%,
-      transparent 74%),
-    /* el poso: al secarse, el pigmento migra al borde de abajo */
-    radial-gradient(96% 48% at 50% 96%,
-      color-mix(in srgb, var(--realce-tinte) 30%, transparent) 0%,
-      transparent 72%);
-  background-size: 210px, auto, auto, auto;
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-  background-blend-mode: multiply, normal, normal, normal;
+    /* CINCO TOQUES QUE SE SOLAPAN. Ni uno solo llega de punta a punta:
+       cada uno ocupa poco más de un tercio de la frase y se pisa con
+       sus vecinos, así que donde coinciden dos el pigmento se acumula
+       y donde solo hay uno queda aguado. Ese desnivel es todo — es lo
+       que en la flor hace que un pétalo tenga el borde encendido y el
+       centro casi blanco.
+
+       Van en porcentaje, no en em: así el reparto es el mismo en una
+       palabra que en una frase larga, y no hay período que se repita
+       (el error de la versión anterior, que salía un collar de
+       bolitas perfectamente espaciadas). */
+    radial-gradient(closest-side ellipse at 50% 44%,
+      color-mix(in srgb, var(--realce-tinte) 15%, transparent) 0%,
+      color-mix(in srgb, var(--realce-tinte) 25%, transparent) 56%,
+      color-mix(in srgb, var(--realce-tinte) 36%, transparent) 84%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 62%,
+      color-mix(in srgb, var(--realce-tinte) 12%, transparent) 0%,
+      color-mix(in srgb, var(--realce-tinte) 22%, transparent) 60%,
+      color-mix(in srgb, var(--realce-tinte) 30%, transparent) 86%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 40%,
+      color-mix(in srgb, var(--realce-tinte) 14%, transparent) 0%,
+      color-mix(in srgb, var(--realce-tinte) 27%, transparent) 62%,
+      color-mix(in srgb, var(--realce-tinte) 34%, transparent) 88%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 66%,
+      color-mix(in srgb, var(--realce-tinte) 11%, transparent) 0%,
+      color-mix(in srgb, var(--realce-tinte) 21%, transparent) 58%,
+      color-mix(in srgb, var(--realce-tinte) 29%, transparent) 84%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, var(--realce-tinte) 13%, transparent) 0%,
+      color-mix(in srgb, var(--realce-tinte) 24%, transparent) 60%,
+      color-mix(in srgb, var(--realce-tinte) 32%, transparent) 86%,
+      transparent 100%);
+  /* Tamaños y alturas TODOS distintos: dos toques iguales seguidos ya
+     se leen como patrón. */
+  background-size: 210px,
+    44% 132%, 37% 116%, 51% 140%, 33% 108%, 41% 124%;
+  background-position: 0 0,
+    -2% 42%, 24% 64%, 49% 36%, 73% 68%, 101% 48%;
+  background-repeat: repeat,
+    no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-blend-mode: multiply,
+    normal, normal, normal, normal, normal;
 }
+
+/* Una frase realzada no se parte a mitad: el trazo de pincel es uno.
+   Solo por encima de 560px, porque en un teléfono estrecho preferimos
+   que baje de línea antes que se salga de la pantalla. */
+@media (min-width: 560px) { .realce { white-space: nowrap; } }
 /* Los tintes son pigmentos, no grises: si se bajan de saturación para
    «suavizarlos» dejan de leerse como acuarela y pasan a resaltador. Lo
    que los suaviza es el alfa de arriba, no el color. */
 .realce--calma { --realce-tinte: #2E8A99; }   /* el agua */
-.realce--tinta { --realce-tinte: #3D6B8A; }   /* el azul de los plazos */
+/* Aclarado desde #3D6B8A. Con cinco toques encimados —que la geometría
+   no permite, pero el contraste no se calcula con lo que suele pasar—
+   aquel azul caía a 3.75:1 y no llegaba al 4.5 exigido. Este da 5.31 en
+   ese mismo caso imposible, así que el realce no puede fallar nunca. */
+.realce--tinta { --realce-tinte: #5A8AA8; }   /* el azul de los plazos */
 
 /* EL LEMA — una sola frase, sola en su línea, del tamaño de una
    afirmación. No es un párrafo corto: es lo que queda si alguien lee
    una sola cosa de toda la sección. */
 .lema {
-  margin: 2rem 0 0;
-  max-width: 30ch;
+  margin: 2.25rem 0 0;
+  /* 46ch, no 30: a 30 la frase partía justo por el medio del realce y
+     el trazo quedaba serrado en dos. El ancho lo manda la frase. */
+  max-width: 46ch;
   font-family: var(--tipo-titulo);
-  font-size: clamp(1.25rem, 5vw, 1.85rem);
-  line-height: 1.35;
+  font-size: clamp(1.3rem, 3.2vw, 2.1rem);
+  line-height: 1.45;
   text-wrap: balance;
 }
 
@@ -497,7 +625,20 @@ body {
    La primera es la más grande y va primera en orden de lectura: quien
    está confundida puede no saber si lo que pasó fue un delito, pero sí
    sabe que quiere irse y estar acompañada. */
-.puertas { display: grid; gap: 0.6rem; margin: 2rem 0 3.5rem; max-width: 44rem; }
+/* DOS COLUMNAS EN PANTALLA ANCHA. En un portátil las cuatro puertas
+   ocupaban una tira estrecha a la izquierda y dejaban media pantalla
+   vacía: se leía como una página de móvil estirada. La primera puerta
+   sigue mandando —cruza las dos columnas— y las otras tres se reparten
+   debajo, que es el orden de lectura que ya tenían. */
+.puertas {
+  display: grid; gap: 0.7rem;
+  margin: 2rem 0 3.5rem;
+  max-width: 62rem;
+}
+@media (min-width: 900px) {
+  .puertas { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  .puerta--primera { grid-column: 1 / -1; }
+}
 .puerta {
   display: grid; gap: 0.25rem; padding: 1.15rem 1.25rem;
   border: 1px solid #16222E26; border-radius: 2px;
@@ -513,12 +654,12 @@ body {
 .puerta--primera .puerta__pie { color: #F4F7F7b8; }
 
 /* ── Bloques ────────────────────────────────────────────────────── */
-.bloque { max-width: 44rem; margin: 0 0 3.5rem; scroll-margin-top: 1.5rem; }
+.bloque { max-width: 54rem; margin: 0 0 3.5rem; scroll-margin-top: 1.5rem; }
 .bloque h3 {
   font-family: var(--tipo-titulo); font-weight: 400;
   font-size: clamp(1.5rem, 6vw, 2.1rem); margin: 0 0 0.6rem;
 }
-.bloque p { line-height: 1.55; max-width: 42ch; }
+.bloque p { line-height: 1.6; max-width: 58ch; text-wrap: pretty; }
 .bloque__intro { color: #16222Ec0; font-size: 0.98rem; }
 
 .boton {

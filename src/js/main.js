@@ -323,6 +323,7 @@ function arrancar(mar) {
        del agua y arrastraba al ave fuera de cuadro igual que hacía con
        el manglar. El ave tiene que moverse con el ÁRBOL, no con el mar. */
     animarGarzas(estado.t, estado.paralaje, dt);
+    animarVisita(estado.t, estado.paralaje);
   }
 
   /* ── EL LAVADO ADAPTATIVO ────────────────────────────────────────
@@ -408,7 +409,8 @@ function arrancar(mar) {
       const dtAve = ultimoAve ? (ms - ultimoAve) / 1000 : 1 / 60;
       ultimoAve = ms;
       if (ms - ultimo >= CUADRO) { ultimo = ms; cuadro(ms, dtAve); }
-      else animarGarzas(ms / 1000, estado.paralaje, dtAve);
+      else { animarGarzas(ms / 1000, estado.paralaje, dtAve);
+             animarVisita(ms / 1000, estado.paralaje); }
       requestAnimationFrame(paso);
     };
     requestAnimationFrame(paso);
@@ -715,6 +717,22 @@ const MS_CUADRO = 150;  // 10 pasos x 150 ms = 0.67 batidos/s
 const contenedor = document.getElementById('garzas');
 let vuelo = null;
 
+/* ── LA SEGUNDA GARZA: LA QUE ACABA DE ENTRAR ───────────────────────
+   La del manglar lejano llega volando, cruza la pantalla y se queda:
+   es alguien que vino antes y sigue ahi. Esta otra es distinta y por
+   eso no comparte ni trayectoria ni tiempos.
+
+   Cae. Entra por arriba, desciende y se posa en la rama cercana —la
+   que esta a un palmo del ojo—, y lo hace en los primeros segundos,
+   porque ES QUIEN ACABA DE ABRIR EL SITIO. No cruza el mundo buscando
+   sitio: ya llego. Se deja caer donde le toca y se queda.
+
+   Reutiliza las ocho laminas del aterrizaje y las seis de posada: no
+   hace falta ciclo de aleteo porque no hay travesia, solo caida. */
+const CAIDA = ['l01','l02','l03','l04','l05','l06','l07','l08'];
+const CAIDA_ESPERA = 1.1;    // s antes de aparecer: la pagina se asienta
+const CAIDA_DURA   = 3.4;    // s de caida y aterrizaje
+let visita = null;
 if (contenedor) {
   contenedor.innerHTML = '';
   const capas = {};
@@ -737,6 +755,30 @@ if (contenedor) {
   }
   vuelo = { capas, w: 0, h: 0, envergadura: 0, px: 0, py: 0, vx: 0, vy: 0, arrancado: false };
 }
+
+if (contenedor) {
+  const capas = {};
+  for (const clave of [...CAIDA, 'posada', 'pAlerta', 'pEncoge',
+                       'pUnaPata', 'pMira', 'pAlas']) {
+    const v = VUELO[clave];
+    const img = new Image();
+    img.src = v.src;
+    img.alt = '';
+    img.className = 'vuelo vuelo--visita';
+    img.decoding = 'async';
+    const wv = v.w === undefined ? 1 : v.w;
+    const ox = v.pies ? v.cx + (v.pies[0] - v.cx) * wv : 0.5;
+    const oy = v.pies ? v.cy + (v.pies[1] - v.cy) * wv : 0.5;
+    img.style.transformOrigin = (ox * 100).toFixed(1) + '% ' + (oy * 100).toFixed(1) + '%';
+    img.style.opacity = '0';
+    contenedor.appendChild(img);
+    capas[clave] = img;
+  }
+  visita = { capas, px: 0, py: 0, vx: 0, vy: 0, arrancado: false,
+             reposo: { actual: 'posada', previa: 'posada', desde: 0, hasta: 0,
+                       arrancado: false } };
+}
+
 
 /* DOS POSADEROS, y por ahora solo se usa uno.
 
@@ -837,6 +879,25 @@ function colocarGarzas(w, h, horDesdeArriba) {
   // media altura entre el crucero y la rama.
   vuelo.frenaX = vuelo.posX + w * 0.055;
   vuelo.frenaY = vuelo.posY - (vuelo.posY - vuelo.alto) * 0.42;
+
+  /* ── Y LA VISITANTE, sobre la rama cercana ────────────────────────
+     Su tamano NO sale del manglar lejano sino del GROSOR DE LA RAMA en
+     la que se para, que es la unica referencia honesta de escala que
+     hay en el primer termino. Y sale mas grande que la otra garza
+     porque esta a un palmo del ojo: eso es lo que la hace leerse como
+     cercana, no un desenfoque ni una sombra. */
+  if (visita) {
+    const c = posaderoCercano(mar.cajaCerca(), w, h);
+    visita.pieX = c.x;
+    visita.pieY = c.y;
+    visita.alto = Math.max(28, c.grosorRama * 3.1);
+    /* Entra por arriba y algo a la derecha: cae en diagonal corta, no
+       en vertical. Una caida perfectamente vertical lee como un objeto
+       soltado, no como un ave que se posa. */
+    visita.entraX = c.x + w * 0.085;
+    visita.entraY = -h * 0.14;
+    visita.h0 = h;
+  }
 }
 
 const suave3 = (p) => p * p * (3 - 2 * p);
@@ -1057,13 +1118,85 @@ function animarGarzas(t, paralaje, dt) {
   }
 }
 
+/* LA CAIDA DE LA VISITANTE. Sin fisica de muelle: es una caida y las
+   caidas no persiguen un objetivo, se dejan ir y frenan al final. La
+   curva es un ease-out cubico sobre la vertical y lineal sobre la
+   horizontal, que es lo que hace un ave que se deja caer en diagonal y
+   abre las alas al llegar. */
+function animarVisita(t, paralaje) {
+  if (!visita || !visita.alto) return;
+  const p0 = CAIDA_ESPERA, p1 = CAIDA_ESPERA + CAIDA_DURA;
+
+  if (t < p0) {                                   // todavia no ha entrado
+    for (const el of Object.values(visita.capas))
+      if (el.style.opacity !== '0') el.style.opacity = '0';
+    return;
+  }
+
+  let clave = 'posada', mezcla = 0, siguiente = null;
+  let x = visita.pieX, y = visita.pieY;
+
+  if (t < p1) {
+    const p = (t - p0) / CAIDA_DURA;
+    const caer = 1 - Math.pow(1 - p, 2.6);        // deja ir y frena
+    x = visita.entraX + (visita.pieX - visita.entraX) * (p * p * (3 - 2 * p));
+    y = visita.entraY + (visita.pieY - visita.entraY) * caer;
+    /* Los ocho cuadros repartidos: la caida ocupa los cinco primeros y
+       el asentamiento los tres ultimos, que es donde el ave deja de
+       moverse y empieza a estar. */
+    const i = Math.min(CAIDA.length - 1, Math.floor(p * CAIDA.length));
+    const dentro = p * CAIDA.length - i;
+    clave = CAIDA[i];
+    siguiente = CAIDA[Math.min(i + 1, CAIDA.length - 1)];
+    mezcla = dentro < 0.72 ? 0 : (dentro - 0.72) / 0.28;
+    if (i === CAIDA.length - 1) { siguiente = 'posada'; mezcla = suave3(Math.min(1, dentro / 0.8)); }
+  } else {
+    const g = visita.reposo;
+    if (!g.arrancado) { g.arrancado = true; g.desde = t; g.hasta = t + entre(4.0, 8.0); }
+    if (t >= g.hasta) {
+      g.previa = g.actual;
+      if (g.actual !== 'posada') { g.actual = 'posada'; g.hasta = t + entre(8.0, 21.0); }
+      else {
+        let r = Math.random() * PESO_TOTAL, el = GESTOS[0];
+        for (const c of GESTOS) { r -= c.peso; if (r <= 0) { el = c; break; } }
+        g.actual = el.clave; g.hasta = t + entre(el.dura[0], el.dura[1]);
+      }
+      g.desde = t;
+    }
+    const mm = Math.min(1, (t - g.desde) / DISUELVE);
+    clave = g.previa; siguiente = g.actual; mezcla = mm * mm * (3 - 2 * mm);
+  }
+
+  /* El mismo paralaje que el fragmento cercano del shader, que es 1.35
+     — el triple que el manglar lejano. Si no, el ave se resbala de la
+     rama al mover el puntero. */
+  x -= paralaje * 1.35 * visita.h0;
+
+  const visibles = (mezcla > 0 && siguiente && siguiente !== clave)
+    ? [[clave, 1 - mezcla], [siguiente, mezcla]] : [[clave, 1]];
+
+  for (const [k, el] of Object.entries(visita.capas)) {
+    const enc = visibles.find(([c]) => c === k);
+    if (!enc) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
+    const v = VUELO[k];
+    const altoPx = visita.alto * (v.factor || 1) / v.altoTinta;
+    const anchoPx = altoPx * v.aspecto;
+    el.style.opacity = enc[1].toFixed(3);
+    el.style.width = anchoPx.toFixed(1) + 'px';
+    el.style.transform =
+      'translate3d(' + (x - v.pies[0] * anchoPx).toFixed(1) + 'px, ' +
+      (y - v.pies[1] * altoPx).toFixed(1) + 'px, 0)';
+  }
+}
+
 /* Asidero de medición, SOLO en desarrollo. El ave tarda 39 s en llegar y
    el navegador estrangula los temporizadores cuando la pestaña no está
    delante, así que esperar al reloj no sirve para medir: hay que poder
    pisarlo y avanzar la animación paso a paso. No viaja al sitio
    publicado — import.meta.env.DEV lo borra en la compilación. */
 if (import.meta.env.DEV) {
-  window.__galene = { animarGarzas, VUELO, ATERRIZA, FASES, vuelo: () => vuelo };
+  window.__galene = { animarGarzas, animarVisita, VUELO, ATERRIZA, FASES,
+                      vuelo: () => vuelo, visita: () => visita };
 }
 
 /* ── ARRANQUE ──────────────────────────────────────────────────────
