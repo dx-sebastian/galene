@@ -764,7 +764,15 @@ void main(){
      luminancia. Mucho color en un rango de nada. Se desatura y se le
      abre algo de recorrido para que el ojo tenga dónde moverse. */
   {
-    float dNoche = 1.0 - smoothstep(0.02, 0.34, u_int);
+    /* CODIGO MUERTO DESDE QUE LO ESCRIBI. La prueba era
+       smoothstep(0.02, 0.34, u_int), pero u_int NUNCA baja de 0.35: los
+       anclajes de la hora son 0.35 a las 3, 0.70 a las 9, 1.00 a las 15
+       y 0.50 a las 21. Asi que la expresion daba 1 a cualquier hora y
+       dNoche valia 0 siempre — la desaturacion, el estirado de rango y
+       el aplanado extra de la noche no se ejecutaron ni una vez.
+
+       El rango real es [0.35, 1.00]: noche 0.35-0.50, dia 0.70-1.00. */
+    float dNoche = 1.0 - smoothstep(0.42, 0.78, u_int);
     /* UNA PASADA FINAL DE APLANADO, para todo el cuadro y despues de
        todo lo demas. Las pasadas de cada capa dejaban fuera lo que se
        compone al final —la perspectiva aerea, el velo, el estirado de
