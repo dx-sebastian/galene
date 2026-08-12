@@ -1035,6 +1035,350 @@ body {
 .ramas a { color: #16222E; font-size: 1.05rem; }
 
 /* ═══════════════════════════════════════════════════════════════════
+   ESTÁS AQUÍ — el reloj de rescate (componentes/RelojRescate.astro)
+
+   El bloque que cierra la página. No repite el instrumento de arriba:
+   lo sitúa. Arriba se gira una aguja y se mira qué sigue encendido;
+   aquí se contesta «¿hace cuánto crees que pasó?» con una palabra y se
+   recibe UNA acción.
+
+   TRES REGLAS QUE EXPLICAN CADA LÍNEA DE ESTE BLOQUE:
+
+   1. NO ES UNA CUENTA ATRÁS. Nada aquí dice cuánto queda. El anillo no
+      se vacía: se recorre, y termina en una línea punteada que se sale
+      del círculo. Una ventana terapéutica no es una fecha de caducidad
+      de la persona, y un cronómetro las confunde.
+
+   2. LA ACUARELA VA DEBAJO, EL INSTRUMENTO VA ENCIMA. La ley del sitio
+      dice que la imperfección vive en el mundo y el instrumento es
+      exacto. Aquí eso se reparte por capas: la aguada del tramo
+      elegido y el lavado detrás del disco son pintura —irregulares,
+      en `multiply`, con el grano del papel dentro—; los trazos, las
+      marcas y la tipografía son exactos y no tiemblan.
+
+   3. CERO JAVASCRIPT. Cinco `input[type=radio]` y `:has()`. Si el
+      navegador no entiende `:has()`, la ficha que queda es la de «no
+      sé», que es la que más opciones muestra: el fallo cae del lado
+      seguro. Y nada de esto depende de que llegue un script.
+   ═══════════════════════════════════════════════════════════════════ */
+.bloque--rescate {
+  max-width: 60rem;
+  margin-bottom: 0;
+  margin-top: 1rem;
+  padding-top: 2.75rem;
+  /* La misma línea que separa la pregunta de la cabecera. Es una pausa,
+     no un cambio de tema: lo que viene es el cierre de lo anterior. */
+  border-top: 1px solid #16222E1f;
+}
+.rr__entrada { max-width: 46ch; }
+
+/* ── La pregunta y las cinco fichas ─────────────────────────────────
+   Los radios van visualmente ocultos y quien manda visualmente es la
+   etiqueta, que es la que tiene el tamaño de objetivo táctil. El foco
+   NO se pierde: se dibuja sobre la ficha con :focus-visible del input.
+   Y el teclado sigue siendo el de un grupo de radios de toda la vida —
+   flechas para moverse—, porque no se ha reinventado el control. */
+.rr__eleccion { margin: 2rem 0 0; padding: 0; border: 0; min-width: 0; }
+.rr__pregunta {
+  padding: 0; margin: 0 0 0.85rem;
+  font-family: var(--tipo-titulo);
+  font-size: clamp(1.15rem, 3vw, 1.35rem);
+}
+.rr__chips {
+  display: grid;
+  /* auto-fit: cinco columnas en un monitor, dos en un móvil, y ningún
+     media query que mantener. El mínimo es el ancho de «Hace unas
+     horas» sin partirse en tres renglones. */
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+.rr__chip {
+  display: grid; align-content: center; gap: 0.12rem;
+  min-height: 3.5rem;              /* muy por encima del mínimo de WCAG */
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #16222E26; border-radius: 2px;
+  background: #fff; color: #16222E; cursor: pointer;
+  transition: background-color 140ms linear, border-color 140ms linear;
+}
+.rr__chip__nombre { font-size: 1rem; line-height: 1.25; }
+.rr__chip__rango {
+  font-size: 0.82rem; color: #16222Eb0;
+  font-variant-numeric: tabular-nums;
+}
+.rr__chip:hover { border-color: #16222E; }
+.rr__radio:checked + .rr__chip {
+  background: #16222E; color: #F4F7F7; border-color: #16222E;
+}
+.rr__radio:checked + .rr__chip .rr__chip__rango { color: #F4F7F7b8; }
+.rr__radio:focus-visible + .rr__chip { outline: 3px solid #16222E; outline-offset: 2px; }
+
+/* ── El cuerpo: disco y acción ──────────────────────────────────────
+   Una columna en móvil —disco, luego acción— y dos en cuanto hay sitio.
+   La acción tiene la columna un pelo más ancha: es lo que se lee, el
+   disco es lo que se mira. */
+.rr__cuerpo {
+  display: grid; gap: clamp(1.5rem, 4vw, 2.75rem);
+  margin-top: 2rem; align-items: center;
+}
+/* 760 y no 800: a 768 —una tableta en vertical, que es de los anchos
+   más comunes que llegan— el disco se quedaba solo en una columna con
+   media pantalla vacía al lado, y la acción caía tan abajo que había
+   que desplazarse para verla. La acción no puede quedar fuera de
+   pantalla por una maquetación. */
+@media (min-width: 760px) {
+  .rr__cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
+}
+
+.rr__esfera { position: relative; width: 100%; max-width: 24rem; margin-inline: auto; }
+.rr__esfera svg { display: block; width: 100%; height: auto; }
+
+/* EL LAVADO DE DETRÁS. Dos charcos descentrados, más oscuros en su
+   corona que en su centro —lo que hace el agua al secarse—, con el
+   grano del papel dentro y en `multiply`, que sobre papel solo puede
+   oscurecer. Es decorativo entero: si no carga, el disco es el mismo.
+
+   LA MÁSCARA NO ES ADORNO, ES LO QUE LO HACE PINTURA. Sin ella el
+   grano del papel se pinta hasta el borde de la caja y lo que aparece
+   detrás del disco es un CUADRADO GRIS — se vio en pantalla, en móvil
+   y en escritorio, y era exactamente el error que la sección se tiene
+   prohibido: una lámina enseñando su canto. Lo que define la forma de
+   una mancha es dónde se acaba el pigmento, no dónde se acaba la caja
+   que lo contiene. */
+.rr__esfera::before {
+  content: "";
+  position: absolute; inset: 2% 0 6%;
+  z-index: -1;
+  background-image:
+    url("/galene/arte/1024/papel.webp"),
+    radial-gradient(closest-side circle at 50% 50%,
+      #2F6B4F0a 0%, #2F6B4F14 58%, #2F6B4F1f 82%, transparent 100%),
+    radial-gradient(closest-side circle at 50% 50%,
+      #4A62740c 0%, #4A62741a 66%, transparent 100%);
+  background-size: 240px, 86% 82%, 64% 68%;
+  background-position: 0 0, 38% 44%, 70% 66%;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-blend-mode: multiply, normal, normal;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: radial-gradient(closest-side circle at 50% 53%,
+    #000 0%, #000 42%, #0009 66%, #0000 90%);
+  mask-image: radial-gradient(closest-side circle at 50% 53%,
+    #000 0%, #000 42%, #0009 66%, #0000 90%);
+}
+
+/* EL CENTRO dice DÓNDE ESTÁS, nunca cuánto queda. Va anclado al centro
+   geométrico del disco (216 de 380 en el viewBox), no al de la caja. */
+.rr__centro {
+  position: absolute; left: 50%; top: 56.8%;
+  transform: translate(-50%, -50%);
+  width: 52%; margin: 0; text-align: center;
+}
+.rr__eco {
+  display: none;
+  font-family: var(--tipo-titulo);
+  font-size: clamp(1.05rem, 4.2vw, 1.35rem);
+  line-height: 1.2; text-wrap: balance;
+}
+.rr__centro__pie {
+  display: block; margin-top: 0.35rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.8rem);
+  line-height: 1.3; color: #16222Eb0;
+}
+
+/* ── El anillo ──────────────────────────────────────────────────── */
+.rr__marca { stroke: #16222E33; stroke-width: 1.2; }
+.rr__marca--borde { stroke: #16222E; stroke-width: 1.8; }
+.rr__arco {
+  fill: none; stroke: #16222E; stroke-width: 9; stroke-linecap: round;
+  opacity: 0.13; transition: opacity 220ms linear, stroke 220ms linear;
+}
+/* La aguada del tramo elegido: el mismo trazo, cuatro veces más ancho y
+   casi transparente. Pigmento que se sale de la línea. */
+.rr__aguada {
+  fill: none; stroke: #2F6B4F; stroke-width: 26; stroke-linecap: round;
+  opacity: 0; transition: opacity 320ms linear;
+}
+/* LA COLA. El círculo no termina en una pared. */
+.rr__cola {
+  fill: none; stroke: #2F6B4F; stroke-width: 4.5;
+  stroke-linecap: round; stroke-dasharray: 0.5 9;
+  opacity: 0.45; transition: opacity 220ms linear, stroke-width 220ms linear;
+}
+.rr__punta {
+  fill: none; stroke: #2F6B4F; stroke-width: 4;
+  stroke-linecap: round; stroke-linejoin: round;
+  opacity: 0.4; transition: opacity 220ms linear;
+}
+.rr__etiqueta {
+  fill: #16222Eb0; font-family: var(--tipo-texto); font-size: 15px;
+  text-anchor: middle; dominant-baseline: middle;
+  transition: fill 220ms linear;
+}
+
+/* Qué se enciende con cada respuesta. El verde es el mismo «abierta»
+   del reloj de arriba y el azul el mismo «quizás»: dentro del sitio un
+   color no puede significar dos cosas. */
+.rr:has(#rr-horas:checked)  .rr__arco--a,
+.rr:has(#rr-anoche:checked) .rr__arco--b,
+.rr:has(#rr-ayer:checked)   .rr__arco--c { stroke: #2F6B4F; opacity: 1; }
+.rr:has(#rr-horas:checked)  .rr__aguada--a,
+.rr:has(#rr-anoche:checked) .rr__aguada--b,
+.rr:has(#rr-ayer:checked)   .rr__aguada--c { opacity: 0.2; }
+.rr:has(#rr-horas:checked)  .rr__etiqueta--a,
+.rr:has(#rr-anoche:checked) .rr__etiqueta--b,
+.rr:has(#rr-ayer:checked)   .rr__etiqueta--c { fill: #16222E; }
+
+/* «No sé» enciende los tres tramos a la vez. No es un estado vacío: es
+   la respuesta que devuelve más opciones, y el disco tiene que decirlo. */
+.rr:has(#rr-nose:checked) .rr__arco { stroke: #4A6274; opacity: 0.6; }
+.rr:has(#rr-nose:checked) .rr__etiqueta { fill: #16222Ec4; }
+.rr:has(#rr-nose:checked) .rr__cola,
+.rr:has(#rr-nose:checked) .rr__punta { opacity: 0.8; }
+
+/* «Hace unos días»: el anillo se apaga y manda la cola. Es el momento
+   en que este bloque tiene que decir lo contrario de un cronómetro. */
+.rr:has(#rr-dias:checked) .rr__arco { opacity: 0.1; }
+.rr:has(#rr-dias:checked) .rr__cola { opacity: 1; stroke-width: 5.5; }
+.rr:has(#rr-dias:checked) .rr__punta { opacity: 1; }
+
+/* ── La acción, una sola ────────────────────────────────────────── */
+.rr__ficha { display: none; gap: 0.55rem; }
+.rr__eco--nose, .rr__ficha--nose { display: grid; }
+.rr:has(.rr__radio:checked:not(#rr-nose)) .rr__eco--nose,
+.rr:has(.rr__radio:checked:not(#rr-nose)) .rr__ficha--nose { display: none; }
+.rr:has(#rr-horas:checked)  .rr__eco--horas,
+.rr:has(#rr-anoche:checked) .rr__eco--anoche,
+.rr:has(#rr-ayer:checked)   .rr__eco--ayer,
+.rr:has(#rr-dias:checked)   .rr__eco--dias,
+.rr:has(#rr-horas:checked)  .rr__ficha--horas,
+.rr:has(#rr-anoche:checked) .rr__ficha--anoche,
+.rr:has(#rr-ayer:checked)   .rr__ficha--ayer,
+.rr:has(#rr-dias:checked)   .rr__ficha--dias { display: grid; }
+
+.rr__accion {
+  margin: 0; font-family: var(--tipo-titulo);
+  font-size: clamp(1.35rem, 3.6vw, 1.85rem);
+  line-height: 1.3; text-wrap: balance;
+}
+.rr__matiz {
+  margin: 0; max-width: 42ch;
+  color: #16222Ec0; font-size: 1rem; line-height: 1.55;
+}
+.rr__salidas {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 0.7rem 1.2rem; margin-top: 0.6rem;
+}
+.rr__otra {
+  display: inline-flex; align-items: center; min-height: 3rem;
+  color: #16222E; font-size: 1rem;
+}
+
+/* ── LOS HORIZONTES ─────────────────────────────────────────────────
+   La corrección al malentendido de «las 72 horas». Puestas a la misma
+   escala se ve de un vistazo lo que un párrafo no consigue explicar:
+   que una ventana cierra a las 12, dos a las 72, otra a las 120 — y que
+   dos no cierran nunca.
+
+   El nombre y el plazo van en una línea y la barra debajo, cruzando las
+   dos columnas: así no hay maquetación que se rompa cuando el nombre
+   ocupa dos renglones en un móvil estrecho. */
+.rr__subtitulo {
+  margin: 3rem 0 0; font-family: var(--tipo-titulo); font-weight: 400;
+  font-size: clamp(1.2rem, 3.2vw, 1.5rem);
+}
+.rr__horizontes {
+  list-style: none; margin: 1.4rem 0 0; padding: 0;
+  display: grid; gap: 1.1rem; max-width: 44rem;
+}
+.rr__horizonte {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline; gap: 0.15rem 0.9rem;
+  transition: opacity 220ms linear;
+}
+.rr__horizonte__nombre { font-size: 1rem; line-height: 1.35; }
+.rr__horizonte__plazo {
+  font-size: 0.88rem; color: #16222Eb0;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.rr__riel {
+  grid-column: 1 / -1; position: relative;
+  height: 8px; margin-top: 0.35rem;
+  border-radius: 999px; background: #16222E14;
+}
+.rr__riel__pigmento {
+  position: absolute; inset: 0 auto 0 0; width: var(--ancho, 0%);
+  border-radius: 999px;
+  background-color: #2F6B4F;
+  background-image: url("/galene/arte/1024/papel.webp");
+  background-size: 180px;
+  background-blend-mode: multiply;
+}
+/* El punto del final es el plazo: la barra no se desvanece, se para. */
+.rr__riel__pigmento::after {
+  content: ""; position: absolute; right: -2px; top: 50%;
+  width: 13px; height: 13px; margin-top: -6.5px;
+  border-radius: 50%; background-color: inherit;
+}
+/* Las que no caducan no tienen punto: se desvanecen y siguen. */
+.rr__horizonte--eterna .rr__riel__pigmento {
+  width: calc(100% - 1.2rem);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 0%, #000 58%, transparent 100%);
+}
+.rr__horizonte--eterna .rr__riel__pigmento::after { content: none; }
+.rr__horizonte--eterna .rr__riel::after {
+  content: "→"; position: absolute; right: 0; top: 50%;
+  transform: translateY(-50%);
+  color: #2F6B4F; font-size: 0.95rem; line-height: 1;
+}
+
+/* Lo que ya pasó, y lo que no se sabe. Tres señales que no son el
+   color: la frase —que está en el HTML—, el tachado del plazo y el
+   pigmento que se apaga. Nada de este sitio se apoya solo en el color.
+
+   Y NO SE APAGA CON `opacity` LA FILA ENTERA, que era lo cómodo. Una
+   fila al 50 % se lleva por delante el contraste de su propio aviso:
+   «Ya pasó.» quedaba en 2,5:1, o sea que la única señal que no depende
+   del color se volvía la menos legible de las tres. Se apaga pieza por
+   pieza, y el texto no se apaga. */
+.rr__cerrado, .rr__quizas {
+  display: none; grid-column: 1 / -1;
+  font-size: 0.85rem; line-height: 1.4; color: #16222Eb0;
+}
+.rr:has(#rr-ayer:checked) .rr__horizonte[data-cierra="12"] .rr__cerrado,
+.rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="12"] .rr__cerrado,
+.rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="72"] .rr__cerrado {
+  display: block;
+}
+.rr:has(#rr-ayer:checked) .rr__horizonte[data-cierra="12"] .rr__horizonte__plazo,
+.rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="12"] .rr__horizonte__plazo,
+.rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="72"] .rr__horizonte__plazo {
+  text-decoration: line-through;
+}
+.rr:has(#rr-ayer:checked) .rr__horizonte[data-cierra="12"] .rr__riel__pigmento,
+.rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="12"] .rr__riel__pigmento,
+.rr:has(#rr-dias:checked) .rr__horizonte[data-cierra="72"] .rr__riel__pigmento {
+  background-color: #16222E; opacity: 0.22;
+}
+
+/* Los plazos que caen DENTRO del momento elegido. Ni verde ni apagado:
+   el azul de «quizás», el mismo del reloj de arriba. */
+.rr:has(#rr-anoche:checked) .rr__horizonte[data-cierra="12"] .rr__riel__pigmento,
+.rr:has(#rr-dias:checked)   .rr__horizonte[data-cierra="120"] .rr__riel__pigmento {
+  background-color: #4A6274;
+}
+.rr:has(#rr-anoche:checked) .rr__horizonte[data-cierra="12"] .rr__quizas,
+.rr:has(#rr-dias:checked)   .rr__horizonte[data-cierra="120"] .rr__quizas {
+  display: block;
+}
+
+.rr__nota { margin: 1.25rem 0 0; }
+
+/* El cierre de la página. Sin aguada: el realce de este sitio es el
+   color del daño y está reservado para las frases que describen uno.
+   Esta dice lo contrario. */
+.rr__cierre { margin-top: 3rem; max-width: 34ch; }
+
+/* ═══════════════════════════════════════════════════════════════════
    prefers-reduced-motion APAGA. No reduce.
    Y con todo apagado el sitio sigue siendo bonito: mar quieto,
    garzas quietas, todo legible. Es también la versión de gama baja.
