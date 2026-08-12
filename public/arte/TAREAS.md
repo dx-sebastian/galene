@@ -43,253 +43,406 @@ mediodía, porque **cada hora tiene su tipo de nube**, y eso es física.
 - **Alba** — cirros altísimos. El sol aún no ha salido pero ya les llega,
   así que se encienden solos sobre un cielo todavía apagado. Es el único
   momento del día en que la luz viene **de abajo**.
-- **Día** — casi nada. Cúmulos pequeños y bajos, lejos, junto al
-  horizonte. Un cielo de mediodía bonito es un cielo **vacío**.
-- **Ocaso** — altocúmulos en capas, el cielo aborregado. Es lo que hace
-  espectaculares los atardeceres: cada borreguito recibe la luz por
+- **Día** — casi nada. Cúmulos pequeños y bajos, junto al horizonte.
+- **Ocaso** — altocúmulos en capas. Cada borreguito recibe la luz por
   separado y el cielo se vuelve un mosaico.
-- **Noche** — un velo finísimo, para que la luna tenga dónde apoyarse y
-  el cielo no sea un plano liso.
+- **Noche** — un velo finísimo, para que la luna tenga dónde apoyarse.
 
-**CONDICIÓN TÉCNICA, y no es negociable**: se pintan **solo en grises**.
-Las nubes van en duotono —la lámina aporta la estructura de VALOR y la
-paleta de la hora aporta el color—, así que una lámina que ya venga rosa
-pelea con la paleta y a las tres de la tarde se ve sucia. Gris que
-granula, y nada más.
+Cada prompt va **completo y autónomo**, y se repiten enteros a propósito:
+un prompt que dice "igual que el anterior" se pega mal y sale mal.
 
-Cuando estén las cuatro hay que cargarlas y cruzarlas por hora, igual que
-ya se cruzan las bandas de agua. Misma mecánica, ya existe.
-
-- [ ] **A0.1 · `cielo-alba.png`**
+- [ ] ### `cielo-alba.png` — El alba — cirros que se encienden por abajo
 
 ```
-A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
-Painted very wet and very fast, in one pass, and then left alone. No
-correction, no second layer over anything that had dried.
+You are painting ONE plate for a hand-painted watercolour scene. Read
+every rule before you start. The rules are not style suggestions: the
+plate is composited by a shader and a plate that breaks them is thrown
+away.
 
-SUBJECT — CIRRUS CLOUDS, the highest clouds there are, floating on
-nothing. Four or five long horizontal filaments swept across the UPPER
-THIRD of the sheet, each one a single dragged stroke, feathered and
-broken at both ends. They are thin enough to see through. Below them,
-nothing at all: the lower two thirds is bare paper.
+=== 1 - WHAT TO PAINT ===
+SUBJECT >>> CIRRUS, the highest clouds there are. Four or five long horizontal
+filaments swept across the UPPER THIRD of the sheet only, each one a
+single dragged stroke, feathered and broken at both ends, thin enough
+to see through. Below them nothing at all: the lower two thirds is
+bare paper. 78% of the sheet untouched.
 
-THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
-the clouds are not, and that is at least 75% of the sheet. The emptiness
-is the subject; the clouds are what happened to it.
+=== 2 - THE FIVE HARD RULES ===
+R1. TRANSPARENT BACKGROUND, true alpha. No white, no cream, no paper
+    tone, no colour of any kind behind the subject. Not "white that
+    looks like transparent" - actually transparent.
+R2. NO HALO. No pale outline, fringe, glow or soft edge of background
+    colour clinging to the subject. No stray coloured pixels anywhere.
+R3. NOTHING BUT THE SUBJECT. No horizon, no ground, no sky, no water,
+    no sun, no moon, no stars, no shadow, no reflection, no frame, no
+    border, no signature, no text, no numbers, no watermark.
+R4. AT LEAST HALF THE SHEET IS BARE. The empty area is not wasted
+    space, it is the picture. If in doubt, paint less.
+R5. ONE PASS ONLY. Painted wet, painted fast, and then abandoned. Never
+    go back over something that has dried.
 
-COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
-umber, and no other pigment anywhere. This is deliberate and it matters:
-the colour of the hour gets added afterwards, so the painting must carry
-only VALUE — where the cloud is dense and where it is barely there.
-Never black, never white paint, no blue, no pink, no gold.
+=== 3 - WHY YOUR WATERCOLOURS COME OUT LOOKING LIKE PHOTOGRAPHS ===
+This is the part that usually fails. A render of a watercolour and a
+watercolour differ in four specific, checkable ways. Obey all four.
 
-HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
-picture of one, and it should be clearly visible at full size:
-· The pigment GRANULATES: it separates on the paper and settles into the
-  tooth, so no wash is ever one flat tone. You can see the grain.
-· Where a wet stroke met a drier one, it BLOOMED into a backrun with a
-  ragged cauliflower edge, and it was left that way.
-· Where the loaded brush moved fast over the tooth it SKIPPED, leaving
-  broken white speckle inside the stroke.
-· Every stroke is soft and lost at one end and ends in a HARD DRIED EDGE
-  at the other. That hard edge is the only drawn line in the picture.
-· The paper's texture shows through everywhere, even in the darkest
-  passages.
-None of this is added on top as an effect. It is what the paint did.
+W1. EDGES, NOT GRADIENTS. Real watercolour dries into FLAT SHAPES with
+    a HARD EDGE where the puddle stopped. Smooth continuous shading is
+    the single clearest sign of a digital render. Every wash must be
+    either flat, or lost into bare paper, and it must have at least one
+    hard dried edge. NO airbrushed falloff. NO soft glow. NO blur.
+W2. GRANULATION INSTEAD OF DETAIL. The interest comes from the pigment
+    separating and settling into the paper's tooth, so no wash is ever
+    one even tone. It does NOT come from drawing more things. Detail is
+    what makes it look rendered; grain is what makes it look painted.
+W3. FEWER STROKES THAN YOU THINK. Each element gets two or three
+    touches of the brush and no more. A shape that took twenty strokes
+    reads as a render no matter how it is textured. Suggest the mass
+    and stop. Where the brush skipped over the tooth, leave the broken
+    white speckle inside the stroke - do not fill it in.
+W4. NO LIGHTING. There is no sun, no light source, no highlight, no
+    cast shadow, no ambient occlusion, no depth of field. Flat, even,
+    diffuse light everywhere. Form comes from the value of the wash,
+    not from illumination.
 
-No cloud has an outline or a defined shape. Do not draw the edge of a
-cloud; let the wash decide where it ends.
+Accidents are welcome - backruns that bloomed where a wet stroke met a
+drier one, a hard edge where a puddle dried, a run that went too far -
+but only as CONSEQUENCES of painting fast. Do not place them
+decoratively. A painting that has accidents and a painting that
+suffered them do not look alike.
 
-Seamless left and right edges. Landscape 3:2, at least 2400px wide.
-Transparent background — true alpha, no white, no cream, no paper tone
-behind the clouds, no halo or pale fringe around them.
-Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
-no rays, no glow, no stars, no birds, no land, no water, no frame.
+=== 4 - COLOUR ===
+GREY AND NOTHING ELSE: a cool neutral grey with a trace of raw umber,
+and no other pigment anywhere in the image. This is deliberate and it
+matters - the colour of the hour is added afterwards by the shader, so
+this painting must carry only VALUE: where the cloud is dense and where
+it is barely there. A plate that arrives already pink or golden fights
+the palette and looks dirty at three in the afternoon.
+Never pure black. Never white paint - the white is the paper.
 
-NEGATIVE: blue sky, sky gradient, background colour, coloured clouds,
-pink, gold, orange, sunset, sunrise colours, fluffy cumulus, cotton
-wool, storybook clouds, outlines, ink lines, god rays, lens flare,
-bloom, glow, sparkle, stars, vector, digital painting, airbrush, 3D,
-photorealistic, HDR, saturated, symmetrical, evenly spaced, repeating
-pattern, decorative, tidy, finished, polished, signature, border.
+=== 5 - OUTPUT ===
+PNG with a real alpha channel. Landscape 3:2, at least 2400 px wide.
+Edges seamless left and right: the plate is tiled horizontally, so what
+leaves the right edge must arrive at the left.
+
+=== 6 - CHECK BEFORE YOU ANSWER ===
+Go through this list. If any answer is no, paint it again.
+  [ ] Is the background genuinely transparent, with no halo?
+  [ ] Is more than half the sheet bare?
+  [ ] Is the whole image grey - no pink, no gold, no blue?
+  [ ] Does every wash have at least one hard dried edge?
+  [ ] Is there any smooth gradient anywhere? There must not be.
+  [ ] Can I see the grain of the paper through the paint?
+  [ ] Did I add a horizon, a sun, a moon, a star or a shadow? Remove it.
+  [ ] Does the left edge continue into the right edge?
+
+=== NEGATIVE ===
+blue sky, sky gradient, background colour, coloured clouds, pink, gold,
+orange, sunrise colours, sunset postcard, golden hour, white background,
+cream background, halo, fringe, outline, ink line, smooth gradient,
+airbrush, soft focus, blur, bloom, glow, god rays, lens flare,
+highlight, cast shadow, ambient occlusion, depth of field, sun, moon,
+stars, starfield, 3D render, CGI, photorealistic, HDR, oversaturated,
+neon, digital painting, concept art, illustration, storybook, cotton
+wool, decorative, symmetrical, evenly spaced, repeating pattern, tidy,
+finished, polished, overworked, signature, watermark, text, numbers,
+border, frame.
 ```
 
-- [ ] **A0.2 · `cielo-dia.png`**
+- [ ] ### `cielo-dia.png` — El día — un cielo de mediodía bonito es un cielo vacío
 
 ```
-A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
-Painted very wet and very fast, in one pass, and then left alone. No
-correction, no second layer over anything that had dried.
+You are painting ONE plate for a hand-painted watercolour scene. Read
+every rule before you start. The rules are not style suggestions: the
+plate is composited by a shader and a plate that breaks them is thrown
+away.
 
-SUBJECT — A FEW SMALL FAIR-WEATHER CUMULUS, low and far away. Six or
-seven of them, sitting in a narrow band across the LOWER THIRD of the
-sheet and never rising above it. Each one has a soft rounded top and a
-flat, slightly darker base, and each is painted with two or three
-touches of the brush and no more. They are uneven: different sizes,
-irregular spacing, two of them almost dissolved to nothing. The entire
-upper two thirds of the sheet is bare paper.
+=== 1 - WHAT TO PAINT ===
+SUBJECT >>> SIX OR SEVEN SMALL FAIR-WEATHER CUMULUS, low and far away, sitting in
+a narrow band across the LOWER THIRD of the sheet and never rising
+above it. Soft rounded tops, flat and slightly darker bases, two or
+three brush touches each and no more. They are uneven: different
+sizes, irregular spacing, and two of them almost dissolved to nothing.
+The entire upper two thirds is bare paper. 82% of the sheet
+untouched.
 
-THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
-the clouds are not, and that is at least 80% of the sheet. A midday sky
-is beautiful because it is EMPTY; the clouds only prove how much room
-there is.
+=== 2 - THE FIVE HARD RULES ===
+R1. TRANSPARENT BACKGROUND, true alpha. No white, no cream, no paper
+    tone, no colour of any kind behind the subject. Not "white that
+    looks like transparent" - actually transparent.
+R2. NO HALO. No pale outline, fringe, glow or soft edge of background
+    colour clinging to the subject. No stray coloured pixels anywhere.
+R3. NOTHING BUT THE SUBJECT. No horizon, no ground, no sky, no water,
+    no sun, no moon, no stars, no shadow, no reflection, no frame, no
+    border, no signature, no text, no numbers, no watermark.
+R4. AT LEAST HALF THE SHEET IS BARE. The empty area is not wasted
+    space, it is the picture. If in doubt, paint less.
+R5. ONE PASS ONLY. Painted wet, painted fast, and then abandoned. Never
+    go back over something that has dried.
 
-COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
-umber, and no other pigment anywhere. This is deliberate and it matters:
-the colour of the hour gets added afterwards, so the painting must carry
-only VALUE — where the cloud is dense and where it is barely there.
-Never black, never white paint, no blue, no pink, no gold.
+=== 3 - WHY YOUR WATERCOLOURS COME OUT LOOKING LIKE PHOTOGRAPHS ===
+This is the part that usually fails. A render of a watercolour and a
+watercolour differ in four specific, checkable ways. Obey all four.
 
-HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
-picture of one, and it should be clearly visible at full size:
-· The pigment GRANULATES: it separates on the paper and settles into the
-  tooth, so no wash is ever one flat tone. You can see the grain.
-· Where a wet stroke met a drier one, it BLOOMED into a backrun with a
-  ragged cauliflower edge, and it was left that way.
-· Where the loaded brush moved fast over the tooth it SKIPPED, leaving
-  broken white speckle inside the stroke.
-· Every stroke is soft and lost at one end and ends in a HARD DRIED EDGE
-  at the other. That hard edge is the only drawn line in the picture.
-· The paper's texture shows through everywhere, even in the darkest
-  passages.
-None of this is added on top as an effect. It is what the paint did.
+W1. EDGES, NOT GRADIENTS. Real watercolour dries into FLAT SHAPES with
+    a HARD EDGE where the puddle stopped. Smooth continuous shading is
+    the single clearest sign of a digital render. Every wash must be
+    either flat, or lost into bare paper, and it must have at least one
+    hard dried edge. NO airbrushed falloff. NO soft glow. NO blur.
+W2. GRANULATION INSTEAD OF DETAIL. The interest comes from the pigment
+    separating and settling into the paper's tooth, so no wash is ever
+    one even tone. It does NOT come from drawing more things. Detail is
+    what makes it look rendered; grain is what makes it look painted.
+W3. FEWER STROKES THAN YOU THINK. Each element gets two or three
+    touches of the brush and no more. A shape that took twenty strokes
+    reads as a render no matter how it is textured. Suggest the mass
+    and stop. Where the brush skipped over the tooth, leave the broken
+    white speckle inside the stroke - do not fill it in.
+W4. NO LIGHTING. There is no sun, no light source, no highlight, no
+    cast shadow, no ambient occlusion, no depth of field. Flat, even,
+    diffuse light everywhere. Form comes from the value of the wash,
+    not from illumination.
 
-No cloud has an outline or a defined shape. Do not draw the edge of a
-cloud; let the wash decide where it ends.
+Accidents are welcome - backruns that bloomed where a wet stroke met a
+drier one, a hard edge where a puddle dried, a run that went too far -
+but only as CONSEQUENCES of painting fast. Do not place them
+decoratively. A painting that has accidents and a painting that
+suffered them do not look alike.
 
-Seamless left and right edges. Landscape 3:2, at least 2400px wide.
-Transparent background — true alpha, no white, no cream, no paper tone
-behind the clouds, no halo or pale fringe around them.
-Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
-no rays, no glow, no stars, no birds, no land, no water, no frame.
+=== 4 - COLOUR ===
+GREY AND NOTHING ELSE: a cool neutral grey with a trace of raw umber,
+and no other pigment anywhere in the image. This is deliberate and it
+matters - the colour of the hour is added afterwards by the shader, so
+this painting must carry only VALUE: where the cloud is dense and where
+it is barely there. A plate that arrives already pink or golden fights
+the palette and looks dirty at three in the afternoon.
+Never pure black. Never white paint - the white is the paper.
 
-NEGATIVE: blue sky, sky gradient, background colour, coloured clouds,
-pink, gold, orange, sunset, sunrise colours, towering cumulus,
-thunderhead, storm, cotton wool, storybook clouds, outlines, ink lines,
-god rays, lens flare, bloom, glow, sparkle, vector, digital painting,
-airbrush, 3D, photorealistic, HDR, saturated, symmetrical, evenly
-spaced, repeating pattern, decorative, tidy, finished, polished,
-signature, border.
+=== 5 - OUTPUT ===
+PNG with a real alpha channel. Landscape 3:2, at least 2400 px wide.
+Edges seamless left and right: the plate is tiled horizontally, so what
+leaves the right edge must arrive at the left.
+
+=== 6 - CHECK BEFORE YOU ANSWER ===
+Go through this list. If any answer is no, paint it again.
+  [ ] Is the background genuinely transparent, with no halo?
+  [ ] Is more than half the sheet bare?
+  [ ] Is the whole image grey - no pink, no gold, no blue?
+  [ ] Does every wash have at least one hard dried edge?
+  [ ] Is there any smooth gradient anywhere? There must not be.
+  [ ] Can I see the grain of the paper through the paint?
+  [ ] Did I add a horizon, a sun, a moon, a star or a shadow? Remove it.
+  [ ] Does the left edge continue into the right edge?
+
+=== NEGATIVE ===
+blue sky, sky gradient, background colour, coloured clouds, pink, gold,
+orange, sunrise colours, sunset postcard, golden hour, white background,
+cream background, halo, fringe, outline, ink line, smooth gradient,
+airbrush, soft focus, blur, bloom, glow, god rays, lens flare,
+highlight, cast shadow, ambient occlusion, depth of field, sun, moon,
+stars, starfield, 3D render, CGI, photorealistic, HDR, oversaturated,
+neon, digital painting, concept art, illustration, storybook, cotton
+wool, decorative, symmetrical, evenly spaced, repeating pattern, tidy,
+finished, polished, overworked, signature, watermark, text, numbers,
+border, frame, towering cumulus, thunderhead, storm.
 ```
 
-- [ ] **A0.3 · `cielo-ocaso.png`**
+- [ ] ### `cielo-ocaso.png` — El ocaso — cielo aborregado, cada nube con su luz
 
 ```
-A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
-Painted very wet and very fast, in one pass, and then left alone. No
-correction, no second layer over anything that had dried.
+You are painting ONE plate for a hand-painted watercolour scene. Read
+every rule before you start. The rules are not style suggestions: the
+plate is composited by a shader and a plate that breaks them is thrown
+away.
 
-SUBJECT — ALTOCUMULUS IN RANKS, a mackerel sky. Many small cloudlets
-gathered into two or three loose horizontal shoals across the MIDDLE
-BAND of the sheet, getting smaller and closer together toward the
-bottom, the way they do when they recede toward the horizon. Each
-cloudlet is ONE touch of the brush and nothing more.
+=== 1 - WHAT TO PAINT ===
+SUBJECT >>> ALTOCUMULUS IN RANKS, a mackerel sky. Many small cloudlets gathered
+into two or three loose horizontal shoals across the MIDDLE BAND of
+the sheet, getting smaller and closer together toward the bottom, the
+way they do when they recede toward the horizon. Each cloudlet is ONE
+touch of the brush and nothing more. The shoals clump in places and
+thin out to bare paper in others - never evenly spaced, never the same
+size. Vary the value from cloudlet to cloudlet: some almost solid,
+some barely a stain, because at sunset each one catches the light
+separately. This is the busiest of the four skies and still 65% of the
+sheet is untouched.
 
-They must NOT be evenly spaced or the same size. The shoals clump in
-places and thin out to bare paper in others, and there are gaps where
-nothing happens at all. Regularity would kill it: this is the busiest of
-the four skies and still there is more paper than paint — at least 65%
-of the sheet untouched.
+=== 2 - THE FIVE HARD RULES ===
+R1. TRANSPARENT BACKGROUND, true alpha. No white, no cream, no paper
+    tone, no colour of any kind behind the subject. Not "white that
+    looks like transparent" - actually transparent.
+R2. NO HALO. No pale outline, fringe, glow or soft edge of background
+    colour clinging to the subject. No stray coloured pixels anywhere.
+R3. NOTHING BUT THE SUBJECT. No horizon, no ground, no sky, no water,
+    no sun, no moon, no stars, no shadow, no reflection, no frame, no
+    border, no signature, no text, no numbers, no watermark.
+R4. AT LEAST HALF THE SHEET IS BARE. The empty area is not wasted
+    space, it is the picture. If in doubt, paint less.
+R5. ONE PASS ONLY. Painted wet, painted fast, and then abandoned. Never
+    go back over something that has dried.
 
-THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
-the clouds are not.
+=== 3 - WHY YOUR WATERCOLOURS COME OUT LOOKING LIKE PHOTOGRAPHS ===
+This is the part that usually fails. A render of a watercolour and a
+watercolour differ in four specific, checkable ways. Obey all four.
 
-COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
-umber, and no other pigment anywhere. This is deliberate and it matters:
-the colour of the hour gets added afterwards, so the painting must carry
-only VALUE — where the cloud is dense and where it is barely there. A
-sunset is spectacular because each cloudlet catches the light SEPARATELY,
-so the value must vary from cloudlet to cloudlet: some almost solid,
-some barely a stain. Never black, never white paint, no blue, no pink,
-no gold.
+W1. EDGES, NOT GRADIENTS. Real watercolour dries into FLAT SHAPES with
+    a HARD EDGE where the puddle stopped. Smooth continuous shading is
+    the single clearest sign of a digital render. Every wash must be
+    either flat, or lost into bare paper, and it must have at least one
+    hard dried edge. NO airbrushed falloff. NO soft glow. NO blur.
+W2. GRANULATION INSTEAD OF DETAIL. The interest comes from the pigment
+    separating and settling into the paper's tooth, so no wash is ever
+    one even tone. It does NOT come from drawing more things. Detail is
+    what makes it look rendered; grain is what makes it look painted.
+W3. FEWER STROKES THAN YOU THINK. Each element gets two or three
+    touches of the brush and no more. A shape that took twenty strokes
+    reads as a render no matter how it is textured. Suggest the mass
+    and stop. Where the brush skipped over the tooth, leave the broken
+    white speckle inside the stroke - do not fill it in.
+W4. NO LIGHTING. There is no sun, no light source, no highlight, no
+    cast shadow, no ambient occlusion, no depth of field. Flat, even,
+    diffuse light everywhere. Form comes from the value of the wash,
+    not from illumination.
 
-HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
-picture of one, and it should be clearly visible at full size:
-· The pigment GRANULATES: it separates on the paper and settles into the
-  tooth, so no wash is ever one flat tone. You can see the grain.
-· Where a wet stroke met a drier one, it BLOOMED into a backrun with a
-  ragged cauliflower edge, and it was left that way.
-· Where the loaded brush moved fast over the tooth it SKIPPED, leaving
-  broken white speckle inside the stroke.
-· Every stroke is soft and lost at one end and ends in a HARD DRIED EDGE
-  at the other. That hard edge is the only drawn line in the picture.
-· The paper's texture shows through everywhere, even in the darkest
-  passages.
-None of this is added on top as an effect. It is what the paint did.
+Accidents are welcome - backruns that bloomed where a wet stroke met a
+drier one, a hard edge where a puddle dried, a run that went too far -
+but only as CONSEQUENCES of painting fast. Do not place them
+decoratively. A painting that has accidents and a painting that
+suffered them do not look alike.
 
-No cloud has an outline or a defined shape. Do not draw the edge of a
-cloud; let the wash decide where it ends.
+=== 4 - COLOUR ===
+GREY AND NOTHING ELSE: a cool neutral grey with a trace of raw umber,
+and no other pigment anywhere in the image. This is deliberate and it
+matters - the colour of the hour is added afterwards by the shader, so
+this painting must carry only VALUE: where the cloud is dense and where
+it is barely there. A plate that arrives already pink or golden fights
+the palette and looks dirty at three in the afternoon.
+Never pure black. Never white paint - the white is the paper.
 
-Seamless left and right edges. Landscape 3:2, at least 2400px wide.
-Transparent background — true alpha, no white, no cream, no paper tone
-behind the clouds, no halo or pale fringe around them.
-Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
-no rays, no glow, no stars, no birds, no land, no water, no frame.
+=== 5 - OUTPUT ===
+PNG with a real alpha channel. Landscape 3:2, at least 2400 px wide.
+Edges seamless left and right: the plate is tiled horizontally, so what
+leaves the right edge must arrive at the left.
 
-NEGATIVE: blue sky, sky gradient, background colour, coloured clouds,
-pink, gold, orange, sunset postcard, golden hour, fish scales, honeycomb,
-grid, tessellation, cotton wool, storybook clouds, outlines, ink lines,
-god rays, lens flare, bloom, glow, sparkle, vector, digital painting,
-airbrush, 3D, photorealistic, HDR, saturated, symmetrical, evenly
-spaced, repeating pattern, decorative, tidy, finished, polished,
-signature, border.
+=== 6 - CHECK BEFORE YOU ANSWER ===
+Go through this list. If any answer is no, paint it again.
+  [ ] Is the background genuinely transparent, with no halo?
+  [ ] Is more than half the sheet bare?
+  [ ] Is the whole image grey - no pink, no gold, no blue?
+  [ ] Does every wash have at least one hard dried edge?
+  [ ] Is there any smooth gradient anywhere? There must not be.
+  [ ] Can I see the grain of the paper through the paint?
+  [ ] Did I add a horizon, a sun, a moon, a star or a shadow? Remove it.
+  [ ] Does the left edge continue into the right edge?
+
+=== NEGATIVE ===
+blue sky, sky gradient, background colour, coloured clouds, pink, gold,
+orange, sunrise colours, sunset postcard, golden hour, white background,
+cream background, halo, fringe, outline, ink line, smooth gradient,
+airbrush, soft focus, blur, bloom, glow, god rays, lens flare,
+highlight, cast shadow, ambient occlusion, depth of field, sun, moon,
+stars, starfield, 3D render, CGI, photorealistic, HDR, oversaturated,
+neon, digital painting, concept art, illustration, storybook, cotton
+wool, decorative, symmetrical, evenly spaced, repeating pattern, tidy,
+finished, polished, overworked, signature, watermark, text, numbers,
+border, frame, fish scales, honeycomb, grid, tessellation.
 ```
 
-- [ ] **A0.4 · `cielo-noche.png`**
+- [ ] ### `cielo-noche.png` — La noche — un velo para que la luna tenga dónde apoyarse
 
 ```
-A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
-Painted very wet and very fast, in one pass, and then left alone. No
-correction, no second layer over anything that had dried.
+You are painting ONE plate for a hand-painted watercolour scene. Read
+every rule before you start. The rules are not style suggestions: the
+plate is composited by a shader and a plate that breaks them is thrown
+away.
 
-SUBJECT — ALMOST NOTHING. Two or three enormous, extremely faint veils
-of high cloud drifting diagonally across the sheet, so thin they are
-barely darker than the paper itself. They have no edges anywhere: each
-one fades into nothing in every direction. If a shape starts to read as
-a cloud, it is already too strong.
-
-This is the emptiest of the four by a long way: at least 88% of the
-sheet is bare paper, and the 12% that is painted is the palest wash in
-the set. Its whole job is to give the moon something to sit behind so
-the night sky is not a flat plane.
-
-THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
-the veils are not.
-
-COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
-umber, and no other pigment anywhere. This is deliberate and it matters:
-the colour of the hour gets added afterwards, so the painting must carry
-only VALUE. Never black, never white paint, no blue, no pink, no gold,
-and above all nothing dark: this sky is painted almost entirely in the
+=== 1 - WHAT TO PAINT ===
+SUBJECT >>> ALMOST NOTHING. Two or three enormous, extremely faint veils of high
+cloud drifting diagonally across the sheet, so thin they are barely
+darker than the paper itself. They have NO hard edges anywhere - this
+is the only one of the four skies without a single hard edge, every
+edge lost in every direction. If a shape starts to read as a cloud it
+is already too strong. 88% of the sheet is bare paper and the painted
+12% is the palest wash in the set, painted almost entirely in the
 first two steps above bare paper.
 
-HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
-picture of one, and it should be visible even at this pale a value:
-· The pigment GRANULATES: it separates on the paper and settles into the
-  tooth, so even the faintest wash shows its grain. At this value the
-  granulation IS the image.
-· One or two places where a wet wash met a drier one and BLOOMED into a
-  soft backrun, and it was left that way.
-· Where the brush moved fast over the tooth it SKIPPED, leaving broken
-  paper inside the wash.
-· No hard dried edges in this one. Every edge is lost. This is the only
-  sky of the four without a single hard edge.
-· The paper's texture shows through everywhere.
-None of this is added on top as an effect. It is what the paint did.
+=== 2 - THE FIVE HARD RULES ===
+R1. TRANSPARENT BACKGROUND, true alpha. No white, no cream, no paper
+    tone, no colour of any kind behind the subject. Not "white that
+    looks like transparent" - actually transparent.
+R2. NO HALO. No pale outline, fringe, glow or soft edge of background
+    colour clinging to the subject. No stray coloured pixels anywhere.
+R3. NOTHING BUT THE SUBJECT. No horizon, no ground, no sky, no water,
+    no sun, no moon, no stars, no shadow, no reflection, no frame, no
+    border, no signature, no text, no numbers, no watermark.
+R4. AT LEAST HALF THE SHEET IS BARE. The empty area is not wasted
+    space, it is the picture. If in doubt, paint less.
+R5. ONE PASS ONLY. Painted wet, painted fast, and then abandoned. Never
+    go back over something that has dried.
 
-Seamless left and right edges. Landscape 3:2, at least 2400px wide.
-Transparent background — true alpha, no white, no cream, no paper tone
-behind the veils, no halo or pale fringe around them.
-Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
-no rays, no glow, no stars, no birds, no land, no water, no frame.
+=== 3 - WHY YOUR WATERCOLOURS COME OUT LOOKING LIKE PHOTOGRAPHS ===
+This is the part that usually fails. A render of a watercolour and a
+watercolour differ in four specific, checkable ways. Obey all four.
 
-NEGATIVE: blue sky, sky gradient, background colour, night sky, dark
-background, black, navy, stars, starfield, milky way, moon, moonlight,
-glow, halo, coloured clouds, storm clouds, defined clouds, outlines,
-ink lines, god rays, lens flare, bloom, sparkle, vector, digital
-painting, airbrush, 3D, photorealistic, HDR, saturated, symmetrical,
-evenly spaced, repeating pattern, decorative, tidy, finished, polished,
-signature, border.
+W1. EDGES, NOT GRADIENTS. Real watercolour dries into FLAT SHAPES with
+    a HARD EDGE where the puddle stopped. Smooth continuous shading is
+    the single clearest sign of a digital render. Every wash must be
+    either flat, or lost into bare paper, and it must have at least one
+    hard dried edge. NO airbrushed falloff. NO soft glow. NO blur.
+W2. GRANULATION INSTEAD OF DETAIL. The interest comes from the pigment
+    separating and settling into the paper's tooth, so no wash is ever
+    one even tone. It does NOT come from drawing more things. Detail is
+    what makes it look rendered; grain is what makes it look painted.
+W3. FEWER STROKES THAN YOU THINK. Each element gets two or three
+    touches of the brush and no more. A shape that took twenty strokes
+    reads as a render no matter how it is textured. Suggest the mass
+    and stop. Where the brush skipped over the tooth, leave the broken
+    white speckle inside the stroke - do not fill it in.
+W4. NO LIGHTING. There is no sun, no light source, no highlight, no
+    cast shadow, no ambient occlusion, no depth of field. Flat, even,
+    diffuse light everywhere. Form comes from the value of the wash,
+    not from illumination.
+
+Accidents are welcome - backruns that bloomed where a wet stroke met a
+drier one, a hard edge where a puddle dried, a run that went too far -
+but only as CONSEQUENCES of painting fast. Do not place them
+decoratively. A painting that has accidents and a painting that
+suffered them do not look alike.
+
+=== 4 - COLOUR ===
+GREY AND NOTHING ELSE: a cool neutral grey with a trace of raw umber,
+and no other pigment anywhere in the image. This is deliberate and it
+matters - the colour of the hour is added afterwards by the shader, so
+this painting must carry only VALUE: where the cloud is dense and where
+it is barely there. A plate that arrives already pink or golden fights
+the palette and looks dirty at three in the afternoon.
+Never pure black. Never white paint - the white is the paper.
+
+=== 5 - OUTPUT ===
+PNG with a real alpha channel. Landscape 3:2, at least 2400 px wide.
+Edges seamless left and right: the plate is tiled horizontally, so what
+leaves the right edge must arrive at the left.
+
+=== 6 - CHECK BEFORE YOU ANSWER ===
+Go through this list. If any answer is no, paint it again.
+  [ ] Is the background genuinely transparent, with no halo?
+  [ ] Is more than half the sheet bare?
+  [ ] Is the whole image grey - no pink, no gold, no blue?
+  [ ] Does every wash have at least one hard dried edge?
+  [ ] Is there any smooth gradient anywhere? There must not be.
+  [ ] Can I see the grain of the paper through the paint?
+  [ ] Did I add a horizon, a sun, a moon, a star or a shadow? Remove it.
+  [ ] Does the left edge continue into the right edge?
+
+=== NEGATIVE ===
+blue sky, sky gradient, background colour, coloured clouds, pink, gold,
+orange, sunrise colours, sunset postcard, golden hour, white background,
+cream background, halo, fringe, outline, ink line, smooth gradient,
+airbrush, soft focus, blur, bloom, glow, god rays, lens flare,
+highlight, cast shadow, ambient occlusion, depth of field, sun, moon,
+stars, starfield, 3D render, CGI, photorealistic, HDR, oversaturated,
+neon, digital painting, concept art, illustration, storybook, cotton
+wool, decorative, symmetrical, evenly spaced, repeating pattern, tidy,
+finished, polished, overworked, signature, watermark, text, numbers,
+border, frame, dark background, black, navy, night sky, defined clouds, storm clouds.
 ```
 
 ---
