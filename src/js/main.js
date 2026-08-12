@@ -119,7 +119,18 @@ function arrancar(mar) {
        lámina 3:2 daba 0.93 del alto de ancho, casi el doble del ancho de
        un teléfono. Aquí se le pone techo por ANCHO. */
     const aspLam = mar.cajaManglar()[3] || 1.5;
-    const altoManglar = Math.min(0.62, (0.74 * w) / (aspLam * h));
+    /* EL TOPE DEPENDE DEL FORMATO DE LA LÁMINA. Estaba fijo en 0.62 del
+       alto, calculado para un manglar apaisado (3:2). Con la lámina
+       repintada, que vino vertical (2:3), ese mismo 0.62 dejaba el árbol
+       en un 33 % del ancho de pantalla en vez del 75 % de antes: dejaba
+       de ser el protagonista y pasaba a ser un arbolito.
+
+       Una lámina alta puede permitirse más alto sin salirse por los
+       lados, así que el techo sube cuando el aspecto baja. El segundo
+       término sigue siendo el que manda en móvil: ahí el límite es el
+       ancho, no el alto. */
+    const techo = aspLam < 1.0 ? 0.78 : 0.62;
+    const altoManglar = Math.min(techo, (0.82 * w) / (aspLam * h));
     mar.colocarManglar(xManglar, altoManglar);
 
     // Después del manglar: el posadero se calcula a partir de su caja.
@@ -401,6 +412,13 @@ function arrancar(mar) {
        0.55, no 1.15: a fuerza alta el papel deja de ser soporte y pasa
        a ser un filtro de textura encima de todo. */
     if (n.includes('papel')) estado.papel = 0.55;
+    /* Y SE VUELVE A MEDIR. El aspecto real del manglar solo se conoce
+       cuando su lámina ha cargado, pero la composición —el techo de
+       altura, el posadero de la garza— se calcula en el arranque con el
+       valor por defecto de 1.5. Mientras la lámina fue apaisada eso
+       coincidía y el fallo no se veía; al llegar una vertical, el árbol
+       se quedó dibujado con el encuadre de la anterior. */
+    medidas();
     cuadro(performance.now());
   }).catch((e) => console.warn('[mar] sin láminas:', e.message));
   if (!quieto.matches) bucle();
@@ -675,7 +693,11 @@ if (contenedor) {
    arriba, o sea sobre la copa. En el cercano, (0.27, 0.455), que es el
    tramo sólido de la rama —más a la derecha la pintura ya se desvanece y
    el ave parecía flotar sobre nada. */
-const POSADERO = [0.42, 0.16];
+/* Remedido sobre el manglar repintado: la copa nueva es mas estrecha y
+   mas alta. A y=0.14 de la lamina la masa va de x 0.229 a 0.693 con un
+   45 % de densidad, asi que el ave se posa en 0.40 de ancho y 0.15 de
+   alto — dentro de la copa solida, no en el aire de la silueta. */
+const POSADERO = [0.40, 0.15];
 const POSADERO_CERCA = [0.27, 0.455];
 const GROSOR_RAMA = 0.076;
 

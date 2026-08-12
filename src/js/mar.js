@@ -733,7 +733,11 @@ void main(){
          demas. Con la curva su masa se apaga y solo cantan las hojas
          que ya tenian color: deja de ser el unico objeto saturado sin
          quedarse gris. */
-      pm += croma(tApagado, u_croma * 0.30, u_croma * 1.05);
+      /* La lamina repintada bajo de 0.465 a 0.337 de saturacion, pero
+         sigue siendo la mas alta del juego —el resto va de 0.11 a 0.21—
+         asi que el arbol seguia siendo el unico objeto con color fuerte.
+         La curva le baja el suelo y el techo. */
+      pm += croma(tApagado, u_croma * 0.22, u_croma * 0.78);
       /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
