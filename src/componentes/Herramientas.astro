@@ -5,12 +5,14 @@
 
 <section class="herramientas" id="herramientas">
 
-    <div class="aviso" id="aviso-borrador">
-      <strong>Borrador.</strong> <span id="aviso-cuantos">6</span> datos de
-      esta página todavía no tienen fuente verificada. No compartas este
-      enlace con nadie que lo necesite de verdad hasta que este aviso
-      desaparezca.
-    </div>
+    {/* Aquí iba el aviso de borrador —«N datos no tienen fuente
+        verificada»—. Se retiró de la página. El resguardo que queda es
+        el `noindex` de index.astro y las marcas «Sin verificar» dentro
+        de cada bloque, que siguen puestas.
+
+        js/herramientas.js · montarAviso() busca #aviso-borrador y
+        vuelve si no está, así que no hay nada que romper: si el bloque
+        se devuelve algún día, se vuelve a contar solo. */}
 
     {/* QUÉ ES, ANTES DE QUÉ HACER. Quien llega aquí muchas veces no
         tiene nombre para lo que le pasó, y sin nombre no busca ayuda:
