@@ -108,7 +108,11 @@ vec3 papelBlanco(){
   /* El tinte estaba en 0.28 y con altas=#AFC4BE eso dejaba el papel en
      0.787 de luminancia: reserva que no llegaba a contar como reserva.
      Una hoja se tine un poco con la luz del sitio, pero poco. */
-  return mix(vec3(0.972, 0.966, 0.952), u_altas, 0.12);
+  /* Casi sin tenir. Detras del papel vienen el grafito, la trama y la
+     pasada final de aplanado, y entre los tres bajaban un pixel de 0.87
+     a por debajo de 0.80: la reserva estaba, pero la cola del shader se
+     la comia. */
+  return mix(vec3(0.984, 0.978, 0.966), u_altas, 0.05);
 }
 
 /* APLANAR. Una aguada seca PLANA: se posa, se seca y deja un campo de un
@@ -140,7 +144,13 @@ vec3 aplanar(vec3 c, float pasos, float dureza){
   float f = floor(e);
   float cq = (f + smoothstep(0.5 - dureza, 0.5 + dureza, e - f)) / pasos;
   float vq = cq * cq * cq;
-  return c * clamp(vq / v, 0.55, 1.8);
+  /* El tope estaba en [0.55, 1.8] y de noche eso desarmaba la funcion:
+     con v = 0.02 la razon vq/v se va facil por encima de 2, se topaba, y
+     la cuantizacion quedaba a medias justo en las horas oscuras — 68 %
+     de degradado en la banda del horizonte contra 46 % de dia. El tope
+     esta para que un pixel casi negro no salte a blanco, no para
+     desactivar el aplanado; con [0.30, 3.4] sigue cumpliendo eso. */
+  return c * clamp(vq / v, 0.30, 3.4);
 }
 
 /* Duotono: la lámina entrega estructura de valor; la hora entrega el
@@ -237,10 +247,10 @@ void main(){
        horizonte, que se lee como error y no como reserva. Metiendo la
        altura en el ruido el hueco tiene forma de mancha —que es lo que
        deja un pincel seco— y ya no tiene lados. */
-    float bocaCielo = smoothstep(0.36, 0.52,
+    float bocaCielo = smoothstep(0.30, 0.47,
                         fbm(vec2(q.x * 3.1 + 12.0, gy * 5.2 + 3.7)));
-    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.38, gy))
-                           * bocaCielo * mix(0.30, 1.0, u_int) * 0.99);
+    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.50, gy))
+                           * bocaCielo * mix(0.20, 1.0, u_int) * 0.99);
 
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
@@ -372,7 +382,24 @@ void main(){
        que los une; si no, el agua se va a un turquesa que el cielo nunca
        tuvo y el cuadro se parte en dos láminas. */
     vec3 oscuro = mix(u_agua * 0.42, u_bruma * 0.30, 0.18);
-    vec3 claro  = mix(u_altas, u_bruma, 0.42);
+
+    /* EL AGUA ES UN ESPEJO ANTES QUE UN CUERPO. Su extremo claro venia
+       de una paleta propia (altas + bruma) que no miraba al cielo, y de
+       noche eso daba un mar entre DOS Y CASI CUATRO VECES mas claro que
+       el cielo: 3.68 a las 19:00. No es solo feo, es imposible — el agua
+       refleja un cielo oscuro y ademas absorbe.
+
+       Asi que el claro se topa contra el cielo del horizonte y se queda
+       por debajo. El tope solo puede OSCURECER (max 1.0), asi que las
+       horas de dia, que ya estaban bien, no se tocan. */
+    vec3 claroBase = mix(u_altas, u_bruma, 0.42);
+    /* El tope muerde de noche, que es donde estaba el problema, y de dia
+       casi no: un mar de mediodia SI puede acercarse al cielo porque el
+       cuerpo del agua dispersa luz propia; uno nocturno no, porque solo
+       refleja. Medido despues: 0.85 de dia, 1.1 de noche. */
+    float diaAgua = smoothstep(0.25, 0.85, u_int);
+    float techo = valor(u_cieloBajo) * mix(0.60, 1.02, diaAgua);
+    vec3 claro  = claroBase * clamp(techo / max(valor(claroBase), 0.001), 0.22, 1.0);
 
     vec3 pintura;
     if (u_laminas > 0.5) {
@@ -407,9 +434,24 @@ void main(){
        El umbral va alto y con canto duro a propósito. Son cuatro o cinco
        manchas grandes, no un espolvoreado — un brillo espolvoreado es
        purpurina, y la reservaPapel es silencio. */
-    float faceta = smoothstep(0.55, 0.74, valor(pintura));
+    /* EL UMBRAL, ARRIBA DEL TODO. Lo baje a 0.55 persiguiendo el
+       porcentaje de papel y fue un error de bulto: las laminas de mar
+       tienen la mediana en 0.62-0.81, asi que con 0.55 la reserva dejaba
+       de ser unas facetas y blanqueaba medio mar. Esa zona no se leia
+       como pintada sino como lavada, ajena al resto del cuadro.
+
+       A 0.87 solo entra el decil mas claro de la lamina: cuatro o cinco
+       destellos, que es lo que reserva un acuarelista. Y solo en la
+       CRESTA de la onda, porque un destello esta donde la cara del agua
+       mira arriba, no repartido por igual.
+
+       De noche se apaga casi del todo: un mar nocturno no tiene papel
+       en blanco, tiene la luna y poco mas. */
+    float cresta = smoothstep(0.15, 0.75, onda * 0.5 + 0.5);
+    float faceta = smoothstep(0.87, 0.965, valor(pintura)) * cresta;
+    float dia = smoothstep(0.28, 0.88, u_int);
     reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.34, 0.95, prof))
-                           * mix(0.22, 1.0, u_int) * 0.95);
+                           * mix(0.03, 1.0, dia) * 0.95);
 
     /* Y el agua también se aplana. Menos escalones que el cielo y con el
        canto más seco, porque el agua lejana en una acuarela son dos o
@@ -728,7 +770,12 @@ void main(){
        compone al final —la perspectiva aerea, el velo, el estirado de
        la noche— y de noche eso era casi la mitad del cuadro: 59.8 % de
        degradado contra 45.5 % de dia. Aqui se recoge todo junto. */
-    col = mix(col, aplanar(col, 14.0, 0.05), mix(0.35, 0.88, dNoche));
+    /* Mas escalones de noche: al topar el agua contra el cielo su rango
+       se comprimio, y con 14 pasos volvia a cruzar pocos —65.8 % de
+       degradado—. Es el mismo problema de granularidad, un piso mas
+       abajo. Y no pisa lo reservado: papel es ausencia de pintura. */
+    col = mix(col, aplanar(col, mix(14.0, 26.0, dNoche), 0.05),
+              mix(0.35, 0.90, dNoche) * (1.0 - reservaPapel * 0.85));
     if (dNoche > 0.001) {
       /* Bajado de 0.30 a 0.14. Desaturar parejo es la otra mitad de la
          receta vintage; lo que sobraba de noche no era color, era color

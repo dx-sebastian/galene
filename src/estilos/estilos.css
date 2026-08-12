@@ -131,6 +131,10 @@ body {
   z-index: 1;
   max-width: 22ch;
   margin: 0;
+  /* La inmersión (js/paralaje.js) escribe `translate`, `opacity` y
+     `filter` aquí y en la lámina. `translate` compone con `transform`,
+     así que el asentamiento y el hover del CTA no se pisan con esto. */
+  will-change: translate, opacity, filter;
 }
 
 /* EL LAVADO. Solo aparece en los crepúsculos, cuando ninguna tinta
