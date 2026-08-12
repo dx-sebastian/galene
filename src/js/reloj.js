@@ -19,10 +19,15 @@
    contrastar cada una contra fuente primaria —protocolo vigente del
    Ministerio de Salud, resolución citada— y rellenar `fuente` y
    `verificado`. La interfaz marca en rojo todo lo que no lo tenga.  */
+/* `corto` es el mismo dato con nombre de etiqueta: lo pide la vista de
+   horizontes del bloque «Estás aquí», donde cada ventana es una barra y
+   no cabe un título de dos renglones. No es un texto nuevo ni una
+   afirmación nueva — es el mismo `titulo` dicho en tres palabras. */
 export const VENTANAS = [
   {
     id: 'toxicologia',
     cierra: 12,
+    corto: 'Muestra toxicológica',
     titulo: 'Tomar una muestra para análisis toxicológico',
     resumen: 'Muchas de las sustancias que se usan se eliminan rápido. ' +
              'Cuanto antes se tome la muestra, más se puede detectar.',
@@ -35,6 +40,7 @@ export const VENTANAS = [
   {
     id: 'pep',
     cierra: 72,
+    corto: 'Profilaxis del VIH (PEP)',
     titulo: 'Empezar la profilaxis post-exposición al VIH (PEP)',
     resumen: 'Se inicia dentro de las 72 horas. Cuanto antes, mejor: ' +
              'las primeras horas cuentan.',
@@ -48,6 +54,7 @@ export const VENTANAS = [
   {
     id: 'anticoncepcion',
     cierra: 120,
+    corto: 'Anticoncepción de emergencia',
     titulo: 'Anticoncepción de emergencia',
     resumen: 'La ventana depende del método. Algunos llegan hasta cinco días.',
     detalle: 'En urgencias o en farmacia. La eficacia baja con las horas.',
@@ -57,6 +64,7 @@ export const VENTANAS = [
   {
     id: 'forense',
     cierra: 72,
+    corto: 'Examen médico-legal',
     titulo: 'Examen médico-legal con cadena de custodia',
     resumen: 'Recoge evidencia física. Conviene no ducharse ni cambiarse ' +
              'de ropa antes, pero si ya lo hiciste, sigue valiendo la pena ir.',
@@ -68,6 +76,7 @@ export const VENTANAS = [
   {
     id: 'atencion',
     cierra: Infinity,
+    corto: 'Atención médica',
     titulo: 'Atención médica',
     resumen: 'No caduca. La atención por violencia sexual es urgencia médica ' +
              'y no exige denunciar ni explicar lo que pasó.',
@@ -78,6 +87,7 @@ export const VENTANAS = [
   {
     id: 'denuncia',
     cierra: Infinity,
+    corto: 'Denunciar, si quieres',
     titulo: 'Denunciar, si quieres',
     resumen: 'No tiene plazo y no es obligatorio. Se puede hacer por internet.',
     detalle: 'La atención médica nunca depende de que denuncies.',
