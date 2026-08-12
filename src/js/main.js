@@ -158,8 +158,16 @@ function arrancar(mar) {
   if (matchMedia('(min-width: 700px) and (pointer: fine)').matches) {
     addEventListener('pointermove', (e) => {
       punteroObjetivo = (e.clientX / innerWidth - 0.5) * 0.06;
+      /* Y EL AGUA SE ENTERA DE QUE PASAS. No es un toque —no aquieta, no
+         deja anillo, no cuenta para el tope— sino lo contrario: donde
+         pasa la mano el agua se despierta un poco, como una brisa
+         siguiendo el gesto. Se apaga sola en cuanto te detienes. */
+      const q = enQ(e.clientX, e.clientY);
+      if (q.y < estado.horizonte) { rocef.x = q.x; rocef.y = q.y; rocef.z = 1; }
     }, { passive: true });
+    addEventListener('pointerleave', () => { rocef.z = 0; }, { passive: true });
   }
+  const rocef = { x: 0, y: 0, z: 0 };
 
   /* ── EL GESTO DE SOSTENER ────────────────────────────────────────
      Se mantiene el dedo (o el ratón, o la barra espaciadora) sobre el
@@ -175,6 +183,27 @@ function arrancar(mar) {
   const TOQUES = [];
   const TOPE_SESION = 240;          // 4 minutos, como el resto del sistema
   let sostenido = 0, sosteniendo = null;
+  /* DOS CALMAS, y hacen falta las dos.
+
+     La PERMANENTE es la del README: sube con lo sostenido de toda la
+     sesion, nunca baja, y con tau = 500 tarda minutos en notarse. Es la
+     memoria del sitio y esta bien que sea lenta.
+
+     Pero por eso mismo el gesto no se veia: aguantar cinco segundos
+     movia la calma permanente cuatro milesimas. La QUIETUD es la
+     respuesta inmediata — sube en un par de segundos mientras se
+     sostiene y se suelta muy despacio, en medio minuto. Lo que se
+     manda al mar es la mayor de las dos, asi que el gesto se ve al
+     instante y lo ganado no se pierde. */
+  /* Y una SEGUNDA curva, la de ESTA mano. La de las raices es de meses
+     y sin servidor vale 0: sostener movia la calma 0.0015 por segundo,
+     asi que las dos laminas calmas pintadas a mano llevaban aqui desde
+     el principio sin llegar nunca a verse. Con tau = 9 s el gesto se
+     nota en segundos. El techo deja el 15 % de arriba para las raices:
+     una mano sola calma el mar, pero no lo vuelve espejo. Eso lo hace
+     la gente. */
+  const TAU_SESION = 9;
+  const TECHO_SESION = 0.85;
 
   const enQ = (cx, cy) => {
     const c = lienzo.getBoundingClientRect();
@@ -218,12 +247,25 @@ function arrancar(mar) {
     for (const t of TOQUES) {
       // La edad solo corre cuando NO se está sosteniendo: el anillo se
       // cierra al soltar, no mientras se aguanta.
-      if (t !== sosteniendo) t.edad = Math.min(1, t.edad + dt * 0.85);
+      /* 0.85 era medio ciclo de anillo antes de arreglar el reloj. Con
+         el dt real el anillo se apagaba sin llegar a cerrarse. */
+      if (t !== sosteniendo) t.edad = Math.min(1, t.edad + dt * 0.45);
     }
     /* La calma global sube con lo sostenido, nunca baja, y nunca llega
        al espejo: la curva es la misma del README. */
-    const n = raices + sostenido * 1.5;
-    estado.calma = 0.35 + 0.50 * (1 - Math.exp(-n / TAU_CALMA));
+    /* DOS VELOS, no dos curvas rivales. El de las raices es el del
+       README —comunidad, tau = 500— y el de la sesion es el de esta
+       mano. Se componen como se componen dos aguadas: 1 - (1-a)(1-b).
+       Asi ninguno tapa al otro cuando lleguen las raices de verdad, y
+       la suma sigue siendo MONOTONA: ninguno baja nunca. Lo que dejas,
+       queda — al soltar, lo calmado se queda calmado. */
+    const cRaices = 1 - Math.exp(-(raices + sostenido * 1.5) / TAU_CALMA);
+    const cSesion = TECHO_SESION * (1 - Math.exp(-sostenido / TAU_SESION));
+    estado.calma = 0.35 + 0.50 * (1 - (1 - cRaices) * (1 - cSesion));
+    /* El roce decae solo: si la mano se para, el agua se vuelve a
+       aquietar en algo mas de un segundo. */
+    rocef.z = Math.max(0, rocef.z - dt * 0.75);
+    mar.roce(rocef);
     mar.toques(TOQUES);
   }
 
@@ -238,6 +280,14 @@ function arrancar(mar) {
     // pruebas), se calcula desde el último cuadro del mar.
     const dt = dtAve !== undefined ? dtAve
              : (ultimoCuadro ? (ms - ultimoCuadro) / 1000 : 1 / 60);
+    /* Y EL RELOJ DEL MAR, que es otro y llevaba mal desde siempre.
+       avanzarToques() solo corre en los cuadros del mar —30 fps— pero
+       recibia el dt del AVE, 1/60 s: el gesto avanzaba a MEDIA velocidad
+       real a 60 Hz y a un cuarto a 120. La misma caricia duraba el doble
+       en una pantalla que en otra, y el tope de 4 minutos eran ocho.
+       Techo de 0.1 s: al volver de una pestana en segundo plano rAF
+       entrega un salto de segundos, y ese salto no es tiempo sostenido. */
+    const dtMar = Math.min(0.1, ultimoCuadro ? (ms - ultimoCuadro) / 1000 : 1 / 30);
     ultimoCuadro = ms;
     estado.t = ms / 1000;
     punteroX += (punteroObjetivo - punteroX) * 0.06;
@@ -266,7 +316,7 @@ function arrancar(mar) {
     const salida = Math.min(1, Math.max(0, scrollY / innerHeight));
     estado.horizonte = horizonte + salida * 0.06;
     estado.luz = L;
-    avanzarToques(dt);
+    avanzarToques(dtMar);
     mar.dibujar(estado);
     calibrarLavado();
     /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito
@@ -374,11 +424,20 @@ function arrancar(mar) {
      este cierre, así que la puerta se abre desde aquí. */
   if (import.meta.env.DEV) {
     window.__mar = {
-      medir(hora, paso = 4) {
+      /* `t` y `calma` opcionales: sin panel visible el rAF no corre y el
+         reloj del mar se queda parado, asi que sin poder pisarlos no hay
+         forma de medir NI el movimiento ni el gesto de calma. */
+      medir(hora, paso = 4, t, calma) {
+        const tPrev = estado.t, cPrev = estado.calma;
         if (hora !== undefined) estado.luz = luz(hora);
+        if (t !== undefined) estado.t = t;
+        if (calma !== undefined) estado.calma = calma;
         mar.dibujar(estado);
-        return mar.muestra(paso);
+        const m = mar.muestra(paso);
+        estado.t = tPrev; estado.calma = cPrev;
+        return m;
       },
+      estado: () => ({ t: estado.t, calma: estado.calma, sostenido }),
     };
   }
   if (PARAMS.has('dev'))

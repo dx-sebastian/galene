@@ -62,6 +62,7 @@ uniform sampler2D u_nubes;
 uniform float u_hayNubes;
 uniform sampler2D u_manglarCerca, u_corales, u_luces;
 uniform sampler2D u_astro, u_camino;
+uniform vec3  u_roce;           // x, y en q; z = fuerza del puntero
 uniform float u_hayAstro, u_hayCamino;
 uniform float u_hayCerca, u_hayCorales, u_hayLuces;
 uniform vec4  u_cercaCaja;      // x, alto, base, ancho/alto
@@ -375,7 +376,12 @@ void main(){
       vec4 tk = u_toques[i];
       if (tk.z <= 0.002) continue;
       float d = distance(q, tk.xy);
-      float r = 0.115;
+      /* EL RADIO CRECE CON LO SOSTENIDO. Estaba fijo en 0.115 —un
+         circulito bajo el dedo— y el encargo es que la calma se sienta
+         EN TODA LA PANTALLA. Ahora nace pequeno y se abre hasta 0.95
+         mientras se aguanta: la quietud sale de la mano y se extiende,
+         que es lo que hace una mano posada en el agua. */
+      float r = mix(0.13, 0.95, tk.z);
       aplanado = max(aplanado, tk.z * exp(-(d * d) / (r * r)));
 
       /* LA GOTA AL REVÉS. Tres anillos que nacen en el borde exterior y
@@ -394,23 +400,49 @@ void main(){
 
     /* Subido un tercio. La amplitud crece con la cercania, que es lo que
        pasa de verdad: lo lejano se aplana por perspectiva. */
-    float amp  = (1.0 - cn) * mix(0.0035, 0.055, pp) * (1.0 - aplanado * 0.92);
+    /* Amplitud +35 %. Crece con la cercania, que es lo que pasa de
+       verdad: lo lejano se aplana por perspectiva. */
+    /* EL ROCE DEL PUNTERO. Lo contrario del toque sostenido: donde pasa
+       la mano el agua se despierta, no se aquieta. Un aumento local de
+       amplitud, sin anillo y sin onda que se expanda desde un punto —esa
+       figura esta prohibida en este sitio y sigue estandolo. */
+    float dRoce = distance(q, u_roce.xy);
+    float roce = u_roce.z * exp(-(dRoce * dRoce) / 0.045) * 0.85;
+    float amp  = (1.0 - cn) * mix(0.0047, 0.074, pp)
+               * (1.0 - aplanado * 0.94) * (1.0 + roce);
     float frec = mix(120.0, 9.0, pp);
-    float vel  = mix(0.74, 0.33, pp);
+    float vel  = mix(0.96, 0.43, pp);      // +30 %
     /* LA FASE VA CON RUIDO. Los dos terminos diagonales eran rejillas
        rectas cruzandose, y al subir la amplitud se veian como un galon
        de espiga repitiendose: el patron mecanico que mata cualquier
        sensacion de agua. Metiendoles una fase de periodo largo la trama
        deambula, nunca cierra un ciclo dentro de la pantalla, y se lee
        como oleaje en vez de como tejido. */
-    float fase1 = fbm(vec2(q.x * 0.9 + 3.0, uv.y * 2.2)) * 7.0;
-    float fase2 = fbm(vec2(q.x * 0.6 - 9.0, uv.y * 1.4 + 21.0)) * 9.0;
+    /* ═══ LAS OLAS VIENEN DE LEJOS ═══════════════════════════════
+       Antes las tres senoidales dependian casi solo de q.x: eran
+       rejillas verticales desplazandose DE LADO. Por eso el agua se
+       movia sin ir a ninguna parte.
+
+       Ahora la fase la manda LA PROFUNDIDAD. marcha es 1/(distancia),
+       o sea la perspectiva: vale 18 en el horizonte y 1 al pie del
+       cuadro, asi que las crestas se apinan al fondo y se separan al
+       acercarse, exactamente como una mar de fondo vista desde la
+       orilla. Y va SUMANDO el tiempo, no restandolo: con el signo
+       positivo, mantener la fase exige que marcha baje, o sea que la
+       cresta avance hacia el observador. Con el signo contrario las
+       olas se irian mar adentro.
+
+       El termino en q.x que queda es pequeno a proposito: sirve para
+       que las crestas ondulen a lo largo en vez de ser rectas
+       paralelas al horizonte, que es lo que las delataria. */
+    float marcha = 1.0 / (prof * 0.92 + 0.055);
+    float fase1 = fbm(vec2(q.x * 0.9 + 3.0, uv.y * 2.2)) * 5.0;
+    float fase2 = fbm(vec2(q.x * 0.6 - 9.0, uv.y * 1.4 + 21.0)) * 6.0;
     float onda =
-        sin((q.x + u_deriva * mix(0.05, 0.55, pp)) * frec        + u_t * vel) * 0.52
-      + sin((q.x * 1.618 - uv.y * 13.0) * frec * 0.311 - u_t * vel * 1.37
-            + fase1) * 0.31
-      + sin((q.x * 0.734 + uv.y *  7.0) * frec * 0.157 + u_t * vel * 0.61
-            + fase2) * 0.17;
+        sin(marcha * 2.35 + u_t * 4.40 + q.x * 1.15 + fase1) * 0.50
+      + sin(marcha * 1.42 + u_t * 2.70 - q.x * 2.05 + fase2) * 0.29
+      + sin(marcha * 4.10 + u_t * 7.30 + q.x * 0.55) * 0.13
+      + sin((q.x + u_deriva * mix(0.05, 0.55, pp)) * frec + u_t * vel) * 0.14;
 
     vec2 duv = vec2(onda * amp * 0.35, onda * amp);
 
@@ -529,6 +561,37 @@ void main(){
        color: las dos cosas son el mismo cambio. La saturacion media
        apenas se mueve; lo que crece es la VARIEDAD de matiz dentro de
        la misma aguada, que es de donde sale la sensacion de pintura. */
+    /* ═══ LAS CRESTAS QUE AVANZAN ════════════════════════════════
+       La onda solo DEFORMABA la lamina: movia el muestreo unas
+       centesimas y volvia. Por eso el agua se agitaba sin ir a ninguna
+       parte — lo que se ve son las bandas pintadas, y esas estan
+       quietas. Medido: correlacion 0.988 entre dos fotogramas separados
+       medio segundo, con desplazamiento CERO.
+
+       Una cresta que avanza no es una deformacion, es un
+       ACONTECIMIENTO DE VALOR: el agua se aclara donde pasa la cara que
+       mira al cielo, y se oscurece en el seno. Asi se pinta y asi se
+       ve. La fase la manda la profundidad, de modo que la banda clara
+       camina del horizonte hacia el ojo, y se separa al acercarse
+       porque marcha es 1/distancia.
+
+       Solo actua sobre el agua media y cercana (pp): en el horizonte
+       las crestas son mas finas que un pixel y solo producirian
+       centelleo. */
+    /* EL PERIODO ES CONSTANTE, no depende de la distancia. Lo tenia
+       multiplicado por vel, que varia con la profundidad, y eso hace que
+       cada franja avance a distinto ritmo: el patron no se traslada, se
+       deforma en su sitio. Medido, la correlacion caia de 0.964 a 0.871
+       en medio segundo SIN desplazarse — se movia sin ir a ninguna
+       parte. Una mar de fondo tiene UN periodo; lo que cambia con la
+       distancia es el espaciado entre crestas, no su frecuencia.
+       4.4 rad/s recorre las 40 radianes del horizonte al ojo en ~9 s. */
+    float paso = sin(marcha * 2.35 + u_t * 4.4 + q.x * 1.15 + fase1);
+    float lomo = smoothstep(0.30, 0.95, paso) * (1.0 - cn) * pp;
+    float valle = smoothstep(-0.30, -0.95, paso) * (1.0 - cn) * pp;
+    col = mix(col, mix(col, u_altas, 0.55), lomo * 0.30);
+    col = mix(col, col * 0.86, valle * 0.30);
+
     float cara = clamp(onda * 0.55 + 0.5, 0.0, 1.0);
     vec3 frio   = mix(col, mix(u_cieloAlto, u_altas, 0.35), 0.185);
     vec3 calido = mix(col, mix(u_reguero, u_bruma, 0.30),   0.155);
@@ -618,7 +681,10 @@ void main(){
        efecto. Y el sitio donde se sostuvo queda un punto más claro,
        como una aguada que se secó más fina. */
     col = mix(col, u_altas, anillo * 0.34);
-    col = mix(col, mix(col, u_altas, 0.35), aplanado * 0.16);
+    /* Y donde se aquieta, el agua tambien deja de centellear: la
+       separacion calido/frio de las crestas se apaga con el aplanado.
+       Un agua quieta no solo deja de moverse, deja de brillar. */
+    col = mix(col, mix(col, u_altas, 0.30), aplanado * 0.22);
 
     /* ===== LOS CORALES =========================================
        Van en el fondo del mar, vistos A TRAVES del agua: se tinen
@@ -670,7 +736,12 @@ void main(){
         /* El desvanecido va ARRIBA, donde acaban las hojas, no abajo,
            que es donde está la arena y tiene que estar sólida. */
         float entra = 1.0 - smoothstep(0.58, 1.0, cv);
-        col = mix(col, pc, tc.a * mix(0.26, 0.62, profC) * entra * mix(0.62, 1.0, u_int));
+        /* MUY bajado. Se lee como una cinta pegada al borde porque la
+           lamina es una FILA CONTINUA sin un solo hueco: la ondulacion
+           por codigo mueve el borde pero no abre claros, y una franja
+           sin huecos siempre se leera como una linea. Bajarla es un
+           parche honesto; el arreglo es una lamina con matas separadas. */
+        col = mix(col, pc, tc.a * mix(0.13, 0.34, profC) * entra * mix(0.55, 1.0, u_int));
       }
     }
 
@@ -993,7 +1064,7 @@ export function crear(lienzo) {
                    'u_papelTex','u_hayPapel','u_papelTam','u_papelMedia',
                    'u_nubes','u_hayNubes','u_manglarCerca','u_corales','u_luces',
                    'u_hayCerca','u_hayCorales','u_hayLuces','u_astro','u_camino',
-                   'u_hayAstro','u_hayCamino','u_cercaCaja','u_coralesCaja',
+                   'u_hayAstro','u_hayCamino','u_roce','u_cercaCaja','u_coralesCaja',
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
                    'u_garzaCercaCaja','u_garzaLejosCaja','u_toques']) {
@@ -1033,6 +1104,7 @@ export function crear(lienzo) {
   gl.uniform1i(u.u_camino, 15);
   gl.uniform1f(u.u_hayAstro, 0);
   gl.uniform1f(u.u_hayCamino, 0);
+  gl.uniform3f(u.u_roce, 0, 0, 0);
   /* El manglar cercano tiene que DOMINAR la esquina inferior izquierda:
      es el primer plano y es el posadero. A 0.52 de alto quedaba como una
      mancha en el canto. */
@@ -1276,6 +1348,7 @@ export function crear(lienzo) {
     /* La caja del manglar, para que quien pinte encima —la garza que se
        posa— calcule su sitio con los MISMOS números y no con fracciones
        paralelas que se separan al cambiar de pantalla. */
+    roce(r) { gl.useProgram(p); gl.uniform3f(u.u_roce, r.x, r.y, r.z); },
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
     redimensionar(w, h, escala) {

@@ -5,6 +5,18 @@
 
 <section class="herramientas" id="herramientas">
 
+    {/* EL FONDO — papel y tres aguadas con paralaje. Decorativo entero:
+        aria-hidden, sin texto y sin datos. data-hondo es el factor de
+        profundidad que lee js/paralaje.js: 1 = clavado al viewport,
+        0 = se va con la página. Las nubes casi no se mueven porque
+        están lejos; el manglar sí, porque está cerca. */}
+    <div class="herramientas__fondo" aria-hidden="true">
+      <div class="fondo__papel"></div>
+      <div class="fondo__capa fondo__capa--nubes"   data-hondo="0.94"></div>
+      <div class="fondo__capa fondo__capa--mar"     data-hondo="0.86"></div>
+      <div class="fondo__capa fondo__capa--manglar" data-hondo="0.66"></div>
+    </div>
+
     {/* Aquí iba el aviso de borrador —«N datos no tienen fuente
         verificada»—. Se retiró de la página. El resguardo que queda es
         el `noindex` de index.astro y las marcas «Sin verificar» dentro
@@ -25,21 +37,36 @@
     <h2 class="herramientas__titulo">Sumisión química</h2>
     <p class="herramientas__intro">
       Es cuando alguien te da una sustancia sin que lo sepas —o se
-      aprovecha de la que ya tomaste— para anular tu voluntad. No hace
-      falta perder el conocimiento: puede dejarte despierta pero sin
-      poder decidir ni defenderte, y con la memoria en blanco o a trozos
-      cuando pasa.
+      aprovecha de la que ya tomaste— para
+      <b class="realce">anular tu voluntad</b>. No hace falta perder el
+      conocimiento: puede dejarte despierta pero sin poder decidir ni
+      defenderte, y con la memoria en blanco o a trozos cuando pasa.
     </p>
+
+    {/* LA FRASE QUE SOSTIENE LA SECCIÓN. Va sola, en cuerpo de título,
+        porque no es un dato más: es el criterio con el que se lee todo
+        lo demás. Si alguien lee una sola línea de esta página, que sea
+        esta. Y el realce cae sobre «no hay consentimiento», que es la
+        mitad que la gente no se cree de sí misma. */}
+    <p class="lema">
+      Sin capacidad de decidir,
+      <b class="realce realce--calma">no hay consentimiento</b>.
+    </p>
+
     <p class="herramientas__intro">
       Pasa en bares y fiestas, pero también en taxis, en casas y entre
       gente conocida. <strong>Que no lo recuerdes no significa que hayas
       consentido</strong>, y no tener pruebas no significa que no ocurriera.
     </p>
 
-    {/* La pregunta se queda: es la entrada a las cuatro puertas. */}
+    {/* La pregunta que abre las cuatro puertas. Es mejor que «¿qué
+        necesitas?»: no le pide a nadie que diagnostique lo que le pasó
+        —eso es justo lo que no puede hacer— sino que conteste algo que
+        sí sabe. Y «no sé» ya es una respuesta que abre puerta. */}
     <p class="herramientas__intro herramientas__pregunta">
-      ¿Qué necesitas ahora? No hace falta saber qué pasó, ni contarlo,
-      ni decidir nada todavía.
+      <b class="realce realce--tinta">¿Pudiste decidir?</b>
+      Si la respuesta es no, o no lo sabes, esto es lo que se puede
+      hacer. No hace falta contarlo ni estar segura de nada.
     </p>
 
     <!-- ═══ EL DESVÍO ═══════════════════════════════════════════════
@@ -72,7 +99,7 @@
       <p>Preparamos un mensaje con tu ubicación para que lo envíes a quien
         tú elijas. <strong>Tu ubicación no se guarda ni se envía a este
         sitio</strong>: se usa en el momento y se descarta.</p>
-      <button class="boton boton--grande" type="button" id="vengan">
+      <button class="acuarela acuarela--grande" type="button" id="vengan">
         Que alguien venga por mí
       </button>
 
