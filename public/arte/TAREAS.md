@@ -34,6 +34,266 @@ pigmentos apagados, no un cuadro saturado.
 
 ---
 
+# A0 · El cielo, cuatro láminas · **lo que más cambia la pantalla**
+
+Hay UNA sola lámina de nubes y la hora solo la recolorea. Por eso ninguna
+hora es del todo hermosa: unas nubes que funcionan al alba están mal a
+mediodía, porque **cada hora tiene su tipo de nube**, y eso es física.
+
+- **Alba** — cirros altísimos. El sol aún no ha salido pero ya les llega,
+  así que se encienden solos sobre un cielo todavía apagado. Es el único
+  momento del día en que la luz viene **de abajo**.
+- **Día** — casi nada. Cúmulos pequeños y bajos, lejos, junto al
+  horizonte. Un cielo de mediodía bonito es un cielo **vacío**.
+- **Ocaso** — altocúmulos en capas, el cielo aborregado. Es lo que hace
+  espectaculares los atardeceres: cada borreguito recibe la luz por
+  separado y el cielo se vuelve un mosaico.
+- **Noche** — un velo finísimo, para que la luna tenga dónde apoyarse y
+  el cielo no sea un plano liso.
+
+**CONDICIÓN TÉCNICA, y no es negociable**: se pintan **solo en grises**.
+Las nubes van en duotono —la lámina aporta la estructura de VALOR y la
+paleta de la hora aporta el color—, así que una lámina que ya venga rosa
+pelea con la paleta y a las tres de la tarde se ve sucia. Gris que
+granula, y nada más.
+
+Cuando estén las cuatro hay que cargarlas y cruzarlas por hora, igual que
+ya se cruzan las bandas de agua. Misma mecánica, ya existe.
+
+- [ ] **A0.1 · `cielo-alba.png`**
+
+```
+A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
+Painted very wet and very fast, in one pass, and then left alone. No
+correction, no second layer over anything that had dried.
+
+SUBJECT — CIRRUS CLOUDS, the highest clouds there are, floating on
+nothing. Four or five long horizontal filaments swept across the UPPER
+THIRD of the sheet, each one a single dragged stroke, feathered and
+broken at both ends. They are thin enough to see through. Below them,
+nothing at all: the lower two thirds is bare paper.
+
+THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
+the clouds are not, and that is at least 75% of the sheet. The emptiness
+is the subject; the clouds are what happened to it.
+
+COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
+umber, and no other pigment anywhere. This is deliberate and it matters:
+the colour of the hour gets added afterwards, so the painting must carry
+only VALUE — where the cloud is dense and where it is barely there.
+Never black, never white paint, no blue, no pink, no gold.
+
+HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
+picture of one, and it should be clearly visible at full size:
+· The pigment GRANULATES: it separates on the paper and settles into the
+  tooth, so no wash is ever one flat tone. You can see the grain.
+· Where a wet stroke met a drier one, it BLOOMED into a backrun with a
+  ragged cauliflower edge, and it was left that way.
+· Where the loaded brush moved fast over the tooth it SKIPPED, leaving
+  broken white speckle inside the stroke.
+· Every stroke is soft and lost at one end and ends in a HARD DRIED EDGE
+  at the other. That hard edge is the only drawn line in the picture.
+· The paper's texture shows through everywhere, even in the darkest
+  passages.
+None of this is added on top as an effect. It is what the paint did.
+
+No cloud has an outline or a defined shape. Do not draw the edge of a
+cloud; let the wash decide where it ends.
+
+Seamless left and right edges. Landscape 3:2, at least 2400px wide.
+Transparent background — true alpha, no white, no cream, no paper tone
+behind the clouds, no halo or pale fringe around them.
+Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
+no rays, no glow, no stars, no birds, no land, no water, no frame.
+
+NEGATIVE: blue sky, sky gradient, background colour, coloured clouds,
+pink, gold, orange, sunset, sunrise colours, fluffy cumulus, cotton
+wool, storybook clouds, outlines, ink lines, god rays, lens flare,
+bloom, glow, sparkle, stars, vector, digital painting, airbrush, 3D,
+photorealistic, HDR, saturated, symmetrical, evenly spaced, repeating
+pattern, decorative, tidy, finished, polished, signature, border.
+```
+
+- [ ] **A0.2 · `cielo-dia.png`**
+
+```
+A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
+Painted very wet and very fast, in one pass, and then left alone. No
+correction, no second layer over anything that had dried.
+
+SUBJECT — A FEW SMALL FAIR-WEATHER CUMULUS, low and far away. Six or
+seven of them, sitting in a narrow band across the LOWER THIRD of the
+sheet and never rising above it. Each one has a soft rounded top and a
+flat, slightly darker base, and each is painted with two or three
+touches of the brush and no more. They are uneven: different sizes,
+irregular spacing, two of them almost dissolved to nothing. The entire
+upper two thirds of the sheet is bare paper.
+
+THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
+the clouds are not, and that is at least 80% of the sheet. A midday sky
+is beautiful because it is EMPTY; the clouds only prove how much room
+there is.
+
+COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
+umber, and no other pigment anywhere. This is deliberate and it matters:
+the colour of the hour gets added afterwards, so the painting must carry
+only VALUE — where the cloud is dense and where it is barely there.
+Never black, never white paint, no blue, no pink, no gold.
+
+HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
+picture of one, and it should be clearly visible at full size:
+· The pigment GRANULATES: it separates on the paper and settles into the
+  tooth, so no wash is ever one flat tone. You can see the grain.
+· Where a wet stroke met a drier one, it BLOOMED into a backrun with a
+  ragged cauliflower edge, and it was left that way.
+· Where the loaded brush moved fast over the tooth it SKIPPED, leaving
+  broken white speckle inside the stroke.
+· Every stroke is soft and lost at one end and ends in a HARD DRIED EDGE
+  at the other. That hard edge is the only drawn line in the picture.
+· The paper's texture shows through everywhere, even in the darkest
+  passages.
+None of this is added on top as an effect. It is what the paint did.
+
+No cloud has an outline or a defined shape. Do not draw the edge of a
+cloud; let the wash decide where it ends.
+
+Seamless left and right edges. Landscape 3:2, at least 2400px wide.
+Transparent background — true alpha, no white, no cream, no paper tone
+behind the clouds, no halo or pale fringe around them.
+Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
+no rays, no glow, no stars, no birds, no land, no water, no frame.
+
+NEGATIVE: blue sky, sky gradient, background colour, coloured clouds,
+pink, gold, orange, sunset, sunrise colours, towering cumulus,
+thunderhead, storm, cotton wool, storybook clouds, outlines, ink lines,
+god rays, lens flare, bloom, glow, sparkle, vector, digital painting,
+airbrush, 3D, photorealistic, HDR, saturated, symmetrical, evenly
+spaced, repeating pattern, decorative, tidy, finished, polished,
+signature, border.
+```
+
+- [ ] **A0.3 · `cielo-ocaso.png`**
+
+```
+A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
+Painted very wet and very fast, in one pass, and then left alone. No
+correction, no second layer over anything that had dried.
+
+SUBJECT — ALTOCUMULUS IN RANKS, a mackerel sky. Many small cloudlets
+gathered into two or three loose horizontal shoals across the MIDDLE
+BAND of the sheet, getting smaller and closer together toward the
+bottom, the way they do when they recede toward the horizon. Each
+cloudlet is ONE touch of the brush and nothing more.
+
+They must NOT be evenly spaced or the same size. The shoals clump in
+places and thin out to bare paper in others, and there are gaps where
+nothing happens at all. Regularity would kill it: this is the busiest of
+the four skies and still there is more paper than paint — at least 65%
+of the sheet untouched.
+
+THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
+the clouds are not.
+
+COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
+umber, and no other pigment anywhere. This is deliberate and it matters:
+the colour of the hour gets added afterwards, so the painting must carry
+only VALUE — where the cloud is dense and where it is barely there. A
+sunset is spectacular because each cloudlet catches the light SEPARATELY,
+so the value must vary from cloudlet to cloudlet: some almost solid,
+some barely a stain. Never black, never white paint, no blue, no pink,
+no gold.
+
+HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
+picture of one, and it should be clearly visible at full size:
+· The pigment GRANULATES: it separates on the paper and settles into the
+  tooth, so no wash is ever one flat tone. You can see the grain.
+· Where a wet stroke met a drier one, it BLOOMED into a backrun with a
+  ragged cauliflower edge, and it was left that way.
+· Where the loaded brush moved fast over the tooth it SKIPPED, leaving
+  broken white speckle inside the stroke.
+· Every stroke is soft and lost at one end and ends in a HARD DRIED EDGE
+  at the other. That hard edge is the only drawn line in the picture.
+· The paper's texture shows through everywhere, even in the darkest
+  passages.
+None of this is added on top as an effect. It is what the paint did.
+
+No cloud has an outline or a defined shape. Do not draw the edge of a
+cloud; let the wash decide where it ends.
+
+Seamless left and right edges. Landscape 3:2, at least 2400px wide.
+Transparent background — true alpha, no white, no cream, no paper tone
+behind the clouds, no halo or pale fringe around them.
+Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
+no rays, no glow, no stars, no birds, no land, no water, no frame.
+
+NEGATIVE: blue sky, sky gradient, background colour, coloured clouds,
+pink, gold, orange, sunset postcard, golden hour, fish scales, honeycomb,
+grid, tessellation, cotton wool, storybook clouds, outlines, ink lines,
+god rays, lens flare, bloom, glow, sparkle, vector, digital painting,
+airbrush, 3D, photorealistic, HDR, saturated, symmetrical, evenly
+spaced, repeating pattern, decorative, tidy, finished, polished,
+signature, border.
+```
+
+- [ ] **A0.4 · `cielo-noche.png`**
+
+```
+A watercolour painting on rough cotton paper, 300gsm, with visible tooth.
+Painted very wet and very fast, in one pass, and then left alone. No
+correction, no second layer over anything that had dried.
+
+SUBJECT — ALMOST NOTHING. Two or three enormous, extremely faint veils
+of high cloud drifting diagonally across the sheet, so thin they are
+barely darker than the paper itself. They have no edges anywhere: each
+one fades into nothing in every direction. If a shape starts to read as
+a cloud, it is already too strong.
+
+This is the emptiest of the four by a long way: at least 88% of the
+sheet is bare paper, and the 12% that is painted is the palest wash in
+the set. Its whole job is to give the moon something to sit behind so
+the night sky is not a flat plane.
+
+THERE IS NO SKY. Do not paint a background. The paper is bare everywhere
+the veils are not.
+
+COLOUR — grey and nothing else. A cool neutral grey with a trace of raw
+umber, and no other pigment anywhere. This is deliberate and it matters:
+the colour of the hour gets added afterwards, so the painting must carry
+only VALUE. Never black, never white paint, no blue, no pink, no gold,
+and above all nothing dark: this sky is painted almost entirely in the
+first two steps above bare paper.
+
+HOW THE PAINT BEHAVES — this is what makes it a watercolour instead of a
+picture of one, and it should be visible even at this pale a value:
+· The pigment GRANULATES: it separates on the paper and settles into the
+  tooth, so even the faintest wash shows its grain. At this value the
+  granulation IS the image.
+· One or two places where a wet wash met a drier one and BLOOMED into a
+  soft backrun, and it was left that way.
+· Where the brush moved fast over the tooth it SKIPPED, leaving broken
+  paper inside the wash.
+· No hard dried edges in this one. Every edge is lost. This is the only
+  sky of the four without a single hard edge.
+· The paper's texture shows through everywhere.
+None of this is added on top as an effect. It is what the paint did.
+
+Seamless left and right edges. Landscape 3:2, at least 2400px wide.
+Transparent background — true alpha, no white, no cream, no paper tone
+behind the veils, no halo or pale fringe around them.
+Nothing else in the image: no sky gradient, no horizon, no sun, no moon,
+no rays, no glow, no stars, no birds, no land, no water, no frame.
+
+NEGATIVE: blue sky, sky gradient, background colour, night sky, dark
+background, black, navy, stars, starfield, milky way, moon, moonlight,
+glow, halo, coloured clouds, storm clouds, defined clouds, outlines,
+ink lines, god rays, lens flare, bloom, sparkle, vector, digital
+painting, airbrush, 3D, photorealistic, HDR, saturated, symmetrical,
+evenly spaced, repeating pattern, decorative, tidy, finished, polished,
+signature, border.
+```
+
+---
+
 # A · El cielo con color · lo que más cambia la pantalla
 
 - [ ] **A1 · `cielo-amanecer.png`** — 3:2, transparente
