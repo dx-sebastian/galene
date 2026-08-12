@@ -896,6 +896,24 @@ export function crear(lienzo) {
       }
       return { max, min, prom: suma / n };
     },
+
+    /* Muestreo completo del cuadro, para auditar la pintura sobre los
+       píxeles en vez de opinar. Mismo requisito que medirZona: hay que
+       llamarlo en el MISMO cuadro que dibujar(). Devuelve una rejilla
+       diezmada de RGB — con paso 4 sobran datos para un histograma y no
+       se traga medio segundo leyendo el buffer entero. */
+    muestra(paso = 4) {
+      const px = new Uint8Array(ancho * alto * 4);
+      gl.readPixels(0, 0, ancho, alto, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      const out = [];
+      for (let y = 0; y < alto; y += paso) {
+        for (let x = 0; x < ancho; x += paso) {
+          const i = (y * ancho + x) * 4;
+          out.push(px[i], px[i + 1], px[i + 2]);
+        }
+      }
+      return { ancho, alto, paso, datos: out };
+    },
     perder() { gl.getExtension('WEBGL_lose_context')?.loseContext(); },
   };
 }

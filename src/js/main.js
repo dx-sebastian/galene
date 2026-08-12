@@ -357,6 +357,19 @@ function arrancar(mar) {
   // tiene que ser bonito por sí solo. Es también la versión gama baja.
   cuadro(performance.now());
   hero.setAttribute('data-mar', 'listo');
+
+  /* Asidero de auditoría, solo en desarrollo. El muestreo tiene que
+     ocurrir en el mismo cuadro que el dibujo y `estado` vive dentro de
+     este cierre, así que la puerta se abre desde aquí. */
+  if (import.meta.env.DEV) {
+    window.__mar = {
+      medir(hora, paso = 4) {
+        if (hora !== undefined) estado.luz = luz(hora);
+        mar.dibujar(estado);
+        return mar.muestra(paso);
+      },
+    };
+  }
   if (PARAMS.has('dev'))
     window.__galene = { estado, cuadro, mar, luz: () => L, calcularPosadero, vuelo: () => vuelo };
 
