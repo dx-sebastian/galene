@@ -40,6 +40,7 @@ const hero  = document.getElementById('mar');
 const texto = document.querySelector('.hero__texto');
 const cta   = document.querySelector('.cta');
 const nota  = document.querySelector('.hero__nota');
+const arco  = document.getElementById('arco');
 
 if (hero && texto) arrancar();
 
@@ -144,6 +145,19 @@ function arrancar() {
     poner(cta, 'translate', `${(-curX * 5).toFixed(1)}px ${ctaY.toFixed(1)}px`);
     poner(cta, 'opacity', (1 - hundido).toFixed(3));
 
+    /* 2b · EL ARCO, plano CERCANO. Al revés que el texto: casi se va
+       con la página (residuo 0.12) y el puntero lo mueve MUCHO y en
+       sentido contrario al manglar lejano del shader — cerca de la
+       ventana las cosas se mueven más. Una respiración lentísima de
+       ~2px lo mantiene vivo, como mecido por el agua que lo entierra. */
+    if (arco) {
+      const vaiven = quieto.matches ? 0
+        : Math.sin(t * 0.19) * 2.0 + Math.sin(t * 0.07 + 2.1) * 1.2;
+      poner(arco, 'translate',
+        `${(curX * 22 + vaiven * 0.4).toFixed(1)}px ` +
+        `${(s * innerHeight * 0.12 + curY * 10 + vaiven).toFixed(1)}px`);
+    }
+
     /* La nota de la hora es el plano más cercano: se va la primera. */
     poner(nota, 'translate', `0px ${(s * innerHeight * 0.22).toFixed(1)}px`);
     poner(nota, 'opacity', (1 - Math.min(1, s * 2.4)).toFixed(3));
@@ -169,7 +183,7 @@ function arrancar() {
 
   /* Movimiento apagado: el hero vuelve a ser el documento plano. */
   function apagar() {
-    for (const el of [texto, cta, nota]) {
+    for (const el of [texto, cta, nota, arco]) {
       if (!el) continue;
       el.style.translate = '';
       el.style.opacity = '';
