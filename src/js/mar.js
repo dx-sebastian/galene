@@ -154,11 +154,18 @@ void main(){
          de valor; la paleta de la hora aporta el color. Una sola lámina
          sirve para las veinticuatro horas y a las seis de la mañana se
          enciende por abajo sin repintar nada. */
-      vec3 sombraN = mix(u_cieloAlto, u_agua, 0.30) * 0.90;
-      vec3 luzN    = mix(u_altas, u_reguero, 0.34);
+      /* Y MENOS. Con el rango abierto la nube tenía cara iluminada y
+         sombra bien separadas, y eso es exactamente lo que la hacía
+         parecer una fotografía retocada en vez de una aguada. En una
+         acuarela el pigmento se posa en un rango estrecho: lo que
+         separa una nube del cielo son dos pasos de valor, no diez.
+         El rango se cierra hacia el propio cielo y la lámina entra a
+         0.46 en vez de 0.78. Se ve menos y se lee más. */
+      vec3 sombraN = mix(u_cieloAlto, u_agua, 0.17) * 0.955;
+      vec3 luzN    = mix(u_cieloAlto, mix(u_altas, u_reguero, 0.34), 0.62);
       vec3 pn = duotono(nb.rgb, sombraN, luzN);
-      pn += (nb.rgb - vec3(valor(nb.rgb))) * u_croma * 0.35;
-      col = mix(col, pn, nb.a * 0.78 * smoothstep(0.02, 0.26, nv));
+      pn += (nb.rgb - vec3(valor(nb.rgb))) * u_croma * 0.18;
+      col = mix(col, pn, nb.a * 0.46 * smoothstep(0.02, 0.30, nv));
     } else {
       float m = fbm((q + vec2(u_deriva * 0.02, 0.0)) * 2.2);
       col = mix(col, u_cieloAlto, (m - 0.5) * 0.16);
@@ -309,7 +316,18 @@ void main(){
        mueve mas. No es oleaje, es vegetacion cediendo a una corriente
        que no se ve. */
     if (u_hayCorales > 0.5) {
-      float cAlto = u_coralesCaja.x, cBase = u_coralesCaja.y;
+      /* LA PRADERA NO TIENE UNA ALTURA, TIENE VARIAS. Con una banda de
+         alto fijo el pasto se leía como una CINTA RECTA cruzando la
+         pantalla: un borde horizontal de lado a lado es lo más
+         artificial que puede haber en un cuadro de agua, y encima
+         mandaba jerárquicamente por encima del manglar, que es el
+         sujeto. Aquí el alto ondula con dos senos de periodo largo y
+         primos entre sí, así que el borde nunca se repite dentro de la
+         pantalla y no hay ninguna línea que seguir. */
+      float onda = sin(q.x * 1.15 - 0.7) * 0.26
+                 + sin(q.x * 2.63 + 2.1) * 0.15;
+      float cAlto = u_coralesCaja.x * (1.0 + onda);
+      float cBase = u_coralesCaja.y + u_coralesCaja.x * onda * 0.55;
       float cv = (uv.y - (cBase - cAlto)) / cAlto;
       if (cv > 0.0 && cv < 1.0) {
         float profC = 1.0 - cv;
@@ -326,8 +344,12 @@ void main(){
         vec2 cu = vec2(q.x / (cAlto * u_coralesCaja.z) + vaiven * cv,
                        cv);
         vec4 tc = texture(u_corales, cu);
-        vec3 pc = mix(col, tc.rgb, 0.82);
-        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.85;
+        /* Y PESA MENOS. Estaba a 0.82 de mezcla y 0.85 de croma, o sea
+           casi opaco y casi a todo color: por eso llamaba más la
+           atención que el árbol. Está a metros de distancia y bajo el
+           agua; lo que llega de eso es un tinte, no una pintura. */
+        vec3 pc = mix(col, tc.rgb, 0.54);
+        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.42;
         /* Nunca una cinta continua: se desvanece por arriba —el corte
            recto se veía— y se abre en claros con una onda lenta, para
            que haya agua limpia entre las matas. La paz es el vacío. */
@@ -336,8 +358,8 @@ void main(){
            Solo se desvanece por arriba, para que no haya canto recto. */
         /* El desvanecido va ARRIBA, donde acaban las hojas, no abajo,
            que es donde está la arena y tiene que estar sólida. */
-        float entra = 1.0 - smoothstep(0.72, 1.0, cv);
-        col = mix(col, pc, tc.a * mix(0.62, 1.0, profC) * entra);
+        float entra = 1.0 - smoothstep(0.58, 1.0, cv);
+        col = mix(col, pc, tc.a * mix(0.34, 0.78, profC) * entra);
       }
     }
   }
