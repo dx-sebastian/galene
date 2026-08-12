@@ -261,8 +261,18 @@ void main(){
        deja un pincel seco— y ya no tiene lados. */
     float bocaCielo = smoothstep(0.30, 0.47,
                         fbm(vec2(q.x * 3.1 + 12.0, gy * 5.2 + 3.7)));
+    /* Y LA RESERVA SE APARTA DEL COLOR. Se abria justo en la franja baja
+       del cielo, que es exactamente donde vive el rosa del amanecer y del
+       ocaso: estaba blanqueando lo unico que distingue las 6:00 de las
+       12:00. Por eso el dia entero se veia igual.
+
+       Un acuarelista reserva el papel en los pasajes vacios, no a traves
+       de su mejor color. Asi que la boca se cierra donde el cielo tiene
+       croma y se abre donde es neutro. */
+    float cromaCielo = length(col - vec3(valor(col)));
+    float neutro = 1.0 - smoothstep(0.020, 0.085, cromaCielo);
     reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.50, gy))
-                           * bocaCielo * mix(0.20, 1.0, u_int) * 0.99);
+                           * bocaCielo * neutro * mix(0.20, 1.0, u_int) * 0.99);
 
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
@@ -327,7 +337,11 @@ void main(){
     vec2 f = vec2(u_fuente.x * aspecto, u_fuente.y);
     if (u_hayAstro > 0.5) {
       float esSol = smoothstep(0.42, 0.78, u_int);
-      float lado = 0.30;                         // alto de la celda en q
+      /* 0.30 -> 0.17. A 0.30 la mancha media casi un tercio del alto y
+         competia con la copa del arbol, que es el sujeto. Un sol o una
+         luna en un paisaje son pequenos; lo que ocupa sitio es su luz,
+         no su disco. */
+      float lado = 0.17;                         // alto de la celda en q
       vec2 au = (q - f) / lado + 0.5;
       if (au.x > 0.0 && au.x < 1.0 && au.y > 0.0 && au.y < 1.0) {
         vec2 uu = vec2((au.x + floor(esSol + 0.5)) * 0.5, au.y);
@@ -783,8 +797,12 @@ void main(){
          resto del cuadro: parecía recortada de otra pintura. Un primer
          término en acuarela es más oscuro que el fondo, sí, pero sigue
          siendo la misma aguada. */
-      vec3 oscuroC = mix(vec3(0.165, 0.160, 0.178), u_agua * 0.42, 0.35);
-      vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
+      /* Sobrecorregi. De 0.085 —silueta casi negra, recortada de otro
+         cuadro— lo subi a 0.165 y quedo una masa gris palida que lee como
+         niebla. Un primer termino tiene que PESAR: es lo mas cercano al
+         ojo y por tanto lo mas contrastado del cuadro. */
+      vec3 oscuroC = mix(vec3(0.112, 0.106, 0.124), u_agua * 0.38, 0.35);
+      vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.88;
       vec3 pk = duotono(tk.rgb, oscuroC, claroC);
       pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
       col = mix(col, pk, tk.a * 0.96);

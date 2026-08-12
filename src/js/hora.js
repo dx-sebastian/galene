@@ -16,7 +16,7 @@
 const A = {
   /* La noche no es negra: es azul de tinta con una insinuación malva
      abajo. Lo que la hace fría es el valor, no la falta de color. */
-  h03: { cieloAlto:'#1B2942', cieloBajo:'#3A3D5C', agua:'#17252F', altas:'#2F5060',
+  h03: { cieloAlto:'#1B2942', cieloBajo:'#453A5E', agua:'#17252F', altas:'#2F5060',
          reguero:'#CBD5E6', bruma:'#28354A', acento:'#B06A4A', elev:12, int:0.35 },
   /* Los anclas de día llevaban el agua a un turquesa que el cielo nunca
      tenía: medido, 23.6 % de saturación contra 8.6 % del cielo, y el
@@ -29,11 +29,25 @@ const A = {
   /* Azul cielo de verdad arriba y un rosa polvoriento abajo. El rosa
      está JUSTIFICADO: cerca del horizonte la luz atraviesa más aire y
      se enrojece. Por eso puede ser color sin volverse decoración. */
-  h09: { cieloAlto:'#9CC6E4', cieloBajo:'#F0DFDC', agua:'#5E858F', altas:'#A6C0C2',
-         reguero:'#FFF4E2', bruma:'#DCDCDC', acento:'#C4703F', elev:38, int:0.70 },
-  h15: { cieloAlto:'#7FBAD8', cieloBajo:'#F2DCCE', agua:'#4E8391', altas:'#AFC4BE',
-         reguero:'#E8B96A', bruma:'#E0D6CA', acento:'#B4552E', elev:52, int:1.00 },
-  h21: { cieloAlto:'#161F35', cieloBajo:'#3B3757', agua:'#142631', altas:'#3E5F70',
+  /* LA MANANA Y LA TARDE TIENEN QUE SER DISTINTAS, o el mediodia —que es
+     su punto medio— no puede ser nada. Estaban a #9CC6E4 contra #7FBAD8
+     arriba y #F0DFDC contra #F2DCCE abajo: practicamente el mismo color,
+     y por eso las 6, las 9 y las 12 se veian iguales.
+
+     Ahora la manana es FRIA y limpia —el aire de la manana tiene menos
+     polvo, el azul llega mas puro y el rosa bajo es todavia el del
+     amanecer que se apaga— y la tarde es CALIDA y con mas bruma: la luz
+     ha atravesado mas atmosfera y el bajo se va a arena. El mediodia
+     queda entre las dos, que es exactamente lo que es.
+
+     Y el rosa bajo sube de croma: a 0.08 de saturacion no se leia como
+     rosa, se leia como blanco sucio, y ese rosa es lo unico que separa
+     una hora de otra. */
+  h09: { cieloAlto:'#8FC6EC', cieloBajo:'#F2D6CC', agua:'#5E8B98', altas:'#A8C4C8',
+         reguero:'#FFF4E2', bruma:'#DEDFE2', acento:'#C4703F', elev:38, int:0.70 },
+  h15: { cieloAlto:'#79B2D2', cieloBajo:'#F6D6B6', agua:'#4E7F86', altas:'#B6C2B4',
+         reguero:'#E8B96A', bruma:'#E2D6C4', acento:'#B4552E', elev:52, int:1.00 },
+  h21: { cieloAlto:'#161F35', cieloBajo:'#4A3A5C', agua:'#142631', altas:'#3E5F70',
          reguero:'#D3CBE8', bruma:'#2A3350', acento:'#A8664C', elev:60, int:0.50 },
 };
 
