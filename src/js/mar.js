@@ -408,10 +408,10 @@ void main(){
        figura esta prohibida en este sitio y sigue estandolo. */
     float dRoce = distance(q, u_roce.xy);
     float roce = u_roce.z * exp(-(dRoce * dRoce) / 0.045) * 0.85;
-    float amp  = (1.0 - cn) * mix(0.0047, 0.074, pp)
+    float amp  = (1.0 - cn) * mix(0.0038, 0.059, pp)   // -20 %
                * (1.0 - aplanado * 0.94) * (1.0 + roce);
     float frec = mix(120.0, 9.0, pp);
-    float vel  = mix(0.96, 0.43, pp);      // +30 %
+    float vel  = mix(0.77, 0.34, pp);      // +30 % y luego -20 %
     /* LA FASE VA CON RUIDO. Los dos terminos diagonales eran rejillas
        rectas cruzandose, y al subir la amplitud se veian como un galon
        de espiga repitiendose: el patron mecanico que mata cualquier
@@ -439,9 +439,9 @@ void main(){
     float fase1 = fbm(vec2(q.x * 0.9 + 3.0, uv.y * 2.2)) * 5.0;
     float fase2 = fbm(vec2(q.x * 0.6 - 9.0, uv.y * 1.4 + 21.0)) * 6.0;
     float onda =
-        sin(marcha * 2.35 + u_t * 4.40 + q.x * 1.15 + fase1) * 0.50
-      + sin(marcha * 1.42 + u_t * 2.70 - q.x * 2.05 + fase2) * 0.29
-      + sin(marcha * 4.10 + u_t * 7.30 + q.x * 0.55) * 0.13
+        sin(marcha * 2.35 + u_t * 3.52 + q.x * 1.15 + fase1) * 0.50
+      + sin(marcha * 1.42 + u_t * 2.16 - q.x * 2.05 + fase2) * 0.29
+      + sin(marcha * 4.10 + u_t * 5.84 + q.x * 0.55) * 0.13
       + sin((q.x + u_deriva * mix(0.05, 0.55, pp)) * frec + u_t * vel) * 0.14;
 
     vec2 duv = vec2(onda * amp * 0.35, onda * amp);
@@ -528,8 +528,17 @@ void main(){
 
        De noche se apaga casi del todo: un mar nocturno no tiene papel
        en blanco, tiene la luna y poco mas. */
-    float cresta = smoothstep(0.15, 0.75, onda * 0.5 + 0.5);
-    float faceta = smoothstep(0.87, 0.965, valor(pintura)) * cresta;
+    /* LOS ECOS DE LUZ. Quedaban dos manchas claras fijas en 0.82 y 0.97
+       de la pantalla A TODAS HORAS, mientras el sol iba de 0.25 a 0.75:
+       no seguian a la luz, o sea que no eran reguero sino reserva de
+       papel. El umbral cazaba franjas enteras del decil claro de la
+       lamina en vez de facetas sueltas.
+
+       Ahora hace falta que coincidan TRES cosas —lamina muy clara,
+       cresta alta y poca profundidad— y ademas el borde es mas
+       estrecho: donde antes salia una mancha, ahora salen destellos. */
+    float cresta = smoothstep(0.42, 0.88, onda * 0.5 + 0.5);
+    float faceta = smoothstep(0.93, 0.985, valor(pintura)) * cresta;
     /* Y DE NOCHE, CERO. Con mix(0.03, 1.0, dia) a las 21:00 quedaba al
        15 %, que parece poco — pero sobre agua casi negra (luminancia
        0.05) mezclar un 15 % hacia papel (0.87) multiplica el brillo por
@@ -586,7 +595,7 @@ void main(){
        parte. Una mar de fondo tiene UN periodo; lo que cambia con la
        distancia es el espaciado entre crestas, no su frecuencia.
        4.4 rad/s recorre las 40 radianes del horizonte al ojo en ~9 s. */
-    float paso = sin(marcha * 2.35 + u_t * 4.4 + q.x * 1.15 + fase1);
+    float paso = sin(marcha * 2.35 + u_t * 3.52 + q.x * 1.15 + fase1);
     float lomo = smoothstep(0.30, 0.95, paso) * (1.0 - cn) * pp;
     float valle = smoothstep(-0.30, -0.95, paso) * (1.0 - cn) * pp;
     col = mix(col, mix(col, u_altas, 0.55), lomo * 0.30);
