@@ -30,6 +30,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   <meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo" />
   <meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo." />
   <meta name="theme-color" content="#2E4256" />
+  <meta property="og:image" content={base + 'arte/1024/manglar-enterrado-a.webp'} />
 
   {/* BORRADOR: mientras las ventanas médicas no estén verificadas contra
       fuente primaria, esto no debe ser encontrable. */}
@@ -44,10 +45,24 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
   <main>
     <section class="hero" id="mar">
+      {/* SEO: el H1 lleva la FRASE DE BÚSQUEDA, no la marca. Nadie
+          busca "Galene"; buscan "sumisión química qué hacer". La marca
+          queda arriba como lema, igual de grande — la jerarquía visual
+          y la semántica no tienen por qué coincidir. */}
       <div class="hero__texto">
-        <h1 class="titulo">Galene</h1>
-        <p class="lockup">Sumisión química: qué hacer, y hasta cuándo.</p>
+        <p class="titulo">Galene</p>
+        <h1 class="lockup">Sumisión química: qué hacer, y hasta cuándo.</h1>
       </div>
+
+      {/* EL MANGLAR DE RAÍCES DESNUDAS — acuarela propia, plano cercano
+          del paralaje. Viene sobre papel blanco: multiply la funde con
+          el mar como una aguada de verdad. Decorativa: alt vacío. */}
+      <img class="hero__arco" id="arco" alt="" aria-hidden="true"
+           decoding="async" fetchpriority="low"
+           src={base + 'arte/1024/manglar-enterrado-a.webp'}
+           srcset={base + 'arte/1024/manglar-enterrado-a.webp 1024w, '
+                 + base + 'arte/manglar-enterrado-a.webp 2048w'}
+           sizes="(max-width: 1100px) 60vw, 40vw" />
 
       <a class="cta" href="#herramientas">Qué puedo hacer ahora</a>
 

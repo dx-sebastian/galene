@@ -230,7 +230,11 @@ void main(){
        Con 0.22 el 44 % de cada escalon era transicion —gradiente
        garantizado, hiciera lo que hiciera con los pasos—. A 0.07 la
        transicion ocupa un 14 % y el resto es aguada seca de verdad. */
-    col = mix(col, aplanar(col, 11.0, 0.07), 1.0);
+    /* SIN aplanado propio. Cada capa con su cuantizacion ponia los
+       escalones en sitios distintos, y por eso el cielo, el agua y el
+       arbol parecian de tres cuadros diferentes. Ahora hay UNA sola
+       pasada, al final, sobre la imagen ya compuesta: un solo juego de
+       aguadas para todo. */
 
     /* Y SE ABRE EL PAPEL junto al horizonte. Está justificado: el cielo
        es más pálido cerca del horizonte porque la luz atraviesa más aire.
@@ -456,7 +460,7 @@ void main(){
     /* Y el agua también se aplana. Menos escalones que el cielo y con el
        canto más seco, porque el agua lejana en una acuarela son dos o
        tres tiras planas y nada más. */
-    col = mix(col, aplanar(col, 13.0, 0.06), mix(1.0, 0.70, pp));
+
 
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
@@ -625,7 +629,7 @@ void main(){
          de las raices, que es lo que la delata como render.
          El arreglo de verdad es repintarla; esto es lo que se puede
          hacer sin lamina nueva. */
-      vec3 pm = aplanar(duotono(t.rgb, oscuroM, claroM), 10.0, 0.06);
+      vec3 pm = duotono(t.rgb, oscuroM, claroM);
       /* El manglar conserva su propio pigmento, como el agua: en duotono
          puro la copa salía gris contra un cielo cálido y leía recorte. */
       /* Y menos croma: 0.85 sobre una lamina que ya viene a 0.465 de
@@ -722,7 +726,7 @@ void main(){
          siendo la misma aguada. */
       vec3 oscuroC = mix(vec3(0.165, 0.160, 0.178), u_agua * 0.42, 0.35);
       vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
-      vec3 pk = aplanar(duotono(tk.rgb, oscuroC, claroC), 9.0, 0.09);
+      vec3 pk = duotono(tk.rgb, oscuroC, claroC);
       pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
       col = mix(col, pk, tk.a * 0.96);
     }
@@ -782,8 +786,14 @@ void main(){
        se comprimio, y con 14 pasos volvia a cruzar pocos —65.8 % de
        degradado—. Es el mismo problema de granularidad, un piso mas
        abajo. Y no pisa lo reservado: papel es ausencia de pintura. */
-    col = mix(col, aplanar(col, mix(14.0, 26.0, dNoche), 0.05),
-              mix(0.35, 0.90, dNoche) * (1.0 - reservaPapel * 0.85));
+    /* Y suave. Con dureza 0.05 el escalon era un canto duro y el cuadro
+       salio BANDEADO: contornos de mapa topografico, que es un artefacto
+       digital y justo lo contrario de una acuarela. Persegui la metrica
+       de planitud hasta romper la pintura. A 0.38 la transicion ocupa
+       tres cuartos del escalon: se agrupa el valor lo justo para que
+       lea aguada, sin que aparezca un solo borde. */
+    col = mix(col, aplanar(col, mix(9.0, 14.0, dNoche), 0.38),
+              mix(0.30, 0.45, dNoche) * (1.0 - reservaPapel * 0.85));
     if (dNoche > 0.001) {
       /* Bajado de 0.30 a 0.14. Desaturar parejo es la otra mitad de la
          receta vintage; lo que sobraba de noche no era color, era color
