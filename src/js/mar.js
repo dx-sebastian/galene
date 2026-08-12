@@ -134,6 +134,22 @@ vec3 aplanar(vec3 c, float pasos, float dureza){
 
 /* Duotono: la lámina entrega estructura de valor; la hora entrega el
    color. Se expande el rango pintado para no perder los extremos. */
+/* CURVA DE CROMA. Multiplicar el color por una ganancia pareja sube la
+   media y deja el tope donde estaba: media baja + tope bajo + un solo
+   matiz es la receta exacta del look vintage, y medido salia asi —0.158
+   de media pero solo 0.35 de tope, y el 78 % de los matices frios.
+
+   Una acuarela viva no tiene mas color en todas partes: tiene la mayor
+   parte del cuadro apagada y DOS O TRES SITIOS donde el pigmento se
+   encharco y seco limpio. Asi que la ganancia sube con el croma que la
+   lamina ya trae: lo apagado se queda apagado —de ahi la paz— y lo que
+   ya tenia color se aclara de verdad. */
+vec3 croma(vec3 pintura, float base, float tope){
+  vec3 desv = pintura - vec3(valor(pintura));
+  float f = length(desv) * 1.732;             // 0..1 aprox
+  return desv * mix(base, tope, smoothstep(0.10, 0.42, f));
+}
+
 vec3 duotono(vec3 pintura, vec3 oscuro, vec3 claro){
   float v = clamp((valor(pintura) - 0.08) / 0.82, 0.0, 1.0);
   return mix(oscuro, claro, v);
@@ -376,7 +392,7 @@ void main(){
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
        mitad de lo que hace que algo lea acuarela en vez de fotografía. */
-    col += (pintura - vec3(valor(pintura))) * u_croma * 1.45;
+    col += croma(pintura, u_croma * 0.85, u_croma * 3.10);
 
     /* CRESTA FRIA, SENO CALIDO. Esto es lo que hace que un mar de
        acuarela se vea colorido sin estar saturado, y es ademas lo que
@@ -399,7 +415,13 @@ void main(){
        agua que tiran a verde y otras a violeta, no como rayas. */
     float aparta = fbm(vec2(q.x * 1.35 + u_deriva * 0.03, uv.y * 3.2 + 7.0));
     col = mix(col, mix(col, u_agua, 0.24), smoothstep(0.58, 0.86, aparta) * 0.55);
-    col = mix(col, mix(col, u_reguero, 0.20), smoothstep(0.42, 0.16, aparta) * 0.42);
+    /* Y el lobulo calido, de verdad calido. Estaba tan lavado que solo
+       era azul un poco menos azul, y un cuadro de un solo matiz se ve
+       apagado por mucho que se le suba el color. El rosa polvoriento que
+       pide el proyecto es esto: no decoracion, el contrapunto sin el
+       cual el azul no canta. */
+    vec3 tibio = mix(u_reguero, vec3(0.86, 0.66, 0.62), 0.42);
+    col = mix(col, mix(col, tibio, 0.34), smoothstep(0.42, 0.14, aparta) * 0.58);
 
     /* Perspectiva aérea: el agua lejana se lava hacia la bruma, pero
        SIEMPRE por debajo de ella. Con la bruma pareja el salto del
@@ -540,7 +562,11 @@ void main(){
       /* Y menos croma: 0.85 sobre una lamina que ya viene a 0.465 de
          saturacion dejaba el arbol como el unico objeto saturado del
          cuadro, tirando de la mirada por color en vez de por valor. */
-      pm += (t.rgb - vec3(valor(t.rgb))) * u_croma * 0.52;
+      /* El arbol venia a 0.465 de saturacion, el doble que todo lo
+         demas. Con la curva su masa se apaga y solo cantan las hojas
+         que ya tenian color: deja de ser el unico objeto saturado sin
+         quedarse gris. */
+      pm += croma(t.rgb, u_croma * 0.30, u_croma * 1.05);
       /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
@@ -671,7 +697,10 @@ void main(){
   {
     float dNoche = 1.0 - smoothstep(0.02, 0.34, u_int);
     if (dNoche > 0.001) {
-      col = mix(col, vec3(valor(col)), dNoche * 0.30);
+      /* Bajado de 0.30 a 0.14. Desaturar parejo es la otra mitad de la
+         receta vintage; lo que sobraba de noche no era color, era color
+         SIN RANGO. Se corrige con el rango, no quitandole el color. */
+      col = mix(col, vec3(valor(col)), dNoche * 0.14);
       col = mix(col, clamp((col - 0.018) * 1.30, 0.0, 1.0), dNoche * 0.55);
     }
   }
