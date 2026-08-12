@@ -2,6 +2,9 @@
 /* Las herramientas: DOM plano, cero canvas. La imperfección vive en
    el mar; el instrumento es exacto. */
 import RelojRescate from './RelojRescate.astro';
+import Decidir from './Decidir.astro';
+import Mapa from './Mapa.astro';
+import { CONSEJOS, FUENTES } from '../js/reloj.js';
 ---
 
 <section class="herramientas" id="herramientas">
@@ -9,13 +12,23 @@ import RelojRescate from './RelojRescate.astro';
     {/* EL FONDO — papel y tres aguadas con paralaje. Decorativo entero:
         aria-hidden, sin texto y sin datos. data-hondo es el factor de
         profundidad que lee js/paralaje.js: 1 = clavado al viewport,
-        0 = se va con la página. Las nubes casi no se mueven porque
-        están lejos; el manglar sí, porque está cerca. */}
+        0 = se va con la página.
+
+        SE LLAMABAN nubes, mar y manglar, y eran eso: el paisaje del
+        hero repetido aquí abajo en gris verdoso. No funcionaba. Los
+        charcos se leían como manchas grises sin sujeto y el manglar
+        —que sí traía lámina— dejaba un árbol fantasma asomando por la
+        esquina, o sea el mismo dibujo dos veces en la misma página.
+
+        Ahora no representan nada: son AGUADAS, en los dos pigmentos
+        del ente —azul y rojo—, y lo único que hacen es dar profundidad
+        al papel. Por eso los nombres son de posición y no de cosa: si
+        no dibujan un manglar, no pueden llamarse manglar. */}
     <div class="herramientas__fondo" aria-hidden="true">
       <div class="fondo__papel"></div>
-      <div class="fondo__capa fondo__capa--nubes"   data-hondo="0.94"></div>
-      <div class="fondo__capa fondo__capa--mar"     data-hondo="0.86"></div>
-      <div class="fondo__capa fondo__capa--manglar" data-hondo="0.66"></div>
+      <div class="fondo__capa fondo__capa--alta"    data-hondo="0.94"></div>
+      <div class="fondo__capa fondo__capa--media"   data-hondo="0.86"></div>
+      <div class="fondo__capa fondo__capa--cercana" data-hondo="0.66"></div>
     </div>
 
     {/* Aquí iba el aviso de borrador —«N datos no tienen fuente
@@ -35,11 +48,13 @@ import RelojRescate from './RelojRescate.astro';
         Definición deliberadamente NO clínica: sin sustancias, sin dosis
         y sin plazos. Todo eso vive en el reloj, con su fuente. Aquí solo
         se describe la experiencia, que es lo que ella puede reconocer. */}
-    {/* La cabecera se maqueta a DOS COLUMNAS en pantalla ancha (ver
-        .cabecera en estilos.css). El orden del DOM es el orden de
-        lectura —definición, lema, matiz, pregunta— y no cambia: la
-        rejilla solo decide dónde cae cada pieza. Quien lo oiga con
-        lector de pantalla lo oye en el orden que tiene sentido. */}
+    {/* La cabecera va en UNA COLUMNA CENTRADA, la misma a todos los
+        anchos (ver .cabecera en estilos.css). Estuvo a dos columnas y
+        el problema no era la maqueta: eran los DOS SITIOS por donde
+        empezar a leer. En una página que se abre asustada, elegir por
+        dónde entrar ya es trabajo. Ahora el orden del DOM y el orden
+        de lectura son el mismo y no hay nada que decidir: definición,
+        lema, matiz, pregunta. */}
     <div class="cabecera">
     <h2 class="herramientas__titulo">Sumisión química</h2>
     <p class="herramientas__intro">
@@ -54,10 +69,24 @@ import RelojRescate from './RelojRescate.astro';
         porque no es un dato más: es el criterio con el que se lee todo
         lo demás. Si alguien lee una sola línea de esta página, que sea
         esta. Y el realce cae sobre «no hay consentimiento», que es la
-        mitad que la gente no se cree de sí misma. */}
+        mitad que la gente no se cree de sí misma.
+
+        EL REALCE YA NO SE PINTA AQUÍ. Era una aguada de CSS —cinco
+        manchas encimadas, quieta y siempre idéntica— y ahora lo hace el
+        ente de js/humo.js: el mismo rojo y el mismo sitio, pero vivo.
+        Es lo único que se mueve en toda la sección, y por eso es lo que
+        se mira.
+
+        `data-humo-realce` es el ancla: el ente busca ese atributo y se
+        reparte por la caja de la frase, así que si el texto cambia de
+        renglones, de cuerpo o de idioma, la mancha lo sigue sola.
+
+        Y SI EL ENTE NO LLEGA, no pasa nada: la frase se queda en
+        negrita, que es lo que ya era por debajo del color. Ninguna
+        palabra de esta página depende de que un script cargue. */}
     <p class="lema">
       Sin capacidad de decidir,
-      <b class="realce realce--calma">no hay consentimiento.</b>
+      <b class="realce-vivo" data-humo-realce>no hay consentimiento.</b>
     </p>
 
     <p class="herramientas__intro">
@@ -66,25 +95,36 @@ import RelojRescate from './RelojRescate.astro';
       consentido</strong>, y no tener pruebas no significa que no ocurriera.
     </p>
 
-    {/* La pregunta que abre las cuatro puertas. Es mejor que «¿qué
-        necesitas?»: no le pide a nadie que diagnostique lo que le pasó
-        —eso es justo lo que no puede hacer— sino que conteste algo que
-        sí sabe. Y «no sé» ya es una respuesta que abre puerta.
+    {/* La pregunta se fue a su propia sección, `Decidir.astro`, justo
+        debajo de esta cabecera. Estaba aquí como un párrafo más y era
+        la frase que desmonta la culpa — la que de verdad hace trabajo
+        en esta página. Un subtítulo no puede cargar con eso. */}
+    </div>
 
-        SIN AGUADA, a propósito. Llevaba una y sobraba: el rojo es el
-        color del daño, y una pregunta no es un daño. Además, con tres
-        realces seguidos ninguno pesaba más que otro y la sección se
-        quedaba sin jerarquía. Aquí el nivel lo da el cuerpo y la
-        familia tipográfica, que es como se separa un rango del de
-        abajo sin gritar. */}
-    <div class="herramientas__pregunta">
-      <p class="pregunta__titulo">¿Pudiste decidir?</p>
-      <p class="herramientas__intro">
-        Si la respuesta es no, o no lo sabes, esto es lo que se puede
-        hacer. No hace falta contarlo ni estar segura de nada.
-      </p>
-    </div>
-    </div>
+    <Decidir />
+
+    <!-- ═══ ESTÁS AQUÍ ══════════════════════════════════════════════
+         SEGUNDO, justo debajo de la definición. Estuvo al final de la
+         página, y el razonamiento de entonces era que cerraba: quien
+         bajaba leyendo llegaba aquí con las cuatro puertas y el reloj
+         ya vistos.
+
+         El orden nuevo responde a otra pregunta, y es la que de verdad
+         se hace quien acaba de leer la definición: «vale, ¿y yo dónde
+         estoy?». Nombrar lo que pasó y situarse en el tiempo son el
+         mismo gesto partido en dos, y separarlos por seis bloques
+         obligaba a leerse media página para completarlo.
+
+         Puesto aquí también hace de ÍNDICE: sus salidas apuntan a
+         #mapa, #salir, #reloj y #recordar, o sea a las puertas que
+         vienen justo debajo. Se elige un momento y la página ya sabe a
+         cuál de ellas mandarte.
+
+         Lo que se pierde: la frase «aunque hayan pasado 72 horas, la
+         ayuda continúa» ya no es lo último que se lee de la página.
+         Sigue estando, y sigue siendo verdad, pero ahora la cierra el
+         bloque de acompañar. -->
+    <RelojRescate />
 
     <!-- ═══ EL DESVÍO ═══════════════════════════════════════════════
          Cuatro puertas, no una lista. La primera es la más grande a
@@ -147,6 +187,56 @@ import RelojRescate from './RelojRescate.astro';
       <noscript><p class="bloque__intro">Sin JavaScript no se puede girar
         el reloj. Lo que nunca depende de JavaScript es el teléfono y el
         botón de salir, abajo.</p></noscript>
+
+      {/* ── LO QUE AYUDA ─────────────────────────────────────────────
+          Se pinta AQUÍ, en el HTML, y no con JavaScript como el reloj:
+          esto es ayuda práctica y no puede depender de que un script
+          llegue. Con la página en bruto se lee entero.
+
+          Y va DESPUÉS del reloj a propósito. Primero se sabe qué sigue
+          abierto —que es lo que quita el pánico— y solo después qué se
+          puede hacer para que sirva mejor. Al revés, la primera cosa
+          que leería alguien recién llegado sería una lista de cosas que
+          probablemente ya hizo mal. */}
+      <div class="consejos">
+        <h4 class="consejos__titulo">Lo que ayuda, si todavía estás a tiempo</h4>
+        <p class="bloque__intro consejos__aviso">Nada de esto es obligatorio
+          y <strong>nada de esto es una condición para que te atiendan</strong>.
+          Si ya hiciste alguna, sigue valiendo la pena ir: lo anotan y el
+          examen sigue adelante.</p>
+
+        <ul class="consejos__lista">
+          {CONSEJOS.map((c) => (
+            <li class="consejo">
+              <p class="consejo__que">{c.titulo}</p>
+              <p class="consejo__porque">{c.porque}</p>
+              {/* La frase que impide que esto sea una lista de reproches.
+                  Va en cada uno, no una vez arriba: quien lee esto salta
+                  de punto en punto buscando el suyo. */}
+              <p class="consejo__ya">{c.yaLoHice}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* DE DÓNDE SALE CADA NÚMERO. Va dentro del bloque del reloj y no
+          escondido en un pie: un dato médico sin fuente a la vista es un
+          rumor con tipografía bonita. */}
+      <details class="fuentes">
+        <summary>De dónde salen estos plazos</summary>
+        <ul class="fuentes__lista">
+          {FUENTES.map((f) => (
+            <li>
+              <a href={f.url} rel="noopener noreferrer" target="_blank">{f.titulo}</a>
+              <span class="fuentes__quien">{f.entidad}. {f.nota}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="sinfuente">Contrastado contra estos documentos, pero
+          <strong>todavía sin verificar</strong> por una persona con criterio
+          clínico: falta confirmar que siguen vigentes. Por eso el sitio
+          lleva <code>noindex</code>.</p>
+      </details>
     </section>
 
     <!-- ═══ SIN HABLAR ══════════════════════════════════════════════ -->
@@ -190,26 +280,12 @@ import RelojRescate from './RelojRescate.astro';
     </section>
 
     <!-- ═══ CARTOGRAFÍA ═════════════════════════════════════════════
-         Mapa real: se arrastra, hace zoom y admite puntero. Carga en
-         diferido para no competir nunca con la ayuda. -->
-    <section class="bloque bloque--mapa" id="mapa">
-      <h3>Dónde ir</h3>
-      <p>Elige tu ciudad. El mapa se mueve con el dedo o con el ratón.
-        <strong>No se envía tu ubicación a este sitio</strong>; si pulsas
-        «dónde estoy» se usa solo para centrar el mapa.</p>
-
-      <div class="mapa" id="mapa-host">
-        <div class="mapa__ciudades" role="group" aria-label="Ciudad"></div>
-        <div class="mapa__lienzo" role="application"
-             aria-label="Mapa de lugares de atención"></div>
-        <p class="mapa__aviso" hidden="hidden"></p>
-        <div class="mapa__barra">
-          <div class="mapa__capas"></div>
-          <button type="button" class="boton mapa__aqui">Dónde estoy</button>
-        </div>
-        <div class="mapa__listado"></div>
-      </div>
-    </section>
+         Tres mapas —emergencia, luz y sombra— sobre el mismo dibujo sin
+         topónimos. Se fue a su propio componente porque ya no es un
+         bloque: es una herramienta con estado, con red y con datos que
+         pone quien lo usa. Carga en diferido para no competir nunca con
+         la ayuda. -->
+    <Mapa />
 
     <!-- ═══ YA ME PASÓ ══════════════════════════════════════════════ -->
     <section class="bloque" id="ya-paso">
@@ -248,13 +324,4 @@ import RelojRescate from './RelojRescate.astro';
       </ul>
     </section>
 
-    <!-- ═══ ESTÁS AQUÍ ══════════════════════════════════════════════
-         El cierre. Va al final y no arriba a propósito: quien entra en
-         crisis ya tiene las cuatro puertas y el reloj antes de llegar
-         aquí. Este bloque es para quien ha bajado leyendo y necesita
-         que alguien le diga, en una sola frase, dónde está.
-
-         Y es lo último que se lee de la página: que pasadas las 72
-         horas la ayuda continúa. -->
-    <RelojRescate />
   </section>

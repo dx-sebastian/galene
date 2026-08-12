@@ -1,0 +1,165 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Mapa.astro — la cartografía, en tres mapas.
+
+   TODO LO QUE PUEDE SER HTML, ES HTML. Las pestañas, las ciudades, el
+   listado de «otra» y el 123 se imprimen en el servidor y llegan en el
+   documento: si JavaScript no corre —o todavía no ha corrido— lo que
+   queda en pantalla sigue siendo una sección legible con el teléfono
+   de emergencias arriba y las ciudades a la vista. Lo único que
+   necesita script es el mapa en sí, que es lo único prescindible.
+
+   El orden de arriba abajo es el de urgencia: qué mapa → qué dice ese
+   mapa → dónde → el mapa → qué hay en él. Nadie tiene que volver
+   atrás para entender lo que está mirando.
+
+   La lógica vive en js/mapa.js; aquí solo está el esqueleto y los
+   ganchos que ese archivo busca por clase.
+   ═══════════════════════════════════════════════════════════════════ */
+import { MODOS, CIUDADES, MAS_CIUDADES } from '../js/lugares.js';
+
+const inicial = MODOS[0];
+---
+
+<section class="bloque bloque--mapa" id="mapa">
+  <h3>Dónde ir, dónde estaré, dónde no</h3>
+  <p>Tres mapas distintos con el mismo dibujo. El de emergencia es el que
+    sirve ahora mismo; los otros dos son para antes y para después.
+    <strong>Tu ubicación no se envía a este sitio</strong> — si pulsas
+    «dónde estoy» se usa solo para centrar el mapa y se descarta.</p>
+
+  <div class="mapa" id="mapa-host" data-modo={inicial.id} data-ciudad={CIUDADES[0].id}>
+
+    {/* ── LAS TRES PESTAÑAS ────────────────────────────────────────
+        Con lema debajo del nombre, y no solo el nombre: «Sombra» sin
+        explicación no significa nada a las cuatro de la mañana, y
+        obligar a pulsar para averiguar qué hay dentro es hacer
+        adivinar a quien menos puede. */}
+    <div class="mapa__modos" role="tablist" aria-label="Qué mapa quieres ver">
+      {MODOS.map((m, i) => (
+        <button type="button" class={`modo modo--${m.id}`} role="tab"
+                data-modo={m.id} id={`modo-${m.id}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                aria-controls="mapa-lienzo"
+                tabindex={i === 0 ? 0 : -1}>
+          <span class="modo__nombre">{m.nombre}</span>
+          <span class="modo__lema">{m.lema}</span>
+        </button>
+      ))}
+    </div>
+
+    <p class="mapa__pie">{inicial.pie}</p>
+
+    {/* El 123 vive DENTRO del mapa de emergencia y no en un pie de
+        página: si alguien llegó hasta aquí buscando un hospital, la
+        llamada tiene que estar antes que el hospital. Va en HTML, sin
+        depender de nada, como manda la regla 5. */}
+    <p class="mapa__urgente">
+      <a class="mapa__linea" href="tel:123">123</a>
+      <span>Línea única de emergencias. Si es ahora, esto va antes que el mapa.</span>
+    </p>
+
+    {/* ── CIUDADES ─────────────────────────────────────────────────
+        Ocho a la vista y el resto detrás de «Otra». El botón dice
+        «Otra» y no «Ver más» porque lo que se busca es una ciudad
+        concreta, no más opciones. */}
+    <div class="mapa__ciudades" role="group" aria-label="Ciudad">
+      {CIUDADES.map((c, i) => (
+        <button type="button" class="ficha" data-id={c.id}
+                aria-pressed={i === 0 ? 'true' : 'false'}>{c.nombre}</button>
+      ))}
+      <button type="button" class="ficha ficha--otra"
+              aria-expanded="false" aria-controls="mapa-otras">Otra…</button>
+    </div>
+
+    <div class="mapa__otras" id="mapa-otras" hidden>
+      <label class="mapa__buscar">
+        <span class="visualmente-oculto">Buscar una ciudad</span>
+        <input type="search" placeholder="Escribe tu ciudad" autocomplete="off"
+               enterkeyhint="go" />
+      </label>
+      {/* Se imprime entero para que exista sin JavaScript; el buscador
+          lo vuelve a pintar filtrado en cuanto alguien escribe. */}
+      <div class="mapa__otras-lista">
+        {MAS_CIUDADES.map((c) => (
+          <button type="button" class="ficha" data-id={c.id} aria-pressed="false">{c.nombre}</button>
+        ))}
+      </div>
+      <p class="mapa__otras-nota">¿No está la tuya? <strong>El mapa se mueve
+        igual</strong>: arrástralo hasta donde estés y los puntos aparecen.</p>
+    </div>
+
+    {/* ── EL MARCO ─────────────────────────────────────────────────
+        El lienzo, el grano del papel encima de las teselas y la rosa
+        de los vientos. Los dos últimos son decoración pura: aria-hidden
+        y sin puntero, para que no aparezcan en el árbol de nadie. */}
+    <div class="mapa__marco">
+      <div class="mapa__lienzo" id="mapa-lienzo" role="application" tabindex="0"
+           aria-label="Mapa de emergencia: dónde hay una puerta abierta"></div>
+
+      {/* ── EL PERMISO ───────────────────────────────────────────────
+          Se pide la ubicación ANTES de dibujar nada, porque un mapa de
+          emergencia centrado en una ciudad que no es la suya no sirve:
+          lo que hace falta es lo que tiene cerca, ahora.
+
+          Y se pide con la razón delante. Un navegador preguntando
+          «¿permitir ubicación?» de golpe, en una página sobre agresión
+          sexual, se lee como una trampa — y con toda la razón. Aquí se
+          dice primero qué se hace con el dato, en la voz del sitio, y
+          el diálogo del navegador solo aparece si ella pulsa.
+
+          La salida está al lado y con el mismo peso: elegir la ciudad
+          a mano lleva al mismo mapa. Nadie se queda fuera por decir
+          que no. */}
+      <div class="mapa__permiso">
+        <div class="permiso__caja">
+          <p class="permiso__titulo">¿Te mostramos lo que tienes cerca?</p>
+          <p class="permiso__texto">Para eso el navegador te va a preguntar por tu
+            ubicación. <strong>No la guardamos.</strong> La usamos para centrar el
+            mapa y buscar los sitios de atención más cercanos, y se descarta.
+            No se envía a este sitio, que no tiene servidor donde ponerla.</p>
+          <div class="permiso__acciones">
+            <button type="button" class="boton boton--firme permiso__si">Mostrarme lo que hay cerca</button>
+            <button type="button" class="boton permiso__no">Elegir mi ciudad a mano</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mapa__grano" aria-hidden="true"></div>
+
+      <svg class="mapa__rosa" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="13.5" />
+        <path class="mapa__rosa-norte" d="M24 11 L27.5 24 L24 26.5 L20.5 24 Z" />
+        <path d="M24 37 L20.5 24 L24 21.5 L27.5 24 Z" />
+        <text x="24" y="9">N</text>
+      </svg>
+
+      <p class="mapa__estado" role="status" aria-live="polite" hidden></p>
+    </div>
+
+    <p class="mapa__aviso" hidden></p>
+
+    <div class="mapa__barra">
+      <div class="mapa__capas"></div>
+      <div class="mapa__acciones">
+        <button type="button" class="boton mapa__aqui">Dónde estoy</button>
+        <button type="button" class="boton mapa__marcar" aria-expanded="false" hidden>Dejar un punto</button>
+        <button type="button" class="boton mapa__compartir" hidden>Compartir mis puntos</button>
+      </div>
+    </div>
+
+    <form class="mapa__nueva" hidden></form>
+
+    <div class="mapa__listado"></div>
+
+    <p class="mapa__creditos">Dibujo del mapa: OpenStreetMap y CARTO.
+      Los sitios de atención los trae OpenStreetMap en el momento;
+      <strong>nadie de Galene los ha comprobado uno por uno</strong>.
+      Tus puntos de luz y de sombra se quedan en este aparato: aquí no
+      hay servidor donde ponerlos.</p>
+
+    <noscript><p class="mapa__creditos">Sin JavaScript no hay mapa. El 123
+      de arriba funciona igual, y en cualquier urgencia tienen que atenderte
+      sin denuncia y sin cita.</p></noscript>
+  </div>
+</section>

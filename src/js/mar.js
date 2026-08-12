@@ -12,6 +12,91 @@
    de contraste las gobierna el motor y no el archivo.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── EL VIENTO, EN UN SOLO SITIO ────────────────────────────────────
+   Devuelve cuánto empuja el aire ahora mismo, de −1 a 1. Lo usan el
+   shader (para doblar la copa del manglar y la rama cercana) y main.js
+   (para mover con ellas a las garzas posadas, que son DOM).
+
+   Dos senos de periodo largo y primos entre sí: uno de unos veinte
+   segundos y otro de treinta y tres. Nunca se repiten a la vez, así que
+   la copa no vuelve nunca a la misma posición y no hay ciclo que
+   detectar — que es lo único que distingue el viento de un péndulo.
+
+   Y NO HAY RÁFAGAS. Un golpe de viento es un sobresalto, y este sitio
+   se abre en el peor momento de la vida de alguien: el aire de aquí
+   empuja despacio y no sorprende nunca. */
+export function viento(t) {
+  /* Periodos de unos 12 y 20 segundos. Estaban en 20 y 33 y era
+     demasiado lento para verse: el ojo no detecta un desplazamiento por
+     debajo de uno o dos píxeles por segundo, y con aquel ciclo la copa
+     se movía a medio píxel. Sigue sin haber ráfagas — el aire empuja
+     despacio y no sorprende — pero ahora se percibe que empuja. */
+  return Math.sin(t * 0.50) * 0.55 + Math.sin(t * 0.31 + 1.3) * 0.45;
+}
+
+/* CUÁNTO SE DOBLA CADA COSA, en fracciones de su propia lámina.
+
+   Viven aquí y se INTERPOLAN en el GLSL de abajo en vez de escribirse a
+   mano allí, porque los mismos dos números los necesita main.js para
+   mover las garzas con la rama en la que están posadas. Ya estuvieron
+   escritos en los dos archivos y duró exactamente hasta la primera vez
+   que hubo que subir la amplitud: el árbol se movió y las aves se
+   quedaron clavadas en el aire. Una sola definición.
+
+   La copa se dobla menos que la rama del primer término, y las dos
+   cosas son ciertas: un tronco es rígido y una rama en voladizo no, y
+   además la rama está a un palmo del ojo, donde el mismo movimiento
+   real se ve al triple. */
+/* SUBIDAS DOS VECES, y las dos por lo mismo: no se veían.
+
+   Empezaron en 0.011 —tres píxeles y medio de recorrido en veinte
+   segundos, o sea un sexto de píxel por segundo— y pasaron a 0.034, que
+   seguía siendo medio píxel por segundo. Se comprobó midiendo el propio
+   lienzo que el viento SÍ llegaba al shader y deformaba la lámina; lo
+   que fallaba era la escala, no el mecanismo.
+
+   Y AQUI HUBO UNA CIFRA FALSA QUE CONVIENE NO REPETIR. Se escribio que
+   a 0.085 la copa recorria 49.7 px, sacado de una cuenta analitica con
+   las unidades cruzadas. Medido de verdad sobre el lienzo —buscando el
+   canto de la copa pixel a pixel— eran 17 px de bufer, o sea unos 11
+   de pantalla: cuatro veces menos. La cuenta estaba mal; la medida es
+   la que vale.
+
+   Lo que de verdad hizo visible el arbol no fue esta amplitud sino el
+   bamboleo por trozos del follaje, mas abajo: el movimiento
+   DIFERENCIAL se ve, el uniforme no.
+
+   0.085 -> 0.068 (un 20 % menos) -> 0.034 (la mitad otra vez). Las dos
+   bajadas por lo mismo: se movia demasiado. Y el bamboleo del follaje
+   bajo en la misma proporcion las dos veces, porque el movimiento sale
+   de los dos sitios y tocar solo uno deja las hojas agitadas sobre un
+   arbol quieto.
+
+   Si hay que volver a tocarlo, ESTE es el numero: las garzas posadas lo
+   leen de aqui y se mueven con el arbol solas.
+
+   El techo de esto no es el buen gusto sino la lámina: es un cizallado,
+   y pasado cierto punto las hojas se estiran en vez de moverse. */
+export const VIENTO_COPA = 0.034;
+export const VIENTO_RAMA = 0.070;
+
+/* CUÁNTO SE ENCOGE EL FRAGMENTO CERCANO según la forma de la ventana.
+   En móvil se comía la composición —0.92 del alto con la pantalla
+   estrecha tapaba al protagonista— así que se achica: el primer término
+   enmarca, no tapa.
+
+   Vive aquí, en JS, y viaja al shader como uniforme en vez de
+   calcularse allí. La razón es un fallo que estuvo escondido todo este
+   tiempo: el shader encogía la lámina y `posaderoCercano()` no se
+   enteraba, así que en cualquier pantalla más estrecha que 1.35 de
+   aspecto la garza cercana se posaba sobre una rama que ya no estaba
+   donde ella creía. En escritorio ancho el factor vale 1 y por eso no
+   se veía nunca. Con una sola definición no puede volver a pasar. */
+export function encogeCerca(aspecto) {
+  const t = Math.min(1, Math.max(0, (aspecto - 0.62) / (1.35 - 0.62)));
+  return 0.60 + 0.40 * (t * t * (3 - 2 * t));
+}
+
 const VS = `#version 300 es
 void main(){
   vec2 p = vec2((gl_VertexID == 1) ? 3.0 : -1.0,
@@ -35,6 +120,20 @@ uniform float u_calma;      // 0.35 … 0.85
                va caminando fuera de cuadro y no vuelve nunca. */
 uniform float u_deriva, u_paralaje;
 uniform float u_comp;
+/* EL VIENTO. Un solo escalar en [-1,1] que llega ya calculado desde JS
+   —ver viento() arriba del todo, fuera del shader— porque el mismo
+   numero lo necesitan tres sitios: la copa del manglar, la rama del
+   primer termino y las garzas posadas, que viven en el DOM y no aqui.
+   Si cada uno se lo calculara por su cuenta, bastaria con que alguien
+   tocara una constante para que las aves se despegaran del arbol.
+   (Y sin comillas invertidas en este comentario: esto vive dentro de un
+   template literal y ya ha cortado el archivo tres veces.) */
+uniform float u_viento;
+uniform float u_encoge;         // ver encogeCerca() al final del archivo
+/* EN QUE PUNTO DEL CICLO DE CIELOS estamos, de 0 a 4. Ver cicloCielo()
+   en hora.js. Es continuo, asi que su parte entera dice que lamina
+   toca y su fraccion cuanto se ha avanzado hacia la siguiente. */
+uniform float u_cielo;
 uniform float u_int;
 uniform vec2  u_fuente;
 uniform float u_papel;
@@ -275,6 +374,100 @@ void main(){
     reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.50, gy))
                            * bocaCielo * neutro * mix(0.20, 1.0, u_int) * 0.99);
 
+    /* ═══ LAS ESTRELLAS ═══════════════════════════════════════════
+       La noche de este sitio no puede ser un apagón. Estaba resuelta
+       como AUSENCIA de día —el mismo cielo con el brillo bajado— y una
+       ausencia no consuela a nadie: se leía triste, que es exactamente
+       lo que este sitio no puede permitirse a las cuatro de la mañana.
+
+       Una noche de verdad no es oscura, es OTRA COSA iluminada. Y lo
+       que la ilumina son las estrellas, que además son el argumento
+       entero del cuadro dicho sin palabras: el cielo sigue ahí, y de
+       noche tiene más cosas que de día, no menos.
+
+       CÓMO SE PINTAN, que es lo que decide si esto vale o es un
+       protector de pantalla:
+
+       - No son puntos. Un punto de un píxel es una estrella de render;
+         en acuarela lo más pequeño que existe es el toque de la punta
+         del pincel, y tiene borde blando. Cada una es una manchita con
+         caída suave, y las hay de tres tamaños.
+       - No están repartidas parejas. Se sortea una por celda de una
+         rejilla y se la mueve dentro de su celda, así que hay grupos y
+         hay vacíos — que es como está el cielo de verdad.
+       - Se apagan hacia el horizonte. Ahí la luz atraviesa mucho más
+         aire y las estrellas bajas se pierden: es cierto, y además deja
+         limpia la banda donde vive la bruma.
+       - Tienen COLOR. Unas tiran a azul y otras a ámbar, que es verdad
+         de las estrellas y es lo que impide que el campo se lea como
+         sal esparcida.
+       - Respiran, no parpadean. El periodo es de varios segundos y la
+         amplitud pequeña: un centelleo rápido sería el «glitch» que la
+         regla 2 prohíbe. Cada una en su fase, o titilarían a coro. */
+    float noche = 1.0 - smoothstep(0.20, 0.62, u_int);
+    if (noche > 0.004) {
+      /* Rejilla en unidades de ALTO (q), no de uv: si fuera en uv, las
+         estrellas se estirarían con la ventana y en apaisado saldrían
+         elipses. */
+      /* LA REJILLA MANDA EL TAMAÑO, y la primera vez la puse en 26: con
+         eso cada celda medía 22 px y las estrellas salían de hasta 18
+         de radio. No eran estrellas, eran globos — el cielo entero se
+         leía como un desenfoque de fondo de foto. El tamaño de una
+         estrella pintada es el del toque de la punta del pincel: uno o
+         dos píxeles de núcleo y el borde blando. A 105 la celda mide
+         unos 5 px y la talla cae donde tiene que caer. */
+      vec2 rej = vec2(q.x, uv.y) * 105.0;
+      vec2 celda = floor(rej);
+      float luzEstrellas = 0.0;
+      vec3 tinteEstrellas = vec3(0.0);
+      /* Nueve celdas: la propia y sus vecinas, porque una estrella
+         cerca del borde de su celda derrama sobre la de al lado y sin
+         esto se le vería el corte. */
+      for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+          vec2 c = celda + vec2(float(i), float(j));
+          float h1 = hash(c);
+          float h2 = hash(c + 31.7);
+          float h3 = hash(c + 74.3);
+          /* Una de cada diez celdas, no una de cada tres: con la
+             rejilla fina, un tercio serían miles de estrellas y el
+             cielo se lee como sal esparcida. Así salen unas cuatrocientas,
+             que es un cielo. */
+          if (h1 > 0.90) {
+            vec2 pos = c + vec2(h2, h3);
+            float d = length(rej - pos);
+            /* Tres tallas. Las grandes son pocas —el cubo hunde la
+               distribución hacia lo pequeño— igual que en el cielo. */
+            float talla = 0.16 + 0.30 * pow(hash(c + 12.1), 3.0);
+            float brillo = 0.35 + 0.65 * hash(c + 5.5);
+            /* Respiración lenta, cada una en su fase. */
+            brillo *= 0.78 + 0.22 * sin(u_t * (0.19 + 0.16 * h2) + h3 * TAU);
+            float m = exp(-pow(d / talla, 1.7)) * brillo;
+            luzEstrellas += m;
+            /* Azules y ámbares, con más azules. */
+            tinteEstrellas += m * mix(vec3(0.70, 0.80, 1.00),
+                                      vec3(1.00, 0.86, 0.68),
+                                      smoothstep(0.55, 0.95, hash(c + 61.2)));
+          }
+        }
+      }
+      if (luzEstrellas > 0.001) {
+        vec3 tinte = tinteEstrellas / luzEstrellas;
+        /* Se apagan hacia el horizonte y donde ya hay luz de la luna:
+           una estrella no se ve al lado de la luna, y fingir que sí es
+           la clase de mentira que delata el cuadro entero. */
+        float altura = smoothstep(0.04, 0.46, gy);
+        float lejosDeLaLuna = smoothstep(0.10, 0.42,
+                                length(q - vec2(u_fuente.x * aspecto, u_fuente.y)));
+        float f = clamp(luzEstrellas, 0.0, 1.0) * noche * altura
+                * mix(0.45, 1.0, lejosDeLaLuna);
+        /* Sobre el cielo, no sustituyéndolo: una estrella es papel que
+           quedó sin pintar con un toque de color encima, así que se
+           mezcla hacia el papel de la hora y no hacia el blanco. */
+        col = mix(col, papelBlanco() * tinte, f * 0.86);
+      }
+    }
+
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
          despacio — más lento que el agua, porque están más lejos.
@@ -282,7 +475,37 @@ void main(){
          tiene el de la luz que la atraviesa. */
       float nv = (uv.y - horX) / max(1.0 - horX, 0.001);
       vec2 nu = vec2(q.x * 0.42 + u_deriva * 0.018, 1.0 - nv * 0.92);
-      vec4 nb = texture(u_nubes, nu);
+
+      /* ── CUATRO CIELOS EN UNA SOLA TEXTURA ───────────────────────
+         Antes habia UNA lamina de nubes y la hora solo la recoloreaba,
+         asi que ninguna hora era del todo suya: unos cirros que
+         funcionan al alba estan mal a mediodia, porque cada hora tiene
+         su TIPO de nube y eso es fisica, no gusto.
+
+         Ahora hay cuatro —alba, dia, ocaso, noche— empaquetadas en un
+         atlas de dos por dos. Van en una sola textura porque el motor
+         ya tiene ocupadas las dieciseis unidades que WebGL2 garantiza:
+         cuatro laminas sueltas serian cuatro unidades mas y el shader
+         dejaria de enlazar, que es exactamente lo que paso al intentar
+         meter las estrellas.
+
+         Y NO SE CONMUTA, SE FUNDE. Se muestrean las DOS laminas que
+         tocan y se mezclan con la fraccion de la hora, asi que el
+         cielo va cambiando toda la tarde en vez de dar un salto. Es la
+         diferencia entre cuatro habitaciones y un dia.
+
+         El fract() de la u no es adorno: la deriva hace crecer la
+         coordenada sin limite y sin envolverla se saldria de su celda
+         y entraria en la de al lado. El margen del 0.998 evita que el
+         filtro bilineal chupe un pixel de la celda vecina en el canto. */
+      int ca = int(mod(floor(u_cielo), 4.0));
+      int cb = int(mod(floor(u_cielo) + 1.0, 4.0));
+      vec2 CELDA[4] = vec2[4](vec2(0.0, 0.5), vec2(0.5, 0.5),
+                              vec2(0.0, 0.0), vec2(0.5, 0.0));
+      vec2 nuw = vec2(fract(nu.x), clamp(nu.y, 0.0, 1.0)) * 0.5 * 0.998 + 0.001;
+      vec4 nb = mix(texture(u_nubes, CELDA[ca] + nuw),
+                    texture(u_nubes, CELDA[cb] + nuw),
+                    fract(u_cielo));
       /* DUOTONO, como el manglar. Antes la nube se pintaba a 0.55 hacia
          el color del propio cielo: o sea, casi del color del fondo, y
          por eso no se veía nada. Una nube no tiene color propio —eso era
@@ -318,11 +541,28 @@ void main(){
     if (u_hayLuces > 0.5) {
       float noche = 1.0 - smoothstep(0.15, 0.55, u_int);
       if (noche > 0.01) {
-        vec2 lu = vec2(q.x * 0.55 + u_deriva * 0.04,
+        /* LA LAMINA TRAE TRES PUEBLOS IDENTICOS a intervalos iguales.
+           No es un fallo de repeticion de textura —cabe menos de una
+           vuelta en pantalla— sino que el motivo ya viene repetido
+           dentro de la propia hoja, y en una pantalla ancha se ven los
+           tres a la vez: el mismo racimo de luces calcado tres veces a
+           la misma distancia. Eso delata la lamina de golpe.
+
+           Se rompe por dos sitios. Primero se ONDULA el muestreo con un
+           ruido de periodo largo: los racimos dejan de estar a
+           distancias iguales y cada uno entra con otro ancho. Y despues
+           se APAGA A TRAMOS con otro ruido todavia mas lento, porque
+           una costa de verdad no tiene un pueblo cada tantos
+           kilometros: tiene un pueblo, luego nada durante un buen rato,
+           y luego dos luces sueltas. Lo que hace que se lea como costa
+           es justamente lo que falta. */
+        float ondula = fbm(vec2(q.x * 0.85 + 3.1, 1.7)) - 0.5;
+        vec2 lu = vec2(q.x * 0.55 + u_deriva * 0.04 + ondula * 0.22,
                        1.0 - (uv.y - horX) / max(1.0 - horX, 0.001) * 2.6);
         vec4 tl = texture(u_luces, lu);
+        float costa = smoothstep(0.36, 0.66, fbm(vec2(q.x * 1.25 + 21.0, 5.3)));
         float titila = 0.86 + 0.14 * sin(u_t * 0.9 + q.x * 31.0);
-        col = mix(col, mix(col, tl.rgb, 0.9), tl.a * noche * titila * 0.85);
+        col = mix(col, mix(col, tl.rgb, 0.9), tl.a * noche * titila * costa * 0.85);
       }
     }
 
@@ -734,8 +974,28 @@ void main(){
            casi opaco y casi a todo color: por eso llamaba más la
            atención que el árbol. Está a metros de distancia y bajo el
            agua; lo que llega de eso es un tinte, no una pintura. */
-        vec3 pc = mix(col, tc.rgb, 0.54);
-        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.42;
+        /* ── DUOTONO, COMO TODO LO DEMÁS ────────────────────────────
+           Era lo ÚNICO del cuadro que entraba con su RGB crudo, y el
+           RGB crudo de esta lámina es arena: ocre cálido. De día
+           colaba porque el agua también es clara. De noche no: el mar
+           se va a azul de tinta y el pasto se quedaba en su ocre, así
+           que aparecían unas vetas amarillas cruzando el fondo del
+           agua a la una de la madrugada. No era que estuviera oscuro
+           — era que era del color de otra hora.
+
+           Se le toma el VALOR y se remapea entre dos colores sacados
+           del AGUA DE LA HORA, que es el agua que lo tapa: un fondo
+           marino no se ve con su color, se ve con el color del agua
+           que hay encima. El extremo oscuro se va a un verde de fondo
+           y el claro apenas se levanta hacia las altas del agua.
+
+           Y conserva un resto de pigmento propio —un 0.18 de croma
+           contra el 0.42 de antes—, porque un pasto marino sí tiene
+           algo de verde y en duotono puro se quedaría gris. */
+        vec3 oscuroP = mix(u_agua, vec3(0.086, 0.121, 0.098), 0.46);
+        vec3 claroP  = mix(u_agua, mix(u_altas, u_bruma, 0.30), 0.44);
+        vec3 pc = duotono(tc.rgb, oscuroP, claroP);
+        pc += croma(tc.rgb, u_croma * 0.10, u_croma * 0.18);
         /* Nunca una cinta continua: se desvanece por arriba —el corte
            recto se veía— y se abre en claros con una onda lenta, para
            que haya agua limpia entre las matas. La paz es el vacío. */
@@ -786,8 +1046,66 @@ void main(){
     vec3 oscuroM = mix(vec3(0.155, 0.118, 0.086), u_agua * 0.35, 0.30);
     vec3 claroM  = mix(mix(u_bruma, u_altas, 0.30), vec3(0.72, 0.66, 0.54), 0.30) * 0.86;
 
+    /* ── EL ÁRBOL RESPIRA ─────────────────────────────────────────
+       Un manglar clavado es una calcomanía, por bien pintada que esté:
+       lo que delata que el paisaje es una lámina no es su dibujo, es
+       que no se mueve nada dentro de él mientras el agua sí.
+
+       No hace falta partirlo en dos láminas —copa y tronco— como se
+       había apuntado. Basta con CIZALLAR el muestreo: se desplaza la
+       coordenada horizontal en proporción al cuadrado de la altura, y
+       eso es exactamente el perfil de una viga en voladizo. Las raíces
+       no se mueven ni un píxel porque abajo el factor vale cero; la
+       copa se dobla porque arriba vale uno. El árbol se dobla, no se
+       desliza — que es la diferencia entre un árbol con viento y un
+       cartel al que le empujan.
+
+       AMPLITUD. Estaba en 1.1 % y NO SE VEIA: con la copa a 300 px son
+       tres pixeles y medio de recorrido repartidos en veinte segundos,
+       o sea un sexto de pixel por segundo. Eso no es un arbol calmado,
+       es un arbol quieto con una cuenta detras.
+
+       A 3.4 % son unos diez pixeles en la punta de la copa, que sigue
+       siendo un aire muy suave —una rama no se agita, se inclina— pero
+       ya se percibe. El limite de esto no es el buen gusto: es que la
+       lamina se cizalla, y pasado cierto punto las hojas empiezan a
+       estirarse en vez de moverse. */
+    float dobla = u_viento * ${VIENTO_COPA};
+
     // Planta
     vec2 m = vec2((q.x - (cx - Sx * 0.5)) / Sx, (uv.y - base) / S);
+    m.x -= dobla * m.y * m.y;
+
+    /* ── Y LAS HOJAS, QUE ES LO QUE DE VERDAD SE VE ─────────────────
+       El cizallado de arriba dobla el árbol ENTERO, y eso —medido
+       sobre el lienzo— movía el canto de la copa once píxeles en seis
+       segundos. Se subió la amplitud dos veces y seguía sin notarse, y
+       el motivo no era la escala: es que un desplazamiento UNIFORME es
+       lo peor que se puede pedirle al ojo. Sin nada quieto al lado
+       contra lo que compararlo, mover toda la copa a la vez se lee
+       igual que no moverla.
+
+       Lo que se ve es el movimiento DIFERENCIAL: unas hojas yendo
+       contra otras. Aquí un ruido de periodo largo recorre la lámina y
+       desplaza cada trozo de follaje por su cuenta, así que la copa
+       deja de ser una pieza rígida y pasa a tener partes. Con una
+       décima parte del recorrido se nota diez veces más — porque ahora
+       hay contra qué medirlo.
+
+       DOS EJES, y el vertical con menos amplitud: una hoja al viento
+       cabecea más de lo que sube.
+
+       Y SOLO EN LA COPA. mascaraHoja apaga esto por debajo del
+       arranque de las ramas: un tronco no ondea, y unas raíces zancudas
+       ondeando serían gelatina. Es lo mismo que hace el cizallado con
+       el cuadrado de la altura, dicho con un umbral. */
+    float mascaraHoja = smoothstep(0.30, 0.72, m.y);
+    if (mascaraHoja > 0.001) {
+      float sopla  = fbm(vec2(m.x * 3.4 + u_t * 0.115, m.y * 4.1 - u_t * 0.07)) - 0.5;
+      float sopla2 = fbm(vec2(m.y * 5.2 - u_t * 0.095, m.x * 3.8 + 4.0)) - 0.5;
+      m.x += sopla  * 0.0208 * mascaraHoja;
+      m.y += sopla2 * 0.0104 * mascaraHoja;
+    }
     if (m.x > 0.0 && m.x < 1.0 && m.y > 0.0 && m.y < 1.0) {
       vec4 t = texture(u_manglar, m);
       /* APLANADO. Esta lamina es la que peor mide del juego: 0.465 de
@@ -847,6 +1165,10 @@ void main(){
     float tajo = (ruido(vec2(uv.y * mix(70.0, 16.0, cn), u_t * 0.25)) - 0.5)
                * (1.0 - cn) * 0.07;
     vec2 r2 = vec2((q.x + tajo - (cx - Sx * 0.5)) / Sx, (base - uv.y) / S);
+    /* El reflejo se dobla con el árbol. El agua ya lo rompe en tajos,
+       pero si el original se mueve y su reflejo no, lo que queda es un
+       árbol bailando sobre una estampa quieta. */
+    r2.x -= dobla * r2.y * r2.y;
     if (r2.x > 0.0 && r2.x < 1.0 && r2.y > 0.0 && r2.y < 1.0 && uv.y < base) {
       vec4 t = texture(u_manglar, r2);
       float roto = step(0.34, ruido(vec2(uv.y * mix(95.0, 22.0, cn), 7.3)) + cn * 0.55);
@@ -914,13 +1236,37 @@ void main(){
     /* En movil el fragmento cercano se comia la composicion: 0.92 del
        alto con la pantalla estrecha tapaba al protagonista. Se encoge
        con el aspecto — el primer termino enmarca, no tapa. */
-    float encoge = mix(0.60, 1.0, smoothstep(0.62, 1.35, aspecto));
-    float kAlto = u_cercaCaja.y * encoge, kAncho = kAlto * u_cercaCaja.w;
+    /* Llega calculado desde JS —encogeCerca()— para que el sitio donde
+       se posa la garza cercana y el sitio donde se pinta la rama salgan
+       del mismo numero. */
+    float kAlto = u_cercaCaja.y * u_encoge, kAncho = kAlto * u_cercaCaja.w;
     /* Anclado por su BORDE IZQUIERDO: es un fragmento que entra por la
        esquina, no un objeto centrado. Con el centro se salía de cuadro
        en cuanto cambiaba la proporción de la ventana. */
     float kx = u_cercaCaja.x * aspecto - u_paralaje * 1.35;
     vec2 mc = vec2((q.x - kx) / kAncho, (uv.y - u_cercaCaja.z) / kAlto);
+    /* Y LA RAMA DEL PRIMER TÉRMINO TAMBIÉN. Va al revés y con más
+       recorrido que la copa, y las dos cosas son ciertas: es una rama
+       en voladizo —así que su punta se mueve mucho más que un tronco—
+       y está a un palmo del ojo, donde el mismo desplazamiento real se
+       ve al triple. Signo contrario porque cuelga desde el otro lado
+       del cuadro; si se doblara igual, las dos leerían como una sola
+       pieza rígida moviéndose en bloque.
+
+       El perfil va por mc.x y no por mc.y: esta lámina es un fragmento
+       que entra por la izquierda y se aleja hacia la derecha, así que
+       su voladizo crece a lo ANCHO, no a lo alto. */
+    mc.y += u_viento * ${VIENTO_RAMA} * mc.x * mc.x;
+    /* Y su follaje también se remueve por trozos, por lo mismo que la
+       copa del lejano: lo que se ve no es que se mueva todo, es que se
+       muevan unas partes contra otras. Aquí con más amplitud, porque
+       esta rama está a un palmo del ojo. */
+    {
+      float sopla = fbm(vec2(mc.x * 3.0 - u_t * 0.10, mc.y * 4.4 + u_t * 0.08)) - 0.5;
+      float hojaC = smoothstep(0.10, 0.55, mc.x);
+      mc.x += sopla * 0.034 * hojaC;
+      mc.y += sopla * 0.028 * hojaC;
+    }
     if (mc.x > 0.0 && mc.x < 1.0 && mc.y > 0.0 && mc.y < 1.0) {
       vec4 tk = texture(u_manglarCerca, mc);
       /* La derecha se desvanece sola: la lámina trae ese final PINTADO.
@@ -1050,6 +1396,20 @@ export function crear(lienzo) {
   });
   if (!gl) return null;
 
+  /* ── CUÁNTAS TEXTURAS CABEN DE VERDAD ──────────────────────────────
+     WebGL2 solo GARANTIZA dieciséis unidades de textura en el fragment
+     shader, o sea de la 0 a la 15, y este motor ya las tenía todas
+     ocupadas. La lámina de estrellas pedía la diecisiete.
+
+     En el portátil donde escribo esto hay treinta y dos y no habría
+     pasado nada; en un teléfono de gama baja con el mínimo, pedir la
+     unidad 16 es un error de enlazado y se cae el mar entero — o sea,
+     se cae la pintura por añadir una capa de adorno. Eso contradice la
+     regla del proyecto: el mar es un enhancement, y lo que sobra se
+     apaga solo. Se pregunta antes de repartir, y si no cabe, las
+     estrellas se quedan siendo las procedurales, que ya son bonitas. */
+  const UNIDADES_MAX = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+
   const vs = compilar(gl, gl.VERTEX_SHADER, VS);
   const fs = compilar(gl, gl.FRAGMENT_SHADER, FS);
   if (!vs || !fs) return null;
@@ -1076,7 +1436,8 @@ export function crear(lienzo) {
                    'u_hayAstro','u_hayCamino','u_roce','u_cercaCaja','u_coralesCaja',
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
-                   'u_garzaCercaCaja','u_garzaLejosCaja','u_toques']) {
+                   'u_garzaCercaCaja','u_garzaLejosCaja','u_toques','u_viento',
+                   'u_encoge','u_cielo']) {
     u[n] = gl.getUniformLocation(p, n);
   }
 
@@ -1184,7 +1545,15 @@ export function crear(lienzo) {
   const cargadas = new Set();
 
   async function cargar(mapa, anchoMax = 2048) {
-    const nombres = Object.keys(mapa);
+    /* Lo que no cabe no se descarga siquiera: en un aparato con las
+       dieciséis unidades justas, bajarse una lámina que nunca se va a
+       poder enlazar es gastar datos de alguien a las cuatro de la
+       mañana con mala señal. */
+    const nombres = Object.keys(mapa)
+      .filter((n) => unidades[n] === undefined || unidades[n] < UNIDADES_MAX);
+    if (nombres.length < Object.keys(mapa).length)
+      console.info('[mar] unidades de textura:', UNIDADES_MAX,
+                   '— se omiten láminas que no caben');
     await Promise.all(nombres.map(async (n) => {
       const img = new Image();
       img.decoding = 'async';
@@ -1217,7 +1586,7 @@ export function crear(lienzo) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       } else if (n === 'manglarCerca' || n === 'corales' || n === 'luces') {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
-          n === 'corales' ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+          n === 'corales' ? gl.MIRRORED_REPEAT : gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         const anchoF = fuente.width || fuente.naturalWidth;
         const altoF = fuente.height || fuente.naturalHeight;
@@ -1374,6 +1743,9 @@ export function crear(lienzo) {
       gl.uniform1f(u.u_deriva, e.deriva);
       gl.uniform1f(u.u_paralaje, e.paralaje || 0);
       gl.uniform1f(u.u_comp, e.luz.compresion);
+      gl.uniform1f(u.u_viento, viento(e.t));
+      gl.uniform1f(u.u_encoge, encogeCerca(ancho / Math.max(1, alto)));
+      gl.uniform1f(u.u_cielo, e.luz.cielo || 0);
       gl.uniform1f(u.u_int, e.luz.int);
       gl.uniform2f(u.u_fuente, e.luz.fuenteX,
         e.horizonte + (e.luz.elev / 90) * (1 - e.horizonte) * 0.95);
