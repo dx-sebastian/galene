@@ -387,6 +387,8 @@ function arrancar(mar) {
     manglarCerca: ARTE + 'manglar-cerca.webp',
     corales:      ARTE + 'corales.webp',
     luces:        ARTE + 'luces.webp',
+    astro:        ARTE + 'astro.webp',
+    camino:       ARTE + 'reguero.webp',
     papel:        ARTE + 'papel.webp',
     grafito:      ARTE + 'grafito.webp',
     nubes:        ARTE + 'cielo-nubes.webp',

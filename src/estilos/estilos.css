@@ -278,7 +278,19 @@ body {
   font-size: clamp(2rem, 8vw, 3.25rem);
   margin: 0;
 }
-.herramientas__intro { max-width: 34ch; font-size: 1.05rem; line-height: 1.5; }
+.herramientas__intro { max-width: 42ch; font-size: 1.05rem; line-height: 1.55; }
+
+/* LA PREGUNTA — cierra la definición y abre las cuatro puertas. Se
+   separa con una línea, no con un título: meter otro encabezado aquí
+   partiría en dos una sección que es una sola idea (qué es → qué hago).
+   El aire de arriba es lo que hace la pausa. */
+.herramientas__pregunta {
+  margin-top: 2.25rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #16222E1f;
+  font-size: 1.15rem;
+  color: #16222E;
+}
 
 /* Aviso de borrador. Grande y feo a propósito: mientras esté, el sitio
    no está listo para que lo use alguien de verdad. */

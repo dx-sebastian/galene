@@ -61,6 +61,8 @@ uniform float u_hayPapel, u_papelTam, u_papelMedia;
 uniform sampler2D u_nubes;
 uniform float u_hayNubes;
 uniform sampler2D u_manglarCerca, u_corales, u_luces;
+uniform sampler2D u_astro, u_camino;
+uniform float u_hayAstro, u_hayCamino;
 uniform float u_hayCerca, u_hayCorales, u_hayLuces;
 uniform vec4  u_cercaCaja;      // x, alto, base, ancho/alto
 uniform vec3  u_coralesCaja;    // alto, base, ancho/alto
@@ -313,12 +315,31 @@ void main(){
       }
     }
 
-    // La luz tiene fuente: disco con halo apretado, jamás resplandor.
+    /* LA FUENTE, PINTADA. Era un disco geometrico con un halo
+       exponencial, y eso se delata siempre en medio de un cuadro hecho a
+       mano: ningun borde de acuarela es un circulo perfecto y ninguna
+       aguada cae como una exponencial. La lamina trae el disco RESERVADO
+       —papel sin tocar— y la aguada alrededor con su borde irregular.
+
+       Es un atlas de dos celdas, luna y sol, con el disco centrado y del
+       mismo tamano en las dos, asi que elegir hora es elegir celda. Y el
+       color lo sigue poniendo u_reguero: la lamina solo aporta forma. */
     vec2 f = vec2(u_fuente.x * aspecto, u_fuente.y);
-    float d = length(q - f);
-    float disco = 1.0 - smoothstep(0.012, 0.020, d);
-    float halo  = exp(-d * 9.0) * 0.55 + exp(-d * 2.6) * 0.16;
-    col = mix(col, u_reguero, clamp((disco * 0.85 + halo * 0.5) * u_int, 0.0, 0.92));
+    if (u_hayAstro > 0.5) {
+      float esSol = smoothstep(0.42, 0.78, u_int);
+      float lado = 0.30;                         // alto de la celda en q
+      vec2 au = (q - f) / lado + 0.5;
+      if (au.x > 0.0 && au.x < 1.0 && au.y > 0.0 && au.y < 1.0) {
+        vec2 uu = vec2((au.x + floor(esSol + 0.5)) * 0.5, au.y);
+        vec4 ta = texture(u_astro, uu);
+        col = mix(col, u_reguero, ta.a * clamp(0.30 + 0.62 * u_int, 0.0, 0.94));
+      }
+    } else {
+      float d = length(q - f);
+      float disco = 1.0 - smoothstep(0.012, 0.020, d);
+      float halo  = exp(-d * 9.0) * 0.55 + exp(-d * 2.6) * 0.16;
+      col = mix(col, u_reguero, clamp((disco * 0.85 + halo * 0.5) * u_int, 0.0, 0.92));
+    }
     col = mix(col, papelBlanco(), reservaPapel);
   }
 
@@ -532,15 +553,36 @@ void main(){
 
     /* EL REGUERO: angosto y continuo con calma, disperso con oleaje.
        Apunta a la fuente — antídoto contra la luz de ninguna parte. */
+    /* EL REGUERO, PINTADO. Era una gaussiana en x multiplicada por
+       chispas de ruido: un degradado suave salpicado de puntos, que es
+       exactamente como NO se ve un camino de luna. Lo que hay de verdad
+       son trazos HORIZONTALES —cada uno la cara de una ola— apretados
+       cerca del horizonte y abiertos y sueltos cerca del ojo, con huecos
+       de agua limpia entre ellos.
+
+       La lamina viene asi pintada. Se ancla a la fuente en x, se estira
+       desde el horizonte hasta el borde de abajo, y se deforma con la
+       misma onda que el agua para que no flote sobre ella. */
     float dx = abs(q.x - u_fuente.x * aspecto);
-    float ancho = mix(0.42, 0.055, cn) * mix(0.35, 1.0, pp);
-    float camino = exp(-pow(dx / max(ancho, 0.02), 2.0));
-    float chispa = smoothstep(mix(0.72, 0.30, cn), 1.0,
-                     ruido(vec2(q.x * mix(90.0, 26.0, pp) + u_deriva * 40.0,
-                                uv.y * 200.0 - u_t * 0.7)));
-    float brillo = camino * (mix(0.18, 0.55, cn) + chispa * 0.5)
-                 * u_int * mix(1.0, 0.35, prof);
-    col = mix(col, u_reguero, clamp(brillo, 0.0, 0.75));
+    if (u_hayCamino > 0.5) {
+      float anchoC = mix(0.62, 0.30, cn);
+      vec2 ru = vec2((q.x - u_fuente.x * aspecto) / anchoC + 0.5,
+                     1.0 - prof + duv.y * 2.0);
+      if (ru.x > 0.0 && ru.x < 1.0 && ru.y > 0.0 && ru.y < 1.0) {
+        vec4 tr = texture(u_camino, ru);
+        col = mix(col, u_reguero,
+                  tr.a * u_int * mix(0.30, 0.72, cn) * mix(1.0, 0.45, prof));
+      }
+    } else {
+      float ancho = mix(0.42, 0.055, cn) * mix(0.35, 1.0, pp);
+      float camino = exp(-pow(dx / max(ancho, 0.02), 2.0));
+      float chispa = smoothstep(mix(0.72, 0.30, cn), 1.0,
+                       ruido(vec2(q.x * mix(90.0, 26.0, pp) + u_deriva * 40.0,
+                                  uv.y * 200.0 - u_t * 0.7)));
+      float brillo = camino * (mix(0.18, 0.55, cn) + chispa * 0.5)
+                   * u_int * mix(1.0, 0.35, prof);
+      col = mix(col, u_reguero, clamp(brillo, 0.0, 0.75));
+    }
 
     /* El anillo que se cierra. Muy tenue: es agua que se aquieta, no un
        efecto. Y el sitio donde se sostuvo queda un punto más claro,
@@ -876,7 +918,8 @@ export function crear(lienzo) {
                    'u_hayManglar','u_manglarCaja','u_escalas','u_croma',
                    'u_papelTex','u_hayPapel','u_papelTam','u_papelMedia',
                    'u_nubes','u_hayNubes','u_manglarCerca','u_corales','u_luces',
-                   'u_hayCerca','u_hayCorales','u_hayLuces','u_cercaCaja','u_coralesCaja',
+                   'u_hayCerca','u_hayCorales','u_hayLuces','u_astro','u_camino',
+                   'u_hayAstro','u_hayCamino','u_cercaCaja','u_coralesCaja',
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
                    'u_garzaCercaCaja','u_garzaLejosCaja','u_toques']) {
@@ -898,18 +941,24 @@ export function crear(lienzo) {
                 grafito: texturaVacia(), garzaCerca: texturaVacia(),
                 garzaLejos: texturaVacia(), medioCalmo: texturaVacia(),
                 nubes: texturaVacia(), manglarCerca: texturaVacia(),
-                corales: texturaVacia(), luces: texturaVacia() };
+                corales: texturaVacia(), luces: texturaVacia(),
+                astro: texturaVacia(), camino: texturaVacia() };
 
   const unidades = { lejano: 0, medio: 1, cercano: 2, cercanoCalmo: 3,
                      manglar: 4, papel: 5, grafito: 6,
                      garzaCerca: 7, garzaLejos: 8, medioCalmo: 9, nubes: 10,
-                     manglarCerca: 11, corales: 12, luces: 13 };
+                     manglarCerca: 11, corales: 12, luces: 13,
+                     astro: 14, camino: 15 };
   gl.uniform1i(u.u_manglarCerca, 11);
   gl.uniform1i(u.u_corales, 12);
   gl.uniform1i(u.u_luces, 13);
   gl.uniform1f(u.u_hayCerca, 0);
   gl.uniform1f(u.u_hayCorales, 0);
   gl.uniform1f(u.u_hayLuces, 0);
+  gl.uniform1i(u.u_astro, 14);
+  gl.uniform1i(u.u_camino, 15);
+  gl.uniform1f(u.u_hayAstro, 0);
+  gl.uniform1f(u.u_hayCamino, 0);
   /* El manglar cercano tiene que DOMINAR la esquina inferior izquierda:
      es el primer plano y es el posadero. A 0.52 de alto quedaba como una
      mancha en el canto. */
@@ -1008,7 +1057,10 @@ export function crear(lienzo) {
       /* Las bandas de agua se repiten espejadas: así una costura se
          vuelve simetría en vez de corte. El manglar es un objeto
          suelto, se recorta en los bordes. */
-      if (n === 'manglarCerca' || n === 'corales' || n === 'luces') {
+      if (n === 'astro' || n === 'camino') {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      } else if (n === 'manglarCerca' || n === 'corales' || n === 'luces') {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
           n === 'corales' ? gl.REPEAT : gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -1087,6 +1139,8 @@ export function crear(lienzo) {
     if (cargadas.has('manglarCerca')) gl.uniform1f(u.u_hayCerca, 1);
     if (cargadas.has('corales'))      gl.uniform1f(u.u_hayCorales, 1);
     if (cargadas.has('luces'))        gl.uniform1f(u.u_hayLuces, 1);
+    if (cargadas.has('astro'))        gl.uniform1f(u.u_hayAstro, 1);
+    if (cargadas.has('camino'))       gl.uniform1f(u.u_hayCamino, 1);
     if (cargadas.has('grafito')) gl.uniform1f(u.u_hayGrafito, 1);
     if (cargadas.has('garzaCerca') || cargadas.has('garzaLejos'))
       gl.uniform1f(u.u_hayGarzas, 1);
