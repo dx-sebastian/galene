@@ -395,27 +395,36 @@ body {
   background-position: 18% 34%, 66% 58%, 42% 78%;
 }
 
-/* Las nubes, arriba y casi quietas: es lo más lejano que hay. */
+/* Las nubes, arriba y casi quietas: es lo más lejano que hay. También
+   sin lámina, y por lo mismo: nubes.webp son tres jirones HORIZONTALES
+   y cualquiera de ellos vuelve a leerse como cinta. Un cielo aquí es
+   una veladura, no un dibujo. */
 .fondo__capa--nubes {
-  top: 0vh; height: 74vh;
-  --charco-a: #2E8A9910;
-  --charco-b: #2E8A9918;
-  --charco-c: #3D6B8A2e;
-  background-image: url("/galene/arte/1024/nubes.webp");
-  opacity: 0.42;
+  top: 0vh; height: 78vh;
+  --charco-a: #2E8A990e;
+  --charco-b: #2E8A9916;
+  --charco-c: #4A7C9430;
+  opacity: 0.44;
 }
 
-/* El mar. Ya no es una banda que cruza: es una mancha ancha y baja,
-   con su propio empozado, que se apaga por los cuatro lados. */
+/* EL AGUA, SIN LÁMINA.
+   Aquí iba mar-lejano.webp y hubo que sacarlo. La máscara elíptica le
+   quitó los cantos rectos, sí, pero el problema no eran los cantos:
+   esa lámina ES una banda horizontal —así está pintada, un horizonte
+   de lado a lado— y difuminarle los bordes solo daba una banda con
+   los bordes difuminados. La cinta seguía ahí porque la cinta estaba
+   dentro del dibujo, no en cómo lo recortaba.
+
+   Se queda solo con sus charcos: manchas redondas, sin una sola
+   horizontal, que es lo único que aquí puede leerse como agua sin
+   leerse como recorte. */
 .fondo__capa--mar {
-  top: 30vh; height: 76vh;
-  width: 132%; margin-left: -66%;
-  --charco-a: #2E8A9912;
-  --charco-b: #2E8A991e;
-  --charco-c: #1F6E7c38;
-  background-image: url("/galene/arte/1024/mar-lejano.webp");
-  background-size: 100% auto;
-  opacity: 0.34;
+  top: 26vh; height: 84vh;
+  width: 128%; margin-left: -64%;
+  --charco-a: #2E8A9914;
+  --charco-b: #2E8A9922;
+  --charco-c: #1F6E7C3e;
+  opacity: 0.5;
 }
 
 /* El manglar: lo más cercano, y por eso lo que más se mueve. Al flanco
@@ -486,7 +495,14 @@ body {
    realza.
    ═══════════════════════════════════════════════════════════════════ */
 .realce {
-  --realce-tinte: #C4703F;             /* el acento del sitio */
+  /* Es el rojo de alerta del sitio (#A33B2A) ABIERTO UN PUNTO. No es
+     una licencia estética: como tinta plana aquel rojo cumple de
+     sobra, pero aquí es una AGUADA de cinco toques que se encima
+     consigo misma, y a plena carga bajaba el texto a 4.38:1 — por
+     debajo del 4.5 que este sitio no negocia. Este da 6.07:1 en el
+     apilamiento normal y 4.93:1 en el peor imaginable.
+     Sigue siendo el mismo rojo; lleva más agua. */
+  --realce-tinte: #CC5F4A;
 
   /* Aire de sobra alrededor de la palabra: es lo que le deja sitio al
      pigmento para desvanecerse ANTES del borde de la caja. Sin este
@@ -579,12 +595,14 @@ body {
 /* Los tintes son pigmentos, no grises: si se bajan de saturación para
    «suavizarlos» dejan de leerse como acuarela y pasan a resaltador. Lo
    que los suaviza es el alfa de arriba, no el color. */
-.realce--calma { --realce-tinte: #2E8A99; }   /* el agua */
-/* Aclarado desde #3D6B8A. Con cinco toques encimados —que la geometría
-   no permite, pero el contraste no se calcula con lo que suele pasar—
-   aquel azul caía a 3.75:1 y no llegaba al 4.5 exigido. Este da 5.31 en
-   ese mismo caso imposible, así que el realce no puede fallar nunca. */
-.realce--tinta { --realce-tinte: #5A8AA8; }   /* el azul de los plazos */
+/* UN SOLO COLOR, Y ES EL DE ALERTA.
+   Antes había tres tintes —terracota, agua, azul— y eso repartía el
+   peso: con cada concepto fuerte de un color distinto, ninguno pesaba
+   más que otro y la página perdía jerarquía. Lo que se realza aquí no
+   son «cosas importantes» genéricas: son las tres afirmaciones que
+   describen un daño. Van todas en el rojo de alerta del sitio, el
+   mismo de los avisos y de las marcas sin fuente, y no hay ninguna
+   otra aguada con la que confundirlo. */
 
 /* EL LEMA — una sola frase, sola en su línea, del tamaño de una
    afirmación. No es un párrafo corto: es lo que queda si alguien lee
@@ -605,12 +623,23 @@ body {
    partiría en dos una sección que es una sola idea (qué es → qué hago).
    El aire de arriba es lo que hace la pausa. */
 .herramientas__pregunta {
-  margin-top: 2.25rem;
-  padding-top: 1.5rem;
+  margin-top: 2.75rem;
+  padding-top: 1.75rem;
   border-top: 1px solid #16222E1f;
-  font-size: 1.15rem;
+  max-width: 56ch;
+}
+/* Nivel 3 de la sección: por debajo del título (nivel 1) y del lema
+   (nivel 2), por encima del cuerpo. Comparte familia con ellos —así se
+   lee como parte de la misma voz— y se separa por cuerpo, no por
+   color: el color aquí ya significa otra cosa. */
+.pregunta__titulo {
+  margin: 0 0 0.35rem;
+  font-family: var(--tipo-titulo);
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  line-height: 1.3;
   color: #16222E;
 }
+.herramientas__pregunta .herramientas__intro { margin-top: 0; }
 
 /* Aviso de borrador. Grande y feo a propósito: mientras esté, el sitio
    no está listo para que lo use alguien de verdad. */

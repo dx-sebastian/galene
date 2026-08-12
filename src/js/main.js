@@ -799,7 +799,11 @@ if (contenedor) {
    45 % de densidad, asi que el ave se posa en 0.40 de ancho y 0.15 de
    alto — dentro de la copa solida, no en el aire de la silueta. */
 const POSADERO = [0.40, 0.15];
-const POSADERO_CERCA = [0.27, 0.455];
+/* Subida por el mismo arco. Medido sobre la lamina: a y=0.455 el tramo
+   solido va de x 0.279 a 0.311, y a y=0.400 va de 0.262 a 0.292 — es la
+   misma raiz, que sube hacia la izquierda. Se planta en el centro del
+   tramo alto, no en su borde. */
+const POSADERO_CERCA = [0.277, 0.400];
 const GROSOR_RAMA = 0.076;
 
 export function calcularPosadero(caja, w, h, lineaPx) {
@@ -1183,9 +1187,17 @@ function animarVisita(t, paralaje) {
     const anchoPx = altoPx * v.aspecto;
     el.style.opacity = enc[1].toFixed(3);
     el.style.width = anchoPx.toFixed(1) + 'px';
+    /* MIRA HACIA LA DERECHA. Las laminas estan pintadas mirando a la
+       izquierda, asi que se espeja. El origen de transformacion ya esta
+       en los PIES, de modo que el espejo gira alrededor de ellos y el
+       ave no se mueve de la rama: si girase sobre su centro, saltaria
+       media envergadura al voltearse.
+
+       Y mirando a la derecha mira HACIA el manglar y hacia el mar, no
+       fuera del cuadro. Quien acaba de llegar mira lo que hay. */
     el.style.transform =
       'translate3d(' + (x - v.pies[0] * anchoPx).toFixed(1) + 'px, ' +
-      (y - v.pies[1] * altoPx).toFixed(1) + 'px, 0)';
+      (y - v.pies[1] * altoPx).toFixed(1) + 'px, 0) scaleX(-1)';
   }
 }
 
