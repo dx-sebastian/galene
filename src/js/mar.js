@@ -206,7 +206,13 @@ void main(){
      mínima —el pulso de una mano, no olas— y con eso deja de ser un
      borde de rectángulo. El resto del motor sigue usando u_hor plano
      para plantar objetos, o se pondrían a cabecear. */
+  /* Y la linea misma tampoco es recta. Estaba en +-0.0055 del alto, que
+     a 800 px son cuatro pixeles: por debajo del umbral de que se note.
+     Un horizonte pintado a mano tiene el pulso dentro. Se le suma un
+     termino de periodo largo, que es el que hace que no se lea como
+     una regla temblorosa sino como una linea trazada de un gesto. */
   float horX = u_hor
+    + (fbm(vec2(q.x * 0.75 + 19.0, 2.6)) - 0.5) * 0.0135
     + (fbm(vec2(q.x * 1.7, 4.2)) - 0.5) * 0.0055
     + (ruido(vec2(q.x * 9.0, 1.1)) - 0.5) * 0.0016;
 
@@ -507,8 +513,19 @@ void main(){
 
        perdido es un ruido de periodo largo: dos o tres tramos anchos
        donde el agua y el cielo se funden, y el resto con el canto seco. */
-    float perdido = smoothstep(0.42, 0.78, fbm(vec2(q.x * 0.62 - 5.0, 8.3)));
-    float anchoBruma = mix(0.035, 0.30, perdido);
+    /* La frecuencia, otra vez. A q.x*0.62 el ruido no completaba un
+       periodo en todo el ancho, asi que perdido valia lo mismo en cada
+       columna y el horizonte salia con dureza uniforme de lado a lado:
+       medido, solo el 2-13 % de las columnas tenia el canto debil. Una
+       horizontal perfecta y continua delata la regla — en la naturaleza
+       el horizonte es recto, pero en pintura casi nunca, porque el
+       pintor lo pierde donde le conviene.
+
+       A 2.3 caben dos o tres tramos perdidos, y el smoothstep va
+       estrecho para que de verdad llegue a los dos extremos: donde se
+       pierde, se pierde del todo; donde no, canto seco. */
+    float perdido = smoothstep(0.44, 0.58, fbm(vec2(q.x * 2.3 - 5.0, 8.3)));
+    float anchoBruma = mix(0.022, 0.46, perdido);
     col = mix(u_bruma * 0.82, col,
               smoothstep(0.0, anchoBruma, prof) * 0.75 + 0.25);
     col = mix(col, col * 0.90, smoothstep(0.60, 1.0, prof));
