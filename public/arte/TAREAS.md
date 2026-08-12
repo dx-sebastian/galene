@@ -765,6 +765,32 @@ Same hand, same palette. Do not add detail, do not tidy, do not recrop.
 
 ---
 
+# F · Las tres láminas que el shader no puede salvar · **prioridad**
+
+Medidas con el mismo instrumento que el resto (L*, desenfoque 7x7,
+normalizado al rango propio):
+
+- `manglar-lejos` — 0.465 de saturación (2.5x cualquier otra), raíces con
+  modelado cilíndrico, contraluz continuo y destellos horneados. El shader
+  lo mitiga por tramos; el arreglo real es repintarlo.
+- `mar-medio-calmo` — 85.9 % de degradado, 5.3 % de aguada plana. Aerógrafo.
+- `mar-cercano-calmo` — 83.5 % de degradado, 9.1 % de plana. Aerógrafo.
+  Y son justo las que entran cuando el mar se calma: la recompensa del
+  gesto central del sitio es su lámina menos pintada.
+
+Los tres prompts completos están en el chat (11 ago 2026). Guárdalas con
+estos nombres exactos:
+
+- [ ] `manglar-lejos.png` — 3:2, transparente, raíces saliendo por abajo
+- [ ] `mar-medio-calmo.png` — 4:1, **2508x627 exactos**, opaca, seamless
+- [ ] `mar-cercano-calmo.png` — 4:1, **2508x627 exactos**, opaca, seamless
+
+Al llegar: el manglar hay que volver a medirlo (caja, posadero de la
+garza en la copa) y a las aguas les quito yo la costura si no llegan
+perfectamente seamless, como hice con el pasto.
+
+---
+
 # E · El manglar crece
 
 - [ ] `manglar-b.png` — `SIX prop roots, the crown slightly narrower`
