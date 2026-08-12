@@ -596,7 +596,28 @@ const HASTA_POSADA = FASES.reduce((s, f) => s + f[1], 0);
 /* ave06 regenerada: ahora tiene exactamente dos alas —la cercana abajo
    y la lejana oculta tras el cuerpo— y su centroide baja a 0.667, el más
    bajo de las diez. Es el fondo del batido y vuelve al ciclo. */
-const CICLO = ['f01','f02','f03','f04','f05','f06','f07','f08','f09','f11'];
+/* EL ORDEN SALIÓ DE MEDIR EL ALA, NO EL CENTROIDE. El centroide de toda
+   la tinta mezcla cuerpo y ala y por eso el orden anterior tenía un
+   retroceso: el ala bajaba a 0.000, subía a 0.245 y VOLVÍA A BAJAR a
+   0.000 antes de subir del todo. Un cuadro de ala yendo al revés en
+   mitad del batido, que es justo lo que se lee como volar hacia atrás.
+
+   Aquí se mide la masa de tinta por encima de la línea del cuerpo —que
+   la marca el pico— y se ordena por su altura. Y se mide también su
+   ANCHO, porque es lo que separa las dos mitades del batido: en la
+   bajada el ala va extendida y empuja; en la subida se pliega para
+   ofrecer menos resistencia. Las dos láminas de ala plegada (ave06 con
+   0.543 de ancho y ave01 con 0.613, las más estrechas) estaban puestas
+   en la bajada, donde el ala tiene que ir abierta.
+
+     bajada  ave03 +.226 · ave11 +.200 · ave08 +.130 · ave04 +.011 · ave05 -.255
+     subida  ave07 -.257 · ave06 +.034 · ave09 +.133 · ave02 +.223 · ave01 +.231
+
+   Las dos mitades son ahora estrictamente monótonas: el ala no cambia de
+   sentido ni una sola vez. ave05 y ave07 son casi la misma pose (-.255 y
+   -.257) y van seguidas a propósito: sostienen el fondo del golpe un
+   cuadro más, que es lo que hace un ala de verdad. */
+const CICLO = ['f03','f11','f08','f04','f05','f07','f06','f09','f02','f01'];
 const MS_CUADRO = 150;  // 10 pasos x 150 ms = 0.67 batidos/s
 
 const contenedor = document.getElementById('garzas');

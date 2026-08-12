@@ -144,9 +144,21 @@ void main(){
       float nv = (uv.y - horX) / max(1.0 - horX, 0.001);
       vec2 nu = vec2(q.x * 0.42 + u_deriva * 0.018, 1.0 - nv * 0.92);
       vec4 nb = texture(u_nubes, nu);
-      vec3 tono = mix(u_cieloAlto, u_reguero, 0.22);
-      col = mix(col, mix(col * 0.965, tono, 0.55),
-                nb.a * 0.62 * smoothstep(0.02, 0.30, nv));
+      /* DUOTONO, como el manglar. Antes la nube se pintaba a 0.55 hacia
+         el color del propio cielo: o sea, casi del color del fondo, y
+         por eso no se veía nada. Una nube no tiene color propio —eso era
+         cierto— pero sí tiene VALOR: una cara iluminada y una sombra.
+         Eso es lo que la hace nube y no mancha.
+
+         La lámina viene pintada en grises, así que aporta la estructura
+         de valor; la paleta de la hora aporta el color. Una sola lámina
+         sirve para las veinticuatro horas y a las seis de la mañana se
+         enciende por abajo sin repintar nada. */
+      vec3 sombraN = mix(u_cieloAlto, u_agua, 0.30) * 0.90;
+      vec3 luzN    = mix(u_altas, u_reguero, 0.34);
+      vec3 pn = duotono(nb.rgb, sombraN, luzN);
+      pn += (nb.rgb - vec3(valor(nb.rgb))) * u_croma * 0.35;
+      col = mix(col, pn, nb.a * 0.78 * smoothstep(0.02, 0.26, nv));
     } else {
       float m = fbm((q + vec2(u_deriva * 0.02, 0.0)) * 2.2);
       col = mix(col, u_cieloAlto, (m - 0.5) * 0.16);
@@ -301,10 +313,18 @@ void main(){
       float cv = (uv.y - (cBase - cAlto)) / cAlto;
       if (cv > 0.0 && cv < 1.0) {
         float profC = 1.0 - cv;
+        /* Y el vaivén va por cv, no por profC: una hoja de pasto está
+           anclada por la raíz y se mece por la PUNTA. Al revés parecía
+           un flequillo colgado moviéndose desde arriba. */
         float vaiven = sin(u_t * 0.28 + q.x * 2.1 + cv * 3.4) * 0.0075
                      + sin(u_t * 0.17 - q.x * 1.3) * 0.0042;
-        vec2 cu = vec2(q.x / (cAlto * u_coralesCaja.z) + vaiven * profC,
-                       1.0 - cv);
+        /* cu.y = cv, NO 1.0 - cv. Las texturas se suben con
+           UNPACK_FLIP_Y, así que y=0 es el borde INFERIOR de la lámina.
+           La lámina vieja traía su sujeto arriba y por eso el invertido
+           colaba; la de pasto marino está arraigada abajo, y con el
+           invertido crecía hacia el fondo del mar colgando de un techo. */
+        vec2 cu = vec2(q.x / (cAlto * u_coralesCaja.z) + vaiven * cv,
+                       cv);
         vec4 tc = texture(u_corales, cu);
         vec3 pc = mix(col, tc.rgb, 0.82);
         pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.85;
@@ -314,7 +334,9 @@ void main(){
         /* La lámina nueva ya trae el vacío —cuatro matas y mucha arena—,
            así que no hay que abrirle claros por código: eso la borraba.
            Solo se desvanece por arriba, para que no haya canto recto. */
-        float entra = smoothstep(0.0, 0.30, cv);
+        /* El desvanecido va ARRIBA, donde acaban las hojas, no abajo,
+           que es donde está la arena y tiene que estar sólida. */
+        float entra = 1.0 - smoothstep(0.72, 1.0, cv);
         col = mix(col, pc, tc.a * mix(0.62, 1.0, profC) * entra);
       }
     }
@@ -566,7 +588,7 @@ export function crear(lienzo) {
      es el primer plano y es el posadero. A 0.52 de alto quedaba como una
      mancha en el canto. */
   const cercaCaja = [-0.02, 0.92, -0.34, 1.5];
-  const coralesCaja = [0.30, 0.30, 4.0];
+  const coralesCaja = [0.155, 0.215, 4.0];
   gl.uniform4fv(u.u_cercaCaja, cercaCaja);
   gl.uniform3fv(u.u_coralesCaja, coralesCaja);
   gl.uniform1i(u.u_medioCalmo, 9);
@@ -662,7 +684,7 @@ export function crear(lienzo) {
          suelto, se recorta en los bordes. */
       if (n === 'manglarCerca' || n === 'corales' || n === 'luces') {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
-          n === 'corales' ? gl.MIRRORED_REPEAT : gl.CLAMP_TO_EDGE);
+          n === 'corales' ? gl.REPEAT : gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         const anchoF = fuente.width || fuente.naturalWidth;
         const altoF = fuente.height || fuente.naturalHeight;
