@@ -105,7 +105,10 @@ float valor(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
    El papel se tiñe un poco con la luz de la hora, pero poco: una hoja
    sigue siendo una hoja de noche. */
 vec3 papelBlanco(){
-  return mix(vec3(0.965, 0.958, 0.945), u_altas, 0.28);
+  /* El tinte estaba en 0.28 y con altas=#AFC4BE eso dejaba el papel en
+     0.787 de luminancia: reserva que no llegaba a contar como reserva.
+     Una hoja se tine un poco con la luz del sitio, pero poco. */
+  return mix(vec3(0.972, 0.966, 0.952), u_altas, 0.12);
 }
 
 /* APLANAR. Una aguada seca PLANA: se posa, se seca y deja un campo de un
@@ -117,6 +120,13 @@ vec3 aplanar(vec3 c, float pasos, float dureza){
   float v = valor(c);
   if (v < 0.0005) return c;
   float e = v * pasos;
+  /* EL ESCALON NO PUEDE SER RECTO. Cuantizar sin mas dejaba bandas con
+     contorno matematico —un artefacto digital, justo lo contrario de lo
+     que se busca—. Un charco de acuarela se para donde el papel deja de
+     mojarse, asi que el limite serpentea siguiendo la trama.
+     Es ruido de periodo largo, no grano: lobulos de unos noventa
+     pixeles. Con ruido fino saldria granulado de pelicula. */
+  e += (fbm(gl_FragCoord.xy / 88.0) - 0.5) * (1.25 / pasos);
   float f = floor(e);
   float vq = (f + smoothstep(0.5 - dureza, 0.5 + dureza, e - f)) / pasos;
   return c * clamp(vq / v, 0.55, 1.8);
@@ -172,7 +182,7 @@ void main(){
     /* De degradado a AGUADA. Cuatro escalones con la transición medio
        perdida: quedan campos planos de verdad, que es lo que hace una
        aguada, en vez de una rampa continua de arriba abajo. */
-    col = mix(col, aplanar(col, 4.0, 0.26), 0.80);
+    col = mix(col, aplanar(col, 4.0, 0.28), 0.94);
 
     /* Y SE ABRE EL PAPEL junto al horizonte. Está justificado: el cielo
        es más pálido cerca del horizonte porque la luz atraviesa más aire.
@@ -184,10 +194,10 @@ void main(){
        no abria nada, y como el valor caia por debajo del umbral, no
        abria nunca. A 3.1 caben dos o tres bocas, que es lo que se
        pidio. */
-    float bocaCielo = smoothstep(0.45, 0.57,
+    float bocaCielo = smoothstep(0.40, 0.53,
                         fbm(vec2(q.x * 3.1 + 12.0, 3.7)));
-    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.0, 0.17, gy))
-                           * bocaCielo * mix(0.30, 1.0, u_int) * 0.94);
+    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.30, gy))
+                           * bocaCielo * mix(0.30, 1.0, u_int) * 0.97);
 
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
@@ -354,14 +364,14 @@ void main(){
        El umbral va alto y con canto duro a propósito. Son cuatro o cinco
        manchas grandes, no un espolvoreado — un brillo espolvoreado es
        purpurina, y la reservaPapel es silencio. */
-    float faceta = smoothstep(0.70, 0.86, valor(pintura));
-    reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.28, 0.80, prof))
-                           * mix(0.22, 1.0, u_int) * 0.88);
+    float faceta = smoothstep(0.62, 0.80, valor(pintura));
+    reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.34, 0.95, prof))
+                           * mix(0.22, 1.0, u_int) * 0.95);
 
     /* Y el agua también se aplana. Menos escalones que el cielo y con el
        canto más seco, porque el agua lejana en una acuarela son dos o
        tres tiras planas y nada más. */
-    col = mix(col, aplanar(col, 5.0, 0.20), mix(0.72, 0.30, pp));
+    col = mix(col, aplanar(col, 5.0, 0.16), mix(0.90, 0.48, pp));
 
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
@@ -516,10 +526,21 @@ void main(){
     vec2 m = vec2((q.x - (cx - Sx * 0.5)) / Sx, (uv.y - base) / S);
     if (m.x > 0.0 && m.x < 1.0 && m.y > 0.0 && m.y < 1.0) {
       vec4 t = texture(u_manglar, m);
-      vec3 pm = duotono(t.rgb, oscuroM, claroM);
+      /* APLANADO. Esta lamina es la que peor mide del juego: 0.465 de
+         saturacion —dos veces y media cualquier otra— y cientos de matas
+         de hoja dibujadas una a una, que es de donde sale el 28 % de
+         canto del cuadro entero. Cuantizar su valor en seis escalones no
+         la convierte en acuarela, pero le quita el modelado cilindrico
+         de las raices, que es lo que la delata como render.
+         El arreglo de verdad es repintarla; esto es lo que se puede
+         hacer sin lamina nueva. */
+      vec3 pm = aplanar(duotono(t.rgb, oscuroM, claroM), 6.0, 0.14);
       /* El manglar conserva su propio pigmento, como el agua: en duotono
          puro la copa salía gris contra un cielo cálido y leía recorte. */
-      pm += (t.rgb - vec3(valor(t.rgb))) * u_croma * 0.85;
+      /* Y menos croma: 0.85 sobre una lamina que ya viene a 0.465 de
+         saturacion dejaba el arbol como el unico objeto saturado del
+         cuadro, tirando de la mirada por color en vez de por valor. */
+      pm += (t.rgb - vec3(valor(t.rgb))) * u_croma * 0.52;
       /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
@@ -606,7 +627,7 @@ void main(){
          siendo la misma aguada. */
       vec3 oscuroC = mix(vec3(0.165, 0.160, 0.178), u_agua * 0.42, 0.35);
       vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
-      vec3 pk = duotono(tk.rgb, oscuroC, claroC);
+      vec3 pk = aplanar(duotono(tk.rgb, oscuroC, claroC), 6.0, 0.30);
       pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
       col = mix(col, pk, tk.a * 0.96);
     }
