@@ -498,9 +498,16 @@ void main(){
        en blanco, tiene la luna y poco mas. */
     float cresta = smoothstep(0.15, 0.75, onda * 0.5 + 0.5);
     float faceta = smoothstep(0.87, 0.965, valor(pintura)) * cresta;
-    float dia = smoothstep(0.28, 0.88, u_int);
+    /* Y DE NOCHE, CERO. Con mix(0.03, 1.0, dia) a las 21:00 quedaba al
+       15 %, que parece poco — pero sobre agua casi negra (luminancia
+       0.05) mezclar un 15 % hacia papel (0.87) multiplica el brillo por
+       3.4 y deja dos manchas palidas flotando en el mar. Sobre agua
+       diurna el mismo 15 % no se ve. El error fue razonar la fuerza en
+       abstracto y no contra el fondo sobre el que cae.
+       Un mar nocturno no tiene papel en blanco: tiene la luna. */
+    float dia = smoothstep(0.46, 0.86, u_int);
     reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.34, 0.95, prof))
-                           * mix(0.03, 1.0, dia) * 0.95);
+                           * dia * dia * 0.95);
 
     /* Y el agua también se aplana. Menos escalones que el cielo y con el
        canto más seco, porque el agua lejana en una acuarela son dos o
@@ -764,8 +771,20 @@ void main(){
       vec4 t = texture(u_manglar, r2);
       float roto = step(0.34, ruido(vec2(uv.y * mix(95.0, 22.0, cn), 7.3)) + cn * 0.55);
       float desvanece = 1.0 - smoothstep(0.0, S * 1.25, base - uv.y);
-      col = mix(col, duotono(t.rgb, oscuroM, claroM),
-                t.a * roto * desvanece * mix(0.34, 0.66, cn));
+      /* UN REFLEJO OSCURECE EL AGUA, NO LA ILUMINA. Estaba pintando el
+         duotono del arbol tal cual, asi que su claridad la mandaba la
+         lamina: con la vieja, oscura, colaba; con la repintada, mucho
+         mas clara, salia una mancha palida clavada bajo el arbol.
+         Medido, el pico de brillo del agua estaba en 0.61 de la
+         pantalla A TODAS HORAS mientras la luna se movia de 0.25 a
+         0.92 — no seguia a la fuente porque no era el reguero.
+
+         Ahora la lamina solo aporta DONDE hay reflejo (su alfa); el
+         color sale de oscurecer el agua que ya hay y teñirla hacia el
+         extremo oscuro del arbol. Es lo que hace un reflejo de verdad. */
+      vec3 refl = mix(col * 0.66, oscuroM, 0.30);
+      col = mix(col, refl,
+                t.a * roto * desvanece * mix(0.30, 0.58, cn));
     }
   }
 
