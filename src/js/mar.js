@@ -560,9 +560,14 @@ void main(){
        estrecho para que de verdad llegue a los dos extremos: donde se
        pierde, se pierde del todo; donde no, canto seco. */
     float perdido = smoothstep(0.44, 0.58, fbm(vec2(q.x * 2.3 - 5.0, 8.3)));
-    float anchoBruma = mix(0.022, 0.46, perdido);
+    /* 0.46 era medio mar. Para perder el canto del horizonte ensanche
+       la bruma hasta casi la mitad de la profundidad del agua, y eso
+       dejo una franja de NIEBLA BLANCA alrededor de las raices a todas
+       horas: el mar se veia lavado y el arbol flotando en vapor.
+       El canto se pierde con un tramo estrecho; lo demas era exceso. */
+    float anchoBruma = mix(0.020, 0.155, perdido);
     col = mix(u_bruma * 0.82, col,
-              smoothstep(0.0, anchoBruma, prof) * 0.75 + 0.25);
+              smoothstep(0.0, anchoBruma, prof) * 0.58 + 0.42);
     col = mix(col, col * 0.90, smoothstep(0.60, 1.0, prof));
 
     /* EL REGUERO: angosto y continuo con calma, disperso con oleaje.
@@ -654,7 +659,7 @@ void main(){
         /* El desvanecido va ARRIBA, donde acaban las hojas, no abajo,
            que es donde está la arena y tiene que estar sólida. */
         float entra = 1.0 - smoothstep(0.58, 1.0, cv);
-        col = mix(col, pc, tc.a * mix(0.34, 0.78, profC) * entra);
+        col = mix(col, pc, tc.a * mix(0.26, 0.62, profC) * entra * mix(0.62, 1.0, u_int));
       }
     }
 
@@ -717,8 +722,16 @@ void main(){
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
          de terminar en una línea. */
+      /* Y SE LE QUITA LA NIEBLA. La lamina trae pintada una aguada
+         blanquecina alrededor de las raices —del original, no del
+         shader— y en pantalla salia como una franja de vapor que dejaba
+         el arbol flotando y el mar lavado. Aqui se apaga lo casi blanco
+         que este en el tercio bajo de la lamina, que es exactamente esa
+         niebla, sin tocar ni las raices ni la copa. */
+      float niebla = smoothstep(0.70, 0.90, valor(t.rgb))
+                   * (1.0 - smoothstep(0.02, 0.42, m.y));
       float bajoAgua = smoothstep(0.0, 0.06, m.y);
-      col = mix(col, pm, t.a * 0.92 * bajoAgua);
+      col = mix(col, pm, t.a * 0.92 * bajoAgua * (1.0 - niebla * 0.88));
     }
 
     /* El reflejo. A calma baja está partido en tajos; a calma alta el
