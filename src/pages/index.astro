@@ -69,10 +69,20 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <Herramientas />
   </main>
 
-  <script>
-    import '../js/main.js';
-    import '../js/paralaje.js';
-    import '../js/herramientas.js';
-  </script>
+  {/* TRES ISLAS SEPARADAS, NO UNA.
+
+      Estaban los tres en un mismo <script>, y eso los ataba: si el mar
+      lanza una excepción al evaluarse, el módulo entero se cae y NO
+      LLEGAN A EJECUTARSE ni el paralaje ni las herramientas. Se vio en
+      vivo — un `ReferenceError` dentro del mar dejó la página sin
+      reloj, sin mapa, sin formularios y sin paralaje.
+
+      Eso contradice la regla que el propio sitio se puso: el mar es un
+      enhancement, y si falla el sitio sigue sirviendo. Con un <script>
+      por módulo cada uno tiene su propio grafo: el que se rompa se
+      rompe solo. La ayuda no depende de que la pintura compile. */}
+  <script>import '../js/main.js';</script>
+  <script>import '../js/paralaje.js';</script>
+  <script>import '../js/herramientas.js';</script>
 </body>
 </html>

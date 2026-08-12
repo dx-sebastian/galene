@@ -41,6 +41,12 @@ const texto = document.querySelector('.hero__texto');
 const cta   = document.querySelector('.cta');
 const nota  = document.querySelector('.hero__nota');
 
+/* La sección 2 y sus aguadas. Van aparte del hero: si un día el hero
+   cambia o desaparece, el fondo de las herramientas sigue vivo. */
+const seccion = document.getElementById('herramientas');
+const capas = [...document.querySelectorAll('.fondo__capa')]
+  .map((el) => ({ el, hondo: parseFloat(el.dataset.hondo) || 0.8 }));
+
 if (hero && texto) arrancar();
 
 function arrancar() {
@@ -54,13 +60,26 @@ function arrancar() {
   let velX = 0, velY = 0;     // muelle: con velocidad, no con lerp seco
 
   // Scroll, ya leído (el listener solo marca; se lee en el cuadro).
-  let s = 0;
+  let s = 0, ultimoScrollY = -1;
 
-  /* ── Entradas ──────────────────────────────────────────────────── */
+  /* ── Entradas ──────────────────────────────────────────────────────
+     TODA entrada del usuario despierta el bucle. Esto es lo que hace
+     que el paralaje siga SIEMPRE a quien mira: da igual dónde esté la
+     página o cuánto lleve quieta, en cuanto se mueve el ratón (o el
+     teléfono, o el scroll) el mundo vuelve a responder en el cuadro
+     siguiente. Antes solo despertaba con el scroll, así que si el
+     bucle se había dormido, mover el ratón no hacía nada.
+
+     Y se escucha en TODA la página, no solo sobre el hero: el puntero
+     mueve las aguadas de la sección 2 igual que mueve el texto de
+     arriba. El paralaje no es del hero, es del sitio. */
+  const despertar = () => { if (!corriendo) bucle(); };
+
   if (matchMedia('(min-width: 700px) and (pointer: fine)').matches) {
     addEventListener('pointermove', (e) => {
       objX = (e.clientX / innerWidth  - 0.5) * 2;
       objY = (e.clientY / innerHeight - 0.5) * 2;
+      despertar();
     }, { passive: true });
   } else if ('DeviceOrientationEvent' in window &&
              typeof DeviceOrientationEvent.requestPermission !== 'function') {
@@ -71,23 +90,40 @@ function arrancar() {
       if (e.gamma === null) return;
       objX = Math.max(-1, Math.min(1, e.gamma / 28));
       objY = Math.max(-1, Math.min(1, (e.beta - 40) / 32));
+      despertar();
     }, { passive: true });
   }
 
-  addEventListener('scroll', () => { if (!corriendo) bucle(); }, { passive: true });
+  addEventListener('scroll', despertar, { passive: true });
+  addEventListener('resize', despertar, { passive: true });
 
-  new IntersectionObserver(([e]) => {
-    visible = e.isIntersecting;
+  /* DOS zonas vigiladas, no una. El bucle tiene que seguir corriendo
+     cuando el hero ya salió por arriba pero la sección 2 está en
+     pantalla — que es justo cuando sus aguadas hacen su trabajo. */
+  let heroDentro = true, seccionDentro = false;
+  const ojo = new IntersectionObserver((entradas) => {
+    for (const e of entradas) {
+      if (e.target === hero) heroDentro = e.isIntersecting;
+      else seccionDentro = e.isIntersecting;
+    }
+    visible = heroDentro || seccionDentro;
     if (visible && !quieto.matches) bucle();
-  }, { threshold: 0 }).observe(hero);
+  }, { threshold: 0 });
+  ojo.observe(hero);
+  if (seccion) ojo.observe(seccion);
 
-  /* ── Escritura perezosa: al DOM solo si cambió. ─────────────────── */
-  const previo = new Map();
+  /* ── Escritura perezosa: al DOM solo si cambió. ───────────────────
+     Indexada POR ELEMENTO. Antes la clave se armaba con el className,
+     y dos elementos con la misma clase —las capas del fondo, sin ir
+     más lejos— se habrían pisado el valor entre ellos: la primera
+     escribía, la segunda se creía ya escrita y se quedaba quieta. */
+  let previo = new WeakMap();
   function poner(el, prop, valor) {
     if (!el) return;
-    const clave = prop + '@' + (el.className || el.id);
-    if (previo.get(clave) === valor) return;
-    previo.set(clave, valor);
+    let props = previo.get(el);
+    if (!props) previo.set(el, (props = new Map()));
+    if (props.get(prop) === valor) return;
+    props.set(prop, valor);
     el.style[prop] = valor;
   }
 
@@ -153,11 +189,60 @@ function arrancar() {
     poner(nota, 'translate', `0px ${(s * innerHeight * 0.22).toFixed(1)}px`);
     poner(nota, 'opacity', (1 - Math.min(1, s * 2.4)).toFixed(3));
 
-    /* ¿Hay algo que seguir animando? Con el hero fuera, el scroll ya
-       lo dejó todo puesto y el muelle en reposo: se suelta el rAF. */
-    const enReposo = Math.abs(velX) + Math.abs(velY) < 0.001 &&
-                     Math.abs(objX - curX) + Math.abs(objY - curY) < 0.002;
-    return visible || !enReposo;
+    /* ── 3 · LAS AGUADAS DE LA SECCIÓN 2 ─────────────────────────────
+       El modelo es el mismo que el del mundo del hero: `hondo` es
+       cuánto se clava la capa al viewport. 1 = fija a la pantalla
+       (infinitamente lejos), 0 = pegada a la página (a ras). Las
+       nubes van a 0.94 y el manglar a 0.66, así que al bajar el
+       manglar se descuelga por debajo de las nubes — que es lo que
+       hace un paisaje visto desde un tren.
+
+       Se mide con getBoundingClientRect en vez de scrollY para que la
+       cuenta no dependa de dónde empieza la sección: funciona igual
+       si mañana se le pone algo encima. */
+    /* Sin puerta de visibilidad: un getBoundingClientRect por cuadro
+       es barato, y condicionarlo dejaba las capas con el valor viejo
+       justo en el cuadro en que la sección vuelve a entrar — un salto
+       al reaparecer. Se calcula siempre; el que no pinta es el
+       navegador, que para eso la sección está fuera de pantalla. */
+    if (seccion && capas.length) {
+      const r = seccion.getBoundingClientRect();
+      const dentro = Math.max(0, -r.top);      // px de sección recorridos
+      for (const { el, hondo } of capas) {
+        /* Deriva lateral con el puntero, proporcional a la CERCANÍA:
+           lo lejano casi no se mueve, lo cercano sí. Es el mismo
+           reparto que separa el texto del manglar en el hero, y es lo
+           que hace que el fondo respire con el ratón en toda la
+           página, no solo en la portada. */
+        const lado = curX * (1 - hondo) * 90;
+        const vert = curY * (1 - hondo) * 34;
+        poner(el, 'translate',
+          `${lado.toFixed(1)}px ${(dentro * hondo + vert).toFixed(1)}px`);
+      }
+    }
+
+    /* ── ¿Seguir? ────────────────────────────────────────────────────
+       Dos motivos distintos para mantener el rAF vivo, y conviene no
+       confundirlos:
+
+       AMBIENTE — el hero está en pantalla y la lámina hace su boya.
+       Eso se anima solo, sin nadie delante, así que mientras se vea
+       hay que seguir dibujando.
+
+       SEGUIMIENTO — el muelle del puntero todavía persigue su
+       objetivo, o el scroll cambió en este cuadro. Es el usuario
+       moviéndose, y es lo que no puede fallar nunca.
+
+       Cuando no hay ninguno de los dos se suelta el rAF y la página
+       no gasta nada. Y despierta al instante, porque TODA entrada
+       llama a despertar(): mover el ratón revive el bucle en el
+       cuadro siguiente. Dormirse sin poder despertar era el fallo que
+       hacía que a veces el paralaje no siguiera al ratón. */
+    const persiguiendo = Math.abs(velX) + Math.abs(velY) > 0.001 ||
+                         Math.abs(objX - curX) + Math.abs(objY - curY) > 0.002;
+    const scrolleando = scrollY !== ultimoScrollY;
+    ultimoScrollY = scrollY;
+    return heroDentro || persiguiendo || scrolleando;
   }
 
   function bucle() {
@@ -172,15 +257,18 @@ function arrancar() {
     requestAnimationFrame(paso);
   }
 
-  /* Movimiento apagado: el hero vuelve a ser el documento plano. */
+  /* Movimiento apagado: el hero vuelve a ser el documento plano y las
+     aguadas se quedan donde las dejó el CSS. Sigue siendo un cuadro. */
   function apagar() {
-    for (const el of [texto, cta, nota]) {
+    for (const el of [texto, cta, nota, ...capas.map((c) => c.el)]) {
       if (!el) continue;
       el.style.translate = '';
       el.style.opacity = '';
       el.style.filter = '';
     }
-    previo.clear();
+    /* WeakMap no tiene clear(): se cambia por uno nuevo y el viejo se
+       recoge solo. Sin esto, apagar() reventaba con un TypeError. */
+    previo = new WeakMap();
   }
 
   quieto.addEventListener('change', () => {
