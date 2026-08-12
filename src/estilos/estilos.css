@@ -160,16 +160,19 @@ body {
 .titulo {
   font-family: var(--tipo-titulo);
   font-weight: 400;
-  font-size: clamp(2.75rem, 11vw, 5.5rem);
-  line-height: 0.95;
+  /* Bajado de 11vw/5.5rem: a ese tamaño el nombre competía con el
+     manglar, y el protagonista es la pintura. El título presenta, no
+     preside. */
+  font-size: clamp(2.5rem, 8.5vw, 4.75rem);
+  line-height: 0.98;
   letter-spacing: 0.02em;
   margin: 0;
 }
 
 .lockup {
-  font-size: clamp(1rem, 3.6vw, 1.35rem);
-  line-height: 1.35;
-  margin: 0.6em 0 0;
+  font-size: clamp(1rem, 3.4vw, 1.3rem);
+  line-height: 1.45;
+  margin: 0.9em 0 0;
   max-width: 24ch;
   text-wrap: balance;
 }
@@ -213,6 +216,11 @@ body {
 }
 .cta:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
 @media (min-width: 700px) { .cta:hover { transform: translateY(-2px); } }
+/* El asentamiento y el hover son movimiento: con reduced-motion, quietos. */
+@media (prefers-reduced-motion: reduce) {
+  .hero[data-mar="listo"] .cta { animation: none; }
+  .cta, .cta:hover { transform: none; transition: none; }
+}
 
 .hero__nota {
   grid-row: 4;

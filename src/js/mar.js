@@ -341,7 +341,11 @@ void main(){
          competia con la copa del arbol, que es el sujeto. Un sol o una
          luna en un paisaje son pequenos; lo que ocupa sitio es su luz,
          no su disco. */
-      float lado = 0.17;                         // alto de la celda en q
+      /* En q, o sea en unidades de ALTO: en un movil vertical 0.17 del
+         alto es media pantalla de ancho y el sol salia como un manchon
+         flotando en mitad del cielo. Se escala con el aspecto para que
+         en pantallas estrechas mida por ancho, no por alto. */
+      float lado = 0.17 * clamp(aspecto * 0.72, 0.52, 1.0);
       vec2 au = (q - f) / lado + 0.5;
       if (au.x > 0.0 && au.x < 1.0 && au.y > 0.0 && au.y < 1.0) {
         vec2 uu = vec2((au.x + floor(esSol + 0.5)) * 0.5, au.y);
@@ -707,7 +711,19 @@ void main(){
          de las raices, que es lo que la delata como render.
          El arreglo de verdad es repintarla; esto es lo que se puede
          hacer sin lamina nueva. */
-      vec3 pm = duotono(t.rgb, oscuroM, claroM);
+      /* EL CONTRALUZ, INTERMITENTE. La lamina trae horneados un reborde
+         calido continuo y unos destellos de estrella por toda la copa, y
+         un contorno iluminado de punta a punta es luz de render: ninguna
+         luz real ni ninguna aguada rodea un arbol entero. Se detectan
+         los pixeles calidos y claros de la lamina y se les deja pasar
+         solo por TRAMOS, con un ruido de periodo largo sobre la propia
+         lamina (m, no q: la mascara viaja con el arbol). Aparece un
+         trecho, se rompe, vuelve mas alla. */
+      float calidoT = smoothstep(0.10, 0.30,
+                        (t.r - t.b) + (valor(t.rgb) - 0.45) * 0.5);
+      float tramo = smoothstep(0.38, 0.62, fbm(m * vec2(4.2, 3.1) + 7.0));
+      vec3 tApagado = mix(t.rgb, vec3(valor(t.rgb)), calidoT * (1.0 - tramo) * 0.8);
+      vec3 pm = duotono(tApagado, oscuroM, claroM);
       /* El manglar conserva su propio pigmento, como el agua: en duotono
          puro la copa salía gris contra un cielo cálido y leía recorte. */
       /* Y menos croma: 0.85 sobre una lamina que ya viene a 0.465 de
@@ -717,7 +733,7 @@ void main(){
          demas. Con la curva su masa se apaga y solo cantan las hojas
          que ya tenian color: deja de ser el unico objeto saturado sin
          quedarse gris. */
-      pm += croma(t.rgb, u_croma * 0.30, u_croma * 1.05);
+      pm += croma(tApagado, u_croma * 0.30, u_croma * 1.05);
       /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
@@ -792,7 +808,11 @@ void main(){
      es donde se posa el ave protagonista. Por eso lleva su propio
      paralaje, el mas fuerte de todos: lo cercano se mueve mas. */
   if (u_hayCerca > 0.5) {
-    float kAlto = u_cercaCaja.y, kAncho = kAlto * u_cercaCaja.w;
+    /* En movil el fragmento cercano se comia la composicion: 0.92 del
+       alto con la pantalla estrecha tapaba al protagonista. Se encoge
+       con el aspecto — el primer termino enmarca, no tapa. */
+    float encoge = mix(0.60, 1.0, smoothstep(0.62, 1.35, aspecto));
+    float kAlto = u_cercaCaja.y * encoge, kAncho = kAlto * u_cercaCaja.w;
     /* Anclado por su BORDE IZQUIERDO: es un fragmento que entra por la
        esquina, no un objeto centrado. Con el centro se salía de cuadro
        en cuanto cambiaba la proporción de la ventana. */
