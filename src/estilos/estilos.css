@@ -284,10 +284,16 @@ body {
    ═══════════════════════════════════════════════════════════════════ */
 .herramientas {
   position: relative;             /* se desliza POR ENCIMA del mar fijo */
-  /* El padding lateral crece con la pantalla en vez de quedarse en
-     3rem: en un monitor ancho el contenido se centra en lugar de
-     apelotonarse contra el borde izquierdo con medio cuadro vacío. */
-  padding: clamp(2rem, 7vw, 4.5rem) clamp(1.25rem, 6vw, 8rem);
+  /* EL CONTENIDO SE CENTRA EN PANTALLA ANCHA.
+     Subir el padding lateral no bastaba: en un monitor de 1280 el texto
+     seguía arrimado a la izquierda con medio cuadro vacío a la derecha,
+     porque el ancho de lectura tiene un techo y el resto se lo comía un
+     solo margen. Aquí el margen es el MAYOR de dos: el que toca por
+     tamaño de pantalla, o el que hace falta para centrar una columna de
+     72rem. Así en un portátil se centra y en un móvil no pasa nada,
+     porque ahí el segundo término es cero. */
+  padding-block: clamp(2rem, 7vw, 4.5rem);
+  padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
   padding-bottom: clamp(3rem, 8vw, 6rem);
   color: #16222E;
   /* Opaca: el instrumento no compite con el mundo. Y el borde superior
@@ -453,6 +459,57 @@ body {
   font-size: clamp(2rem, 8vw, 3.25rem);
   margin: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA CABECERA A DOS COLUMNAS — solo en pantalla ancha.
+
+   Centrar el bloque no arreglaba nada, y conviene entender por qué:
+   el texto tiene un TECHO DE MEDIDA (56 caracteres, que es lo que se
+   lee sin perder el renglón). En un monitor de 1280 esa medida ocupa
+   unos 600 px, así que sobren 64 px de margen o 400, el resto de la
+   pantalla se queda muerto igual. El hueco no era un problema de
+   márgenes, era que había UNA sola columna.
+
+   Aquí el lema se va a la derecha y hace de cita destacada, que es
+   justo lo que es: la frase que sostiene la sección. El cuerpo se
+   queda a la izquierda con su medida intacta. Nadie lee más ancho, y
+   sin embargo el cuadro está lleno.
+
+   La rejilla NO reordena el DOM: el orden de lectura y el que oye un
+   lector de pantalla siguen siendo definición → lema → matiz →
+   pregunta. Solo cambia dónde se pinta cada cosa.
+   ═══════════════════════════════════════════════════════════════════ */
+/* 1240, no 1100. A 1100 la columna de la derecha salía de 437 px y el
+   lema no cabía en una línea; partirse ahí no rompe nada —el realce ya
+   sabe partirse— pero la cita quedaba en tres renglones cortos y perdía
+   la contundencia que justifica sacarla al margen. Por debajo de este
+   ancho, una sola columna: es mejor maqueta que dos columnas apretadas. */
+@media (min-width: 1240px) {
+  .cabecera {
+    display: grid;
+    /* La derecha algo MÁS ancha que la izquierda: ahí va el lema, que
+       es texto grande, y el cuerpo de la izquierda ya tiene su tope de
+       medida en 56 caracteres y no aprovecharía el sitio de más. */
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    column-gap: clamp(2.5rem, 4vw, 4.5rem);
+    align-items: start;
+  }
+  .cabecera > .herramientas__titulo { grid-column: 1 / -1; }
+  /* Los dos párrafos de cuerpo, apilados en la columna izquierda. */
+  .cabecera > .herramientas__intro { grid-column: 1; }
+  /* El lema ocupa la derecha y se alinea con el primer párrafo, no con
+     el título: es un comentario al margen del texto, no otro titular. */
+  .cabecera > .lema {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    margin-top: 0;
+    padding-left: clamp(1rem, 2vw, 2rem);
+    border-left: 2px solid #16222E1a;
+    max-width: none;
+  }
+  /* La pregunta cruza las dos y hace de puente hacia las puertas. */
+  .cabecera > .herramientas__pregunta { grid-column: 1 / -1; }
+}
 /* `pretty` en vez de nada: el navegador evita dejar una palabra huérfana
    en la última línea y reparte mejor las últimas dos. Es la diferencia
    entre un párrafo que se lee y uno que se tropieza al final. */
@@ -588,10 +645,23 @@ body {
     normal, normal, normal, normal, normal;
 }
 
-/* Una frase realzada no se parte a mitad: el trazo de pincel es uno.
-   Solo por encima de 560px, porque en un teléfono estrecho preferimos
-   que baje de línea antes que se salga de la pantalla. */
-@media (min-width: 560px) { .realce { white-space: nowrap; } }
+/* SIN `white-space: nowrap`. Lo tuvo y hubo que quitarlo.
+
+   La idea era que el trazo de pincel no se partiera nunca por la mitad,
+   y a primera vista funcionaba. Pero `nowrap` no es una preferencia,
+   es una prohibición: cuando la cabecera pasó a dos columnas, la frase
+   de 526 px no cabía en una columna de 437 y, como tenía prohibido
+   bajar de línea, se salió de la pantalla. Medido a 1100 px de ancho:
+   scroll horizontal y la afirmación central cortada por el borde.
+
+   Y no hay forma en CSS de decir «no partas salvo que no quepas». Así
+   que se prefiere partir: con `box-decoration-break: clone` cada trozo
+   se pinta entero, con sus propios bordes desvanecidos, y dos trazos
+   de acuarela seguidos no desentonan — lo que desentonaba era el
+   rectángulo serrado de la primera versión, que ya no existe.
+
+   Regla que queda: nada de este realce puede empujar la página a lo
+   ancho. El ancho lo manda la pantalla, no la frase. */
 /* Los tintes son pigmentos, no grises: si se bajan de saturación para
    «suavizarlos» dejan de leerse como acuarela y pasan a resaltador. Lo
    que los suaviza es el alfa de arriba, no el color. */
@@ -613,8 +683,13 @@ body {
      el trazo quedaba serrado en dos. El ancho lo manda la frase. */
   max-width: 46ch;
   font-family: var(--tipo-titulo);
-  font-size: clamp(1.3rem, 3.2vw, 2.1rem);
-  line-height: 1.45;
+  /* El MÍNIMO importa tanto como el máximo. Con 1.3rem aquí y 1.35rem
+     en la pregunta, por debajo de ~800px los dos clamp tocaban su suelo
+     y la jerarquía SE INVERTÍA: el lema quedaba en 21px y la pregunta
+     en 22px. Medido en un móvil de 390. Una escala tipográfica tiene
+     que ser monótona en todos los anchos, no solo en el del diseño. */
+  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  line-height: 1.4;
   text-wrap: balance;
 }
 
@@ -633,10 +708,13 @@ body {
    lee como parte de la misma voz— y se separa por cuerpo, no por
    color: el color aquí ya significa otra cosa. */
 .pregunta__titulo {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.5rem;
   font-family: var(--tipo-titulo);
-  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
-  line-height: 1.3;
+  /* Un nivel se reconoce por el salto, no por el tamaño absoluto: tiene
+     que quedar por debajo del lema y por encima del cuerpo EN TODOS los
+     anchos, así que su suelo va por debajo del suelo del lema. */
+  font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+  line-height: 1.25;
   color: #16222E;
 }
 .herramientas__pregunta .herramientas__intro { margin-top: 0; }
@@ -662,7 +740,11 @@ body {
 .puertas {
   display: grid; gap: 0.7rem;
   margin: 2rem 0 3.5rem;
-  max-width: 62rem;
+  /* 72rem = la misma columna de contenido que centra la sección. A
+     62rem las puertas quedaban 160 px más cortas que la cabecera de
+     arriba y el bloque se veía descuadrado por la derecha en un
+     monitor grande. Son fichas, no texto: no tienen tope de medida. */
+  max-width: 72rem;
 }
 @media (min-width: 900px) {
   .puertas { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
@@ -763,7 +845,13 @@ body {
      shader, así que no cuesta una petición nueva. */
   background-image: url("/galene/arte/1024/papel.webp");
   background-size: 260px;
-  background-blend-mode: screen;  /* el grano aclara, como el papel real */
+  /* `multiply`, NO `screen`. Con screen el grano del papel —que es casi
+     blanco— ACLARABA el pigmento hasta dejarlo en un verde pálido, y el
+     texto blanco encima se volvía ilegible. Se vio en pantalla: el
+     botón principal del sitio, el que pide que alguien venga a
+     buscarte, no se leía. Un efecto de textura no puede costar eso.
+     Con multiply el grano solo muerde, nunca destiñe. */
+  background-blend-mode: multiply;
   mix-blend-mode: multiply;
   transform-origin: center;
   transition: transform 900ms cubic-bezier(.25,.8,.3,1),
@@ -776,7 +864,10 @@ body {
   transform: scale(1.07, 1.18) translate(-2px, 0) skew(6deg, -1.5deg);
 }
 .acuarela::after {
-  opacity: 0.88;
+  /* Casi opaca. La aguada de arriba es la que sostiene el texto: si
+     deja pasar papel, el blanco se cae. Medido con este valor:
+     5.75:1 sobre el fondo de la sección. */
+  opacity: 0.96;
   border-radius: 20px 20px 40px 10px / 20px 25px 20px 40px;
   transform: scale(1.03, 1.06) translate(0, 1px) skew(-9deg, 1.6deg);
 }
