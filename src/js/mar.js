@@ -119,16 +119,27 @@ vec3 papelBlanco(){
 vec3 aplanar(vec3 c, float pasos, float dureza){
   float v = valor(c);
   if (v < 0.0005) return c;
-  float e = v * pasos;
+  /* SE CUANTIZA EN CLARIDAD, NO EN LUMINANCIA. Los escalones lineales
+     se reparten mal: de noche el cuadro entero vive entre 0 y 0.3, asi
+     que once escalones lineales solo cruzaban tres y la noche seguia
+     siendo una rampa —59.7 % de degradado contra 45.9 % de dia—. La
+     raiz cubica es aproximadamente como ve el ojo, y ademas es como se
+     reparten los valores de una acuarela: muchos pasos entre los
+     claros, pocos entre los oscuros. */
+  float cv = pow(v, 0.3333);
+  float e = cv * pasos;
   /* EL ESCALON NO PUEDE SER RECTO. Cuantizar sin mas dejaba bandas con
      contorno matematico —un artefacto digital, justo lo contrario de lo
      que se busca—. Un charco de acuarela se para donde el papel deja de
      mojarse, asi que el limite serpentea siguiendo la trama.
      Es ruido de periodo largo, no grano: lobulos de unos noventa
      pixeles. Con ruido fino saldria granulado de pelicula. */
-  e += (fbm(gl_FragCoord.xy / 88.0) - 0.5) * (1.25 / pasos);
+  /* Mas amplitud: el borde tiene que recorrer mas de un escalon entero
+     para que no se lea como curva de nivel. */
+  e += (fbm(gl_FragCoord.xy / 76.0) - 0.5) * (1.85 / pasos);
   float f = floor(e);
-  float vq = (f + smoothstep(0.5 - dureza, 0.5 + dureza, e - f)) / pasos;
+  float cq = (f + smoothstep(0.5 - dureza, 0.5 + dureza, e - f)) / pasos;
+  float vq = cq * cq * cq;
   return c * clamp(vq / v, 0.55, 1.8);
 }
 
@@ -198,7 +209,18 @@ void main(){
     /* De degradado a AGUADA. Cuatro escalones con la transición medio
        perdida: quedan campos planos de verdad, que es lo que hace una
        aguada, en vez de una rampa continua de arriba abajo. */
-    col = mix(col, aplanar(col, 4.0, 0.28), 0.94);
+    /* ONCE escalones, no cuatro. Con cuatro, un cielo cuyo valor va de
+       0.35 a 0.75 cruzaba 1.6 escalones: casi ningun borde, o sea que
+       cuantizar no hacia nada y el cielo seguia siendo una rampa —70 %
+       de degradado y 0 % de canto, el bloque de aerografo mas grande
+       del cuadro—. Lo que importa no es el numero de pasos sino cuantos
+       cruza EL RANGO REAL del contenido. Once le dan cuatro o cinco
+       tiras planas, que es un cielo de acuarela. */
+    /* Y la DUREZA es la palanca de verdad, no el numero de escalones.
+       Con 0.22 el 44 % de cada escalon era transicion —gradiente
+       garantizado, hiciera lo que hiciera con los pasos—. A 0.07 la
+       transicion ocupa un 14 % y el resto es aguada seca de verdad. */
+    col = mix(col, aplanar(col, 11.0, 0.07), 1.0);
 
     /* Y SE ABRE EL PAPEL junto al horizonte. Está justificado: el cielo
        es más pálido cerca del horizonte porque la luz atraviesa más aire.
@@ -210,10 +232,15 @@ void main(){
        no abria nada, y como el valor caia por debajo del umbral, no
        abria nunca. A 3.1 caben dos o tres bocas, que es lo que se
        pidio. */
-    float bocaCielo = smoothstep(0.40, 0.53,
-                        fbm(vec2(q.x * 3.1 + 12.0, 3.7)));
-    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.30, gy))
-                           * bocaCielo * mix(0.30, 1.0, u_int) * 0.97);
+    /* La boca en DOS dimensiones. Con un ruido de solo q.x la reserva
+       salia con los lados verticales: un rectangulo palido pegado al
+       horizonte, que se lee como error y no como reserva. Metiendo la
+       altura en el ruido el hueco tiene forma de mancha —que es lo que
+       deja un pincel seco— y ya no tiene lados. */
+    float bocaCielo = smoothstep(0.36, 0.52,
+                        fbm(vec2(q.x * 3.1 + 12.0, gy * 5.2 + 3.7)));
+    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.38, gy))
+                           * bocaCielo * mix(0.30, 1.0, u_int) * 0.99);
 
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
@@ -380,14 +407,14 @@ void main(){
        El umbral va alto y con canto duro a propósito. Son cuatro o cinco
        manchas grandes, no un espolvoreado — un brillo espolvoreado es
        purpurina, y la reservaPapel es silencio. */
-    float faceta = smoothstep(0.62, 0.80, valor(pintura));
+    float faceta = smoothstep(0.55, 0.74, valor(pintura));
     reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.34, 0.95, prof))
                            * mix(0.22, 1.0, u_int) * 0.95);
 
     /* Y el agua también se aplana. Menos escalones que el cielo y con el
        canto más seco, porque el agua lejana en una acuarela son dos o
        tres tiras planas y nada más. */
-    col = mix(col, aplanar(col, 5.0, 0.16), mix(0.90, 0.48, pp));
+    col = mix(col, aplanar(col, 13.0, 0.06), mix(1.0, 0.70, pp));
 
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
@@ -556,7 +583,7 @@ void main(){
          de las raices, que es lo que la delata como render.
          El arreglo de verdad es repintarla; esto es lo que se puede
          hacer sin lamina nueva. */
-      vec3 pm = aplanar(duotono(t.rgb, oscuroM, claroM), 6.0, 0.14);
+      vec3 pm = aplanar(duotono(t.rgb, oscuroM, claroM), 10.0, 0.06);
       /* El manglar conserva su propio pigmento, como el agua: en duotono
          puro la copa salía gris contra un cielo cálido y leía recorte. */
       /* Y menos croma: 0.85 sobre una lamina que ya viene a 0.465 de
@@ -653,7 +680,7 @@ void main(){
          siendo la misma aguada. */
       vec3 oscuroC = mix(vec3(0.165, 0.160, 0.178), u_agua * 0.42, 0.35);
       vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.78;
-      vec3 pk = aplanar(duotono(tk.rgb, oscuroC, claroC), 6.0, 0.30);
+      vec3 pk = aplanar(duotono(tk.rgb, oscuroC, claroC), 9.0, 0.09);
       pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
       col = mix(col, pk, tk.a * 0.96);
     }
@@ -696,6 +723,12 @@ void main(){
      abre algo de recorrido para que el ojo tenga dónde moverse. */
   {
     float dNoche = 1.0 - smoothstep(0.02, 0.34, u_int);
+    /* UNA PASADA FINAL DE APLANADO, para todo el cuadro y despues de
+       todo lo demas. Las pasadas de cada capa dejaban fuera lo que se
+       compone al final —la perspectiva aerea, el velo, el estirado de
+       la noche— y de noche eso era casi la mitad del cuadro: 59.8 % de
+       degradado contra 45.5 % de dia. Aqui se recoge todo junto. */
+    col = mix(col, aplanar(col, 14.0, 0.05), mix(0.35, 0.88, dNoche));
     if (dNoche > 0.001) {
       /* Bajado de 0.30 a 0.14. Desaturar parejo es la otra mitad de la
          receta vintage; lo que sobraba de noche no era color, era color
