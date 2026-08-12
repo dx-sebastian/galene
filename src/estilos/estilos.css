@@ -174,24 +174,11 @@ body {
   text-wrap: balance;
 }
 
-/* EL ARCO — el manglar de raíces desnudas, plano CERCANO del paralaje
-   (js/paralaje.js le escribe `translate`). Está pintado sobre papel
-   blanco, no recortado: multiply lo funde con el agua como una aguada
-   encima de otra — el blanco desaparece, el pigmento se queda. Anclado
-   al flanco derecho, hundido en el borde: se lee orilla, no calcomanía. */
-.hero__arco {
-  position: absolute;
-  right: -6%;
-  bottom: -4%;
-  height: min(58vh, 78vw);
-  width: auto;
-  z-index: 0;                      /* bajo el texto (1), sobre el mundo */
-  mix-blend-mode: multiply;
-  opacity: 0.9;
-  pointer-events: none;
-  user-select: none;
-  will-change: translate, opacity;
-}
+/* (Aquí estaba .hero__arco. La lámina que colocaba —el manglar de
+   raíces desnudas— entró después en el shader, y este <img> se quedó
+   dibujando un segundo árbol encima del lienzo: sin paralaje del mundo,
+   sin la luz de la hora y con su propio multiply. Una calcomanía sobre
+   la pintura.) */
 
 /* PLANO 1 — la lámina. Trae su propio contraste, así que puede
    pararse sobre el agua sin romper ninguna ley de legibilidad. */

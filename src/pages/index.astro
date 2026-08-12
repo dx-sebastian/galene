@@ -54,15 +54,12 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
         <h1 class="lockup">Sumisión química: qué hacer, y hasta cuándo.</h1>
       </div>
 
-      {/* EL MANGLAR DE RAÍCES DESNUDAS — acuarela propia, plano cercano
-          del paralaje. Viene sobre papel blanco: multiply la funde con
-          el mar como una aguada de verdad. Decorativa: alt vacío. */}
-      <img class="hero__arco" id="arco" alt="" aria-hidden="true"
-           decoding="async" fetchpriority="low"
-           src={base + 'arte/1024/manglar-enterrado-a.webp'}
-           srcset={base + 'arte/1024/manglar-enterrado-a.webp 1024w, '
-                 + base + 'arte/manglar-enterrado-a.webp 2048w'}
-           sizes="(max-width: 1100px) 60vw, 40vw" />
+      {/* Aquí vivía un <img> con manglar-enterrado-a.webp, encima del
+          lienzo y por fuera de él. Era de cuando el manglar todavía no
+          estaba dentro del shader, y al entrar quedó dibujando un SEGUNDO
+          árbol a la derecha: mismo dibujo, otra escala, otro tratamiento
+          de color y sin paralaje ni luz de la hora. Se veía como una
+          calcomanía pegada sobre la pintura, que es justo lo que era. */}
 
       <a class="cta" href="#herramientas">Qué puedo hacer ahora</a>
 
