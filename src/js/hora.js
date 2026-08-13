@@ -32,8 +32,67 @@ const A = {
      El color sube, el valor se queda. Así la noche se vuelve hermosa
      sin que nadie pierda legibilidad a las cuatro de la mañana, que es
      la hora que manda en este proyecto. */
-  h03: { cieloAlto:'#14294C', cieloBajo:'#4C3568', agua:'#132630', altas:'#2C5567',
-         reguero:'#D6DCEE', bruma:'#243855', acento:'#B06A4A', elev:12, int:0.35 },
+  /* ── Y LA TERCERA PARADA: LA FRANJA DEL HORIZONTE ────────────────
+     El cielo era una rampa de DOS colores, alto y bajo, y por eso
+     ocupaba media pantalla con un valor casi uniforme: una rampa
+     continua entre dos tonos parecidos no tiene ningún sitio donde
+     mirar. El diagnóstico —"el cielo es el principal culpable, se
+     siente más gris de lo que realmente es"— es exacto, y no se
+     arregla cambiando los dos colores: se arregla metiendo un TERCER
+     color abajo, más luminoso que los otros dos.
+
+     Está justificado físicamente y no es un truco: cerca del horizonte
+     la luz atraviesa mucho más aire, se dispersa y sube de valor. Es
+     lo que hace que un amanecer suave sea sereno y no melancólico.
+
+     Y vive en su propio canal, aparte de `cieloBajo`, POR UNA RAZÓN
+     MEDIDA: `lumTexto` —de la que sale si la tinta va clara u oscura—
+     pesa cieloAlto al 70 % y cieloBajo al 30 %. Si la luz nueva
+     entrara por cieloBajo, subiría lumTexto y podría cruzar el umbral
+     de tinta a horas donde hoy no cruza. Por este canal no pasa: la
+     franja vive pegada al horizonte, el texto vive arriba, y el
+     calibrador del lavado mide de todos modos lo que de verdad quedó
+     pintado detrás. */
+  /* Y AHORA CONTRA UNA REFERENCIA, no contra una descripción. La lámina
+     de noche que pide el proyecto es añil profundo con la vía láctea
+     cruzando y una banda malva levantándose hacia la luna. El azul de
+     tinta anterior era más verdoso —tiraba a petróleo— y por eso la
+     noche se leía fría en vez de honda.
+
+     LA LUMINANCIA SIGUE SIN MOVERSE, que es la ley de esta hora:
+     medido, cieloAlto 0.0226 → 0.0251 y cieloBajo 0.0509 → 0.0487, y la
+     banda del texto 0.0310 → 0.0322. El cruce de tinta está en 0.175:
+     seguimos a un orden de magnitud, la tinta sigue siendo clara y el
+     texto blanco sigue por encima de 12:1. El color cambia, el valor
+     no. */
+  h03: { cieloAlto:'#172A56', cieloBajo:'#40376A', cieloHorizonte:'#6A5786',
+         agua:'#152840', altas:'#325A7C',
+         reguero:'#DCE4F4', bruma:'#26375E', acento:'#B06A4A', elev:12, int:0.35 },
+  /* ── EL AMANECER Y EL OCASO SON SU PROPIA HORA ────────────────────
+     Esto es lo que faltaba de verdad, y no era un color: era un ANCLA.
+
+     La rampa diurna iba de h09 a h15 y se sostenía en los extremos, así
+     que las 6:30 de la mañana pintaban EXACTAMENTE lo mismo que las
+     9:00, y las 17:45 lo mismo que las 15:00. O sea que el amanecer y
+     el atardecer —las dos horas que la referencia resuelve como
+     lavanda, rosa y crema— no existían como momento: eran el día con
+     algo de noche mezclada por encima.
+
+     Con h06 y h18 la rampa tiene cuatro nodos y cada franja es suya.
+     Son casi el mismo cielo el uno del otro a propósito: la referencia
+     de amanecer y la de atardecer son la misma imagen, y es cierto —lo
+     que separa un alba de un ocaso es de qué lado sale el sol, y de eso
+     ya se encarga `fuenteX`. El ocaso lleva algo más de coral y algo
+     menos de azul porque el aire de la tarde tiene más polvo.
+
+     Y `elev` a 5, no a 16. En la referencia el sol está POSADO sobre el
+     horizonte y el reguero baja de él hasta el pie del cuadro en una
+     sola columna de luz: esa columna es media composición, y solo
+     existe si el disco toca la línea. A 16 el sol flotaba a un 16 % de
+     la altura del cielo y el camino salía corto y descolgado. */
+  h06: { cieloAlto:'#7C83A8', cieloBajo:'#D6A6AC', cieloHorizonte:'#F7DEBE',
+         agua:'#5A7594', altas:'#A9BACE',
+         reguero:'#FBE3C2', bruma:'#C9C2CE', acento:'#C4703F', elev:5, int:0.72 },
   /* Los anclas de día llevaban el agua a un turquesa que el cielo nunca
      tenía: medido, 23.6 % de saturación contra 8.6 % del cielo, y el
      cuadro se partía en dos láminas distintas. Agrisados hacia el mismo
@@ -59,17 +118,155 @@ const A = {
      Y el rosa bajo sube de croma: a 0.08 de saturacion no se leia como
      rosa, se leia como blanco sucio, y ese rosa es lo unico que separa
      una hora de otra. */
-  h09: { cieloAlto:'#8FC6EC', cieloBajo:'#F2D6CC', agua:'#5E8B98', altas:'#A8C4C8',
-         reguero:'#FFF4E2', bruma:'#DEDFE2', acento:'#C4703F', elev:38, int:0.70 },
-  h15: { cieloAlto:'#79B2D2', cieloBajo:'#F6D6B6', agua:'#4E7F86', altas:'#B6C2B4',
-         reguero:'#E8B96A', bruma:'#E2D6C4', acento:'#B4552E', elev:52, int:1.00 },
+  /* LA MAÑANA, LAVANDA. El azul de arriba estaba limpio pero era solo
+     azul, y la mañana que pide este sitio es "lavanda-azulado → rosado
+     muy pálido → crema luminoso en el horizonte". El malva del cenit no
+     es licencia: a primera hora la banda de Venus todavía no se ha ido
+     del todo y el azul alto tira a violeta. Y es lo que separa esta
+     hora de la tarde por algo que no sea el brillo. */
+  /* Y CON EL AMANECER YA APARTE, la mañana puede ser lo que la
+     referencia de día pide: azul limpio arriba, azul pálido a media
+     altura y crema blanquecino en el horizonte. El lavanda se fue a
+     h06, que es donde vive de verdad.
+
+     EL AGUA SUBE DE CROMA, y esto contradice una corrección anterior
+     —se agrisó el agua porque a 23.6 % de saturación contra 8.6 % del
+     cielo el cuadro se partía en dos láminas—. La corrección era buena
+     y el motivo sigue en pie, pero se pasó de frenada: la referencia de
+     día es un mar TURQUESA, y sin ese turquesa el día no es el día.
+     De 0.38 a 0.45 de saturación, no a 0.60: el cian vuelve sin
+     gritar. */
+  /* EL MAR DEL DIA, MAS TURQUESA — y esto es la segunda vez que se
+     mueve este numero, asi que conviene dejar el historial entero.
+     Primero se agriso porque a 23.6 % de saturacion contra 8.6 % del
+     cielo el cuadro se partia en dos laminas. Luego se subio a 0.45
+     contra la referencia de dia. Y medido sobre los pixeles seguia sin
+     llegar: 0.155 de saturacion en el agua, EXACTAMENTE la misma que la
+     copa del arbol — o sea que ni el mar era turquesa ni el arbol
+     destacaba por color de nada.
+     El agua y sus altas suben juntas. Suben las DOS porque el extremo
+     claro del duotono del agua sale de `altas`, y con unas altas grises
+     el mar se lava por arriba por muy turquesa que sea su color base. */
+  /* ── EL DIA ES UNA SOLA ATMOSFERA ────────────────────────────────
+     Los tres anclajes diurnos llevan LA MISMA paleta: la medida de la
+     foto de referencia. Antes la manana era mas fria y la tarde se iba
+     a arena (#F2DCC2 abajo a las 15:00), asi que solo el mediodia se
+     parecia a la referencia y a las 9 o a las 15 ya era otro cielo.
+     La peticion es la contraria: el dia entero se ve asi de hermoso e
+     IGUAL; el color cambia en el alba y el ocaso, que para eso tienen
+     ancla propia. Lo unico que recorre el dia es el SOL (elev y
+     fuenteX), que es fisica y no paleta. */
+  h09: { cieloAlto:'#77A3D8', cieloBajo:'#B4C8E2', cieloHorizonte:'#CCD7E5',
+         agua:'#6796B4', altas:'#A0C4D7',
+         reguero:'#FFF8EE', bruma:'#DCE6EA', acento:'#C4703F', elev:42, int:0.95 },
+  /* ── Y AHORA MEDIDO CONTRA LA FOTO, NO MIRANDOLA ─────────────────
+     La referencia de dia, muestreada franja a franja evitando el arbol y
+     el sol (x 0.04..0.52), da esto:
+
+       cenit       #77a3d8  L* 65.9  sat 0.451  matiz 213
+       alto        #87acdc     69.4      0.384        214
+       medio-alto  #9fbbdf     74.9      0.286        214
+       medio       #b8cae4     80.7      0.192        216
+       horizonte   #bfcfe2     82.5      0.155        212
+
+     Tres cosas que solo se ven midiendo:
+     1. El matiz es CONSTANTE en 212-216 grados de arriba abajo. No hay
+        deriva de color: lo unico que cambia es cuanto azul queda.
+     2. La saturacion cae de 0.451 a 0.155 — el cenit es MUY azul y el
+        horizonte casi gris. Nuestro cenit estaba en 0.36.
+     3. El horizonte de mediodia es FRIO y palido, no crema. La franja
+        calida es cosa del alba y del ocaso.
+
+     Los tres colores de aqui son literalmente los de la foto. */
+  /* ── Y AQUI ME PASE, Y CONVIENE QUE QUEDE ESCRITO ─────────────────
+     Al oir «el cielo se ve palido» oscureci el cenit de L* 66.6 a 60.1.
+     Era la lectura equivocada: la referencia de dia NO tiene un cielo
+     oscuro — tiene un cielo CLARO con una masa de nube grande cruzandolo.
+     Lo que se leia como plano no era falta de azul, era falta de nube en
+     los dos tercios altos. Oscurecerlo alejo el cielo de la referencia
+     en vez de acercarlo.
+     Vuelto a un periwinkle claro, que es lo que la lamina de referencia
+     tiene arriba. La estructura la tienen que poner las nubes. */
+  /* NOTA SOBRE `altas` DE DIA, que se movio cuatro veces en una sesion.
+     Es el extremo CLARO del duotono del agua, o sea la mitad del mar que
+     de verdad se ve, y arrastra tambien las altas de la garza y del
+     manglar. Aclararlo sube el mar pero lo DESATURA —en sRGB, a matiz
+     fijo, mas claro es menos cromatico— y por ahi el mar se vuelve
+     lechoso en vez de turquesa.
+     Medido sobre candidatos: #B4E1EC da L* 86.8 con 0.237 de saturacion
+     y #8FD8EE da 82.4 con 0.399. Cuatro puntos menos de claridad por un
+     68 % mas de croma: ese es el cambio bueno. Turquesa es un cian CLARO
+     Y CROMATICO; solo claro es lechoso. */
+  /* ── EL AGUA ESTABA VERDE Y EL CENIT PALIDO ───────────────────────
+     MEDIDO en pantalla a mediodia, por franjas: el agua salia con matiz
+     172-177 grados —verde-cian; el cian empieza en 190— y el cielo con
+     matiz 209, que esta bien, pero a 78-81 de L* en las TRES franjas.
+     O sea: al cielo no le faltaba azul, le faltaba HONDURA, y estaba
+     tan plano que el cenit media mas claro que la banda media.
+
+     El agua no se corrige por `agua`, que ya estaba en 188 grados, sino
+     por `altas`: es el extremo CLARO del duotono, o sea la mitad del mar
+     que de verdad se ve, y estaba en 176 —verde-cian—. Suben las dos
+     juntas hacia el azul.
+
+     Y `cieloAlto` baja de L* 66.6 a 60.1 en el mediodia. La tinta sigue
+     siendo oscura por un orden de magnitud: la banda del texto queda en
+     0.41 de luminancia contra un cruce de 0.175. */
+  /* ── Y EL MEDIODIA TAMBIEN ES SU PROPIA HORA ──────────────────────
+     Este archivo ya lo tenia escrito arriba, sobre la manana y la tarde:
+     «o el mediodia —que es su punto medio— no puede ser nada». Era
+     literal y se cumplio. El cielo bajo de la manana es azul palido
+     (#C8DCEC) y el de la tarde durazno (#F1DCC3); interpolar entre un
+     frio y un calido PASA POR EL GRIS, y a las 12:00 salia #D8DCDC, o
+     sea 0.020 de saturacion. MEDIDO sobre el lienzo: 0.137 de saturacion
+     en todo el cielo y mediana 82 de L* — un cielo claro y sin color.
+
+     No se arregla con exponentes ni con reservas: mientras el mediodia
+     sea el punto medio de dos horas de temperatura opuesta, sera gris.
+     Se arregla dandole ancla propia, que es exactamente lo que se hizo
+     con el alba y con el ocaso.
+
+     Su cielo bajo es AZUL PALIDO, no crema: la parte blanca del
+     horizonte ya la pone `cieloHorizonte`, que para eso existe. Y es el
+     sol mas alto del dia (elev 66) y la luz mas intensa. */
+  h12: { cieloAlto:'#77A3D8', cieloBajo:'#B4C8E2', cieloHorizonte:'#CCD7E5',
+         agua:'#6796B4', altas:'#A0C4D7',
+         reguero:'#FFF8EE', bruma:'#DCE6EA', acento:'#C4703F', elev:66, int:1.00 },
+  /* LA TARDE, DORADA — pero dorada de acuarela, no de postal. El
+     horizonte se va a un dorado tenue y no a un naranja: un atardecer
+     exagerado es la forma más rápida de que esto deje de ser una
+     acuarela y pase a ser un filtro. El durazno de `cieloBajo` ya
+     estaba bien; lo que faltaba era la luz DEBAJO del durazno. */
+  /* La tarde YA NO es arena: esa calidez vive ahora solo en h18. Ver
+     la nota del bloque de arriba — misma paleta que h09 y h12. */
+  h15: { cieloAlto:'#77A3D8', cieloBajo:'#B4C8E2', cieloHorizonte:'#CCD7E5',
+         agua:'#6796B4', altas:'#A0C4D7',
+         reguero:'#FFF8EE', bruma:'#DCE6EA', acento:'#B4552E', elev:52, int:0.95 },
+  /* EL OCASO. Mismo cielo que el alba con el polvo de la tarde dentro:
+     el violeta de arriba se entibia, el rosa baja a coral y el agua se
+     va a azul acero —de tarde el mar ya no devuelve el turquesa del
+     mediodía, devuelve el cielo—. Es la hora que la referencia resuelve
+     como la más impresionante, y lo es porque tiene las tres cosas a la
+     vez: violeta arriba, coral en medio y oro en el horizonte. */
+  h18: { cieloAlto:'#8A7FA8', cieloBajo:'#DFA9A2', cieloHorizonte:'#F9DDB2',
+         agua:'#4E6B8C', altas:'#9EB2C8',
+         reguero:'#F5CE94', bruma:'#CDBEC0', acento:'#B4552E', elev:5, int:0.76 },
+  /* Y LA LUNA BAJA DE 60 A 26. Con el sol del ocaso posado en el
+     horizonte (elev 5), un astro nocturno a 60 hacía que entre las
+     18:00 y las 19:00 el disco TREPARA medio cielo en una hora: se veía
+     deslizarse, y un astro que se mueve a ojo delata el motor. A 26 la
+     luna cae a un cuarto de la altura del cielo, que además es donde
+     está en la referencia de noche, y la subida deja de leerse.
+     Medido: el mayor cambio de color en un minuto queda en el
+     crepúsculo, que es donde tiene que estar. */
   /* La primera noche, la de las nueve, conserva rescoldo del ocaso: su
      banda baja tira a ciruela cálida y no al malva frío de las tres.
      Que las dos noches sean distintas es la misma ley que obligó a
      separar la mañana de la tarde — si no, todas las horas oscuras son
      la misma imagen. */
-  h21: { cieloAlto:'#131F3C', cieloBajo:'#553A63', agua:'#122630', altas:'#3B6274',
-         reguero:'#DCCFEE', bruma:'#26355A', acento:'#A8664C', elev:60, int:0.50 },
+  h21: { cieloAlto:'#182448', cieloBajo:'#4A3866', cieloHorizonte:'#7E5E7A',
+         agua:'#16283F', altas:'#3F6480',
+         reguero:'#E0D4F0', bruma:'#28365C', acento:'#A8664C', elev:26, int:0.50 },
 };
 
 /* PENDIENTE (sección 14): sustituir por cálculo real por latitud antes
@@ -86,7 +283,8 @@ export const ATARDECER = 18.1;
    instante del crepúsculo sea el mejor posible. */
 export const CRUCE_TINTA = 0.175;
 
-const CANALES = ['cieloAlto','cieloBajo','agua','altas','reguero','bruma','acento'];
+const CANALES = ['cieloAlto','cieloBajo','cieloHorizonte',
+                 'agua','altas','reguero','bruma','acento'];
 
 const hex = (s) => [
   parseInt(s.slice(1, 3), 16) / 255,
@@ -117,24 +315,60 @@ function paleta(a, b, t) {
   return o;
 }
 
+/* ── LA RAMPA DIURNA, POR TRAMOS ────────────────────────────────────
+   Era un solo tramo de h09 a h15 sostenido en los extremos, y por eso
+   el amanecer no existía: a las 6:30 el `dia` ya vale 1 y la paleta
+   diurna devolvía h09 tal cual, o sea el cielo de las nueve.
+
+   Ahora son cuatro nodos —alba, mañana, tarde, ocaso— y el que toca se
+   busca por tramos. Cada segmento entra y sale con `rampa`, que es un
+   smoothstep, así que el cielo no cambia de golpe en ningún nodo: va
+   cambiando toda la mañana y toda la tarde, que es lo que hace de
+   verdad y lo que separa esto de cuatro habitaciones.
+
+   Fuera del primer y el último nodo se sostiene el extremo. No es
+   pereza: a esas horas manda `dia`, que ya está cruzando hacia la
+   noche, y sostener el ocaso mientras se apaga es exactamente lo que
+   pasa entre las 18:00 y las 19:00. */
+/* EL NODO DE LA TARDE SE VA DE LAS 14:00 A LAS 15:30, y no es un ajuste
+   de gusto: con el nodo en 14, a las 12:00 la paleta ya iba un 59 % hacia
+   la tarde, o sea que a mediodia el cielo bajo ya era durazno. MEDIDO
+   sobre el lienzo: 0.137 de saturacion en todo el cielo y mediana 82 de
+   L* — claro y sin color, que es justo lo que se veia.
+   Un cielo no se entibia a la una: se entibia cuando el sol empieza a
+   bajar. Con el nodo en 15.5 el mediodia se queda en un 39 % de tarde y
+   el azul limpio dura lo que tiene que durar. */
+const DIURNAS = [[6.0, 'h06'], [9.5, 'h09'], [12.3, 'h12'], [15.8, 'h15'], [17.8, 'h18']];
+
+function paletaDiurna(h) {
+  const primera = A[DIURNAS[0][1]];
+  const ultima  = A[DIURNAS[DIURNAS.length - 1][1]];
+  if (h <= DIURNAS[0][0]) return paleta(primera, primera, 0);
+  for (let i = 0; i < DIURNAS.length - 1; i++) {
+    const [h0, k0] = DIURNAS[i], [h1, k1] = DIURNAS[i + 1];
+    if (h <= h1) return paleta(A[k0], A[k1], rampa(h, h0, h1));
+  }
+  return paleta(ultima, ultima, 0);
+}
+
 /** En qué punto del ciclo de cielos cae una hora, de 0 a 4.
 
     0 = alba · 1 = día · 2 = ocaso · 3 = noche · 4 ≡ 0 otra vez.
 
-    Devuelve un número CONTINUO a propósito: 1.5 no es un cielo, es
-    medio camino entre el día y el ocaso, y el shader mezcla las dos
-    láminas con esa fracción. Así el cielo no cambia nunca de golpe —
-    va cambiando toda la tarde, que es lo que hace de verdad.
+    Devuelve un número CONTINUO a propósito, pero el 1 se SOSTIENE de
+    7:00 a 17:00: el día entero usa la misma lámina, igual que usa la
+    misma paleta. Antes el atlas seguía girando aunque el color ya no:
+    a las 9 aún era medio alba y a las 15 ya era medio ocaso. Era otra
+    forma del mismo error.
 
-    Los anclajes son las horas reales del sitio: el alba en AMANECER y
-    el ocaso en ATARDECER, no en números redondos. El mediodía cae
-    donde cae. */
+    Las fundidas viven solo donde hay un cambio físico de atmósfera:
+    noche→alba→día entre 5:00 y 7:00, y día→ocaso→noche entre
+    17:00 y 19:12. Dentro del día se mueve el sol, no el cielo. */
 export function cicloCielo(h) {
   const hh = ((h % 24) + 24) % 24;
-  const MEDIODIA = (AMANECER + ATARDECER) / 2;
   const nodos = [
-    [AMANECER, 0], [MEDIODIA, 1], [ATARDECER, 2],
-    [ATARDECER + (24 - ATARDECER + AMANECER) / 2, 3], [AMANECER + 24, 4],
+    [AMANECER, 0], [7.0, 1], [17.0, 1], [ATARDECER, 2], [19.2, 3],
+    [AMANECER - 0.9 + 24, 3], [AMANECER + 24, 4],
   ];
   const t = hh < AMANECER ? hh + 24 : hh;
   for (let i = 0; i < nodos.length - 1; i++) {
@@ -155,13 +389,34 @@ export function luz(horaDecimal) {
     ? rampa(h, AMANECER - ANCHO, AMANECER + ANCHO)
     : 1 - rampa(h, ATARDECER - ANCHO, ATARDECER + ANCHO);
 
-  // Mezcla diurna: 09:00 → 15:00, sostenida en los extremos.
-  const deDia = paleta(A.h09, A.h15, rampa(h, 9, 15));
+  // Mezcla diurna: alba → mañana → tarde → ocaso. Ver paletaDiurna().
+  const deDia = paletaDiurna(h);
 
   /* Mezcla nocturna: recorre el arco del atardecer al amanecer.
      21:00 cae en 0.25 del arco y 03:00 en 0.75. */
   const largoNoche = (ATARDECER > AMANECER) ? (24 - ATARDECER + AMANECER) : 0;
-  const pn = (((h - ATARDECER) + 24) % 24) / largoNoche;
+  let pn = (((h - ATARDECER) + 24) % 24) / largoNoche;
+  /* ── UN CORTE QUE LLEVABA AHÍ DESDE SIEMPRE ──────────────────────
+     De día `pn` se sale de su arco: a las 12:00 vale 1.7, a las 18:00
+     vale 2.03. Como `rampa` lo recorta a 1, la mezcla nocturna se
+     quedaba clavada en h03 —la madrugada que YA PASÓ— durante todo el
+     día, y a las 18:06 en punto el módulo daba la vuelta y `pn` saltaba
+     de 2.03 a 0, o sea de h03 a h21 de un fotograma al siguiente.
+
+     Y no era invisible, precisamente porque cae en el ocaso: ahí `dia`
+     vale 0.5, así que el salto entraba al cuadro a media fuerza.
+     MEDIDO barriendo las 24 h minuto a minuto: 10.1 niveles de 255 en
+     un minuto sobre la franja del horizonte — el mayor cambio de color
+     del día entero, y el único que no era una transición sino un corte.
+     Todo lo demás se movía por debajo de 4.
+
+     Se arregla haciendo que `pn` VUELVA despacio a lo largo del día en
+     vez de dar la vuelta de golpe. Da exactamente igual lo que valga
+     mientras hay sol —la mezcla nocturna pesa (1 − dia), o sea cero—,
+     pero así llega a 0 justo en el ocaso y a 1 justo en el amanecer, y
+     los dos empalmes quedan continuos. Comprobado en los dos extremos:
+     en 5.90 y en 18.10 las dos ramas dan el mismo número. */
+  if (pn > 1) pn = 1 - limita((h - AMANECER) / (ATARDECER - AMANECER));
   const deNoche = paleta(A.h21, A.h03, rampa(pn, 0.25, 0.75));
 
   const L = {};
@@ -218,10 +473,20 @@ export function aplicar(L, escribirLavado = true) {
      Este valor por compresión es solo el respaldo sin WebGL. */
   if (escribirLavado) {
     r.style.setProperty('--lavado', (k * 0.30).toFixed(3));
-    r.style.setProperty('--lavado-color', L.tinta === 'clara' ? '#0B141A' : '#F6F9FA');
+    /* La tinta del hero ya es blanca de forma estable. Incluso en el
+       respaldo sin WebGL, el lavado que la sostiene tiene que ser oscuro;
+       un lavado claro debajo de letra blanca borraria las dos cosas. */
+    r.style.setProperty('--lavado-color', '#0B141A');
   }
   r.style.setProperty('--cielo-alto', aCss(alto));
   r.style.setProperty('--cielo-bajo', aCss(bajo));
+  /* La franja del horizonte también se comprime hacia el medio cerca
+     del cruce de tinta, por lo mismo que las otras dos: sin WebGL el
+     respaldo CSS tiene que hacer exactamente lo que hace el shader o
+     el crepúsculo queda ilegible en el único caso en que la pintura
+     no está para salvarlo. */
+  r.style.setProperty('--cielo-horizonte',
+                      aCss(mezcla(L.cieloHorizonte, medio, k * 0.7)));
   r.style.setProperty('--agua',       aCss(L.agua));
   r.style.setProperty('--agua-altas', aCss(L.altas));
   r.style.setProperty('--reguero',    aCss(L.reguero));

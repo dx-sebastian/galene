@@ -1,0 +1,57 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Nodo — LA TARJETA DE UN COMENTARIO. Solo la tarjeta.
+
+   Existe aparte de `Comentario.astro` por una razón de estructura y no
+   de gusto: un comentario y sus respuestas tienen que ir dentro del
+   MISMO <li> para que el árbol sea válido, y un componente de Astro no se
+   puede llamar a sí mismo sin importarse a sí mismo. Partido en dos —la
+   tarjeta aquí, el árbol allí— no hace falta recursión ninguna y tampoco
+   se duplica una línea de marcado.
+
+   DOS COLUMNAS: EL SELLO EN SU CANAL Y TODO LO DEMÁS AL LADO. El sello NO
+   va dentro de la cabecera. Puesto ahí, la garza solo mide lo que mide la
+   fila del nombre y el texto vuelve a empezar debajo, pegado al borde: se
+   lee como un párrafo con un icono encima. Con el sello en su propia
+   columna, el nombre, el texto y los votos comparten una sola sangría, y
+   la columna de la izquierda queda libre para que la raíz de las
+   respuestas baje por ella. Es la maqueta de los hilos de las redes, y se
+   usa aquí por lo que resuelve.
+
+   LA FILA DE ABAJO ES LA DE REDDIT Y NADA MÁS: votos y responder. Sin
+   compartir, sin guardar, sin premios, sin reacciones.
+
+   `esAutora` es la única insignia de toda la página: quien abrió el hilo,
+   cuando vuelve a hablar dentro de él. No hay karma, ni medallas, ni
+   antigüedad. Un foro que reparte puntos convierte acompañar en competir.
+   ═══════════════════════════════════════════════════════════════════ */
+import Sello from './Sello.astro';
+import Votos from './Votos.astro';
+
+const { c } = Astro.props;
+---
+
+<article class="nodo__caja">
+  <Sello autora={c.autora} />
+
+  <div class="nodo__col">
+    <header class="nodo__cabeza">
+      <span class:list={['nodo__autora', c.autora.anonima && 'nodo__autora--anonima']}>
+        {c.autora.nombre}
+      </span>
+      {c.autora.esAutora && <span class="nodo__insignia">abrió el hilo</span>}
+      <span class="nodo__cuando">{c.cuando}</span>
+    </header>
+
+    <p class="nodo__texto">{c.texto}</p>
+
+    <div class="nodo__pie">
+      <Votos votos={c.votos} compacto={true} />
+      {/* «Responder» es un ENLACE al compositor, no un botón: así
+          funciona sin JavaScript y no promete un campo que se abre en
+          sitio. Lo que hay al llegar allí es la verdad sobre que
+          todavía no hay servidor. */}
+      <a class="nodo__responder" href="#escribir">Responder</a>
+    </div>
+  </div>
+</article>

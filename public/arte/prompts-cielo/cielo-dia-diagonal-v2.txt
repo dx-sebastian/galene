@@ -1,0 +1,43 @@
+Use case: precise-object-edit
+Asset type: grayscale value plate for the animated Galene website hero,
+later recolored by a WebGL shader.
+
+Input images: Image 1 is the overall hero reference and is used only for
+target atmosphere and placement context. Image 2 is the edit target and
+the authoritative cloud composition.
+
+Primary request: Reproduce the watercolor cloud painting from Image 2 as
+a clean grayscale value plate. Preserve its exact broad diagonal
+composition: one continuous, majestic cumulus mass rising from the lower
+left through the center to a tall upper-right tower, plus the separate
+very low distant cloud band across the bottom. Keep the large clean open
+area above and left. Preserve the hand-painted rough cotton-paper
+granulation, broken dry edges, soft lost edges, lit white faces, and
+blue-gray undersides.
+
+Scene/backdrop: perfectly flat solid pure black (#000000), used only as a
+luminance matte. It must be uniform edge to edge with no gray vignette,
+glow, gradient, texture, halo, light spill, floor plane, sky, or horizon.
+
+Style/medium: real loose watercolor study, mineral pigments, one-pass
+brushwork; never photographic or digital airbrush.
+
+Composition/framing: landscape 3:2, same crop and placement as Image 2;
+no cloud may touch the top, left, or right frame edges; the bottom distant
+band may approach the bottom edge.
+
+Color palette: strictly neutral grayscale only. White paper-reserve faces,
+cool middle gray, deep blue-gray shadows; no blue, cream, pink, gold, or
+other chroma.
+
+Constraints: preserve Image 2's cloud silhouettes and relative scale; no
+extra clouds except the existing distant bottom band; no sun, landscape,
+water, birds, text, signature, border, or watermark.
+
+Avoid: background glow, cloudy gray background, vignette, soft-focus halo,
+photorealism, CGI, cotton-wool rendering, overworked detail, crisp digital
+outlines, colored pixels.
+
+Post-processing: convert the pure-black matte to alpha with a smooth
+0–32 luminance ramp, force RGB to neutral luminance, then place the result
+in the upper-right cell of cielo-atlas-v2.webp.

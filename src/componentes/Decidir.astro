@@ -81,7 +81,11 @@ const JIRONES = [
         contestarla. Se rompe en el tercer tiempo — no se borra, se
         rompe, porque lo que le pasa a esa respuesta es que no se
         sostiene, no que sea mentira. */}
-    <p class="decidir__si" data-humo-si>
+    {/* (Llevaba `data-humo-si`: el ente se posaba sobre esta palabra
+        antes de que se rompiera. El ente se retiró y el atributo con
+        él. La rotura NO era suya —sale de `--avance`, que escribe
+        js/decidir.js— así que aquí no cambia un solo fotograma.) */}
+    <p class="decidir__si">
       {SI.map((letra, i) => (
         <span class="decidir__pieza" style={`--i:${i}`}>
           {/* La letra de verdad: la que se lee y la que se oye. */}
