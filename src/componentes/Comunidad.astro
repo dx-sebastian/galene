@@ -1,0 +1,322 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Comunidad — EL MANGLAR.
+
+   LA MECÁNICA ES LA DE REDDIT, y se pidió así: hilos con etiqueta,
+   flecha arriba y flecha abajo con un solo marcador, comentarios con
+   respuestas anidadas, y ordenar por nuevos o por votados. Nada de
+   reacciones y nada de compartir.
+
+   Lo que se queda del sitio, y por qué:
+
+     1 · EL PIE DE UNA TARJETA TIENE DOS COSAS: votos y respuestas. Sin
+         compartir —de una página sobre sumisión química no se reenvía a
+         nadie— y sin guardar ni premios, que es lo que convierte un foro
+         en un marcador de puntos.
+
+     2 · SE PUEDE ORDENAR POR QUIÉN ESTÁ SOLA. «Sin responder» saca
+         arriba los hilos que nadie ha contestado, y es el único orden
+         con una razón moral detrás: los otros dos amplifican lo que ya
+         tiene compañía. Por eso es el que lleva su explicación en
+         pantalla y su propio color.
+
+     3 · DOS NIVELES DE RESPUESTA Y SE ACABA. Ver Comentario.astro.
+
+     4 · NADA QUE ACUMULAR. Sin karma, sin medallas, sin antigüedad, sin
+         rachas. La única insignia dice «abrió el hilo», y es
+         información, no premio.
+
+   Y QUEDA ANOTADO EL REPARO, para quien lea esto dentro de un año: la
+   regla 8 del proyecto dice que nadie es castigado por su contexto, y la
+   flecha de bajar es lo único de esta página que puede hacer eso. Se
+   implementa porque se pidió; lo que sí se cuidó es que su color sea el
+   azul apagado de «quizás» del reloj y no el rojo del sitio, que está
+   reservado al daño.
+
+   MATERIAL PRESTADO, CERO LÁMINAS NUEVAS. El fondo son las mismas clases
+   del fondo de las herramientas (`.herramientas__fondo`, papel + dos
+   aguadas pintadas), los sellos son las seis garzas posadas del manglar
+   del hero, la viñeta de las reglas es el filete 5 que ya usan las
+   tarjetas de consejos, y el canto de arriba es el mismo `papel-barbas`.
+   La página no estrena ni un archivo.
+
+   `data-seccion-hoja` es el ancla de los DOS módulos de la hoja, y con
+   eso esta página hereda gratis los dos gestos que ya existen: las
+   aguadas se descuelgan al bajar y derivan con el puntero
+   (js/paralaje.js), y cada hilo llega mojado y se seca antes de entrar
+   en la zona de lectura (js/desplazamiento.js). Este componente no sabe
+   nada de ninguno de los dos: pone el ancla y las clases, y los módulos
+   encuentran su trabajo solos.
+   ═══════════════════════════════════════════════════════════════════ */
+import Comentario from './Comentario.astro';
+import Sello from './Sello.astro';
+import Votos from './Votos.astro';
+import { HILOS, ETIQUETAS, respuestasDe } from '../datos/comunidad.js';
+
+const deEtiqueta = (id) => ETIQUETAS.find((e) => e.id === id) || ETIQUETAS[0];
+
+/* Las rutas NUNCA se escriben a mano: el sitio se publica bajo /galene
+   y en local bajo /. Un `href="/#reloj"` funciona en el portátil y se
+   rompe en producción, que es la peor forma de romperse. */
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<section class="comunidad" id="comunidad" data-seccion-hoja>
+
+  {/* EL FONDO. Las mismas cuatro capas de la sección de herramientas y
+      con los mismos nombres de clase, así que hereda entero su
+      tratamiento: papel en multiply de día y screen de noche, aguadas
+      pintadas con la máscara elíptica que les come el canto, y el rojo
+      solo en el flanco derecho, fuera del ancho de lectura. Decorativo
+      entero: aria-hidden y sin un dato dentro. */}
+  <div class="herramientas__fondo" aria-hidden="true">
+    <div class="fondo__papel"></div>
+    <div class="fondo__capa fondo__capa--alta"    data-hondo="0.94"></div>
+    <div class="fondo__capa fondo__capa--media"   data-hondo="0.86"></div>
+    <div class="fondo__capa fondo__capa--cercana" data-hondo="0.66"></div>
+  </div>
+
+  {/* ── LA CABECERA ──────────────────────────────────────────────────
+      El H1 lleva la palabra que se busca —«comunidad»— y debajo va lo
+      que de verdad hace falta saber antes de leer el primer hilo: que
+      aquí nadie pregunta qué pasó. Es la regla 4 del proyecto puesta
+      como norma de la casa, y va ARRIBA porque es la que decide si
+      alguien se atreve a escribir. */}
+  <header class="comunidad__cabecera">
+    <p class="comunidad__sobre">El manglar</p>
+    <h1 class="comunidad__titulo">Comunidad</h1>
+
+    <svg class="comunidad__filete" viewBox="0 0 44 4" aria-hidden="true" focusable="false">
+      <path d="M1 2.5 C 9 1.3, 17 3.1, 25 2 S 38 2.1, 43 2.6"
+            fill="none" stroke="currentColor" stroke-width="1.1"
+            stroke-linecap="round" vector-effect="non-scaling-stroke" />
+    </svg>
+
+    <p class="comunidad__declaracion">Lo que aprendimos después, contado
+      por quienes ya pasaron por ahí.</p>
+
+    <ul class="comunidad__casa">
+      <li>Aquí <strong>nadie pregunta qué pasó</strong>.</li>
+      <li>Se puede escribir sin nombre, y no hay que explicar por qué.</li>
+      <li>No se vota en contra de nadie: se acompaña o se deja pasar.</li>
+    </ul>
+  </header>
+
+  {/* ── EL MANDO ─────────────────────────────────────────────────────
+      Tres órdenes y ningún filtro por defecto. «Sin responder» lleva su
+      propio pie porque es el que no se explica solo, y es el que
+      justifica que esta página no tenga un «lo mejor».
+
+      La fila de etiquetas nace OCULTA y la enciende js/comunidad.js. Un
+      chip que no filtra porque el script no llegó es un control muerto,
+      y este proyecto no deja controles muertos en pantalla: sin
+      JavaScript la lista sale entera y en orden de llegada, que es un
+      estado correcto. */}
+  <div class="mando">
+    <div class="mando__orden" role="group" aria-label="Ordenar los hilos">
+      <button class="orden" type="button" data-orden="recientes" aria-pressed="true">
+        Nuevos
+      </button>
+      <button class="orden" type="button" data-orden="votados" aria-pressed="false">
+        Más votados
+      </button>
+      <button class="orden orden--solas" type="button" data-orden="solas" aria-pressed="false">
+        Sin responder
+      </button>
+    </div>
+
+    <div class="mando__etiquetas" hidden="hidden">
+      <button class="chip chip--todas" type="button" data-etiqueta="" aria-pressed="true">
+        Todo
+      </button>
+      {ETIQUETAS.map((e) => (
+        <button class="chip" type="button" data-etiqueta={e.id} aria-pressed="false"
+                style={`--pigmento: ${e.pigmento}`} title={e.pie}>
+          {e.nombre}
+        </button>
+      ))}
+    </div>
+
+    <p class="mando__nota" data-nota-orden hidden="hidden">Arriba los hilos
+      que todavía no ha contestado nadie.</p>
+  </div>
+
+  {/* ── ESCRIBIR ─────────────────────────────────────────────────────
+      Y AQUÍ NO SE FINGE. Va como <details>, así que abre y cierra sin
+      JavaScript, y lo que dice al abrirse es la verdad: este sitio no
+      tiene servidor —ni base de datos, ni cuentas, ni analítica— así
+      que no hay dónde guardar un mensaje. El botón de publicar está
+      apagado y explica por qué.
+
+      Se puede escribir en el campo de todas formas. No es un adorno:
+      ordenar lo que uno quiere decir sirve aunque no se envíe, y lo
+      escrito se puede copiar y llevar a donde sí haya alguien
+      escuchando. Lo que no se hace es prometer que llega. */}
+  <details class="escribir" id="escribir">
+    <summary class="escribir__senuelo">
+      <Sello autora={{ nombre: 'quien llega', pose: 'mira-abajo', mirar: 1 }} />
+      <span class="escribir__frase">Escribir en la comunidad…</span>
+    </summary>
+
+    <div class="escribir__panel">
+      <p class="escribir__aviso"><strong>Esto es una maqueta.</strong> Galene
+        no tiene servidor, ni cuentas, ni base de datos, y eso es una
+        decisión: lo que se escribe sobre salud o vida sexual es dato
+        sensible, y este proyecto eligió no guardarlo. Mientras no exista
+        un sitio donde recibirlo con ese cuidado, aquí no se publica nada.</p>
+
+      <label class="escribir__campo">
+        <span class="visualmente-oculto">Lo que quieres decir</span>
+        <textarea rows="4" placeholder="Se queda en tu pantalla."></textarea>
+      </label>
+
+      <div class="escribir__fila">
+        <label class="interruptor">
+          <input type="checkbox" checked />
+          <span>Publicar sin nombre</span>
+        </label>
+        <button class="boton" type="button" disabled
+                title="No hay servidor: todavía no hay dónde publicarlo.">
+          Publicar
+        </button>
+      </div>
+    </div>
+  </details>
+
+  {/* ── LOS HILOS ────────────────────────────────────────────────────
+      Las cuentas viajan en data-* para que el orden y el filtro sean
+      aritmética sobre el DOM y no otra copia de los datos en el
+      cliente. `data-indice` guarda el orden de llegada: es a lo que
+      vuelve «Recientes» sin tener que interpretar las cadenas de
+      tiempo, que están escritas para leerse y no para calcular. */}
+  <ol class="hilos" id="hilos">
+    {HILOS.map((h, i) => {
+      const et = deEtiqueta(h.etiqueta);
+      const n = respuestasDe(h);
+      return (
+        <li class="hilos__item"
+            data-indice={i}
+            data-etiqueta={h.etiqueta}
+            data-minutos={h.minutos}
+            data-votos={h.votos}
+            data-respuestas={n}>
+          {/* EL PIGMENTO SE DECLARA UNA VEZ, EN LA TARJETA, y desciende
+              por herencia al canto pintado del borde izquierdo y a la
+              etiqueta. Puesto solo en la etiqueta —donde estaba— el
+              canto tenía que repetir el color, y dos declaraciones del
+              mismo color son dos colores el día que alguien toque una. */}
+          <article class="hilo" id={`hilo-${h.id}`} style={`--pigmento: ${et.pigmento}`}>
+
+            {/* EL SELLO VA EN SU PROPIA COLUMNA, fuera de la cabecera:
+                así el nombre, el título, el cuerpo, los botones y la
+                hebra comparten una sola sangría, y el canal de la
+                izquierda queda libre para que la raíz de las respuestas
+                baje por debajo de la garza. Dentro de la cabecera, la
+                garza solo medía lo que mide la fila del nombre y el
+                título volvía a empezar pegado al borde. */}
+            <Sello autora={h.autora} grande={true} />
+
+            <div class="hilo__col">
+              <header class="hilo__cabeza">
+                <span class:list={['hilo__autora', h.autora.anonima && 'hilo__autora--anonima']}>
+                  {h.autora.nombre}
+                </span>
+                <span class="hilo__cuando">{h.cuando}</span>
+                <span class="etiqueta">{et.nombre}</span>
+              </header>
+
+              <h2 class="hilo__titulo">{h.titulo}</h2>
+
+              <div class="hilo__cuerpo">
+                {h.cuerpo.map((p) => <p>{p}</p>)}
+              </div>
+
+              {/* LA FILA DE ABAJO, LA DE REDDIT: votos y respuestas.
+                  Nada más. No hay compartir, ni guardar, ni premios, ni
+                  reacciones — y que no haya un botón de compartir en un
+                  sitio sobre sumisión química es además la única postura
+                  posible: de aquí nadie reenvía a nadie a ninguna parte.
+
+                  ── POR QUÉ ESTO NO ES UN <details> ──────────────────
+                  Lo fue, y se cambió por una razón de maqueta que no
+                  tiene vuelta: el contenido de un <details> vive DENTRO
+                  de la caja de su <summary>, así que el contador de
+                  respuestas no puede estar en la misma fila que las
+                  flechas sin que la lista entera de comentarios se meta
+                  en esa fila también. En Reddit las dos cosas van juntas
+                  abajo y los comentarios se despliegan a lo ancho de la
+                  tarjeta, y eso pedía separar el botón de su panel.
+
+                  Lo que se pierde con el cambio es el plegado sin
+                  JavaScript, y se recupera al revés: la hebra nace
+                  ABIERTA (`aria-expanded="true"`, sin `hidden`), y es
+                  js/comunidad.js quien la pliega al cargar. Sin script,
+                  la página sale con todos los comentarios a la vista —
+                  larga, pero entera y legible. Nunca hay un botón que no
+                  hace nada, que es la única cosa que este proyecto no se
+                  permite. */}
+              <div class="hilo__pie">
+                <Votos votos={h.votos} />
+
+                {n > 0 ? (
+                  <button class="hebra__abrir" type="button"
+                          aria-expanded="true" aria-controls={`hebra-${h.id}`}>
+                    <svg class="hebra__globo" viewBox="0 0 16 14" aria-hidden="true" focusable="false">
+                      {/* Un globo de diálogo dibujado a mano: la línea no
+                          cierra del todo por abajo, como no cierra un
+                          trazo de pincel al levantarlo. */}
+                      <path d="M2.2 3.4 C 2.2 2.2, 3.2 1.5, 4.6 1.5 L11.4 1.5
+                               C 12.8 1.5, 13.8 2.3, 13.8 3.5 L13.8 7.8
+                               C 13.8 9, 12.8 9.8, 11.4 9.8 L6.4 9.8
+                               L3.4 12.4 L3.7 9.7 C 2.7 9.4, 2.2 8.7, 2.2 7.7 Z"
+                            fill="none" stroke="currentColor" stroke-width="1.4"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            vector-effect="non-scaling-stroke" />
+                    </svg>
+                    <span class="hebra__cuenta">{n}</span>
+                    <span>{n === 1 ? 'respuesta' : 'respuestas'}</span>
+                  </button>
+                ) : (
+                  /* SIN RESPUESTA, Y SE DICE EN VOZ BAJA. Ni aviso rojo
+                     ni icono de alerta: no es un error del sitio, es
+                     alguien esperando. El único énfasis es que la frase
+                     existe y que al lado hay una puerta para contestar. */
+                  <p class="hilo__sola">
+                    Nadie ha respondido todavía.
+                    <a class="hebra__responder" href="#escribir">Contestar</a>
+                  </p>
+                )}
+              </div>
+
+              {n > 0 && (
+                <div class="hebra" id={`hebra-${h.id}`}>
+                  <ol class="hebra__lista">
+                    {h.comentarios.map((c) => <Comentario c={c} />)}
+                  </ol>
+
+                  <p class="hebra__pie">
+                    <a class="hebra__responder" href="#escribir">Escribir en este hilo</a>
+                  </p>
+                </div>
+              )}
+            </div>
+          </article>
+        </li>
+      );
+    })}
+  </ol>
+
+  {/* ── EL PIE ───────────────────────────────────────────────────────
+      Lo último de la página no es la comunidad: es la ayuda. Quien haya
+      bajado leyendo diez hilos tiene que salir de aquí con la ruta a
+      mano, no con la sensación de que esto era el destino. */}
+  <footer class="comunidad__pie">
+    <p class="comunidad__pie-frase">Si estás en medio de algo ahora mismo,
+      la ayuda no está aquí: está en la portada.</p>
+    <p class="comunidad__pie-enlaces">
+      <a href={base + '#reloj'}>Ver qué sigue abierto</a>
+      <a href={base + '#mapa'}>Dónde ir en mi ciudad</a>
+      <a href={base + '#salir'}>Que alguien venga por mí</a>
+    </p>
+  </footer>
+</section>

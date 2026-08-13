@@ -1,0 +1,54 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Comentario — UN NODO DE LA HEBRA Y SUS RESPUESTAS.
+
+   DOS NIVELES Y SE ACABA, y es una decisión de fondo, no un límite
+   técnico: un árbol de seis niveles como los de Reddit convierte una
+   conversación en un juicio con réplicas de la réplica, y el que más
+   aguanta escribiendo gana. Aquí una respuesta a una respuesta ya es el
+   final de la rama. Lo que venga después es un hilo nuevo, que es
+   además la forma de que lo lea alguien más.
+
+   LA RAÍZ QUE CUELGA A LA IZQUIERDA de las respuestas no es un
+   `border-left`: un borde de 2 px tiene grosor constante y extremos
+   exactos, y es la línea que dibuja un ordenador. Aquí es un trazo
+   dibujado a mano que ondula, y por eso las respuestas parecen colgar
+   de una raíz de manglar y no de una regla.
+
+   Y VA EN SVG EN LÍNEA, no con la lámina `filete-5.webp` que usan las
+   tarjetas de consejos. La razón es medible: esa lámina es un trazo
+   HORIZONTAL de 628×33, y estirarla en una caja de 10 px de ancho por
+   200 de alto comprime su ondulación —que vive a lo largo— hasta
+   hacerla desaparecer, y estira su grosor a lo alto. Lo que queda es
+   una barra difusa, no un trazo. Dibujado aquí, el camino ya nace
+   vertical: `preserveAspectRatio="none"` lo alarga hasta donde llegue la
+   hebra y `vector-effect="non-scaling-stroke"` mantiene el grosor en
+   1.3 px por muy larga que sea. Es el mismo truco que la ola del
+   logotipo, y por lo mismo hereda la tinta con `currentColor`.
+   ═══════════════════════════════════════════════════════════════════ */
+import Nodo from './Nodo.astro';
+
+const { c } = Astro.props;
+const hijas = c.respuestas || [];
+---
+
+<li class="nodo">
+  <Nodo c={c} />
+
+  {hijas.length > 0 && (
+    <ol class="hebra__lista hebra__lista--hija">
+      <svg class="raiz" viewBox="0 0 10 120" preserveAspectRatio="none"
+           aria-hidden="true" focusable="false">
+        <path d="M6.4 0 C 3.2 16, 8.2 34, 4.4 52 C 1.4 68, 7.6 86, 3.6 104
+                 C 2.4 111, 3.2 116, 4.8 120"
+              fill="none" stroke="currentColor" stroke-width="1.3"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      </svg>
+      {hijas.map((h) => (
+        <li class="nodo nodo--hija">
+          <Nodo c={h} />
+        </li>
+      ))}
+    </ol>
+  )}
+</li>
