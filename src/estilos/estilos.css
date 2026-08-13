@@ -1900,8 +1900,16 @@ body {
 .mapa__lienzo:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; }
 
 /* El viraje de cada mapa, sobre las teselas y solo sobre ellas. */
+/* Emergencia se aprieta un poco más que los otros dos: es donde hace
+   falta distinguir una calle de otra.
+
+   Y OJO CON EL CONTRASTE, que ya costó una vuelta: la tesela clara es
+   casi toda blanco, y `contrast()` pivota sobre el gris medio, así que
+   subirlo empuja los grises claros —o sea las calles— hacia el blanco y
+   BORRA el mapa. Con 1.42 la caja se quedó en blanco. Lo que funciona
+   es bajar primero el brillo y apretar poco. */
 .mapa[data-modo="emergencia"] .leaflet-tile-pane {
-  filter: saturate(0.55) contrast(1.16) brightness(0.99);
+  filter: saturate(0.62) brightness(0.94) contrast(1.12);
 }
 .mapa[data-modo="luz"] .leaflet-tile-pane {
   filter: grayscale(1) sepia(0.55) saturate(0.8) brightness(1.04) contrast(0.96);

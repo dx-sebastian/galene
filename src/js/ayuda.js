@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════════
    ayuda.js — de dónde salen los puntos del mapa de emergencia.
 
    POR QUÉ NO ESTÁN ESCRITOS A MANO. La regla de lugares.js es que aquí
@@ -38,19 +38,23 @@ const ESPEJOS = [
   'https://overpass.private.coffee/api/interpreter',
 ];
 
-const SEGUNDOS = 25;
+const SEGUNDOS = 40;
 const TOPE = 1000;
 
 /* Radio de búsqueda alrededor del centro. Sale del zoom con el que se
    encuadra cada ciudad, que ya lleva codificado su tamaño: Bogotá se
-   mira desde 12 y pide 14 km; Mitú se mira desde 14 y con 5 km sobra.
-   Pedir 14 km alrededor de Mitú no trae más hospitales, trae selva.
+   mira desde 12 y pide 11 km; Mitú se mira desde 14 y con 5 km sobra.
+   Pedir 11 km alrededor de Mitú no trae más hospitales, trae selva.
+
+   Los 14 km de Bogotá se bajaron a 11 porque esa consulta se pasaba de
+   los veinticinco segundos y se caía entera: más radio no sirve de nada
+   si la respuesta no llega.
 
    Cuando el centro es ELLA y no una ciudad, el radio baja a seis
    kilómetros: lo que hace falta es lo que tiene cerca, no el censo
    sanitario del área metropolitana. */
 const radioDe = (ciudad) =>
-  ciudad.propia ? 6000 : ({ 12: 14000, 13: 9000, 14: 5000 }[ciudad.zoom] || 9000);
+  ciudad.propia ? 6000 : ({ 12: 11000, 13: 8000, 14: 5000 }[ciudad.zoom] || 8000);
 
 /* Las etiquetas que se piden, agrupadas por clave para que la consulta
    sea corta. Se derivan de CAPAS: si mañana alguien añade una capa en
