@@ -51,10 +51,29 @@
        cuánto tarda en pasar.
    ═══════════════════════════════════════════════════════════════════ */
 
+import { viewportHeight } from './viewport.js';
+
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
 const escenas = [...document.querySelectorAll('[data-escena]')].map((el) => ({
   el,
   pegada: el.hasAttribute('data-pegada'),
+  /* LA CURVA — cómo se reparte el avance dentro del recorrido.
+
+     Por defecto, LINEAL: la escena avanza lo mismo por cada píxel de
+     scroll. Es lo correcto casi siempre, porque lo que se está contando
+     es el propio scroll y falsearlo se nota como un tirón.
+
+     `data-curva="salida"` reparte el avance HACIA EL PRINCIPIO: el
+     primer cuarto del recorrido se lleva casi la mitad del gesto y el
+     final se acerca despacio. Existe por la boca, y por una razón que
+     no es de gusto: con reparto lineal el papel tardaba media pantalla
+     larga en asomar, así que quien bajaba tres dedos veía mar, mar y
+     mar, y la hoja parecía llegar cuando ya había dejado de mirar. Lo
+     que tiene que sentirse de inmediato es que ABAJO HAY PAPEL. Con
+     esta curva la hoja salta en cuanto se toca la rueda y luego se
+     asienta, que además es lo que hace una aguada de verdad: entra de
+     golpe y se para sola. */
+  curva: el.dataset.curva || 'lineal',
   /* Cuánto de pantalla tarda una escena AL PASO en completarse, contado
      desde que su canto superior toca el borde inferior. 0.62 de pantalla:
      para cuando el bloque está centrado, la escena ya terminó. Ese es el
@@ -96,13 +115,17 @@ function arrancar() {
            clavada durante todo el tramo que sobra por encima de una
            pantalla, así que `avance` es exactamente qué parte de la
            escena toca. */
-        p = -r.top / Math.max(1, r.height - innerHeight);
+        p = -r.top / Math.max(1, r.height - viewportHeight());
       } else {
         /* Al paso: de 0 cuando el canto toca el borde inferior a 1
            cuando ha subido `recorrido` pantallas. */
-        p = (innerHeight - r.top) / Math.max(1, innerHeight * e.recorrido);
+        p = (viewportHeight() - r.top) / Math.max(1, viewportHeight() * e.recorrido);
       }
       p = p < 0 ? 0 : p > 1 ? 1 : p;
+      /* La curva se aplica DESPUÉS de recortar a [0,1] y no antes: es
+         un reparto del gesto dentro del recorrido, no una forma de
+         alargarlo. Los dos extremos siguen valiendo 0 y 1 exactos. */
+      if (e.curva === 'salida') p = 1 - (1 - p) * (1 - p);
       /* Al DOM solo si cambió el valor que se va a escribir. Cuatro
         decimales es lo que se escribe, así que es lo que se compara. */
       const v = p.toFixed(4);
@@ -124,6 +147,7 @@ function arrancar() {
     encender();
     addEventListener('scroll', marcar, { passive: true });
     addEventListener('resize', marcar, { passive: true });
+    addEventListener('galene:viewportresize', marcar, { passive: true });
     /* Las láminas mueven la maqueta al cargar; sin esto la primera
        medida se toma contra una página que todavía va a crecer. */
     addEventListener('load', marcar);

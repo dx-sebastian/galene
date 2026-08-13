@@ -186,6 +186,18 @@ uniform sampler2D u_papelTex;
 uniform float u_hayPapel, u_papelTam, u_papelMedia;
 uniform sampler2D u_nubes;
 uniform float u_hayNubes;
+/* La via lactea PINTADA. Es una aguada con salpicado de sal —el gesto
+   que hace un acuarelista para un cielo estrellado— y entra como banda
+   diagonal.
+   VA ENTRE MARCAS, y no basta con el uniforme de siempre: GL cuenta un
+   sampler como activo por estar declarado, aunque solo se lea dentro de
+   una rama que nunca se ejecuta. Cuando no cabe, el bloque se recorta
+   del codigo fuente antes de compilar y manda el campo procedural.
+   Ver recortar(). */
+//#ESTRELLAS
+uniform sampler2D u_estrellas;
+uniform float u_hayEstrellas;
+//#FIN
 uniform sampler2D u_manglarCerca, u_corales, u_luces;
 uniform sampler2D u_astro, u_camino;
 uniform vec3  u_roce;           // x, y en q; z = fuerza del puntero
@@ -196,10 +208,20 @@ uniform vec3  u_coralesCaja;    // alto, base, ancho/alto
 uniform sampler2D u_grafitoTex;
 uniform float u_hayGrafito, u_grafitoMedia;
 uniform vec3  u_grafito;        // ancla v del horizonte dibujado, escala, fuerza
+/* ── LAS GARZAS DEL SHADER, QUE YA NO SE PINTAN AQUI ──────────────
+   Se fueron al DOM: aqui estaban paradas en mar abierto y una garza
+   vadea en somero (ver main.js). main.js dejo de pedir sus laminas, asi
+   que u_hayGarzas lleva tiempo valiendo cero — pero sus dos samplers
+   SEGUIAN contando, porque GL no distingue una rama muerta de una viva.
+   Eran dos unidades de textura de las dieciseis pagando por codigo que
+   no pinta un pixel, y son justo las que le faltaban a la via lactea.
+   El codigo se queda por si algun dia vuelven; recortado, no cuesta. */
+//#GARZAS
 uniform sampler2D u_garzaCerca, u_garzaLejos;
 uniform float u_hayGarzas;
 uniform vec4  u_garzaCercaCaja; // x, alto, hundir, ancho/alto
 uniform vec4  u_garzaLejosCaja;
+//#FIN
 
 #define TAU 6.28318530718
 
@@ -603,7 +625,13 @@ void main(){
        - Respiran, no parpadean. El periodo es de varios segundos y la
          amplitud pequeña: un centelleo rápido sería el «glitch» que la
          regla 2 prohíbe. Cada una en su fase, o titilarían a coro. */
-    float noche = 1.0 - smoothstep(0.20, 0.62, u_int);
+    /* La puerta estaba en (0.20, 0.62): con int 0.50 a las nueve de la
+       noche (h21) eso dejaba el factor de noche en 0.20, o sea que las
+       estrellas y la via lactea apenas se veian a la hora que el sitio
+       muestra por defecto. Las dos anclas nocturnas —h21 e h03— tienen
+       que leer cielo lleno de estrellas; el desvanecido es cosa del
+       crepusculo (int 0.72-0.76), no de la propia noche. */
+    float noche = 1.0 - smoothstep(0.55, 0.85, u_int);
     if (noche > 0.004) {
       /* Rejilla en unidades de ALTO (q), no de uv: si fuera en uv, las
          estrellas se estirarían con la ventana y en apaisado saldrían
@@ -653,14 +681,93 @@ void main(){
          Y mas estrecha (0.17), porque ahora que esta concentrada no
          necesita tanto ancho para leerse. */
       float diag = uv.y + 1.44 * uv.x - 1.555;
-      float via  = exp(-pow(diag / 0.17, 2.0));
-      via *= 0.40 + 0.74 * fbm(vec2(uv.x * 3.4 + 41.0, uv.y * 2.4));
-      via *= smoothstep(0.06, 0.52, gy);
-      via  = clamp(via, 0.0, 1.0);
-      col = mix(col, mix(col, papelBlanco() * vec3(0.90, 0.93, 1.0), 0.55),
-                via * noche * 0.13);
+      /* ── EL PERFIL DE LA BANDA ES BLANDO Y NO TIENE CANTO ──────────
+         Una via lactea no termina, se deshilacha. El exponente por
+         debajo de dos ensancha las faldas, y el ruido de periodo largo
+         se come el borde para que en ningun sitio haya una linea. */
+      float perfil = exp(-pow(abs(diag) / 0.34, 1.7));
+      perfil *= 0.55 + 0.72 * fbm(vec2(uv.x * 2.2 + 41.0, uv.y * 1.6));
+      /* Y NO SE LEVANTA DEL AGUA. La puerta de altura la despegaba de
+         la linea del mar y dejaba una franja muerta entre las dos: en
+         la referencia la banda ENTRA en el agua, que es de donde sale
+         el reflejo. Aqui llega entera hasta abajo y lo unico que la
+         apaga cerca del horizonte es la bruma, que se pinta despues. */
+      perfil = clamp(perfil, 0.0, 1.0);
+      float via = perfil;
+      float viaNucleo = perfil * smoothstep(0.35, 0.95, perfil);
 
-      vec2 rej = vec2(q.x, uv.y) * 145.0;
+      /* ── POR QUE LA LAMINA NO PUEDE DAR LA FORMA DE LA BANDA ───────
+         Estuvo mapeada con un eje corriendo a lo largo de la diagonal y
+         el otro cruzandola: los 896 px de ancho estirados sobre una
+         diagonal larga y los 296 de alto apretados dentro de una franja
+         estrecha. Esa anisotropia es enorme, y lo que le hace al
+         salpicado de sal es convertir cada mota REDONDA en una RAYA en
+         la direccion del estirado. Por eso no se leia como via lactea
+         sino como una pincelada de purpurina cruzando el cuadro: no era
+         cuestion de fuerza ni de color, era el muestreo.
+         Asi que la lamina deja de dar la FORMA y pasa a dar la MATERIA.
+         Se muestrea en coordenadas casi isotropas —la v escalada por la
+         proporcion de la lamina, para que el texel salga cuadrado— y su
+         pigmento MODULA el perfil de arriba. Las motas vuelven a ser
+         redondas, el canto de la banda deja de ser un filo, y lo que
+         aporta la pintura es lo que solo la pintura tiene: los grumos y
+         las vetas de polvo. */
+      float motaVia = 0.0;
+//#ESTRELLAS
+      if (u_hayEstrellas > 0.5) {
+        vec2 lamUV = vec2(q.x * 0.62, uv.y * 1.88);
+        vec3 lam = texture(u_estrellas, lamUV).rgb;
+        /* MEDIDA, la aguada vive entre 0.547 y 0.980 de luminancia con
+           la mediana en 0.806: el pigmento —1 menos eso— solo llega a
+           0.45. La ventana va contra ese rango y no contra [0,1], que
+           es lo que antes la dejaba casi toda multiplicada por cero. */
+        float pig = smoothstep(0.10, 0.42, 1.0 - valor(lam));
+        via = clamp(perfil * (0.45 + 1.20 * pig), 0.0, 1.0);
+        viaNucleo = via * smoothstep(0.35, 0.95, via);
+        /* El salpicado de sal, detectado por CONTRASTE LOCAL y no por
+           brillo absoluto: el papel de la lamina es tan claro como una
+           mota, y con umbral fijo se pintaban zonas enteras. */
+        float e = 0.0022;
+        float vecina = (valor(texture(u_estrellas, lamUV + vec2( e, 0.0)).rgb)
+                      + valor(texture(u_estrellas, lamUV + vec2(-e, 0.0)).rgb)
+                      + valor(texture(u_estrellas, lamUV + vec2(0.0,  e)).rgb)
+                      + valor(texture(u_estrellas, lamUV + vec2(0.0, -e)).rgb)) * 0.25;
+        motaVia = smoothstep(0.02, 0.13, valor(lam) - vecina) * perfil;
+      }
+//#FIN
+      /* Los dos colores de la referencia, uno dentro del otro: el halo
+         va a violeta-lavanda y el corazon a SALMON, no a magenta. Es
+         una diferencia pequena de numeros y grande de lectura — el
+         magenta tira a fucsia y se lee digital; el salmon es el rosa
+         terroso que de verdad tiene el polvo de la via lactea en la
+         foto, y ademas emparenta con el acento calido del cuadro. */
+      /* Y el salmon va SATURADO, no palido: el color tiene que venir
+         del matiz y no de la cantidad. Con un salmon lavado hacia el
+         blanco hacia falta tanta luz para que se notara que la banda
+         salia quemada —medida en 109 de luminancia contra 31 del
+         cielo—, y una via lactea no es un foco. */
+      vec3 tonoHalo   = vec3(0.76, 0.74, 1.00);
+      vec3 tonoNucleo = vec3(1.00, 0.64, 0.54);
+      col = mix(col, mix(col, papelBlanco() * tonoHalo, 0.66),
+                via * noche * 0.15);
+      /* Y el nucleo rosado encima, mas concentrado y mas calido de
+         matiz —el corazon de la galaxia visto de canto, que es magenta
+         antes que azul. Se suma color propio ademas de mezclar, para
+         que de verdad se lea rosado y no solo un blanco mas fuerte. */
+      /* Y el termino ADITIVO pesa mas que el de mezcla, que es lo que
+         faltaba para que el rosa se leyera: mezclar hacia un salmon
+         sobre un cielo cuyo azul es tres veces el rojo sigue dando
+         lavanda —medido, el nucleo daba (105, 97, 124), o sea azul—.
+         Sumar color si mueve el matiz, porque sube el rojo sin tocar el
+         azul. Es ademas como se comporta una luz de verdad. */
+      col = mix(col, papelBlanco() * tonoNucleo, viaNucleo * noche * 0.20);
+      col += tonoNucleo * viaNucleo * noche * 0.17;
+      /* Y las motas de sal encima de todo: son papel reservado, o sea
+         lo mas claro del cuadro, y son lo que hace que la banda se lea
+         como MILES DE ESTRELLAS y no como una nube pintada. */
+      col = mix(col, papelBlanco(), motaVia * noche * 0.85);
+
+      vec2 rej = vec2(q.x, uv.y) * 340.0;
       vec2 celda = floor(rej);
       float luzEstrellas = 0.0;
       vec3 tinteEstrellas = vec3(0.0);
@@ -673,43 +780,78 @@ void main(){
           float h1 = hash(c);
           float h2 = hash(c + 31.7);
           float h3 = hash(c + 74.3);
-          /* Una de cada diez celdas, no una de cada tres: con la
-             rejilla fina, un tercio serían miles de estrellas y el
-             cielo se lee como sal esparcida. Así salen unas cuatrocientas,
-             que es un cielo. */
-          if (h1 > 0.94) {
+          /* ── NO SE REPARTEN PAREJAS, SE APELMAZAN ─────────────────
+             Un umbral fijo da una densidad constante, y eso —aunque
+             sean miles— se lee como una TRAMA: sal esparcida sobre el
+             papel, que es el defecto que este bloque lleva evitando
+             desde el principio. El cielo de verdad tiene grumos y
+             tiene huecos.
+             El umbral lo mueve un ruido de periodo largo, asi que hay
+             zonas donde entra una de cada tres celdas y zonas donde no
+             entra casi ninguna. Baja la cuenta total y sube la
+             sensacion de cantidad, que no es lo mismo. La via lactea
+             sigue apretandolo por su lado. */
+          float cumulo = fbm(vec2(c.x * 0.021 + 3.0, c.y * 0.021 - 8.0));
+          float umbral = mix(0.93, 0.62, smoothstep(0.30, 0.72, cumulo));
+          if (h1 > mix(umbral, umbral - 0.26, via)) {
             vec2 pos = c + vec2(h2, h3);
             float d = length(rej - pos);
             /* Tres tallas. Las grandes son pocas —el cubo hunde la
                distribución hacia lo pequeño— igual que en el cielo. */
-            float talla = 0.12 + 0.22 * pow(hash(c + 12.1), 3.0);
-            /* Dentro de la banda hay mas luz y las estrellas pesan
-               mas: es lo que la separa de una mancha clara. */
-            float brillo = (0.35 + 0.65 * hash(c + 5.5)) * (1.0 + via * 0.85);
+            float talla = 0.10 + 0.22 * pow(hash(c + 12.1), 3.0);
+            /* ── Y NO BRILLAN TODAS IGUAL ─────────────────────────
+               Con un reparto plano el campo entero pesa lo mismo y
+               vuelve a leerse como trama. La cuarta potencia deja la
+               mayoria tenues y saca UNAS POCAS muy vivas, que es la
+               distribucion real de magnitudes: lo que hace que el ojo
+               encuentre donde posarse en vez de resbalar.
+               Dentro de la banda pesan mas: es lo que la separa de una
+               mancha clara. */
+            float brillo = (0.34 + 2.60 * pow(hash(c + 5.5), 4.0))
+                         * (1.0 + via * 1.35);
             /* Respiración lenta, cada una en su fase. */
-            brillo *= 0.78 + 0.22 * sin(u_t * (0.19 + 0.16 * h2) + h3 * TAU);
-            float m = exp(-pow(d / talla, 1.7)) * brillo;
+            brillo *= 0.72 + 0.34 * sin(u_t * (0.19 + 0.16 * h2) + h3 * TAU);
+            /* Núcleo puntiagudo sobre el halo suave: sin esto una
+               estrella grande se lee como mancha borrosa en vez de
+               brillar de verdad. */
+            float nucleo = exp(-pow(d / (talla * 0.32), 1.4)) * brillo * 0.9;
+            float m = exp(-pow(d / talla, 1.7)) * brillo + nucleo;
             luzEstrellas += m;
-            /* Azules y ámbares, con más azules. */
-            tinteEstrellas += m * mix(vec3(0.70, 0.80, 1.00),
-                                      vec3(1.00, 0.86, 0.68),
+            /* Azules y salmones, con más azules. El extremo cálido se
+               lleva al mismo rosa terroso del corazón de la banda en
+               vez de al ámbar de antes: así el campo de estrellas y la
+               vía láctea son la misma paleta y no dos capas pegadas. */
+            tinteEstrellas += m * mix(vec3(0.58, 0.74, 1.00),
+                                      vec3(1.00, 0.78, 0.70),
                                       smoothstep(0.55, 0.95, hash(c + 61.2)));
           }
         }
       }
       if (luzEstrellas > 0.001) {
         vec3 tinte = tinteEstrellas / luzEstrellas;
-        /* Se apagan hacia el horizonte y donde ya hay luz de la luna:
-           una estrella no se ve al lado de la luna, y fingir que sí es
-           la clase de mentira que delata el cuadro entero. */
-        float altura = smoothstep(0.04, 0.46, gy);
+        /* Se apagan donde ya hay luz de la luna: una estrella no se ve
+           al lado de la luna, y fingir que sí es la clase de mentira
+           que delata el cuadro entero.
+           PERO NO SE CORTAN EN EL HORIZONTE. Aqui habia una puerta de
+           altura que las apagaba antes de llegar abajo, y el efecto era
+           una COSTURA: el cielo estrellado terminaba en una raya recta
+           y debajo quedaba una franja lisa hasta el agua. En la
+           referencia las estrellas bajan hasta tocar la linea del mar y
+           lo que las apaga ahi no es una puerta, es la bruma —que ya se
+           pinta despues, encima, y basta—. Se deja solo un pelo de
+           caida para el ultimo pixel. */
+        float altura = smoothstep(-0.02, 0.035, gy);
         float lejosDeLaLuna = smoothstep(0.10, 0.42, length(q - fuenteQ));
         float f = clamp(luzEstrellas, 0.0, 1.0) * noche * altura
                 * mix(0.45, 1.0, lejosDeLaLuna);
         /* Sobre el cielo, no sustituyéndolo: una estrella es papel que
            quedó sin pintar con un toque de color encima, así que se
            mezcla hacia el papel de la hora y no hacia el blanco. */
-        col = mix(col, papelBlanco() * tinte, f * 0.86);
+        col = mix(col, papelBlanco() * tinte, f * 1.0);
+        /* Y las más brillantes ganan un pelo de luz propia encima del
+           mezclado, que es lo que hace que una estrella grande LATA en
+           vez de quedarse en un parche de papel sin pintar. */
+        col += tinte * clamp(luzEstrellas - 0.55, 0.0, 1.4) * noche * altura * 0.5;
       }
     }
 
@@ -1318,10 +1460,100 @@ void main(){
        tres tiras planas y nada más. */
 
 
+    /* NOCHE DEL AGUA, con su propia puerta —la misma curva que apaga
+       las estrellas—, no con diaAgua: diaAgua todavia vale 0.35 a las
+       nueve de la noche (int:0.50), que dejaba pasar un tercio del
+       verde crudo de la lamina. De noche el agua no tiene pigmento
+       propio, solo refleja: la puerta tiene que cerrar de verdad. */
+    float nocheAgua = 1.0 - smoothstep(0.55, 0.85, u_int);
+
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
-       mitad de lo que hace que algo lea acuarela en vez de fotografía. */
-    col += croma(pintura, u_croma * 0.85, u_croma * 3.10);
+       mitad de lo que hace que algo lea acuarela en vez de fotografía.
+       Pero de noche el agua NO tiene pigmento propio, solo refleja
+       —igual que en el manglar—, así que el verde que trae la lámina
+       de origen se apaga casi del todo en vez de pintarse siempre. */
+    col += croma(pintura, u_croma * 0.85, u_croma * 3.10) * mix(0.03, 1.0, 1.0 - nocheAgua);
+
+    /* EL CIELO SE REFLEJA EN EL AGUA. Sin este paso una noche cuajada
+       de estrellas se corta en seco justo en el horizonte, que es lo
+       primero que un ojo real busca en una marina nocturna: la vía
+       láctea repetida, quebrada, bajo la línea del agua.
+       Mismo campo de estrellas del cielo, muestreado con la vertical
+       invertida sobre el horizonte, apagado con la profundidad —una
+       reflejo coherente cerca de la línea, roto por el oleaje en primer
+       plano— y quebrado por la calma del agua como cualquier otro
+       reflejo del cuadro. */
+    if (nocheAgua > 0.004) {
+      float uvEsp = 2.0 * horX - uv.y;
+      vec2 rejR = vec2(q.x, uvEsp) * 340.0;
+      vec2 celdaR = floor(rejR);
+      float luzR = 0.0;
+      vec3 tinteR = vec3(0.0);
+      for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+          vec2 c = celdaR + vec2(float(i), float(j));
+          float h1 = hash(c);
+          if (h1 > 0.62) {
+            float h2 = hash(c + 31.7);
+            float h3 = hash(c + 74.3);
+            vec2 pos = c + vec2(h2, h3);
+            float d = length(rejR - pos);
+            float talla = 0.12 + 0.24 * pow(hash(c + 12.1), 3.0);
+            float brillo = (0.80 + 1.30 * hash(c + 5.5));
+            brillo *= 0.72 + 0.34 * sin(u_t * (0.19 + 0.16 * h2) + h3 * TAU);
+            float m = exp(-pow(d / talla, 1.7)) * brillo;
+            luzR += m;
+            tinteR += m * mix(vec3(0.58, 0.74, 1.00), vec3(1.00, 0.78, 0.70),
+                              smoothstep(0.55, 0.95, hash(c + 61.2)));
+          }
+        }
+      }
+      float profR = horX - uv.y;
+      /* Un reflejo se apaga con la distancia a la linea —cerca es
+         coherente, lejos lo deshace el oleaje— y lo quiebra la calma
+         del agua, igual que el reflejo del manglar. */
+      float apagaProf = smoothstep(0.62, 0.05, profR);
+      float quiebre = mix(0.45, 0.95, cn);
+      if (luzR > 0.001) {
+        vec3 tinteRn = tinteR / luzR;
+        float f = clamp(luzR, 0.0, 1.4) * nocheAgua * apagaProf * quiebre;
+        col = mix(col, papelBlanco() * tinteRn, f * 0.80);
+      }
+
+      /* ── Y LA VIA LACTEA TAMBIEN SE REFLEJA ───────────────────────
+         Es la mitad de lo que hace una marina nocturna, y era lo que
+         faltaba: el agua repetia las estrellas sueltas pero no la
+         banda, asi que la via lactea moria en la linea del horizonte
+         como si el mar no estuviera debajo. Se reconstruye el mismo
+         perfil con la vertical espejada sobre el horizonte —el reflejo
+         se inclina al reves, que es lo que hace un espejo— y se hunde
+         en el agua con la profundidad. */
+      float diagR = uvEsp + 1.44 * uv.x - 1.555;
+      float perfilR = exp(-pow(abs(diagR) / 0.34, 1.7));
+      perfilR *= 0.55 + 0.72 * fbm(vec2(uv.x * 2.2 + 41.0, uvEsp * 1.6));
+      perfilR = clamp(perfilR, 0.0, 1.0);
+      float viaR = perfilR;
+//#ESTRELLAS
+      if (u_hayEstrellas > 0.5) {
+        vec3 lamR = texture(u_estrellas, vec2(q.x * 0.62, uvEsp * 1.88)).rgb;
+        viaR = clamp(perfilR * (0.45 + 1.20
+                   * smoothstep(0.10, 0.42, 1.0 - valor(lamR))), 0.0, 1.0);
+      }
+//#FIN
+      {
+        /* Mas apagado que el cielo —un reflejo devuelve parte de la luz,
+           no toda— y con los mismos dos tonos, para que se lea la misma
+           banda y no una mancha aparte. */
+        float fR = viaR * nocheAgua * apagaProf * quiebre;
+        float nucR = viaR * smoothstep(0.35, 0.95, viaR)
+                   * nocheAgua * apagaProf * quiebre;
+        col = mix(col, mix(col, papelBlanco() * vec3(0.76, 0.74, 1.00), 0.66),
+                  fR * 0.17);
+        col = mix(col, papelBlanco() * vec3(1.00, 0.64, 0.54), nucR * 0.14);
+        col += vec3(1.00, 0.64, 0.54) * nucR * 0.12;
+      }
+    }
 
     /* CRESTA FRIA, SENO CALIDO. Esto es lo que hace que un mar de
        acuarela se vea colorido sin estar saturado, y es ademas lo que
@@ -1993,7 +2225,9 @@ void main(){
      posada en el manglar mediría 25 px: eso no es compañía, es un punto.
      La cercana está en primer plano y acompaña; las lejanas son puro
      gesto de pincel junto al manglar.
-     El sitio nunca afirma quiénes son, y ninguna está en apuros. */
+     El sitio nunca afirma quiénes son, y ninguna está en apuros.
+     (Recortado: ver la nota de los uniformes, arriba.) */
+//#GARZAS
   if (u_hayGarzas > 0.5) {
     /* SOMBRA AZUL, CANTO CALIDO. Una garza no es blanca: es papel con
        una sombra fria dentro y un filo tibio donde le da la luz. Sin
@@ -2033,6 +2267,7 @@ void main(){
       }
     }
   }
+//#FIN
 
   /* ===== EL MANGLAR CERCANO ====================================
      Lo mas proximo del cuadro y lo ultimo que se pinta. No es paisaje:
@@ -2124,9 +2359,20 @@ void main(){
          dos distancias, de dos colores. Se acerca por los tres sitios
          que lo separaban: menos tiron del agua en el extremo oscuro,
          mas madera en el claro, y sobre todo el croma de mas abajo. */
-      vec3 oscuroC = mix(vec3(0.132, 0.098, 0.070), u_agua * 0.36, 0.16);
-      vec3 claroC  = mix(mix(u_bruma, u_altas, 0.30),
+      /* De noche este primer termino se quedaba con su madera calida de
+         siempre —la de mediodia— porque oscuroC/claroC no tenian puerta
+         de hora, a diferencia del manglar del fondo que si oscurece con
+         u_cieloAlto/u_agua. Un primer plano no puede ser mas claro que
+         el fondo a las 9 de la noche: se le da la misma familia nocturna
+         fria, y la madera calida solo vuelve con el sol alto. */
+      float diaCerca = smoothstep(0.55, 0.90, u_int);
+      vec3 oscuroCDia = mix(vec3(0.132, 0.098, 0.070), u_agua * 0.36, 0.16);
+      vec3 claroCDia  = mix(mix(u_bruma, u_altas, 0.30),
                          vec3(0.70, 0.60, 0.43), 0.62) * 0.84;
+      vec3 oscuroCNoche = mix(u_cieloAlto * 0.34, u_agua * 0.30, 0.55) * 0.55;
+      vec3 claroCNoche  = mix(u_cieloBajo, mix(u_altas, u_bruma, 0.25), 0.34) * 0.42;
+      vec3 oscuroC = mix(oscuroCNoche, oscuroCDia, diaCerca);
+      vec3 claroC  = mix(claroCNoche, claroCDia, diaCerca);
       vec3 pk = duotono(tk.rgb, oscuroC, claroC);
       /* ── Y AQUI ESTABA EL GRUESO DEL PROBLEMA ─────────────────────
          1.15 era el multiplicador de croma mas alto de todo el shader —
@@ -2140,7 +2386,7 @@ void main(){
          unico color era el que traia dentro. Ahora que comparte familia
          de madera con el arbol del fondo, el pigmento propio pasa a ser
          un matiz, no el color. */
-      pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 0.34;
+      pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 0.34 * mix(0.15, 1.0, diaCerca);
 
       /* ── LA LUZ QUE DEVUELVE EL AGUA ──────────────────────────────
          Las raices del primer termino se leian como una silueta puesta
@@ -2260,6 +2506,18 @@ void main(){
   salida = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
+/* Quita del codigo del shader los bloques marcados //#ETIQUETA … //#FIN.
+   Existe por una razon concreta: GL cuenta un sampler como ACTIVO por el
+   mero hecho de estar declarado y leido en alguna rama, aunque su
+   bandera este en cero y nunca se ejecute. O sea que una capa apagada
+   sigue gastando unidad de textura, y pasado el limite —dieciseis
+   garantizadas— el enlazado falla y se cae el mar entero. Para que una
+   capa se apague de verdad hay que recortarla ANTES de compilar. */
+function recortar(fuente, etiqueta) {
+  return fuente.replace(
+    new RegExp('^//#' + etiqueta + '$[\\s\\S]*?^//#FIN$', 'gm'), '');
+}
+
 function compilar(gl, tipo, fuente) {
   const s = gl.createShader(tipo);
   gl.shaderSource(s, fuente);
@@ -2292,8 +2550,15 @@ export function crear(lienzo) {
      estrellas se quedan siendo las procedurales, que ya son bonitas. */
   const UNIDADES_MAX = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
 
+  /* Las garzas del shader se recortan SIEMPRE: llevan tiempo sin
+     pintarse y solo estaban reservando dos unidades de textura. Con una
+     de las dos, la via lactea pintada cabe hasta en el aparato del
+     minimo, que era lo que faltaba. */
+  let fuenteFS = recortar(FS, 'GARZAS');
+  const CABE_ESTRELLAS = UNIDADES_MAX > 15;
+  if (!CABE_ESTRELLAS) fuenteFS = recortar(fuenteFS, 'ESTRELLAS');
   const vs = compilar(gl, gl.VERTEX_SHADER, VS);
-  const fs = compilar(gl, gl.FRAGMENT_SHADER, FS);
+  const fs = compilar(gl, gl.FRAGMENT_SHADER, fuenteFS);
   if (!vs || !fs) return null;
 
   const p = gl.createProgram();
@@ -2320,7 +2585,7 @@ export function crear(lienzo) {
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
                    'u_garzaCercaCaja','u_garzaLejosCaja','u_toques','u_viento',
-                   'u_encoge','u_cielo']) {
+                   'u_encoge','u_cielo','u_estrellas','u_hayEstrellas']) {
     u[n] = gl.getUniformLocation(p, n);
   }
 
@@ -2336,17 +2601,23 @@ export function crear(lienzo) {
   const tex = { lejano: texturaVacia(), medio: texturaVacia(),
                 cercano: texturaVacia(), cercanoCalmo: texturaVacia(),
                 manglar: texturaVacia(), papel: texturaVacia(),
-                grafito: texturaVacia(), garzaCerca: texturaVacia(),
-                garzaLejos: texturaVacia(), medioCalmo: texturaVacia(),
+                grafito: texturaVacia(), medioCalmo: texturaVacia(),
                 nubes: texturaVacia(), manglarCerca: texturaVacia(),
                 corales: texturaVacia(), luces: texturaVacia(),
-                astro: texturaVacia(), camino: texturaVacia() };
+                astro: texturaVacia(), camino: texturaVacia(),
+                estrellas: texturaVacia() };
 
+  /* La 7 y la 8 eran de las garzas del shader, que ya no se pintan; la
+     via lactea hereda la 7. */
   const unidades = { lejano: 0, medio: 1, cercano: 2, cercanoCalmo: 3,
                      manglar: 4, papel: 5, grafito: 6,
-                     garzaCerca: 7, garzaLejos: 8, medioCalmo: 9, nubes: 10,
+                     estrellas: 7, medioCalmo: 9, nubes: 10,
                      manglarCerca: 11, corales: 12, luces: 13,
                      astro: 14, camino: 15 };
+  if (CABE_ESTRELLAS) {
+    gl.uniform1i(u.u_estrellas, unidades.estrellas);
+    gl.uniform1f(u.u_hayEstrellas, 0);
+  }
   gl.uniform1i(u.u_manglarCerca, 11);
   gl.uniform1i(u.u_corales, 12);
   gl.uniform1i(u.u_luces, 13);
@@ -2502,6 +2773,14 @@ export function crear(lienzo) {
         // Espejada en X: derivan sin costura visible.
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      } else if (n === 'estrellas') {
+        /* Espejada en los DOS ejes. Ya no se estira para llenar la
+           banda —eso convertia las motas en rayas—: se repite a su
+           escala, y quien decide donde hay via lactea es el perfil del
+           shader. Espejada y no repetida, para que la costura se
+           vuelva simetria en vez de corte. */
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
       } else if (n === 'garzaCerca' || n === 'garzaLejos') {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -2560,6 +2839,7 @@ export function crear(lienzo) {
     if (cargadas.has('manglar')) gl.uniform1f(u.u_hayManglar, 1);
     if (cargadas.has('papel'))   gl.uniform1f(u.u_hayPapel, 1);
     if (cargadas.has('nubes'))   gl.uniform1f(u.u_hayNubes, 1);
+    if (cargadas.has('estrellas')) gl.uniform1f(u.u_hayEstrellas, 1);
     if (cargadas.has('manglarCerca')) gl.uniform1f(u.u_hayCerca, 1);
     if (cargadas.has('corales'))      gl.uniform1f(u.u_hayCorales, 1);
     if (cargadas.has('luces'))        gl.uniform1f(u.u_hayLuces, 1);
