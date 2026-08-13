@@ -4,7 +4,7 @@
 import RelojRescate from './RelojRescate.astro';
 import Decidir from './Decidir.astro';
 import Mapa from './Mapa.astro';
-import { CONSEJOS, FUENTES } from '../js/reloj.js';
+import { CONSEJOS, CONSEJOS_SIEMPRE, FUENTES } from '../js/reloj.js';
 ---
 
 <section class="herramientas" id="herramientas">
@@ -71,22 +71,20 @@ import { CONSEJOS, FUENTES } from '../js/reloj.js';
         esta. Y el realce cae sobre «no hay consentimiento», que es la
         mitad que la gente no se cree de sí misma.
 
-        EL REALCE YA NO SE PINTA AQUÍ. Era una aguada de CSS —cinco
-        manchas encimadas, quieta y siempre idéntica— y ahora lo hace el
-        ente de js/humo.js: el mismo rojo y el mismo sitio, pero vivo.
-        Es lo único que se mueve en toda la sección, y por eso es lo que
-        se mira.
+        EL REALCE NO SE PINTA AQUÍ, Y AHORA MISMO NO SE PINTA EN NINGÚN
+        SITIO. Fue una aguada de CSS —cinco manchas encimadas, quieta y
+        siempre idéntica—, luego el ente de humo la pintó viva, y con el
+        ente retirado la frase se queda con su tratamiento tipográfico
+        solo: versalitas, negrita y prosa espaciada.
 
-        `data-humo-realce` es el ancla: el ente busca ese atributo y se
-        reparte por la caja de la frase, así que si el texto cambia de
-        renglones, de cuerpo o de idioma, la mancha lo sigue sola.
-
-        Y SI EL ENTE NO LLEGA, no pasa nada: la frase se queda en
-        negrita, que es lo que ya era por debajo del color. Ninguna
-        palabra de esta página depende de que un script cargue. */}
+        Eso era el respaldo declarado de esta línea y sigue bastando —
+        ninguna palabra de esta página depende de que un script cargue—,
+        pero conviene saber lo que cuesta: la sección se queda sin nada
+        que se mueva, y esta frase era lo que se miraba. Ver el
+        razonamiento entero en `.realce-vivo`, en estilos.css. */}
     <p class="lema">
       Sin capacidad de decidir,
-      <b class="realce-vivo" data-humo-realce>no hay consentimiento.</b>
+      <b class="realce-vivo">no hay consentimiento.</b>
     </p>
 
     <p class="herramientas__intro">
@@ -102,6 +100,18 @@ import { CONSEJOS, FUENTES } from '../js/reloj.js';
     </div>
 
     <Decidir />
+
+    {/* ── HOJA 2 · de «qué me pasó» a «dónde estoy» ─────────────────
+        Los cuatro cantos de papel de esta sección no son adorno ni
+        ritmo por ritmo: marcan los cuatro sitios donde cambia la
+        PREGUNTA que se está contestando. Aquí acaba la que nombra lo
+        ocurrido y empieza la que sitúa a quien lee en el tiempo.
+
+        Decorativos enteros —`aria-hidden`, sin texto—: quien navega
+        con lector de pantalla ya tiene los capítulos marcados por los
+        encabezados, y un separador anunciado sería un tabulador de más
+        en un recorrido que ya es largo. Ver `.hoja` en estilos.css. */}
+    <div class="hoja" aria-hidden="true"></div>
 
     <!-- ═══ ESTÁS AQUÍ ══════════════════════════════════════════════
          SEGUNDO, justo debajo de la definición. Estuvo al final de la
@@ -149,6 +159,11 @@ import { CONSEJOS, FUENTES } from '../js/reloj.js';
         <span class="puerta__pie">Se queda en tu teléfono. No se sube a ningún sitio.</span>
       </a>
     </div>
+
+    {/* ── HOJA 3 · de «dónde estoy» a «qué puedo hacer» ─────────────
+        Las cuatro puertas son el índice; lo que viene debajo son las
+        cuatro cosas. El canto separa elegir de hacer. */}
+    <div class="hoja" aria-hidden="true"></div>
 
     <!-- ═══ QUE ALGUIEN VENGA ═══════════════════════════════════════ -->
     <section class="bloque" id="salir">
@@ -213,6 +228,49 @@ import { CONSEJOS, FUENTES } from '../js/reloj.js';
               {/* La frase que impide que esto sea una lista de reproches.
                   Va en cada uno, no una vez arriba: quien lee esto salta
                   de punto en punto buscando el suyo. */}
+              <p class="consejo__ya">{c.yaLoHice}</p>
+            </li>
+          ))}
+        </ul>
+
+        {/* ── Y LO QUE SIRVE EN CUALQUIER MOMENTO ──────────────────────
+            El bloque de arriba le hablaba a UNA persona: a alguien a
+            quien acaba de pasarle, hace horas, y que va a ir a un
+            examen. Sus cinco puntos son la misma cosa dicha cinco veces
+            —preservar señales— y los cinco en negativo.
+
+            Eso dejaba fuera a casi todo el mundo que llega aquí, y
+            sobre todo a quien contesta «no sé», que es la respuesta
+            PRINCIPAL de esta herramienta: giraba la aguja y se
+            encontraba cinco cosas que ya no le servían y ninguna que
+            sí. La ley 1 de js/reloj.js dice que «no sé» devuelve más
+            opciones, nunca menos; en las ventanas se cumplía y aquí no.
+
+            VAN SEPARADOS Y NO MEZCLADOS EN UNA LISTA DE ONCE, porque
+            son dos respuestas a dos preguntas distintas. Los de arriba
+            tienen prisa; estos no tienen ninguna. Fundidos, los que
+            corren se perderían entre los que no, que es exactamente la
+            forma de que alguien no lea el que le tocaba.
+
+            Y NINGUNO LLEVA FUENTE porque ninguno afirma nada: no dicen
+            qué pasa en un cuerpo ni qué está obligado a hacer nadie,
+            dicen qué puede hacer ella con su teléfono, su memoria y
+            quien tenga cerca. El razonamiento entero —y la regla de qué
+            NO puede entrar aquí— está en la cabecera de
+            CONSEJOS_SIEMPRE en js/reloj.js. */}
+        <h4 class="consejos__titulo consejos__titulo--siempre">
+          Y esto sirve aunque hayan pasado días
+        </h4>
+        <p class="bloque__intro consejos__aviso">Ninguna de estas depende de
+          la hora, ni de un hospital, ni de que decidas nada todavía.
+          <strong>Son cosas que dependen solo de ti</strong>, y siguen
+          valiendo dentro de un mes.</p>
+
+        <ul class="consejos__lista">
+          {CONSEJOS_SIEMPRE.map((c) => (
+            <li class="consejo consejo--siempre">
+              <p class="consejo__que">{c.titulo}</p>
+              <p class="consejo__porque">{c.porque}</p>
               <p class="consejo__ya">{c.yaLoHice}</p>
             </li>
           ))}
@@ -285,7 +343,18 @@ import { CONSEJOS, FUENTES } from '../js/reloj.js';
          bloque: es una herramienta con estado, con red y con datos que
          pone quien lo usa. Carga en diferido para no competir nunca con
          la ayuda. -->
+    {/* ── HOJA 4 · de «qué puedo hacer» a «dónde» ───────────────────
+        El mapa es la única herramienta con red y con datos de fuera:
+        merece hoja propia. */}
+    <div class="hoja" aria-hidden="true"></div>
+
     <Mapa />
+
+    {/* ── HOJA 5 · del ahora al después ─────────────────────────────
+        Todo lo de arriba contesta a «está pasando». Lo de abajo, a «ya
+        pasó» y a «le pasó a otra persona». Es el cambio de sujeto más
+        grande de la página y era el único que no se veía venir. */}
+    <div class="hoja" aria-hidden="true"></div>
 
     <!-- ═══ YA ME PASÓ ══════════════════════════════════════════════ -->
     <section class="bloque" id="ya-paso">

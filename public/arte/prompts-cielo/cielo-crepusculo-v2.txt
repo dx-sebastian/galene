@@ -1,0 +1,5 @@
+PROMPT FINAL — CIELO CREPUSCULAR V2
+
+Usa las referencias adjuntas solo como guía de lenguaje pictórico y composición. Genera una lámina aislada de nubes de acuarela para un hero web animado: una sola masa diagonal, alargada y panorámica, que nace baja a la izquierda y crece hacia la derecha, con algunas nubes muy bajas y pequeñas en la base. Bordes orgánicos de pincel seco, grandes lavados conectados, luces de papel reservadas y sombras azul lavanda. Debe funcionar tanto sobre un cielo rosado de amanecer como sobre uno coral de ocaso. Sin paisaje, sin mar, sin sol, sin aves, sin texto, sin marco y sin elementos cortados por los bordes.
+
+Fondo croma verde puro #00FF00, completamente plano, uniforme y opaco; sin sombra, halo, reflejo ni derrame verde sobre la nube. La nube debe quedar separada del borde por un margen amplio y ocupar la mayor parte del ancho. Formato panorámico 3:2.

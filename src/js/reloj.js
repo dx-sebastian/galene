@@ -247,6 +247,108 @@ export const CONSEJOS = [
   },
 ];
 
+/* ── LO QUE SIRVE EN CUALQUIER MOMENTO ─────────────────────────────
+   La segunda mitad del bloque, y existe porque a la primera le faltaba
+   la mitad de la gente.
+
+   EL DIAGNÓSTICO. Los cinco consejos de arriba son todos LA MISMA COSA
+   dicha cinco veces —preservar señales para el examen forense— y todos
+   en negativo: no te duches, no te cepilles, no laves, no tires. Eso
+   le habla a una persona muy concreta: a alguien a quien acaba de
+   pasarle, hace horas, y que va a ir a un examen. Quien gira la aguja
+   a «hace unos días» —o a «no sé», que es la RESPUESTA PRINCIPAL de
+   esta herramienta por la ley 1 de este archivo— se encontraba cinco
+   cosas que ya no le sirven y ninguna que sí. La ley 1 dice que «no
+   sé» devuelve MÁS opciones, nunca menos, y en las ventanas se cumplía;
+   en los consejos no.
+
+   ESTOS NO CADUCAN Y NO SON DEL EXAMEN. Son cosas que dependen solo de
+   quien lee, y que siguen valiendo a los cinco días y a los cinco
+   meses. Por eso el bloque de arriba no se toca ni se mezcla con este:
+   son dos respuestas a dos preguntas distintas, y juntarlas en una
+   lista de once haría que las de las primeras horas —que sí tienen
+   prisa— se perdieran entre las que no.
+
+   POR QUÉ NINGUNO LLEVA `fuente`, Y POR QUÉ ESO NO ROMPE LA LEY 2.
+   La ley 2 prohíbe mostrar UN DATO como cierto sin fuente. Aquí no hay
+   ningún dato: ninguno de estos seis afirma nada sobre medicina, sobre
+   plazos ni sobre derechos. No dicen qué pasa en tu cuerpo ni qué está
+   obligado a hacer nadie — dicen qué puedes hacer tú con tu teléfono,
+   con tu memoria y con quien tengas cerca. Un consejo que no afirma
+   nada comprobable no necesita una cita: necesita no colarse en la
+   lista de al lado, que sí afirma.
+
+   Y ESTA REGLA ES FRÁGIL, así que va escrita: si alguna vez se añade
+   aquí algo que empiece por «tienes derecho a», «te tienen que» o
+   «funciona hasta las N horas», ese consejo NO va en esta lista. Va
+   arriba, con su documento y su cita, o no va.
+
+   Cada uno lleva su «y si ya lo hiciste» por lo mismo que los de
+   arriba: sin esa línea una lista de consejos es una lista de
+   reproches. */
+export const CONSEJOS_SIEMPRE = [
+  {
+    id: 'escribir',
+    titulo: 'Escribe hoy lo que recuerdes, aunque sean trozos',
+    porque: 'Lo que anotes ahora va a ser más de lo que recuerdes dentro ' +
+            'de una semana. No tiene que tener orden, ni sentido, ni ser ' +
+            'un relato.',
+    yaLoHice: 'Y si casi no recuerdas nada, escribe eso: dónde estabas, ' +
+              'con quién, qué hora era. Un hueco también es información.',
+    fuente: null,
+  },
+  {
+    id: 'telefono',
+    titulo: 'No borres nada del teléfono',
+    porque: 'Los chats, la app del taxi, el recibo, el historial de pagos, ' +
+            'las fotos con su hora. Eso no se va con las horas como las ' +
+            'señales del cuerpo: sigue ahí mañana y dentro de un mes.',
+    yaLoHice: 'Si ya borraste algo, lo que quede sigue sirviendo. Nada de ' +
+              'esto tiene que estar completo para valer.',
+    fuente: null,
+  },
+  {
+    id: 'quien',
+    titulo: 'Apunta quién estaba, aunque sea a medias',
+    porque: 'Nombres, apodos, quién te vio, quién te llevó a casa. Es lo ' +
+            'primero que se difumina y lo único que nadie puede ' +
+            'reconstruir por ti.',
+    yaLoHice: '«El amigo del que trabaja con Ana» ya es un dato. Apúntalo ' +
+              'tal cual, sin arreglarlo.',
+    fuente: null,
+  },
+  {
+    id: 'donde',
+    titulo: 'Anota el sitio y la hora, aunque sea aproximada',
+    porque: '«Sobre las dos, en el bar de la esquina» basta. No hace falta ' +
+            'precisión: hace falta que quede escrito antes de que esa ' +
+            'noche se mezcle con las demás.',
+    yaLoHice: 'Si no sabes ni el sitio, apunta cómo llegaste y cómo ' +
+              'volviste. Muchas veces eso lo encuentra.',
+    fuente: null,
+  },
+  {
+    id: 'avisar',
+    titulo: 'Dile a alguien que vas, sin tener que contarle qué pasó',
+    porque: '«¿Puedes venir conmigo al hospital?» es una frase completa. ' +
+            'No hay que explicar nada para pedir compañía.',
+    yaLoHice: 'Y si ahora mismo no hay nadie, ir sola sigue valiendo. ' +
+              'Avisar puede ser después.',
+    fuente: null,
+  },
+  {
+    id: 'copia',
+    titulo: 'Pide copia de todo lo que te den',
+    porque: 'El resumen de la atención, las órdenes, el número del caso. ' +
+            'Si más adelante decides hacer algo, esos papeles son por ' +
+            'donde se empieza — y pedirlos en el momento cuesta mucho ' +
+            'menos que buscarlos después.',
+    yaLoHice: 'Si ya saliste sin nada, pregunta en la misma institución: ' +
+              'es la vía normal y no hay que dar explicaciones.',
+    fuente: null,
+  },
+];
+
 /* Los tramos del disco. Gruesos a propósito: no se pregunta una hora
    exacta porque nadie la tiene, y pedirla es un interrogatorio. */
 export const TRAMOS = [
@@ -274,6 +376,19 @@ export function abierto(horas) {
     esto vale cero — se deja porque es la red que avisaría si alguien
     añade una ventana nueva y se olvida de citarla. */
 export const sinFuente = () => VENTANAS.filter((v) => !v.fuente).length;
+
+/** La misma red, para los consejos de las primeras horas.
+
+    `CONSEJOS` afirma cosas sobre el examen forense —qué se lleva el
+    agua, por qué la bolsa es de papel— y por tanto cada uno tiene que
+    salir de un documento. `CONSEJOS_SIEMPRE` no afirma nada
+    comprobable y por eso no lleva fuente, a propósito y explicado en
+    su cabecera.
+
+    Esta cuenta existe para el día en que alguien añada a la lista de
+    arriba un consejo nuevo y se olvide de citarlo: vale cero, y si
+    deja de valer cero es que se coló una afirmación sin documento. */
+export const consejosSinFuente = () => CONSEJOS.filter((c) => !c.fuente).length;
 
 /** Cuántas están contrastadas contra fuente pero SIN VERIFICAR por una
     persona con criterio clínico.

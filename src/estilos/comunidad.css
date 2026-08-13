@@ -1,0 +1,1335 @@
+/* ═══════════════════════════════════════════════════════════════════
+   GALENE — COMUNIDAD
+
+   ── POR QUÉ ESTO NO ESTÁ DENTRO DE estilos.css ──────────────────────
+   La convención del sitio es una sola hoja. Dos razones para esta, y la
+   primera es de fontanería:
+
+     1 · `estilos.css` se está reescribiendo en paralelo en otra sesión
+         —casi mil líneas de diferencia contra el último commit mientras
+         se escribía esto— y añadirle seiscientas por el final es la
+         forma más segura de que uno de los dos trabajos se pierda.
+     2 · Es la hoja de UNA página, y Astro la empaqueta solo donde se
+         importa.
+
+   ── Y POR QUÉ ESTA PÁGINA NO SE PARECE AL RESTO DEL SITIO ───────────
+   Es una decisión declarada, no una deriva. La portada y la sección de
+   lectura son ACUARELA SOBRE PAPEL: esquinas de 2 px, sin sombras,
+   aguadas en `multiply`, y todo lo que sobresale lo hace por valor y no
+   por altura. Aquí se pidió otra cosa: redondo, inmersivo, con vidrio y
+   con sombras cuidadas.
+
+   Las dos cosas no se pelean si el vidrio se pone ENCIMA de la pintura
+   en vez de en su lugar. Eso es exactamente lo que hace esta hoja: el
+   fondo sigue siendo el papel de algodón y las dos aguadas pintadas de
+   la sección 2, con su paralaje; lo que cambia es que los hilos flotan
+   sobre ella en paneles translúcidos que la desenfocan al pasar por
+   encima. La pintura no se tapa: se ve a través. Eso es lo que hace que
+   el vidrio aquí no sea un estilo pegado de otra app — tiene algo debajo
+   que merece la pena mirar borroso.
+
+   Lo que NO cambia, y no se negocia:
+   — Ni un tamaño de letra fuera de la escala `--t-*`, ni un margen
+     fuera de `--e-*`.
+   — Ningún pigmento nuevo: los cinco colores de etiqueta y los cuatro
+     de reacción son los que el sitio ya usa (el azul y el rojo del
+     ente, el verde de «ventana abierta», el morado del modo sombra).
+   — `prefers-reduced-motion` APAGA, no reduce.
+   — El contraste del texto no depende de que yo acierte con una
+     opacidad. Ver la nota del vidrio, más abajo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOS TOKENS DE ESTA PÁGINA
+
+   Van en `.pagina-papel` —o sea en el <body>— y no en `:root`, para que
+   la portada no se entere de nada de esto. Las propiedades
+   personalizadas se heredan, así que todo lo de dentro las ve.
+   ═══════════════════════════════════════════════════════════════════ */
+.pagina-papel {
+  /* ── EL BLANCO ─────────────────────────────────────────────────────
+     La hoja de esta página es BLANCA, y más clara que el papel del resto
+     del sitio (#F3F5F4, un gris verdoso de papel de algodón). Se pidió
+     un blanco que se sienta en paz, y eso son tres decisiones, no una:
+
+     1 · NO ES #FFF PLANO. Un blanco absoluto en una pantalla es una
+         lámpara: no descansa, y a las dos de la mañana quema. Estos dos
+         llevan un rastro de verde azulado —una o dos unidades— que es lo
+         que hace que se lea como papel muy claro y no como retroluz. La
+         diferencia es casi invisible y se nota en el cansancio, que es
+         donde importa.
+
+     2 · LA TINTA SE SUAVIZA. Sobre un blanco así, la tinta del sitio
+         (#162 2E) da un contraste altísimo y el texto se vuelve
+         estridente. Bajarla un paso deja el cuerpo en una lectura
+         tranquila y sigue muy por encima del mínimo exigido — sobre
+         #FAFCFC, esta tinta mide del orden de 12:1, y el mínimo del
+         proyecto para texto es 4.5.
+
+     3 · EL COLOR SE RETIRA A UN SUSURRO. Un blanco en paz no se
+         consigue solo con el blanco: se consigue quitándole ruido a lo
+         que tiene alrededor. Por eso las aguadas del fondo bajan (más
+         abajo, en `.comunidad .fondo__capa--*`) y la aguada de pigmento
+         de cada tarjeta también. La calma es lo que NO está.        */
+  --papel:        #FAFCFC;
+  --papel-arriba: #FFFFFF;
+  --papel-alto:   #FFFFFF;
+  --papel-hondo:  #F2F6F7;
+  --letra-rgb:    28 42 50;
+  --letra:        rgb(var(--letra-rgb));
+  --contra:       #FFFFFF;
+
+  /* ── EL SUELO DEL GRIS: 66 %. MEDIDO, NO ELEGIDO ───────────────────
+     Aclarar el papel al blanco y suavizar la tinta a la vez tiene un
+     precio y hay que pagarlo entero: los grises secundarios se caen. Las
+     horas iban al 56 % y al 58 %, y sobre este blanco median 3.53:1 y
+     3.73:1 — por debajo del 4.5 que este proyecto se exige. En la hoja
+     gris de la portada esos mismos alfas pasaban. El texto no había
+     cambiado; había cambiado el suelo.
+
+     Se barrió el alfa de 0.54 a 0.90 componiendo la tinta sobre el fondo
+     REAL de una tarjeta —vidrio sobre papel, y con la aguada empujando el
+     papel un 12 % hacia el color de la letra, que es el peor caso— en las
+     dos luces:
+
+         alfa   día    noche
+         0.56   3.53   4.32     ninguna pasa
+         0.60   3.96   4.71     la noche sí, el día no
+         0.64   4.45   5.13     al día le falta un pelo
+         0.66   4.72   5.34     ← las dos, con margen
+         0.70   5.34   5.80
+
+     0.66 es el primero que pasa en las dos, y por eso es el suelo de
+     cualquier gris de esta página que lleve texto. Por debajo de eso no
+     hay «gris suave»: hay texto que alguien no va a poder leer a las dos
+     de la mañana. Lo decorativo —la raíz, el pozo del sello, el filete—
+     no cuenta aquí: no dice nada que no esté dicho de otra forma. */
+  --gris-suelo: 66%;
+
+  /* ── LOS RADIOS ────────────────────────────────────────────────────
+     Tres, en la misma proporción que la escalera de espacios. El grande
+     es el de los paneles que flotan; el medio, el de las cosas que van
+     dentro de un panel; el chico, el de los detalles. Nada de valores
+     sueltos: si un radio no está aquí, el componente está mal.
+
+     26 px y no 12: a 12 el panel se lee como una tarjeta de material
+     design, que es exactamente lo común que se pidió evitar. A 26 el
+     canto deja de tener esquina y el panel se lee como un canto rodado
+     — y encima le sienta bien al pigmento del fondo, que no tiene
+     ninguna recta. */
+  --redondo:       26px;
+  --redondo-medio: 18px;
+  --redondo-chico: 12px;
+
+  /* ── EL VIDRIO ─────────────────────────────────────────────────────
+     Cuatro valores y cada uno hace un trabajo distinto:
+
+     `--vidrio`        el cuerpo translúcido del panel.
+     `--vidrio-alto`   el mismo, un paso más denso, para el hover.
+     `--vidrio-canto`  el borde. Es lo que separa un panel del de al lado
+                       cuando los dos tienen el mismo fondo detrás.
+     `--vidrio-brillo` el FILO DE ARRIBA, en `inset`. Es el detalle que
+                       convierte un rectángulo translúcido en vidrio: un
+                       canto real recoge la luz por su borde superior y
+                       la pierde por el inferior. Sin esta línea de un
+                       píxel, un panel translúcido parece un velo.
+
+     ── Y LA GARANTÍA DE CONTRASTE, QUE ES LO ÚNICO QUE IMPORTA AQUÍ ──
+     El vidrio es BLANCO al 68 % sobre un papel casi blanco, o sea que
+     ACLARA lo que tiene debajo. Y el texto de encima es la tinta del
+     papel, que es oscura. O sea que el peor caso del contraste del texto
+     es el papel desnudo sin vidrio, y cualquier cosa que el vidrio haga
+     solo lo mejora. De noche pasa al revés y por el mismo motivo: el
+     vidrio es un azul MÁS CLARO que el papel nocturno, así que la
+     dirección se invierte y ahí el peor caso es el vidrio, no el papel.
+
+     Por eso los números del suelo del gris de más arriba están medidos
+     sobre el fondo COMPUESTO —vidrio sobre papel— y no sobre el token:
+     en una página con vidrio, el fondo de una palabra no es ningún color
+     declarado en ningún sitio. Es una mezcla, y hay que componerla para
+     poder medirla. */
+  --vidrio:        rgb(255 255 255 / 68%);
+  --vidrio-alto:   rgb(255 255 255 / 82%);
+  --vidrio-canto:  rgb(255 255 255 / 88%);
+  --vidrio-brillo: rgb(255 255 255 / 92%);
+
+  /* El desenfoque de lo que hay detrás. `saturate` va con él a
+     propósito: un blur grande apaga el color de lo que difumina, y las
+     aguadas del fondo son lo único que da vida a esta página. Sin la
+     saturación, el vidrio convierte la acuarela en niebla gris. */
+  --difuminado: blur(18px) saturate(1.35);
+
+  /* ── LAS SOMBRAS ───────────────────────────────────────────────────
+     Dos capas cada una, y las dos capas hacen cosas distintas: la
+     primera es el CONTACTO —un píxel, muy cerca, casi opaca— y la
+     segunda es la CAÍDA —muy abierta, muy difusa, muy floja—. Una sola
+     sombra grande deja el panel flotando sin apoyarse en nada; una sola
+     pequeña lo deja pegado. Las dos juntas son lo que hace que algo
+     parezca estar a un centímetro de la hoja.
+
+     Y ninguna es negra. El negro puro sobre un blanco con color se lee
+     sucio: estas son de la tinta del sitio, azul verdosa.
+
+     SOBRE BLANCO VAN MÁS FLOJAS Y MÁS ABIERTAS que sobre un papel gris.
+     Una sombra fuerte sobre blanco es un contraste duro —lo más oscuro y
+     lo más claro de la página, tocándose en el mismo canto— y eso es lo
+     contrario de la calma que se pidió. Aquí la caída es larguísima y
+     casi no llega a verse: lo que se lee no es la sombra, es que la
+     tarjeta está separada de la hoja. */
+  --sombra-rgb:  16 38 48;
+  --sombra-baja: 0 1px 2px rgb(var(--sombra-rgb) / 4%),
+                 0 10px 26px -16px rgb(var(--sombra-rgb) / 13%);
+  --sombra-alta: 0 2px 4px rgb(var(--sombra-rgb) / 5%),
+                 0 26px 50px -24px rgb(var(--sombra-rgb) / 20%);
+
+  background: var(--papel-arriba);
+  color: var(--letra);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA NOCHE, Y NO ES MORADA
+
+   El papel de la sección de lectura de la portada se va de noche a un
+   morado azulado (#1A1832) y ahí está bien: acompaña al añil del cielo
+   pintado que tiene justo encima, en la misma pantalla. Aquí no hay
+   cielo encima — hay una hoja sola — y el morado sin su añil al lado se
+   lee como un tema de editor de código, no como una noche.
+
+   Así que esta página tiene su propia noche, y es TINTA AZUL VERDOSA:
+   la del mar del sitio, la misma familia que `--tinta` (#1C2A30). No es
+   negra —un negro puro en una pantalla a oscuras es un agujero, y eso
+   ya está escrito en la hoja general— es un azul de mucha profundidad
+   con algo de verde, que es el color del agua honda.
+
+   `--letra` SE VUELVE A DECLARAR AQUÍ, y no es redundante: en la hoja
+   general vale `rgb(var(--letra-rgb))` y se resolvió contra el
+   `--letra-rgb` de `:root`. Lo que heredan los hijos es ese valor ya
+   calculado, así que cambiar `--letra-rgb` en el <body> no lo mueve. Es
+   una trampa clásica de las propiedades personalizadas y cuesta media
+   hora encontrarla: el token nuevo se aplica y el color no cambia.
+   ═══════════════════════════════════════════════════════════════════ */
+:root[data-tinta="clara"] .pagina-papel {
+  --papel:        #0F1D24;
+  --papel-arriba: #0A1519;
+  --papel-alto:   #16272F;
+  --papel-hondo:  #122029;
+  --letra-rgb:    226 238 242;
+  --letra:        rgb(var(--letra-rgb));
+  --contra:       #0A1519;
+
+  /* El vidrio de noche no es blanco al 5 %: es un azul propio con
+     cuerpo. Un blanco muy transparente sobre fondo oscuro se lee gris y
+     sucio, porque lo que llega es la mezcla del blanco con el negro.
+     Con un azul un paso por encima del papel, el panel tiene color
+     propio y se separa del fondo por valor Y por matiz. */
+  --vidrio:        rgb(38 62 74 / 52%);
+  --vidrio-alto:   rgb(48 76 90 / 64%);
+  --vidrio-canto:  rgb(150 196 210 / 16%);
+  --vidrio-brillo: rgb(190 226 238 / 13%);
+
+  /* Y las sombras se cierran: sobre un fondo oscuro una sombra abierta
+     y clara no existe, y una sombra oscura tiene que ser MÁS oscura que
+     el fondo para que se vea. */
+  --sombra-baja: 0 1px 2px rgb(0 0 0 / 24%),
+                 0 8px 20px -12px rgb(0 0 0 / 48%);
+  --sombra-alta: 0 2px 6px rgb(0 0 0 / 28%),
+                 0 24px 48px -22px rgb(0 0 0 / 62%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOS DOS RESPALDOS DEL VIDRIO, Y NINGUNO ES OPCIONAL
+
+   1 · SIN `backdrop-filter` no hay vidrio, hay un velo. Pasa en
+       navegadores viejos y en algunos móviles con la aceleración
+       apagada: el panel se queda translúcido pero sin desenfocar, y el
+       texto se lee sobre las aguadas del fondo directamente. Se corrige
+       subiendo el panel a casi opaco, que es lo que el vidrio estaba
+       haciendo por otro camino.
+
+   2 · `prefers-reduced-transparency`. Hay gente que pide menos
+       transparencia en el sistema, y no por gusto: un fondo que se ve a
+       través de un texto es exactamente lo que hace ilegible una página
+       con baja visión o con ciertos tipos de dislexia. En este sitio esa
+       petición se respeta igual que `prefers-reduced-motion`: no se
+       reduce, se APAGA. Panel opaco, sin desenfoque, sin filo.
+   ═══════════════════════════════════════════════════════════════════ */
+@supports not (backdrop-filter: blur(2px)) {
+  .pagina-papel {
+    --vidrio:      rgb(248 251 251 / 94%);
+    --vidrio-alto: rgb(255 255 255 / 98%);
+  }
+  :root[data-tinta="clara"] .pagina-papel {
+    --vidrio:      rgb(22 39 47 / 95%);
+    --vidrio-alto: rgb(28 48 58 / 98%);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .pagina-papel {
+    --difuminado:  none;
+    --vidrio:      var(--papel-alto);
+    --vidrio-alto: var(--papel-alto);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA BARRA SOBRE PAPEL
+
+   La misma barra de la portada con una diferencia medida: allí flota
+   sobre la pintura, su tinta es la del cielo y lleva detrás el lavado
+   que calibra main.js midiendo los píxeles del shader. Aquí detrás hay
+   una hoja, así que toma la tinta del PAPEL (`--letra`) y no lleva
+   lavado — un velo elíptico desenfocado sobre un papel liso no protege
+   nada: es una mancha sin causa. Los tokens `--lavado-*` valen 0 en esta
+   página porque nadie los escribe.
+   ═══════════════════════════════════════════════════════════════════ */
+.barra--papel {
+  /* El mismo reparto de márgenes que la hoja: el mayor entre el que toca
+     por pantalla y el que centra una columna de 72rem. Así el logotipo
+     cae en la misma vertical que el primer hilo. */
+  padding-block: var(--e-4);
+  padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+  color: var(--letra);
+}
+
+/* DÓNDE ESTOY. Se cuelga de `aria-current` y no de una clase: el estado
+   ya está dicho para quien usa un lector de pantalla, y un segundo
+   nombre para la misma cosa es una cosa que un día se queda a medias. */
+.barra__enlace[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.45em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA HOJA
+
+   Reutiliza las clases de fondo de la sección 2 (`.herramientas__fondo`,
+   `.fondo__papel`, `.fondo__capa`) tal cual, así que hereda entero su
+   tratamiento de noche —papel y aguadas en `screen`— y su paralaje.
+
+   Y ESTÁ REDONDEADA POR ARRIBA. Es una hoja apoyada sobre otra, no una
+   franja que empieza: 28 px de radio y una sombra hacia arriba, que es
+   lo que separa dos hojas de papel sin dibujar una línea entre ellas.
+   ═══════════════════════════════════════════════════════════════════ */
+.comunidad {
+  position: relative;
+  overflow: clip;                  /* que el canto de barbas respete el radio */
+  padding-block: clamp(1.5rem, 5vw, 3rem) clamp(3rem, 8vw, 6rem);
+  padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(to bottom, var(--papel-arriba) 0, var(--papel) 12rem);
+  color: var(--letra);
+  box-shadow: 0 -1px 0 var(--vidrio-canto),
+              0 -18px 40px -28px rgb(var(--sombra-rgb) / 30%);
+}
+.comunidad > *:not(.herramientas__fondo) { position: relative; z-index: 1; }
+
+/* EL CANTO DE LA HOJA, el mismo `papel-barbas` que cose la sección 2 con
+   el mar. Aquí cose la barra con la hoja, y hace el mismo trabajo: que
+   el bloque no EMPIECE, sino que sea una hoja puesta encima de otra.
+   Va MUY FLOJO (0.5) porque debajo hay además un radio y una sombra
+   haciendo el mismo trabajo: con la lámina a plena tinta, el canto se
+   contaba tres veces. */
+.comunidad::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: clamp(22px, 3vw, 40px);
+  background-image: url("/galene/arte/papel-barbas.webp");
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  background-position: top center;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* LAS AGUADAS, EN EL PUNTO JUSTO ENTRE DOS COSAS QUE SE CONTRADICEN.
+
+   Hacia arriba: van por DEBAJO de paneles de vidrio que las desenfocan,
+   así que buena parte de su fuerza se queda en el difuminado. Con los
+   valores de la portada (0.42) esta página era papel liso y lo único que
+   se le pide al vidrio —tener algo que mirar a través— no ocurría.
+
+   Hacia abajo: la hoja tiene que sentirse BLANCA Y EN PAZ, y una aguada
+   fuerte sobre blanco no es calma, es una mancha. Estuvieron a 0.58 y el
+   fondo se leía como acuarela de verdad… y como ruido detrás del texto.
+
+   0.40 es el punto donde el color todavía se ve moverse al bajar y
+   todavía se puede llamar blanco a la hoja. El pigmento aquí no es el
+   tema: es lo que impide que el blanco sea vacío. */
+.comunidad .fondo__capa--alta    { opacity: 0.40; }
+.comunidad .fondo__capa--media   { opacity: 0.42; }
+.comunidad .fondo__capa--cercana { opacity: 0.30; }
+:root[data-tinta="clara"] .comunidad .fondo__capa--alta    { opacity: 0.28; }
+:root[data-tinta="clara"] .comunidad .fondo__capa--media   { opacity: 0.32; }
+:root[data-tinta="clara"] .comunidad .fondo__capa--cercana { opacity: 0.22; }
+
+/* ── LA CABECERA ────────────────────────────────────────────────────
+   Una columna, y en el orden en que hacen falta las cosas: dónde estás,
+   cómo se llama esto, qué es, y las tres reglas de la casa. Las reglas
+   van ARRIBA y no en un pie: son las que deciden si alguien se atreve a
+   escribir. */
+.comunidad__cabecera {
+  max-width: 46rem;
+  margin-block: var(--e-5) var(--e-6);
+}
+.comunidad__sobre {
+  margin: 0 0 var(--e-2);
+  font-size: var(--t-xs);
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: rgb(var(--letra-rgb) / var(--gris-suelo));
+}
+.comunidad__titulo {
+  margin: 0;
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: var(--t-3xl);
+  line-height: 1.05;
+}
+/* El mismo filete del hero, y por lo mismo: en SVG para que herede la
+   tinta de la hora, y trazado a mano porque una raya recta no la dibuja
+   nadie. */
+.comunidad__filete {
+  display: block;
+  width: 5.5rem;
+  height: 0.5rem;
+  margin-block: var(--e-3) var(--e-4);
+  overflow: visible;
+  color: rgb(var(--letra-rgb) / 55%);
+}
+.comunidad__declaracion {
+  margin: 0 0 var(--e-4);
+  font-size: var(--t-lg);
+  line-height: 1.4;
+  max-width: 32ch;
+  text-wrap: pretty;
+}
+
+/* LAS TRES REGLAS DE LA CASA, en su propio panel de vidrio. Son la
+   norma, no una lista de apoyo: puestas como texto suelto se leían como
+   un pie de página, y esto es lo primero que alguien necesita saber
+   antes de escribir. */
+.comunidad__casa {
+  list-style: none;
+  margin: 0;
+  padding: var(--e-4) clamp(1rem, 2.2vw, 1.4rem);
+  border: 1px solid var(--vidrio-canto);
+  border-radius: var(--redondo-medio);
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  display: grid;
+  gap: var(--e-2);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: rgb(var(--letra-rgb) / 86%);
+}
+.comunidad__casa li {
+  position: relative;
+  padding-left: 1.6rem;
+}
+/* La viñeta es un toque del filete pintado, no un punto: es la única
+   viñeta que este sitio puede permitirse, y la lámina ya está en caché
+   porque la usan las tarjetas de consejos de la portada. */
+.comunidad__casa li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 1rem; height: 5px;
+  background-image: url("/galene/arte/1024/filete-5.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL MANDO — ordenar y filtrar
+
+   NO ES `sticky`, y no es un descuido. `paralaje.js` le escribe un
+   `translate` a la sección mientras entra, y una transformación en un
+   ancestro le cambia el bloque contenedor a todo lo que lleve dentro: un
+   `position: sticky` ahí se pega a la sección en vez de al viewport, y
+   solo cuando el gesto de entrada termina y la propiedad se borra vuelve
+   a comportarse. O sea que funcionaría casi siempre y se rompería justo
+   al llegar a la página, que es el peor reparto posible.
+   ═══════════════════════════════════════════════════════════════════ */
+.mando {
+  display: grid;
+  gap: var(--e-3);
+  margin-bottom: var(--e-5);
+}
+.mando__orden, .mando__etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Los tres órdenes. Píldora de vidrio, y la activa se rellena con la
+   tinta. Mismo gesto que las fichas de ciudad del mapa: dos controles
+   que hacen lo mismo tienen que verse igual en todo el sitio. */
+.orden {
+  min-height: 2.6rem;
+  padding: 0 1rem;
+  border: 1px solid var(--vidrio-canto);
+  border-radius: 999px;
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  color: rgb(var(--letra-rgb) / 82%);
+  font: inherit;
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 180ms linear, color 180ms linear,
+              box-shadow 180ms linear, translate 180ms ease-out;
+}
+.orden:hover { background: var(--vidrio-alto); color: var(--letra); }
+.orden[aria-pressed="true"] {
+  background: var(--letra);
+  border-color: transparent;
+  color: var(--contra);
+  box-shadow: var(--sombra-alta);
+}
+.orden:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+
+/* «SIN RESPONDER» LLEVA SU PROPIO COLOR, y es el único control de la
+   página que lo lleva. Es el orden con una razón moral detrás —saca
+   arriba a quien nadie ha contestado— y es la razón por la que esta
+   página no tiene un «lo mejor». El verde es el mismo de «ventana
+   abierta» del reloj: aquí también significa que algo sigue abierto. */
+.orden--solas[aria-pressed="true"] {
+  background: #2F6B4F;
+  color: #F7FAF9;
+}
+
+.mando__nota {
+  margin: 0;
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  color: rgb(var(--letra-rgb) / 70%);
+}
+/* El aviso para lectores de pantalla no se pinta: lo que anuncia ya está
+   escrito en la pantalla, en la lista misma. Ocupa sitio cero. */
+.mando__parte {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* Los chips de etiqueta. Cada uno lleva su pigmento en una GOTA, no en
+   el fondo: cinco fondos de color en fila serían cinco manchas
+   compitiendo, y el color aquí es una clave de lectura, no un adorno. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 2.4rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--vidrio-canto);
+  border-radius: 999px;
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja);
+  color: rgb(var(--letra-rgb) / 80%);
+  font: inherit;
+  font-size: var(--t-xs);
+  cursor: pointer;
+  transition: background-color 180ms linear, box-shadow 180ms linear;
+}
+.chip::before {
+  content: "";
+  width: 0.62em; height: 0.62em;
+  border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
+  background: var(--pigmento, currentColor);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--pigmento, currentColor) 18%, transparent);
+  flex: none;
+}
+.chip--todas::before { display: none; }
+.chip:hover { background: var(--vidrio-alto); color: var(--letra); }
+.chip[aria-pressed="true"] {
+  color: var(--letra);
+  box-shadow: var(--sombra-baja), inset 0 0 0 1.5px rgb(var(--letra-rgb) / 55%);
+}
+.chip:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ESCRIBIR — y aquí no se finge nada
+
+   Va como <details>, así que abre y cierra sin JavaScript. El señuelo
+   imita un campo de texto porque es lo que la gente reconoce, pero lo
+   que hay dentro es la verdad: no hay servidor, no hay dónde publicar, y
+   el botón está apagado con su razón escrita.
+   ═══════════════════════════════════════════════════════════════════ */
+.escribir {
+  margin-bottom: var(--e-6);
+  max-width: 62rem;
+  border: 1px solid var(--vidrio-canto);
+  border-radius: var(--redondo);
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  transition: box-shadow 220ms linear;
+}
+.escribir[open] { box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo); }
+.escribir__senuelo {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem clamp(1rem, 2.2vw, 1.4rem);
+  border-radius: var(--redondo);
+  cursor: pointer;
+  list-style: none;                       /* fuera el triángulo */
+}
+.escribir__senuelo::-webkit-details-marker { display: none; }
+.escribir__senuelo:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; border-radius: var(--redondo); }
+.escribir__frase {
+  font-size: var(--t-md);
+  color: rgb(var(--letra-rgb) / var(--gris-suelo));
+}
+.escribir__senuelo:hover .escribir__frase { color: rgb(var(--letra-rgb) / 85%); }
+
+.escribir__panel {
+  padding: 0 clamp(1rem, 2.2vw, 1.4rem) var(--e-4);
+  display: grid;
+  gap: var(--e-3);
+}
+.escribir__aviso {
+  margin: 0;
+  padding: var(--e-3) 1rem;
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 5%);
+  font-size: var(--t-sm);
+  line-height: 1.55;
+  max-width: 58ch;
+  color: rgb(var(--letra-rgb) / 84%);
+}
+.escribir__campo textarea {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgb(var(--letra-rgb) / 16%);
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: var(--letra);
+  font: inherit;
+  font-size: var(--t-md);
+  line-height: 1.5;
+  resize: vertical;
+}
+.escribir__campo textarea:focus-visible {
+  outline: 3px solid var(--letra); outline-offset: 2px;
+}
+.escribir__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3);
+  justify-content: space-between;
+}
+/* «Publicar sin nombre» viene MARCADO por defecto, y esa casilla es una
+   declaración: el valor por defecto de esta casa es el anonimato, y
+   quien quiera poner su nombre tiene que decidirlo. Al revés —marcar
+   para esconderse— el que no lee la casilla se expone. */
+.interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 85%);
+  cursor: pointer;
+}
+.interruptor input { width: 1.1rem; height: 1.1rem; accent-color: #2F6B4F; }
+.escribir .boton { border-radius: 999px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOS HILOS
+   ═══════════════════════════════════════════════════════════════════ */
+.hilos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-4);
+  max-width: 62rem;
+}
+.hilos__item { min-width: 0; }
+
+/* AL REORDENAR, LA HOJA SE MOJA. Un reordenamiento instantáneo se lee
+   como un parpadeo de error; un velo corto se lee como una hoja que se
+   cambia. Es el mismo vocabulario que la entrada del mundo y que el
+   secado de los bloques: nada aparece con un fundido, todo llega mojado
+   y se seca. 260 ms — lo justo para que el ojo entienda que la lista es
+   otra, no tanto que haya que esperarla. */
+.hilos--mojada { animation: hilos-mojar 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+@keyframes hilos-mojar {
+  from { opacity: 0.42; filter: blur(1.6px); }
+  to   { opacity: 1;    filter: blur(0); }
+}
+
+.hilos__vacio {
+  margin: var(--e-5) 0 0;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 72%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA TARJETA DE UN HILO
+
+   DOS COLUMNAS: el sello en su canal y todo lo demás al lado. Es la
+   maqueta de los hilos de las redes y se usa por lo que resuelve, no por
+   parecerse: con el sello dentro de la cabecera, la garza solo mide lo
+   que mide la fila del nombre y el título vuelve a empezar pegado al
+   borde. Con el sello en su columna, el nombre, el título, el cuerpo,
+   los botones y la hebra comparten una sangría y el canal de la
+   izquierda queda libre para que la raíz de las respuestas baje por
+   debajo del ave.
+
+   `isolation: isolate` está por una razón concreta: las manchas de las
+   reacciones van en `mix-blend-mode`, y sin un contexto de apilado
+   propio se mezclarían con lo que hay DETRÁS de la tarjeta —las aguadas
+   del fondo— en vez de con el vidrio de la tarjeta. `backdrop-filter` ya
+   crea uno, pero el respaldo sin `backdrop-filter` no, y ahí el defecto
+   solo aparecería en los navegadores que peor se prueban.
+   ═══════════════════════════════════════════════════════════════════ */
+.hilo {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  padding: clamp(1.05rem, 2.4vw, 1.5rem);
+  border: 1px solid var(--vidrio-canto);
+  border-radius: var(--redondo);
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  transition: background-color 220ms linear, box-shadow 220ms linear,
+              translate 220ms cubic-bezier(.2,.7,.2,1);
+}
+/* SE LEVANTA DOS PÍXELES, y no más. Lo que dice el gesto es «esto se
+   puede tocar»; a partir de cuatro, la tarjeta salta y se convierte en
+   el efecto de plantilla que hay en media web. El resto lo hace la
+   sombra, que se abre y se separa: eso es lo que se lee como altura. */
+@media (hover: hover) and (min-width: 700px) {
+  .hilo:hover {
+    background: var(--vidrio-alto);
+    box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo);
+    translate: 0 -2px;
+  }
+}
+.hilo:focus-within {
+  box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo);
+}
+
+/* EL PIGMENTO DE LA ETIQUETA, COMO UNA AGUADA BAJO EL VIDRIO.
+   Aquí hubo un canto de 3 px a la izquierda —la lámina `filete-5` usada
+   como máscara— y con 26 px de radio no funcionaba: una barra recta
+   pegada a una esquina redonda enseña que la esquina es un recorte.
+
+   Esto es lo que hace un pigmento debajo de un cristal: se acumula en
+   una esquina y se pierde hacia el centro. Entra por la esquina superior
+   izquierda, que es de donde viene la luz en toda la página (el filo del
+   vidrio y las dos sombras están puestos con esa misma fuente), así que
+   el color aparece donde el ojo ya está mirando.
+
+   `z-index: -1` lo pinta ENCIMA del fondo de la tarjeta y DEBAJO de su
+   contenido, que es exactamente el sitio de una aguada bajo un cristal.
+   Es el mismo recurso que usan las dos manchas del botón de acuarela. */
+.hilo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(120% 90% at 0% 0%,
+    color-mix(in oklab, var(--pigmento) 26%, transparent) 0%,
+    color-mix(in oklab, var(--pigmento) 7%, transparent) 42%,
+    transparent 68%);
+  /* Al 30 %: sobre una tarjeta blanca, la etiqueta se sabe de qué color
+     es sin que la tarjeta deje de ser blanca. Estuvo al 50 % y cada
+     hilo se leía como una tarjeta de color — cinco colores bajando por
+     la página, que es exactamente el ruido que quita la paz. */
+  opacity: 0.3;
+  pointer-events: none;
+}
+:root[data-tinta="clara"] .hilo::after { opacity: 0.4; }
+
+.hilo__col { min-width: 0; }
+
+.hilo__cabeza {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  margin-bottom: var(--e-2);
+}
+.hilo__autora {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  line-height: 1.2;
+}
+/* Sin nombre no es menos: es el valor por defecto de esta casa. Se pinta
+   más suave para que no compita con los nombres, no para señalarla. */
+.hilo__autora--anonima { font-weight: 400; color: rgb(var(--letra-rgb) / 74%); }
+.hilo__cuando {
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / var(--gris-suelo));
+}
+
+/* La etiqueta, al final de la fila y sin fondo de color: el pigmento ya
+   está en la aguada de la esquina, así que aquí basta una gota y la
+   palabra. Con fondo lleno, diez tarjetas serían diez manchas peleándose
+   con su propio título. */
+.etiqueta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  flex: none;
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--letra-rgb) / 72%);
+}
+.etiqueta::before {
+  content: "";
+  width: 0.55em; height: 0.55em;
+  border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
+  background: var(--pigmento, currentColor);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--pigmento) 16%, transparent);
+}
+
+.hilo__titulo {
+  margin: 0 0 var(--e-3);
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: var(--t-lg);
+  line-height: 1.28;
+  text-wrap: pretty;
+}
+.hilo__cuerpo p {
+  margin-block: 0 var(--e-3);
+  font-size: var(--t-md);
+  line-height: 1.62;
+  max-width: 62ch;
+  text-wrap: pretty;
+  color: rgb(var(--letra-rgb) / 88%);
+}
+.hilo__cuerpo p:last-child { margin-bottom: 0; }
+
+/* ── EL PIE DE LA TARJETA ───────────────────────────────────────────
+   Sin filete de separación: con el vidrio y el radio, una línea de 1 px
+   cruzando el panel lo parte en dos cajas. Lo que separa esta fila del
+   texto es el aire. */
+.hilo__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-top: var(--e-4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOS VOTOS — flecha, marcador, flecha
+
+   Una sola píldora con las tres cosas dentro, que es como está en
+   Reddit: las dos flechas y el número entre ellas se leen como UN
+   control, y así el número no queda flotando al lado de dos botones
+   sueltos.
+
+   Los dos colores son los que el reloj de la portada ya usa: el verde de
+   «ventana abierta» para subir y el azul apagado de «quizás» para bajar.
+   El naranja de Reddit no existe en esta paleta, y el rojo del sitio está
+   reservado al daño — no puede ser el color de una flecha de votar.
+
+   Y VIVEN AQUÍ, no en un `style=` del componente. Estuvieron en línea
+   —traídos desde los datos, con la idea de declarar el pigmento una sola
+   vez— y era un error que solo se ve midiendo de noche: un estilo en
+   línea no lo puede pisar ninguna regla de la hoja, así que la variante
+   nocturna no llegaba nunca y la flecha votada quedaba en 1.88:1 contra
+   el vidrio oscuro. El mínimo del proyecto es 4.5. De día se veía
+   perfecta, que es cuando uno mira.
+   ═══════════════════════════════════════════════════════════════════ */
+.votos {
+  --sube: #2F6B4F;               /* «ventana abierta» del reloj */
+  --baja: #4A6274;               /* «quizás» del reloj */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: rgb(var(--letra-rgb) / 5%);
+}
+/* 2.4rem = 38.4 px, LO MISMO QUE EL RESTO DE LA FILA. Estuvo en 2.1rem
+   (33.6 px) y se midió: por debajo de los 36 px de blanco de dedo que
+   este proyecto se exige en un control de lista, y encima descuadrada
+   respecto al botón de respuestas que tiene al lado, que mide 38.4. Dos
+   controles hermanos de altura distinta se ven antes que un error de
+   color. */
+.voto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(var(--letra-rgb) / var(--gris-suelo));
+  cursor: pointer;
+  transition: background-color 160ms linear, color 160ms linear,
+              scale 160ms cubic-bezier(.2,.7,.2,1);
+}
+.voto__flecha { width: 1.15em; height: 1.15em; overflow: visible; }
+.voto:hover { color: var(--letra); background: rgb(var(--letra-rgb) / 9%); }
+.voto:focus-visible { outline: 3px solid var(--letra); outline-offset: 1px; }
+
+/* PUESTO: la flecha se tiñe y se ENSANCHA un pelo. El color solo no
+   basta —hay quien no lo distingue— y `aria-pressed` ya lo dice para
+   quien escucha, pero en pantalla hace falta una segunda señal que no
+   sea el color. Un 12 % de escala es suficiente para verse y no mueve
+   nada de la fila. */
+.voto--sube[aria-pressed="true"] {
+  color: var(--sube);
+  background: color-mix(in oklab, var(--sube) 16%, transparent);
+  scale: 1.12;
+}
+.voto--baja[aria-pressed="true"] {
+  color: var(--baja);
+  background: color-mix(in oklab, var(--baja) 18%, transparent);
+  scale: 1.12;
+}
+
+.votos__marcador {
+  min-width: 2.1ch;
+  padding-inline: 0.1rem;
+  text-align: center;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--letra-rgb) / 88%);
+  transition: color 160ms linear;
+}
+/* El marcador se tiñe del lado al que se empujó, como en Reddit. */
+.votos[data-tenido="sube"] .votos__marcador { color: var(--sube); }
+.votos[data-tenido="baja"] .votos__marcador { color: var(--baja); }
+
+/* ── DE NOCHE LOS DOS PIGMENTOS SUBEN DE VALOR ─────────────────────
+   Sobre la tinta azul del papel nocturno, el verde y el azul de día
+   quedan por debajo del texto que los rodea, y un control activo no
+   puede leerse más débil que uno en reposo.
+
+   El azul de bajar se midió dos veces. #7E9BB4 daba 4.07:1 contra el
+   vidrio nocturno en el peor caso — por debajo del 4.5 del proyecto — y
+   el barrido dio esto:
+
+       #7E9BB4  4.07   no pasa
+       #8AA6BD  4.65   ← pasa, y sigue por debajo del verde
+       #93AEC4  5.11   pasa, pero adelanta al verde
+       #A5BED2  6.13
+
+   Se queda en #8AA6BD por lo que dice la tercera fila: el verde de subir
+   mide 5.04, y si el azul de bajar lo adelanta, lo más llamativo de la
+   página pasa a ser la flecha de hundir a alguien. Pasa el mínimo y se
+   queda un paso por detrás, que es el sitio que le toca. */
+:root[data-tinta="clara"] .votos { --sube: #6FB894; --baja: #8AA6BD; }
+
+/* En los comentarios todo baja un paso, pero el control NO baja de 36 px
+   —2.25rem— porque un comentario se vota con el pulgar igual que un
+   hilo. Lo que se encoge es el hueco y la letra del marcador, no el
+   blanco de dedo. */
+.votos--compactos { padding: 0.1rem; }
+.votos--compactos .voto { width: 2.25rem; height: 2.25rem; }
+.votos--compactos .voto__flecha { width: 1.05em; height: 1.05em; }
+.votos--compactos .votos__marcador { font-size: var(--t-xs); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA HEBRA — comentarios y respuestas
+   ═══════════════════════════════════════════════════════════════════ */
+/* EL BOTÓN DE LAS RESPUESTAS vive en la fila del pie, junto a los votos,
+   y su panel es un hermano que va debajo: por eso no es un <summary>
+   —el contenido de un <details> tiene que caber dentro de la caja de su
+   resumen, y ahí la lista de comentarios se metería en la misma fila que
+   las flechas. Ver la nota larga en Comunidad.astro. */
+.hebra__abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 2.4rem;
+  padding: 0 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(var(--letra-rgb) / 5%);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  color: rgb(var(--letra-rgb) / 76%);
+  transition: background-color 180ms linear, color 180ms linear;
+}
+.hebra__abrir:hover { background: rgb(var(--letra-rgb) / 10%); color: var(--letra); }
+.hebra__abrir:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+.hebra__globo { width: 1.1em; height: 1em; flex: none; overflow: visible; }
+.hebra__cuenta {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+/* Abierto, el botón se queda encendido: es lo que dice que el panel de
+   abajo es suyo. Sin esto, diez hilos abiertos y diez cerrados se ven
+   exactamente igual en la fila del pie. */
+.hebra__abrir[aria-expanded="true"] {
+  background: rgb(var(--letra-rgb) / 11%);
+  color: var(--letra);
+}
+
+.hebra { margin-top: var(--e-4); }
+
+.hebra__lista {
+  list-style: none;
+  margin: var(--e-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-4);
+}
+
+/* LAS RESPUESTAS CUELGAN DE UNA RAÍZ. El trazo va en SVG dentro del
+   marcado (ver Comentario.astro): dibujado vertical, estirado con
+   `preserveAspectRatio="none"` y con el grosor fijo por
+   `non-scaling-stroke`, así que ondula de verdad por muy larga que sea
+   la rama. Un `border-left` aquí sería la línea que dibuja un ordenador.
+
+   La sangría empieza en el centro del sello de la madre —1.2rem, la
+   mitad de sus 2.4— para que la raíz salga de debajo del ave y no del
+   borde de la tarjeta. */
+.hebra__lista--hija {
+  position: relative;
+  margin-top: var(--e-4);
+  margin-left: 1.2rem;
+  padding-left: 1.7rem;
+}
+.raiz {
+  position: absolute;
+  left: 0; top: -0.4rem; bottom: 0.5rem;
+  width: 10px;
+  overflow: visible;
+  color: rgb(var(--letra-rgb) / 34%);
+  pointer-events: none;
+}
+
+/* La tarjeta de un comentario NO es una tarjeta: es texto sobre el mismo
+   vidrio del hilo. Dos niveles de panel dentro de un panel es lo que
+   convierte un foro en un archivador. Lo que separa un comentario del
+   siguiente es el aire y su sello. */
+.nodo__caja {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  min-width: 0;
+}
+.nodo__col { min-width: 0; }
+.nodo__cabeza {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+  margin-bottom: var(--e-1);
+}
+.nodo__autora { font-size: var(--t-sm); font-weight: 700; }
+.nodo__autora--anonima { font-weight: 400; color: rgb(var(--letra-rgb) / 74%); }
+.nodo__cuando {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / var(--gris-suelo));
+}
+
+/* LA ÚNICA INSIGNIA DE LA PÁGINA. Dice quién abrió el hilo, y eso es
+   información: sin ella, una respuesta de la autora se lee como la
+   opinión de un tercero. No hay karma, ni medallas, ni antigüedad —
+   nada que se pueda acumular. */
+.nodo__insignia {
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  background: rgb(var(--letra-rgb) / 8%);
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / 70%);
+  white-space: nowrap;
+}
+
+.nodo__texto {
+  margin: 0 0 var(--e-2);
+  font-size: var(--t-sm);
+  line-height: 1.62;
+  max-width: 58ch;
+  text-wrap: pretty;
+  color: rgb(var(--letra-rgb) / 88%);
+}
+
+/* La fila de un comentario: votos y responder, la de Reddit. */
+.nodo__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.7rem;
+}
+.nodo__responder {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;                 /* 36 px, como las flechas de al lado */
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / 72%);
+  text-decoration: none;
+  transition: background-color 180ms linear, color 180ms linear;
+}
+.nodo__responder:hover {
+  background: rgb(var(--letra-rgb) / 9%);
+  color: var(--letra);
+}
+.nodo__responder:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+.hebra__pie { margin: var(--e-4) 0 0; }
+.hebra__responder {
+  font-size: var(--t-sm);
+  color: var(--letra);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+}
+
+/* ── EL HILO QUE NADIE HA CONTESTADO ────────────────────────────────
+   Y SE DICE EN VOZ BAJA. Ni aviso rojo ni icono de alerta: no es un
+   error del sitio, es alguien esperando. El único énfasis es que la
+   frase existe y que al lado hay una puerta para contestar. */
+.hilo__sola {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: var(--e-3) 0 0;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 66%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL SELLO — la garza de cada quien
+
+   Las seis láminas de garza posada, las mismas que se posan en el
+   manglar del hero. Tres cosas que la hacen sello y no adorno:
+
+   1 · SE VE EL AVE ENTERA, de pie. Recortarle la cabeza para meterla en
+       un círculo la convertiría en un avatar, y un avatar es una cara.
+       Aquí es un pájaro que está ahí de pie, que es otra cosa — y es
+       además el argumento del sitio: la bandada del árbol es de quienes
+       entraron antes.
+   2 · SE APOYA EN UN POZO. Un ave flotando sobre el vidrio no está en
+       ningún sitio; con una sombra de agua debajo, está posada.
+   3 · NO USA LOS TOKENS `--vuelo-*`. Esos están calibrados contra la
+       PINTURA: de noche bajan el brillo a 0.55 porque el ave se ve
+       contra un mar oscuro. Aquí el fondo es papel, y de noche el papel
+       también es oscuro — ese brillo dejaría la garza en una silueta
+       negra sobre azul. La luz de aquí es propia y va en la dirección
+       contraria: de noche SUBE.
+   ═══════════════════════════════════════════════════════════════════ */
+.sello {
+  position: relative;
+  flex: none;
+  display: block;
+  width: 2.4rem;
+  height: 3rem;
+  border-radius: var(--redondo-medio);
+  /* Una baldosa de vidrio muy floja. No lleva borde: veinte cantos
+     marcados bajando por la columna de la izquierda se leen como una
+     tabla, y esto tiene que leerse como una fila de aves en una rama. */
+  background: rgb(255 255 255 / 26%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%);
+}
+:root[data-tinta="clara"] .sello {
+  background: rgb(190 226 238 / 7%);
+  box-shadow: inset 0 1px 0 rgb(190 226 238 / 10%);
+}
+.sello--grande { width: 3rem; height: 3.8rem; }
+
+/* EL POZO. Una elipse muy suave a los pies, en la tinta del papel. No es
+   una sombra proyectada —esta página no declara ninguna fuente de luz
+   dura— es el agua que queda alrededor de algo que se posó. */
+.sello::after {
+  content: "";
+  position: absolute;
+  left: 10%; right: 10%; bottom: 4%;
+  height: 20%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 60%,
+    rgb(var(--letra-rgb) / 18%) 0%, rgb(var(--letra-rgb) / 8%) 52%, transparent 78%);
+  pointer-events: none;
+}
+
+.sello__ave {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  /* El espejado pivota sobre el CENTRO y aquí sí vale: la caja del sello
+     es fija, así que voltear dentro de ella no mueve al ave de su sitio.
+     (En el hero pivota sobre los pies porque allí el ave está colocada
+     por ellos — ver `.vuelo--visita`.) */
+  transform: scaleX(var(--mirar, 1)) rotate(var(--giro, 0deg));
+  filter: saturate(0.6) contrast(0.95)
+          drop-shadow(0 1px 1px rgb(var(--sombra-rgb) / 18%));
+}
+:root[data-tinta="clara"] .sello__ave {
+  /* De noche el papel se va a la tinta azul y la garza —gris azulada de
+     valor medio— se hunde en él. Sube de brillo y baja de contraste: lo
+     que hay que conservar es la silueta, no el modelado. */
+  filter: saturate(0.45) brightness(1.5) contrast(0.8)
+          drop-shadow(0 1px 2px rgb(0 0 0 / 35%));
+}
+
+/* El señuelo de escribir lleva sello también, y ese es «quien llega»: la
+   garza que se posa en la rama de abajo al abrir el sitio. */
+.escribir__senuelo .sello { width: 2rem; height: 2.5rem; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL PIE — y lo último que se lee no es la comunidad
+   ═══════════════════════════════════════════════════════════════════
+   Quien haya bajado diez hilos tiene que salir de aquí con la ruta a la
+   ayuda a mano. Si esta página fuera el destino, sería un sitio donde se
+   habla de lo que pasó en vez de un sitio donde se hace algo.
+   Va en vidrio y con el pigmento del verde abierto: es una salida, no un
+   pie de página. */
+.comunidad__pie {
+  margin-top: var(--e-7);
+  padding: var(--e-5) clamp(1.1rem, 2.4vw, 1.6rem);
+  border: 1px solid var(--vidrio-canto);
+  border-radius: var(--redondo);
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  max-width: 62rem;
+}
+.comunidad__pie-frase {
+  margin: 0 0 var(--e-3);
+  font-size: var(--t-md);
+  line-height: 1.5;
+  color: rgb(var(--letra-rgb) / 90%);
+}
+.comunidad__pie-enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+}
+.comunidad__pie-enlaces a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  background: rgb(var(--letra-rgb) / 5%);
+  color: var(--letra);
+  font-size: var(--t-sm);
+  text-decoration: none;
+  transition: background-color 180ms linear;
+}
+.comunidad__pie-enlaces a:hover { background: rgb(var(--letra-rgb) / 11%); }
+.comunidad__pie-enlaces a:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL TELÉFONO
+
+   Lo que se va y por qué. Con 390 px de ancho, la fila del pie de una
+   tarjeta pide «Acompañar 34» más cuatro reacciones con su rótulo: se
+   parte en cuatro renglones y la tarjeta se convierte en un panel de
+   botones con un título encima.
+
+   Se van LOS RÓTULOS de las reacciones, no las reacciones. El glifo y la
+   cuenta caben en una línea, el nombre sigue en `title` y en el texto
+   accesible del botón, y lo que se pulsa mantiene sus 38 px de alto
+   —blanco de dedo—, porque esta página se abre en la cama a las dos de
+   la mañana igual que la portada a las cuatro.
+
+   Y EL DESENFOQUE BAJA A 12 px. No es un ajuste estético: cada panel con
+   `backdrop-filter` es una capa que la GPU compone aparte, y aquí hay
+   diez hilos, el mando, el compositor y el pie. El aparato que manda en
+   este proyecto es un teléfono de gama baja con el 3 % de batería, no el
+   que tengo delante. A 12 px el vidrio sigue siendo vidrio y el radio
+   del desenfoque cuesta la mitad.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+  .pagina-papel { --difuminado: blur(12px) saturate(1.3); --redondo: 22px; }
+
+  /* `--canal` es el ancho de la columna de la garza del hilo más su
+     hueco. Se declara una vez y se usa dos: aquí no vale repetir 3.2rem
+     en dos sitios, porque el día que la garza cambie de talla la hebra se
+     queda descolocada y no hay nada que lo avise. */
+  .hilo { gap: 0.7rem; --canal: 3.2rem; }
+  .sello { width: 2.1rem; height: 2.6rem; }
+  .sello--grande { width: 2.5rem; height: 3.1rem; }   /* 2.5 + 0.7 = --canal */
+
+  /* ── LA HEBRA SE SALE DEL CANAL DE LA GARZA ────────────────────────
+     Medido en 375 px: con la hebra dentro de la columna del texto, cada
+     comentario paga los 51 px del canal de la garza del hilo ADEMÁS de
+     su propia sangría. El comentario de primer nivel se quedaba en 28
+     caracteres por renglón y la respuesta en 31 — y una respuesta más
+     ancha que el comentario al que contesta, encima, se lee al revés.
+
+     En una pantalla estrecha la conversación no cuelga del retrato de
+     quien abrió el hilo: empieza donde empieza la tarjeta. Es lo que
+     hacen las redes en móvil y es lo único que cabe. En escritorio la
+     sangría se queda, porque ahí sí sobra ancho y el canal es lo que
+     dice de un golpe qué es hilo y qué es respuesta. */
+  .hebra { margin-left: calc(0px - var(--canal)); }
+
+  /* La etiqueta baja a su propia línea: en la fila de arriba compite con
+     el nombre y el tiempo, y es lo menos urgente de los tres. */
+  .etiqueta { margin-left: 0; }
+
+  /* ── LA SEGUNDA VUELTA PIERDE SU GARZA, Y ESTÁ MEDIDO ─────────────
+     En una pantalla de 375 px la cadena de sangrías se come 121 de los
+     335 px de la tarjeta: la garza del hilo (40 + 11 de hueco), la
+     sangría de la hebra (25.6) y ADEMÁS la garza de la respuesta
+     (33.6 + 11). Lo que queda para el texto de una respuesta anidada son
+     177.8 px, o sea **24 caracteres por renglón**. Este archivo ya decía
+     unas líneas más arriba que por debajo de 30 se lee peor colgado de la
+     raíz que sin ella, así que la regla se aplica a sí misma.
+
+     Se retira la garza de la SEGUNDA vuelta, no la de la primera. Es la
+     única pieza de las cuatro que no lleva información: el sello es
+     `aria-hidden` y quién habla ya lo dice el nombre, que está justo al
+     lado. Con eso el texto pasa de 24 a unos 31 caracteres.
+
+     Y hay que cambiar la rejilla, no solo esconder el sello: con
+     `display: none` el hijo que queda caería en la primera columna, que
+     es `auto` —se ajusta al contenido— y un párrafo largo la desborda.
+     Pasa a una sola columna de `minmax(0, 1fr)`, que es lo que impide
+     que un texto sin espacios estire la caja. */
+  .hebra__lista--hija { margin-left: 0.4rem; padding-left: 1rem; }
+  .nodo--hija .nodo__caja { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .nodo--hija > .nodo__caja > .sello { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOVIMIENTO APAGADO — no reducido. Es la regla 7 del proyecto.
+   Se van los levantamientos, los giros y los velos. El vidrio, las
+   sombras y el radio se quedan: no se mueven, y quitarlos sería quitar
+   la página, no su animación.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .hilos--mojada { animation: none; }
+  .hilo, .orden, .chip, .escribir, .voto, .votos__marcador,
+  .hebra__abrir, .nodo__responder, .comunidad__pie-enlaces a {
+    transition: none;
+  }
+  .hilo:hover { translate: none; }
+  /* La flecha votada se queda ensanchada: no es una animación, es el
+     estado. Lo que se quita es el camino hasta él. */
+  .voto--sube[aria-pressed="true"], .voto--baja[aria-pressed="true"] { scale: 1.12; }
+}
