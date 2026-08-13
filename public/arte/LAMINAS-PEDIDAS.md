@@ -53,7 +53,7 @@ resolver solo**.
 | **L1** | `luna.png` | ✅ **Entregada e implementada.** |
 | **L2** | `estrellas.png` | ⚠️ Entregada, **no se puede conectar** — ver abajo. |
 | ~~L3~~ | ~~`amago-01..04.png`~~ | ❌ **Descartada.** No se va a pintar. |
-| **L4** | `arbol-seccion2.png` | ⏸️ Entregada y preparada, **sin usar todavía**. |
+| ~~L4~~ | ~~`arbol-seccion2.png`~~ | ❌ **Sin destino.** Existía para que se posara el ente, y el ente se retiró (12 ago 2026). No la generes. |
 | **L5** | `pasto-matas.png` | ✅ **Entregada e implementada.** |
 | **L6** | `papel-barbas.png` | 🆕 Pedida — cose la pintura con el documento. |
 | **L7** | `aguadas-seccion2.png` | 🆕 Pedida — el fondo de las herramientas, pintado. |
@@ -195,7 +195,20 @@ noise, saturated, navy blue, black sky, finished, polished.
 
 ---
 
-# L4 · `arbol-seccion2.png` — el árbol donde se posa el ente
+# ~~L4 · `arbol-seccion2.png` — el árbol donde se posa el ente~~
+
+> ## ❌ DESCARTADA — no la generes
+>
+> **El 12 de agosto de 2026 se suprimió la idea del humo.** `js/humo.js`
+> y sus dos lienzos salieron de la página, y con ellos el ave que se
+> recogía al entrar en las herramientas. Esta lámina solo existía para
+> darle dónde posarse: sin ente no hay nada que aterrice, y un árbol
+> suelto en el margen de la sección de lectura sería justo lo que este
+> documento prohíbe en la ficha de abajo —un dibujo que compite con el
+> manglar del hero sin contar nada.
+>
+> El prompt se conserva íntegro por si algún día vuelve un actor a esa
+> sección. Hasta entonces, no hay que pintarla.
 
 El humo azul y rojo ya recorre la página y ya se recoge en forma de ave
 al entrar en la sección de herramientas, pero **se posa en el aire**: el

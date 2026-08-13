@@ -13,7 +13,7 @@
    guarda. Lo que ella escriba se queda en su dispositivo.
    ═══════════════════════════════════════════════════════════════════ */
 
-import { VENTANAS, abierto, sinFuente } from './reloj.js';
+import { VENTANAS, abierto, sinFuente, consejosSinFuente } from './reloj.js';
 
 const $ = (s, raiz = document) => raiz.querySelector(s);
 
@@ -263,6 +263,30 @@ montarReloj();
 montarVengan();
 montarRecuerdo();
 montarAviso();
+
+/* ── LAS DOS REDES DE LAS FUENTES, EN DESARROLLO ───────────────────
+   `montarAviso()` de arriba vuelve sin hacer nada desde que el aviso
+   de borrador salió de la página: busca `#aviso-borrador` y ya no
+   existe. O sea que la cuenta de ventanas sin fuente lleva un tiempo
+   sin que la lea nadie, y una red que nadie mira no es una red.
+
+   Aquí se leen las dos, y en la consola de desarrollo, que es donde
+   está mirando quien acaba de añadir un dato. Nunca en producción: a
+   quien abre esta página a las cuatro de la mañana no le sirve de nada
+   un aviso para el que escribe el código.
+
+   Lo que vigilan son cosas distintas y las dos importan:
+   — VENTANAS sin `fuente`: un plazo médico sin documento detrás.
+   — CONSEJOS sin `fuente`: un consejo de las primeras horas que afirma
+     algo sobre el examen forense sin decir de dónde sale.
+   `CONSEJOS_SIEMPRE` NO entra en la cuenta, y a propósito: no afirma
+   nada comprobable. Ver su cabecera en reloj.js, donde está escrito
+   qué NO puede entrar en esa lista. */
+if (import.meta.env.DEV) {
+  const v = sinFuente(), c = consejosSinFuente();
+  if (v) console.warn(`[reloj] ${v} ventana(s) SIN FUENTE. Un plazo médico sin documento no se publica.`);
+  if (c) console.warn(`[reloj] ${c} consejo(s) de las primeras horas SIN FUENTE. O lleva cita, o se va a CONSEJOS_SIEMPRE, o no va.`);
+}
 
 /* El mapa se carga aparte y en diferido: si Leaflet no llega, nada de lo
    anterior se entera. La ayuda nunca depende de un CDN. */
