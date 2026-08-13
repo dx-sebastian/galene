@@ -10,6 +10,7 @@
 
 import { luz, aplicar, horaAhora, notaAmanecer } from './hora.js';
 import { crear, viento, encogeCerca, VIENTO_COPA, VIENTO_RAMA } from './mar.js';
+import { viewportHeight, viewportWidth } from './viewport.js';
 
 /* La barra de reflejos —salida rápida y línea de atención— salió del
    sitio: la urgencia se traslada a una app móvil, y aquí volverá más
@@ -47,7 +48,7 @@ setInterval(refrescarHora, 30_000);
 
    El 67.5 % del tráfico en Colombia es móvil, y esto se abre a las
    cuatro de la mañana con mala señal y el 3 % de batería. */
-const ANCHO_REAL = Math.min(2048, innerWidth * Math.min(devicePixelRatio || 1, 2));
+const ANCHO_REAL = Math.min(2048, viewportWidth() * Math.min(devicePixelRatio || 1, 2));
 const LAMINAS_CHICAS = ANCHO_REAL <= 1100;
 /* BASE_URL lo resuelve Vite en compilación: '/' en local y '/galene/'
    en producción. Nunca se escribe la ruta a mano. */
@@ -101,7 +102,7 @@ function arrancar(mar) {
 
   function medidas() {
     const caja = hero.getBoundingClientRect();
-    const w = innerWidth, h = caja.height || innerHeight;
+    const w = viewportWidth(), h = caja.height || viewportHeight();
     const aspecto = w / h;
 
     /* SI EL BLOQUE DE TEXTO CRECE, EL PAISAJE SE AGACHA — nunca al revés.
@@ -271,6 +272,7 @@ function arrancar(mar) {
   sondear();
   medidas();
   addEventListener('resize', medidas, { passive: true });
+  addEventListener('galene:viewportresize', medidas, { passive: true });
 
   /* Paralaje de puntero: solo en escritorio, solo con puntero fino. */
   if (matchMedia('(min-width: 700px) and (pointer: fine)').matches) {
@@ -299,7 +301,7 @@ function arrancar(mar) {
          bandada y la visitante multiplican todos este mismo escalar.
          Cambiarlo en el shader dejaría a las aves clavadas en el aire
          mientras el árbol se mueve — ya pasó una vez. */
-      punteroObjetivo = (e.clientX / innerWidth - 0.5) * 0.030;
+      punteroObjetivo = (e.clientX / viewportWidth() - 0.5) * 0.030;
       /* Y EL AGUA SE ENTERA DE QUE PASAS. No es un toque —no aquieta, no
          deja anillo, no cuenta para el tope— sino lo contrario: donde
          pasa la mano el agua se despierta un poco, como una brisa
@@ -377,7 +379,7 @@ function arrancar(mar) {
   addEventListener('keydown', (e) => {
     if (e.code !== 'Space' || sosteniendo || e.target !== document.body) return;
     e.preventDefault();
-    empezarToque(innerWidth * 0.5, innerHeight * (1 - estado.horizonte * 0.5));
+    empezarToque(viewportWidth() * 0.5, viewportHeight() * (1 - estado.horizonte * 0.5));
   });
   addEventListener('keyup', (e) => { if (e.code === 'Space') soltarToque(); });
 
@@ -466,7 +468,7 @@ function arrancar(mar) {
        modo, así que sin esta puerta el mundo se quedaría hundido en el
        sitio de quien pidió que nada se moviera. */
     const k = quieto.matches ? 0
-      : Math.min(1, Math.max(0, scrollY / Math.max(1, innerHeight)));
+      : Math.min(1, Math.max(0, scrollY / Math.max(1, viewportHeight())));
     salida = k * k * (3 - 2 * k);
     /* Al primer palmo de scroll —34 px en una ventana de 910—, un ave
        de la copa levanta el vuelo. Vive en el módulo, junto a la
@@ -478,7 +480,7 @@ function arrancar(mar) {
 
     const e = SALIDA_ESCALA * salida;
     const tr = e === 0 ? 'translate3d(0, 0, 0)'
-      : `translate3d(0, ${(e * innerHeight * SALIDA_HUNDE).toFixed(2)}px, 0) `
+      : `translate3d(0, ${(e * viewportHeight() * SALIDA_HUNDE).toFixed(2)}px, 0) `
         + `scale(${(1 + e).toFixed(5)})`;
     if (tr === salidaEscrita) return salida;
     salidaEscrita = tr;
@@ -629,36 +631,27 @@ function arrancar(mar) {
      objetivo anterior de 5.4 obligaba al dia claro a cargar con una
      nube oscura mucho mayor que el texto, ajena a la referencia. */
   const OBJETIVO = 4.5;
-  /* ── TRES ZONAS, NO UNA ────────────────────────────────────────────
-     Esto medía solo la caja de `.hero__texto`, y mientras el hero fue lo
-     único que se leía sobre la pintura eso bastaba. Con la barra puesta
-     ya no: el logotipo y los enlaces viven sobre OTRO trozo de cielo, y
-     no es el mismo trozo — por detrás de la barra pasa la luna a
-     medianoche y la copa del manglar a cualquier hora, y por detrás del
-     título no.
+  /* ── UNA ZONA, QUE ES LA QUE HAY ───────────────────────────────────
+     Llegó a medir tres —el bloque de texto, el logotipo y la fila de
+     enlaces— porque la barra vivía sobre la pintura y su peor caso sin
+     lavar era 2.60:1 a las 5:00, sobre el logotipo. Aquello se midió
+     bien y valía; lo que pasa es que la pregunta desapareció: la barra
+     salió del hero y ahora baja sobre papel, con su propio fondo (ver
+     `.barra--flotante` en estilos.css y js/barra.js). Sobre papel opaco
+     un lavado elíptico no protege nada — es una mancha sin causa, que
+     es el mismo razonamiento que ya tenía la barra de la comunidad.
 
-     Estuvo un rato tomando prestado el número del texto con un recargo
-     de 1.25 sacado de correlacionar las dos zonas hora a hora. Pasaba, y
-     era honesto por lo menos en que estaba medido — pero una correlación
-     no es una medida: el día que el árbol se mueva de sitio o el rótulo
-     cambie de tamaño, el recargo sigue valiendo 1.25 y ya no querrá
-     decir nada. Medido de verdad sobre los píxeles y por elemento de
-     texto, el peor caso de la barra sin lavado era 2.60:1 a las 5:00,
-     sobre el logotipo.
+     Queda lo único que de verdad se lee sobre el cielo: el bloque del
+     rótulo. Si algún día vuelve a haber texto suelto encima de la
+     pintura, se añade aquí su caja y ya está — la maquinaria de abajo
+     no distingue cuántas zonas hay.
 
-     Y son tres zonas y no dos porque el logotipo y los enlaces están en
-     esquinas opuestas de una pantalla ancha: lavar los dos con el mismo
-     alfa obliga al que menos lo necesita a llevar el velo del otro, y en
-     una pantalla de 1900 px eso es una cinta de lado a lado. Cada uno
-     con el suyo son dos manchas pequeñas.
-
-     Lo que NO se mide aparte es cada enlace: `.barra__nav` entera es una
-     fila corta y contigua, y ahí el peor píxel del conjunto sí es el
-     peor píxel de cada uno. */
+     (Lo que se aprendió y no hay que volver a aprender: dos elementos
+     en esquinas opuestas necesitan un alfa CADA UNO. Con uno solo, el
+     que menos lo necesita carga con el velo del otro y en una pantalla
+     de 1900 px eso es una cinta de lado a lado cruzando el cielo.) */
   const ZONAS = [
-    { sel: '.hero__texto', prop: '--lavado',       v: 0 },
-    { sel: '.marca',       prop: '--lavado-marca', v: 0 },
-    { sel: '.barra__nav',  prop: '--lavado-nav',   v: 0 },
+    { sel: '.hero__texto', prop: '--lavado', v: 0 },
   ];
   let contadorLavado = 14, primeraCalibracion = true;
   lavadoAdaptativo = true;
@@ -819,6 +812,11 @@ function arrancar(mar) {
     papel:        ARTE + 'papel.webp',
     grafito:      ARTE + 'grafito.webp',
     nubes:        ARTE + 'cielo-atlas-v3.webp',
+    /* La aguada de cielo estrellado: salpicado de sal sobre azul de
+       payne, que es como se pinta a mano una via lactea. Va de adorno,
+       asi que si el aparato no tiene unidad libre se cae sola y quedan
+       las estrellas procedurales. */
+    estrellas:    ARTE + 'estrellas.webp',
     /* Las garzas ya NO se pintan en el shader: allí estaban paradas en
        mar abierto, y una garza vadea en somero. Ahora hay una sola, en
        el DOM, que llega volando y se posa sobre la copa del manglar. */
@@ -1280,7 +1278,7 @@ function poblarBandada() {
      serían una mancha, además de sesenta láminas más en el DOM de un
      aparato que puede ser de gama baja. El tramo es aleatorio porque el
      manglar no tiene el mismo censo cada tarde. */
-  const chica = innerWidth < 700;
+  const chica = viewportWidth() < 700;
   const cuantas = Math.min(PERCHAS.length, chica ? 4 + Math.floor(Math.random() * 3)
                                                  : 6 + Math.floor(Math.random() * (BANDADA_MAX - 5)));
   /* Barajado de Fisher-Yates sobre los índices: las perchas se reparten
@@ -2200,7 +2198,7 @@ function empezarDespegue() {
 function animarDespegue(ave, t, paralaje) {
   if (!vuelo) return;
   const te = t - despegue.t0;
-  const w = vuelo.w || innerWidth, h = ave.h0 || vuelo.h || innerHeight;
+  const w = vuelo.w || viewportWidth(), h = ave.h0 || vuelo.h || viewportHeight();
   /* La envergadura sale de la misma proporción que usa la protagonista
      entre su lámina de vuelo y la de posada (0.17 / 0.135): las dos
      hojas se dibujaron con garzas de otras proporciones y ese número es
