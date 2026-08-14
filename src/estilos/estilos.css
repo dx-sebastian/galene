@@ -327,7 +327,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/galene/arte/1024/manglar-v2.webp") 78% 66% / auto 68% no-repeat;
+  background: url("/galene/arte/mobile/manglar-v2.webp") 78% 66% / auto 68% no-repeat;
   filter: saturate(0.72) contrast(0.94);
   opacity: 0.94;
 }
