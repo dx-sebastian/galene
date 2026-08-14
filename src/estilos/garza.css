@@ -62,8 +62,22 @@
    `--letra` y no `--tinta`: dentro del panel el fondo es papel, así que
    la tinta que toca es la del papel. El hero fuerza `--tinta: #FFFFFF`
    y sin esto las diez frases saldrían blancas sobre papel claro. */
+/* ── Y SE ABRE HACIA ARRIBA, FUERA DEL FLUJO ───────────────────────
+   Estuvo en el flujo, debajo del <summary>, y en un teléfono se veía el
+   problema: `.garza-yo` va anclado por `bottom`, así que al crecer el
+   panel EMPUJA EL DISPARADOR HACIA ARRIBA — medido a 390×844, «Tu
+   garza» acababa encima de «Conocer más», que es el enlace a la ayuda.
+   Un control que al abrirse se sube encima de otro control es un fallo,
+   y aquí además del otro control depende la ruta a la información.
+
+   En absoluto y colgado del canto de arriba del disparador, el
+   disparador NO SE MUEVE y el panel flota por encima del cuadro. Es lo
+   mismo que ya hace `.menu__panel` en la barra, y por la misma razón. */
 .garza-yo__panel {
-  margin-top: 0.6rem;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.6rem);
+  width: min(22rem, calc(100vw - 2.5rem));
   padding: 0.9rem 1rem 1rem;
   border: 1px solid rgb(var(--letra-rgb) / 18%);
   border-radius: 4px;
