@@ -1,0 +1,52 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   LA BOCA — donde el agua se convierte en hoja.
+
+   Es la costura entre las dos mitades del sitio: arriba una pintura,
+   abajo lo que se lee. Estuvo resuelta con un canto recto y una sombra
+   —la solución de un documento— y después con un degradado de alfa,
+   que era mejor pero seguía siendo un ESTADO: el papel simplemente
+   estaba más o menos puesto según dónde cayera el scroll.
+
+   Aquí pasa algo, y es esto: EL PIGMENTO SE LEVANTA DEL AGUA Y EL
+   PAPEL AVANZA. No es el papel tapando el mar —eso es una cortina—, es
+   el mar perdiendo color mientras la hoja se lo come por un canto
+   deshilachado. Tres capas, un solo desplazamiento:
+
+     1 · LA HOJA. Papel opaco, con el canto de barbas arriba. Sube
+         desde fuera de la pantalla hasta cubrirla.
+     2 · EL LAVADO (`::before`). La banda que va justo por delante del
+         canto: ahí el agua se dessatura y se aclara. Es
+         `backdrop-filter`, o sea que no pinta nada encima — le quita el
+         pigmento a lo que hay detrás, que es literalmente lo que hace
+         un pincel limpio sobre una aguada todavía húmeda.
+     3 · LA SANGRÍA (`::after`). Un segundo canto, más alto y más
+         flojo, por delante del primero. Es lo que impide que el frente
+         se lea como una línea: una aguada que avanza sobre papel
+         mojado no tiene un borde, tiene dos o tres.
+
+   POR QUÉ VA FUERA DE `#herramientas` Y NO DENTRO. Estuvo dentro, como
+   un relleno superior de la sección, y obligaba a tres apaños que se
+   caen solos al sacarla: el fondo de la sección tenía que empezar
+   transparente, sus aguadas tenían que arrancar desplazadas, y el
+   ancla «Información» necesitaba un `scroll-margin-top` negativo para
+   no aterrizar en mitad del agua. Fuera, `#herramientas` vuelve a ser
+   una hoja opaca desde su primer píxel y el ancla cae donde tiene que
+   caer sin trucos.
+
+   Y ES EL ÚNICO CANTO. El que había en `.herramientas::before` se
+   retiró: con la boca puesta habría dos costuras seguidas, una encima
+   de la otra, contando la misma cosa dos veces.
+
+   SIN JAVASCRIPT es una franja corta con su canto — o sea exactamente
+   la costura estática de siempre. `--avance` no existe, el CSS lee
+   `var(--avance, 1)` y la hoja está puesta. Decorativa entera: no hay
+   una palabra aquí dentro.
+   ═══════════════════════════════════════════════════════════════════ */
+---
+
+<div class="boca" data-escena="boca" data-pegada aria-hidden="true">
+  <div class="boca__escena">
+    <div class="boca__hoja"></div>
+  </div>
+</div>

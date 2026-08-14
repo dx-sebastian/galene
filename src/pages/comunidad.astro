@@ -1,0 +1,110 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — la comunidad.
+
+   NO LLEVA EL MAR, Y NO ES POR PESO. El hero es un shader WebGL2 que
+   compone nueve láminas y se calibra midiendo sus propios píxeles
+   contra la caja del texto: es una pintura terminada, y montarla otra
+   vez aquí arriba para poner encima una lista de diez hilos sería
+   pedirle al cuadro que haga de cabecera de un foro.
+
+   Lo que sí baja es el MATERIAL. Esta página se pinta con las mismas
+   capas que la sección de lectura de la portada —papel de algodón, dos
+   aguadas pintadas, el canto de barbas— y con la misma luz: hora.js
+   escribe los tokens de la hora local y el modo de tinta, así que a las
+   nueve de la mañana esto es una hoja clara y a las nueve de la noche
+   es la misma hoja de noche. Sin duplicar una sola regla de CSS.
+
+   TRES ISLAS SEPARADAS, por lo mismo que en la portada: si un módulo
+   revienta al evaluarse, se lleva por delante todo lo que comparta
+   <script> con él. Aquí la luz, el paralaje y el foro van en tres, y el
+   orden importa — la luz primero, para que la tinta esté puesta antes
+   del primer cuadro.
+   ═══════════════════════════════════════════════════════════════════ */
+import '../estilos/estilos.css';
+/* Y la hoja de esta página, DESPUÉS de la general: aquí no se pisa nada
+   —los selectores son propios— pero el orden correcto es el que dice la
+   verdad sobre quién manda si algún día se pisan. En su cabecera está
+   escrito por qué vive aparte y qué hace falta para plegarla dentro. */
+import '../estilos/comunidad.css';
+import Comunidad from '../componentes/Comunidad.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>Comunidad — Galene</title>
+  <meta name="description" content="Lo que aprendimos después, contado por quienes ya pasaron por ahí." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Comunidad — Galene" />
+  <meta property="og:description" content="Lo que aprendimos después, contado por quienes ya pasaron por ahí." />
+  <meta name="theme-color" content="#2E4256" />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
+
+  {/* BORRADOR, y aquí con más razón que en la portada: los hilos son
+      datos de ejemplo. Nada de esto puede ser encontrable. */}
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+</head>
+
+<body class="pagina-papel">
+
+  {/* LA BARRA, LA MISMA DE LA PORTADA Y CON UNA DIFERENCIA MEDIDA.
+      Allí flota sobre la pintura y su tinta es la del cielo (`--tinta`,
+      con el lavado que calibra main.js midiendo el shader). Aquí no hay
+      cielo detrás: hay papel. Así que toma la tinta del papel
+      (`--letra`) y no lleva lavado ninguno — un velo detrás del
+      logotipo sobre una hoja opaca sería una mancha sin causa.
+
+      `.barra--papel` es esa diferencia y nada más. El logotipo, la ola
+      en SVG que hereda la tinta y la píldora son exactamente los
+      mismos, porque son la marca. */}
+  <header class="barra barra--papel">
+    <a class="marca" href={base}>
+      <span class="marca__nombre">Galene</span>
+      <svg class="marca__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
+           aria-hidden="true" focusable="false">
+        <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
+                 S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
+              fill="none" stroke="currentColor" stroke-width="1.15"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      </svg>
+    </a>
+
+    <nav class="barra__nav" aria-label="Principal">
+      <a class="barra__enlace" href={base + '#herramientas'}>Información</a>
+      <a class="barra__enlace" href={base + '#sin-hablar'}>Recursos</a>
+      {/* `aria-current="page"` y no una clase: quien navega con lector
+          de pantalla se entera de que ya está aquí sin depender de que
+          vea el subrayado. El CSS se cuelga del mismo atributo. */}
+      <a class="barra__enlace" href={base + 'comunidad'} aria-current="page">Comunidad</a>
+      <a class="pildora" href={base + '#salir'}>
+        Buscar ayuda
+        <svg class="pildora__icono" viewBox="0 0 14 12"
+             aria-hidden="true" focusable="false">
+          <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
+                fill="none" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"
+                vector-effect="non-scaling-stroke" />
+        </svg>
+      </a>
+    </nav>
+  </header>
+
+  <main>
+    <Comunidad />
+  </main>
+
+  <script>import '../js/luz.js';</script>
+  <script>import '../js/paralaje.js';</script>
+  <script>import '../js/desplazamiento.js';</script>
+  <script>import '../js/comunidad.js';</script>
+</body>
+</html>
