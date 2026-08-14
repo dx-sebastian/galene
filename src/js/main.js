@@ -115,8 +115,8 @@ function arrancar(mar) {
   /* En móvil, más píxeles de respaldo no son más detalle visible: son
      más fragmentos del shader por cuadro. La escala puede recuperarse
      tras la sonda si el dispositivo demuestra que tiene margen. */
-  let escala = PERFIL_AHORRO ? 0.64
-    : MOVIL ? Math.min(devicePixelRatio || 1, 0.78)
+  let escala = PERFIL_AHORRO ? 0.58
+    : MOVIL ? Math.min(devicePixelRatio || 1, 0.72)
       : Math.min(devicePixelRatio || 1, 1.35);
   let horizonte = 0.44;
   let deriva = 0, punteroX = 0, punteroObjetivo = 0;
@@ -127,7 +127,9 @@ function arrancar(mar) {
      que se le escribió al lienzo, para no reescribir lo que no cambió. */
   let salida = 0, derivaScroll = 0, salidaEscrita = '';
   let fpsMar = PERFIL_AHORRO ? 20 : 30;
+  let fpsCielo = PERFIL_AHORRO ? 8 : 15;
   let intervaloMar = 1000 / fpsMar;   // compuerta — SOLO el mar
+  let intervaloCielo = 1000 / fpsCielo, ultimoCielo = 0;
 
   const estado = { t: 0, horizonte, calma, deriva: 0, papel: 0.055, luz: L };
 
@@ -287,35 +289,14 @@ function arrancar(mar) {
     colocarGarzas(w, h, desdeArriba);
   }
 
-  /* Sonda real de rendimiento. `hardwareConcurrency >= 8` no sirve:
-     Helio G85 y Unisoc T606 son octa-core y se arrastran. En móvil se
-     mide el lienzo A SU TAMAÑO REAL; la antigua muestra de 96×96 decía
-     que el shader era rápido y luego le pedía diez veces más fragmentos
-     al pintar la pantalla completa. El temporizador de GPU es asíncrono:
-     medir nunca congela la interfaz. La fluidez se compra reduciendo
-     píxeles internos, no quitando capas de la escena. */
+  /* Perfil de arranque. `hardwareConcurrency >= 8` no sirve: Helio G85
+     y Unisoc T606 son octa-core y se arrastran. El móvil empieza con un
+     presupuesto conservador y la cadencia real de rAF lo corrige más
+     abajo sin añadir un cuadro pesado solo para medir. */
   function sondear() {
     if (MOVIL) {
       medidas();
-      mar.medirGpu(estado).then((ms) => {
-        if (ms === null) {
-          console.info(`[mar] sin temporizador GPU → escala ${escala}, ${fpsMar} fps`);
-          return;
-        }
-        const presupuesto = 18;
-        if (ms > presupuesto) {
-          const proporcion = Math.sqrt(presupuesto / ms) * 0.94;
-          escala = Math.max(0.52, Math.min(escala, escala * proporcion));
-        }
-        escala = Math.round(escala * 100) / 100;
-        fpsMar = ms > 38 ? Math.min(fpsMar, 18)
-               : ms > 26 ? Math.min(fpsMar, 20)
-               : ms > 18 ? Math.min(fpsMar, 24)
-               : fpsMar;
-        intervaloMar = 1000 / fpsMar;
-        medidas();
-        console.info(`[mar] sonda real: ${ms.toFixed(2)} ms/cuadro → escala ${escala}, ${fpsMar} fps`);
-      });
+      console.info(`[mar] perfil móvil: escala ${escala}, agua ${fpsMar} fps, cielo ${fpsCielo} fps`);
       return;
     }
 
@@ -669,7 +650,14 @@ function arrancar(mar) {
     estado.horizonte = horizonte;
     estado.luz = L;
     avanzarToques(dtMar);
-    mar.dibujar(estado);
+    /* El agua lleva la cadencia alta. El cielo, la Vía Láctea y el
+       movimiento lentísimo de la copa se renuevan aparte: entre esos
+       cuadros el framebuffer conserva exactamente el último cielo y el
+       shader solo recorre la franja inferior. */
+    const cieloNuevo = !MOVIL || !ultimoCielo || ms - ultimoCielo >= intervaloCielo;
+    if (cieloNuevo) ultimoCielo = ms;
+    const limiteAgua = Math.min(1, horizonte + 0.055);
+    mar.dibujar(estado, cieloNuevo ? 1 : limiteAgua, MOVIL);
     calibrarLavado();
     /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito
        del agua y arrastraba al ave fuera de cuadro igual que hacía con
@@ -791,15 +779,15 @@ function arrancar(mar) {
     document.documentElement.style.setProperty('--lavado-color', '#0B141A');
   }
 
-  /* La sonda GPU elige un buen punto de partida, pero el dato que al
+  /* El perfil móvil elige un buen punto de partida, pero el dato que al
      final importa es la cadencia que la persona recibe. Tras el arranque
      se observa rAF en ventanas de tres segundos. Si el navegador no
      sostiene 48 actualizaciones, el lienzo baja resolución interna por
      pasos; no se apaga ninguna capa y todos los relojes siguen ligados
      al tiempo real. Tres ajustes son suficientes para llegar al suelo
-     de 0.52 sin convertir una caída puntual en una oscilación. */
+     de 0.50 sin convertir una caída puntual en una oscilación. */
   let muestraCadencia = 0, cuadrosCadencia = 0, ajustesCadencia = 0;
-  const cadenciaDesde = performance.now() + 6000;
+  const cadenciaDesde = performance.now() + 4000;
   function adaptarCadencia(ms) {
     if (!MOVIL || ms < cadenciaDesde || ajustesCadencia >= 3) return;
     if (!muestraCadencia) { muestraCadencia = ms; cuadrosCadencia = 0; return; }
@@ -809,12 +797,14 @@ function arrancar(mar) {
     const hz = cuadrosCadencia * 1000 / lapso;
     muestraCadencia = ms;
     cuadrosCadencia = 0;
-    if (hz >= 48 || escala <= 0.52) return;
+    if (hz >= 48 || escala <= 0.50) return;
 
     const anterior = escala;
-    escala = Math.max(0.52, Math.round(escala * 0.86 * 100) / 100);
+    escala = Math.max(0.50, Math.round(escala * 0.86 * 100) / 100);
     fpsMar = Math.min(fpsMar, hz < 34 ? 18 : 24);
+    fpsCielo = Math.min(fpsCielo, hz < 34 ? 8 : 10);
     intervaloMar = 1000 / fpsMar;
+    intervaloCielo = 1000 / fpsCielo;
     ajustesCadencia++;
     medidas();
     console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: escala ${anterior} → ${escala}, ${fpsMar} fps`);
