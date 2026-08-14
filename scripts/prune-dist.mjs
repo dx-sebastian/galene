@@ -1,4 +1,4 @@
-import { readdir, rm, stat } from 'node:fs/promises';
+import { readFile, readdir, rm, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +12,7 @@ const texturasHero = [
   'mar-cercano.webp', 'mar-cercano-calmo.webp', 'manglar-v2.webp',
   'manglar-cerca.webp', 'corales.webp', 'luces.webp', 'astro.webp',
   'reguero.webp', 'papel.webp', 'grafito.webp', 'cielo-atlas-v3.webp',
+  'estrellas.webp',
 ];
 const aves = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11]
   .map((n) => `aves/ave${String(n).padStart(2, '0')}.webp`);
@@ -27,6 +28,25 @@ const conservar = new Set([
   'papel-barbas.webp', '1024/papel-barbas.webp', '1024/filete-5.webp',
   '1024/manglar-enterrado-a.webp', 'mobile/manglar-v2.webp',
 ]);
+
+/* Las secciones pulidas cambian con frecuencia. En vez de mantener una
+   segunda lista manual que puede borrar arte válido, se registran todas
+   las láminas realmente enlazadas por el HTML, CSS y JS compilados. La
+   lista explícita de arriba queda solo para las rutas dinámicas del mar. */
+async function registrarReferencias(dir) {
+  for (const entrada of await readdir(dir, { withFileTypes: true })) {
+    const ruta = join(dir, entrada.name);
+    if (entrada.isDirectory()) {
+      if (ruta !== arte) await registrarReferencias(ruta);
+      continue;
+    }
+    if (!/\.(?:html|css|m?js)$/i.test(entrada.name)) continue;
+    const fuente = await readFile(ruta, 'utf8');
+    for (const coincidencia of fuente.matchAll(/(?:\/galene\/|\/)?arte\/([^"'`)\\\s?#]+\.webp)/g))
+      conservar.add(decodeURIComponent(coincidencia[1]));
+  }
+}
+await registrarReferencias(dist);
 
 /* Material de trabajo que debe vivir junto al proyecto, no en la web. */
 for (const ruta of ['fuente', 'prompts-cielo']) {

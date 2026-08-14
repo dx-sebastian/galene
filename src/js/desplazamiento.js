@@ -62,6 +62,8 @@
    exacto para esa pregunta. Cero lecturas de maqueta por cuadro.
    ═══════════════════════════════════════════════════════════════════ */
 
+import { viewportHeight } from './viewport.js';
+
 const quieto  = matchMedia('(prefers-reduced-motion: reduce)');
 
 /* DOS NOMBRES PARA LA MISMA COSA: `#herramientas` es la hoja de la
@@ -100,7 +102,8 @@ const seccion = document.getElementById('herramientas') ||
    ya se leyó hace rato. Cada uno entra por dónde está, que es la regla
    de este módulo. */
 const SUJETOS = ':scope > .cabecera, :scope > .hoja, ' +
-                ':scope > .bloque, :scope > .puertas > .puerta, ' +
+                ':scope > .bloque, :scope > .mapa-herramientas, ' +
+                ':scope > .puertas > .puerta, ' +
                 ':scope > .comunidad__cabecera, :scope > .mando, ' +
                 ':scope > .escribir, :scope > .hilos > .hilos__item, ' +
                 ':scope > .comunidad__pie';
@@ -170,7 +173,7 @@ function arrancar() {
 
   function pintar() {
     pedido = false;
-    const alto   = innerHeight;
+    const alto   = viewportHeight();
     const inicio = alto * ENTRA;
     const largo  = Math.max(1, alto * (ENTRA - FIN));
     for (const s of sujetos) {
@@ -213,6 +216,7 @@ function arrancar() {
 
   addEventListener('scroll', marcar, { passive: true });
   addEventListener('resize', () => { remedir(); marcar(); }, { passive: true });
+  addEventListener('galene:viewportresize', () => { remedir(); marcar(); }, { passive: true });
   /* Las láminas de fondo y la tipografía llegan después del primer
      cuadro y mueven la maqueta hacia abajo. */
   addEventListener('load', () => { remedir(); marcar(); });
@@ -234,7 +238,7 @@ function arrancar() {
       pintar, apagar, remedir,
       estado: () => sujetos.map((s) => ({
         id: s.el.id || s.el.className, y: s.y, p: +s.p.toFixed(3),
-        enPantalla: +((s.y - scrollY) / innerHeight).toFixed(3),
+        enPantalla: +((s.y - scrollY) / viewportHeight()).toFixed(3),
       })),
     };
   }

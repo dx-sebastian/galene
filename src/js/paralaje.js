@@ -41,6 +41,8 @@
      DOM cuando el valor cambió de verdad.
    ═══════════════════════════════════════════════════════════════════ */
 
+import { viewportHeight, viewportWidth } from './viewport.js';
+
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
 
 const hero  = document.getElementById('mar');
@@ -119,8 +121,8 @@ function arrancar() {
 
   if (matchMedia('(min-width: 700px) and (pointer: fine)').matches) {
     addEventListener('pointermove', (e) => {
-      objX = (e.clientX / innerWidth  - 0.5) * 2;
-      objY = (e.clientY / innerHeight - 0.5) * 2;
+      objX = (e.clientX / viewportWidth() - 0.5) * 2;
+      objY = (e.clientY / viewportHeight() - 0.5) * 2;
       despertar();
     }, { passive: true });
   } else if ('DeviceOrientationEvent' in window &&
@@ -138,6 +140,7 @@ function arrancar() {
 
   addEventListener('scroll', despertar, { passive: true });
   addEventListener('resize', despertar, { passive: true });
+  addEventListener('galene:viewportresize', despertar, { passive: true });
 
   /* DOS zonas vigiladas, no una. El bucle tiene que seguir corriendo
      cuando el hero ya salió por arriba pero la sección 2 está en
@@ -198,7 +201,7 @@ function arrancar() {
     curY += velY * dt;
 
     /* La inmersión: 0 arriba del todo, 1 con un viewport recorrido. */
-    s = Math.min(1, Math.max(0, scrollY / innerHeight));
+    s = Math.min(1, Math.max(0, scrollY / viewportHeight()));
     const hundido = suave3(s);
 
     /* 1 · EL TEXTO SE QUEDA CON EL CIELO.
@@ -207,7 +210,7 @@ function arrancar() {
        El puntero lo mueve al CONTRARIO del manglar — poco: la
        profundidad se construye con milímetros, no con vaivenes. */
     const txX = -curX * 10;
-    const txY = s * innerHeight * 0.45 - curY * 6;
+    const txY = s * viewportHeight() * 0.45 - curY * 6;
     poner(texto, 'translate', `${txX.toFixed(1)}px ${txY.toFixed(1)}px`);
 
     /* Y se sumerge: se vela y pierde el filo. El desenfoque tiene
@@ -223,7 +226,7 @@ function arrancar() {
        repita, amplitud total ~3px. Una lámina sobre agua CALMA. */
     const boya = quieto.matches ? 0
       : Math.sin(t * 0.55) * 1.7 + Math.sin(t * 0.23 + 1.3) * 1.1;
-    const ctaY = s * innerHeight * 0.30 + boya - curY * 3;
+    const ctaY = s * viewportHeight() * 0.30 + boya - curY * 3;
     poner(cta, 'translate', `${(-curX * 5).toFixed(1)}px ${ctaY.toFixed(1)}px`);
     poner(cta, 'opacity', (1 - hundido).toFixed(3));
 
@@ -233,14 +236,14 @@ function arrancar() {
        con ella.) */
 
     /* La nota de la hora es el plano más cercano: se va la primera. */
-    poner(nota, 'translate', `0px ${(s * innerHeight * 0.22).toFixed(1)}px`);
+    poner(nota, 'translate', `0px ${(s * viewportHeight() * 0.22).toFixed(1)}px`);
     poner(nota, 'opacity', (1 - Math.min(1, s * 2.4)).toFixed(3));
 
     /* Y el «Desliza» se va antes todavía —a un tercio de pantalla ya no
        está—, porque no es un plano del cuadro sino una instrucción, y
        en cuanto la persona desliza deja de ser verdad. Baja poco (0.12)
        a propósito: lo que la borra es que se apaga, no que se mueva. */
-    poner(desliza, 'translate', `0px ${(s * innerHeight * 0.12).toFixed(1)}px`);
+    poner(desliza, 'translate', `0px ${(s * viewportHeight() * 0.12).toFixed(1)}px`);
     poner(desliza, 'opacity', (1 - Math.min(1, s * 3.2)).toFixed(3));
 
     /* ── LA SECCIÓN 2: SU LLEGADA (0) Y SUS AGUADAS (3) ──────────────
@@ -296,7 +299,7 @@ function arrancar() {
       const RECORRIDO = 0.28;                  // en alturas de ventana
       const arriba = r.top - alzaSeccion;
       const entra = suave3(Math.min(1, Math.max(0,
-        (innerHeight - arriba) / (innerHeight * RECORRIDO))));
+        (viewportHeight() - arriba) / (viewportHeight() * RECORRIDO))));
       alzaSeccion = (1 - entra) * 26;
       poner(seccion, 'translate', entra >= 1 ? '' : `0px ${alzaSeccion.toFixed(1)}px`);
       poner(seccion, 'opacity',   entra >= 1 ? '' : entra.toFixed(3));

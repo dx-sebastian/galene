@@ -27,6 +27,7 @@ import '../estilos/estilos.css';
    verdad sobre quién manda si algún día se pisan. En su cabecera está
    escrito por qué vive aparte y qué hace falta para plegarla dentro. */
 import '../estilos/comunidad.css';
+import '../estilos/responsive.css';
 import Comunidad from '../componentes/Comunidad.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -85,7 +86,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
           de pantalla se entera de que ya está aquí sin depender de que
           vea el subrayado. El CSS se cuelga del mismo atributo. */}
       <a class="barra__enlace" href={base + 'comunidad'} aria-current="page">Comunidad</a>
-      <a class="pildora" href={base + '#salir'}>
+      <a class="pildora" href={base + '#sin-hablar'}>
         Buscar ayuda
         <svg class="pildora__icono" viewBox="0 0 14 12"
              aria-hidden="true" focusable="false">
@@ -102,6 +103,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <Comunidad />
   </main>
 
+  <script>import '../js/viewport.js';</script>
   <script>import '../js/luz.js';</script>
   <script>import '../js/paralaje.js';</script>
   <script>import '../js/desplazamiento.js';</script>
