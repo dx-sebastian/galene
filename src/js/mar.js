@@ -114,11 +114,27 @@ export const VIENTO_RAMA = 0.070;
    enteraba, así que en cualquier pantalla más estrecha que 1.35 de
    aspecto la garza cercana se posaba sobre una rama que ya no estaba
    donde ella creía. En escritorio ancho el factor vale 1 y por eso no
-   se veía nunca. Con una sola definición no puede volver a pasar. */
+   se veía nunca. Con una sola definición no puede volver a pasar.
+
+   ── EL SUELO SUBE DE 0.60 A 0.72, Y ESO CORRIGE UNA CONFUSIÓN ──────
+   La nota de arriba dice que este fragmento «tapaba al protagonista», y
+   el protagonista de esta esquina ES ÉL: la rama del primer término es
+   donde se posa la garza que llega. Lo que tapaba era el manglar del
+   fondo, que es el paisaje.
+
+   Medido a 390x844 con el factor en 0.60: la rama medía 0.552 del alto
+   y la garza que se para en ella, 110 px — un ave de 13 % de pantalla
+   metida en la esquina de abajo, con las patas por debajo del canto
+   (ver la nota del anclaje en `baseCerca`). A 0.72 la rama mide 0.662 y
+   el ave 131 px, que es la proporción que tiene en escritorio respecto
+   al árbol del fondo. Sigue siendo más pequeña que en una ventana
+   ancha: en un teléfono no cabe la lámina entera y eso no se discute.
+   Lo que cambia es que vuelve a leerse como PRIMER TÉRMINO. */
 export function encogeCerca(aspecto) {
   const t = Math.min(1, Math.max(0, (aspecto - 0.62) / (1.35 - 0.62)));
-  return 0.60 + 0.40 * (t * t * (3 - 2 * t));
+  return 0.72 + 0.28 * (t * t * (3 - 2 * t));
 }
+
 
 const VS = `#version 300 es
 void main(){
@@ -3126,13 +3142,33 @@ export function crear(lienzo) {
     gl.uniform2f(u['u_v' + cual], cerca, lejos);
   }
 
+  /** Dónde entra el fragmento cercano: su canto IZQUIERDO (`x`, en
+      fracción del ancho) y su borde INFERIOR (`base`, en uv, con el 0
+      en el canto de abajo de la pantalla).
+
+      Los dos eran constantes —−0.02 y −0.34— y los dos tenían que dejar
+      de serlo por la misma razón: `u_encoge` achica la lámina en
+      pantallas estrechas, y con los cantos clavados todo lo que la
+      lámina lleva DENTRO se desplaza con ella. Lo que lleva dentro es
+      la rama donde se posa la garza protagonista.
+
+      Quién decide los dos valores: `baseCerca()` y `xCerca()` en
+      main.js, que es donde vive la coordenada de la percha. */
+  function colocarCerca(base, x) {
+    gl.useProgram(p);
+    if (base !== undefined) cercaCaja[2] = base;
+    if (x !== undefined) cercaCaja[0] = x;
+    gl.uniform4fv(u.u_cercaCaja, cercaCaja);
+  }
+
   for (const n of Object.keys(unidades)) {
     gl.activeTexture(gl.TEXTURE0 + unidades[n]);
     gl.bindTexture(gl.TEXTURE_2D, tex[n]);
   }
 
   return {
-    cargar, ventana, colocarManglar, pincelada, ajustarGrafito, toques,
+    cargar, ventana, colocarManglar, colocarCerca, pincelada, ajustarGrafito,
+    toques,
     /* La caja del manglar, para que quien pinte encima —la garza que se
        posa— calcule su sitio con los MISMOS números y no con fracciones
        paralelas que se separan al cambiar de pantalla. */

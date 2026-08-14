@@ -163,7 +163,23 @@ function arrancar(mar) {
        de la foto. La composicion conserva un cielo amplio, pero ahora
        la linea de agua, las raices y el reflejo comparten la misma
        geometria que la referencia. */
-    const base = aspecto < 0.8 ? 0.68 : 0.66;
+    /* ── Y EN VERTICAL BAJA A 0.74, QUE ES LO QUE LE DA SUELO AL ÁRBOL
+       En un teléfono el texto ocupa el ancho entero, así que el manglar
+       no puede ponerse a su lado: tiene que caber DEBAJO, entre el
+       renglón más bajo y la línea de agua. Con el horizonte en 0.68 esa
+       franja medía 0.209 del alto de pantalla, y en 0.209 no cabe un
+       árbol con sus raíces fuera del agua: o se encoge hasta dejar de
+       ser el sujeto, o se hunde. Se hundía — ver `SUMERGIDO`.
+
+       Cada punto que baja el horizonte es un punto de franja. A 0.74
+       son 0.269, que es justo lo que hace falta para que el árbol
+       conserve su tamaño Y sus zancas. Lo que se paga es mar: la banda
+       de agua pasa de 32 % a 26 % del alto, y en vertical eso sobraba
+       —era agua vacía— porque el primer término ya ocupa esa esquina.
+
+       En apaisado NO se toca: allí el árbol se pone al lado del texto y
+       la franja no es el límite de nada. */
+    const base = aspecto < 0.8 ? 0.74 : 0.66;
     const texto = document.querySelector('.hero__texto');
     const fondoTexto = texto ? (texto.getBoundingClientRect().bottom - caja.top) : 0;
     const respiro = Math.max(24, h * 0.05);
@@ -239,6 +255,10 @@ function arrancar(mar) {
        árbol debajo— y de la separación vertical ya se encarga el
        horizonte unas líneas más arriba. */
     let x = xManglar;
+    /* Hasta dónde puede subir la copa. `null` mientras no haya un techo
+       —el caso de escritorio, donde el árbol va AL LADO del texto y por
+       encima solo tiene cielo—. */
+    let limiteCopa = null;
     const cajaTexto = document.querySelector('.hero__texto');
     if (cajaTexto) {
       const rt = cajaTexto.getBoundingClientRect();
@@ -275,14 +295,64 @@ function arrancar(mar) {
            para el árbol: si el texto crece, el paisaje se agacha, nunca
            al revés. Con suelo, porque un manglar diminuto tampoco es la
            escena que este sitio cuenta. */
-        const hundir = mar.cajaManglar()[2];
         const textoAbajo = (caja.bottom - rt.bottom) / h;
-        const techoCopa = textoAbajo - 0.025 - horizonte + hundir;
+        limiteCopa = textoAbajo - 0.025;
+        /* La copa está en `horizonte − hundir + alto`, y `hundir` ya no
+           es una constante sino `alto · SUMERGIDO`, así que despejar el
+           alto máximo pide dividir por lo que queda FUERA del agua. Con
+           el hundimiento fijo esto era una resta; ahora es una regla de
+           tres, y esa es toda la diferencia. */
+        const techoCopa = (limiteCopa - horizonte) / (1 - SUMERGIDO);
         altoManglar = Math.max(altoManglar * 0.68,
                                Math.min(altoManglar, techoCopa));
       }
     }
-    mar.colocarManglar(x, altoManglar);
+
+    /* ── CUÁNTO SE HUNDE, Y POR QUÉ YA NO ES UN NÚMERO SUELTO ────────
+       Era 0.252 del ALTO DE PANTALLA, fijo, y el árbol no lo es: mide
+       0.82 de pantalla en escritorio y 0.38 en un teléfono. La misma
+       resta aplicada a dos árboles de distinto tamaño no hunde lo
+       mismo — hunde una fracción distinta de cada uno.
+
+       MEDIDO, y es el bug entero: en 1440×900 quedaba bajo el agua el
+       30.7 % de la lámina, en 390×844 el 57.8 % y en 768×1024 el 64.3 %.
+       En escritorio se ven los arcos de raíz zancuda enteros; en el
+       teléfono el agua cortaba por encima de ellos y lo que quedaba era
+       un tronco recto entrando en el mar. Un mangle sin zancas deja de
+       leerse como mangle —está escrito en la nota de `manglarCaja`, «las
+       zancas SON la especie»— y de ahí la sensación de que el árbol se
+       hunde en móvil.
+
+       Ahora se hunde una fracción de SÍ MISMO, y la fracción es la que
+       ya estaba calibrada en escritorio (0.252 / 0.82). El árbol se
+       mete en el agua hasta la misma altura de su propio tronco en
+       cualquier pantalla. */
+    let hundir = altoManglar * SUMERGIDO;
+
+    /* Y SI AUN ASÍ LA COPA TOCA EL TEXTO, SE HUNDE MÁS — pero solo
+       entonces. Pasa cuando el suelo de tamaño (el 0.68 de arriba) gana
+       a la regla de tres: en una ventana muy baja el árbol no puede
+       encoger más, así que lo único que queda es meterlo un poco más en
+       el agua. Es una degradación, no el comportamiento normal, y por
+       eso lleva tope: pasado el 46 % sumergido volveríamos al problema
+       que esto viene a arreglar, y a partir de ahí es mejor que la copa
+       roce el texto —de lo que ya se encarga el lavado calibrado— que
+       perder las raíces. */
+    if (limiteCopa !== null) {
+      const copa = horizonte - hundir + altoManglar;
+      if (copa > limiteCopa) {
+        hundir = Math.min(altoManglar * 0.46, hundir + (copa - limiteCopa));
+      }
+    }
+    mar.colocarManglar(x, altoManglar, hundir);
+
+    /* El primer término se coloca DESPUÉS del horizonte y antes que las
+       garzas: `baseCerca` lo necesita, y `posaderoCercano` necesita el
+       resultado. El orden de estas tres líneas es la cadena entera. */
+    const cajaCerca = mar.cajaCerca();
+    const altoCerca = cajaCerca[1] * encogeCerca(aspecto);
+    mar.colocarCerca(baseCerca(altoCerca, horizonte),
+                     xCerca(altoCerca, cajaCerca[3], aspecto));
 
     // Después del manglar: el posadero se calcula a partir de su caja.
     colocarGarzas(w, h, desdeArriba);
@@ -1570,6 +1640,83 @@ const POSADERO = [0.40, 0.15];
    tramo alto, no en su borde. */
 const POSADERO_CERCA = [0.277, 0.400];
 const GROSOR_RAMA = 0.076;
+
+/* ── CUÁNTO DEL ÁRBOL QUEDA BAJO EL AGUA ────────────────────────────
+   Una fracción del PROPIO ÁRBOL, no del alto de pantalla. El valor sale
+   de la composición que ya estaba calibrada en escritorio —0.252 de
+   pantalla sobre un árbol de 0.82— y va escrito como esa división para
+   que se vea de dónde viene: no es un número nuevo, es el mismo de
+   antes dicho en las unidades correctas.
+
+   Lo consume `medidas()`. El porqué, largo, está allí. */
+const SUMERGIDO = 0.252 / 0.82;
+
+/* ── DÓNDE APOYA LA LÁMINA CERCANA ──────────────────────────────────
+   `cercaCaja[2]` es su borde INFERIOR en uv (0 abajo de la pantalla).
+   Estaba fijo en −0.34 y `encogeCerca()` no lo tocaba, así que al
+   achicarse la lámina en una pantalla estrecha se quedaba clavada por
+   el pie y todo lo que lleva encima bajaba con ella: la rama, y con la
+   rama la garza protagonista.
+
+   MEDIDO a 390×844: la percha caía en uv −0.0088, o sea 7 px POR DEBAJO
+   del canto inferior de la pantalla. El ave salía cortada por el borde
+   y encima del rótulo «Desliza». Eso es lo que en el encargo se llamó
+   «la grulla del manglar cercano no tiene protagonismo»: no era que
+   fuera pequeña — es que estaba medio fuera de cuadro.
+
+   Se invierte el razonamiento, igual que ya se hizo con el horizonte
+   («lo fija el texto, no el diseño»): no se fija dónde apoya la lámina
+   y se mira dónde cae la percha, se fija DÓNDE TIENE QUE CAER LA PERCHA
+   y de ahí sale dónde apoya la lámina.
+
+   La percha quiere dos cosas:
+   — Caer donde cae en escritorio (uv 0.212), que es el sitio medido y
+     el que deja aire entre el ave y el canto de abajo.
+   — Quedar claramente POR DEBAJO del horizonte, o el primer término
+     deja de leerse como primer término. En escritorio son 0.128 del
+     alto; aquí se le exige un mínimo de 0.105.
+   En una ventana alta el horizonte sube y manda la segunda.
+
+   `1 − POSADERO_CERCA[1]` es la distancia de la percha al pie de la
+   lámina —la coordenada está medida DESDE ARRIBA— y se lee de la misma
+   constante que usa `posaderoCercano()`, para que no puedan discrepar. */
+function baseCerca(alto, horizonte) {
+  const percha = Math.min(0.212, horizonte - 0.105);
+  return percha - (1 - POSADERO_CERCA[1]) * alto;
+}
+
+/* ── Y POR DÓNDE ENTRA, POR LA MISMA RAZÓN ──────────────────────────
+   `cercaCaja[0]` es el canto izquierdo de la lámina en fracción del
+   ancho, y estaba fijo en −0.02 mientras la lámina se encogía. La
+   percha se iba con ella: en escritorio caía en el 22 % del ancho y en
+   un teléfono en el 57 %, o sea encima del manglar del fondo. Dos
+   sujetos apilados en la misma vertical y la garza cercana recortada
+   contra las raíces del árbol lejano, que es lo peor que le puede pasar
+   a una silueta.
+
+   EL −0.02 NO ERA UN NÚMERO ARBITRARIO Y ESTO LO DEMUESTRA: sustituyendo
+   la ventana de escritorio en la fórmula de abajo sale −0.019. Era «la
+   percha en el 22 % del ancho» escrito para una sola forma de ventana.
+   Aquí se dice lo que quería decir, y entonces vale para todas.
+
+   El 22 % es el sitio medido: deja el ave sobre agua abierta, con el
+   flanco izquierdo del cuadro por delante y el árbol del fondo lejos
+   por la derecha, que es la separación que hace que se lean como dos
+   planos y no como un montón. */
+const PERCHA_ANCHO = 0.22;
+function xCerca(alto, aspLam, aspecto) {
+  /* CON TECHO EN CERO, Y ESE TECHO NO ES UN DETALLE. Esta lámina es un
+     fragmento que ENTRA POR LA ESQUINA: su canto izquierdo es un corte
+     recto, no un final pintado, y el único sitio donde un corte recto
+     no se ve es fuera de pantalla. En una ventana muy apaisada la
+     fórmula lo empujaba a la derecha del cero —a 1920×1080 daba +0.005,
+     o sea diez píxeles de agua vacía y luego el canto— así que se le
+     pone tope. Cuando el tope manda, la percha se corre a la derecha de
+     su 22 %, que es lo que ya pasaba antes y no molesta: en una ventana
+     ancha sobra sitio entre los dos árboles. */
+  return Math.min(-0.015,
+                  PERCHA_ANCHO - (POSADERO_CERCA[0] * alto * aspLam) / aspecto);
+}
 
 /* ── LAS PERCHAS DE LA BANDADA ──────────────────────────────────────
    Doce sitios MEDIDOS sobre manglar-lejos.webp, no elegidos a ojo.
