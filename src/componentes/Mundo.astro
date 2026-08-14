@@ -7,5 +7,164 @@
 
 <div class="mundo" aria-hidden="true">
   <canvas class="hero__lienzo" id="lienzo"></canvas>
+
+  {/* ═══════════════════════════════════════════════════════════════
+      LOS PINCELES DE LAS AVES
+
+      El cielo, el agua y el manglar los pinta el shader sobre papel:
+      llevan grano, llevan la luz de la hora y llevan el canto mojado
+      que deja una aguada al secarse. Las garzas NO — son láminas en el
+      DOM, y por muy acuarela que sea la lámina, colocada encima sale
+      lisa, limpia de canto y con su propio gris. Comparadas al lado,
+      el cielo tiene diente de papel y el ave no tiene ninguno: eso es
+      exactamente lo que hace que se lea como una calcomanía sobre una
+      pintura en vez de como algo pintado en ella.
+
+      Estos dos filtros le devuelven las tres cosas. Van aquí, en el
+      marcado del mundo, y no en un archivo suelto, porque son parte
+      de cómo se pinta este cuadro y no de cómo se maqueta la página.
+
+      POR QUÉ UN FILTRO SVG Y NO UNA CAPA POR AVE. La otra forma de
+      hacerlo es superponer a cada garza un rectángulo con el grano y
+      otro con la bruma, los dos enmascarados con su propia lámina —es
+      lo que hace `pico.js` con el pico—. Serían DOS ELEMENTOS MÁS POR
+      AVE y hay hasta dieciocho aves: treinta y seis capas compuestas
+      más, cada una con su máscara. El filtro hace lo mismo dentro de
+      una sola capa que ya existía, y el navegador guarda el resultado
+      mientras la lámina no cambie: el ave se mueve por `transform`, y
+      un `transform` no vuelve a ejecutar el filtro.
+
+      `color-interpolation-filters="sRGB"` en los dos y no es un
+      detalle de sintaxis: por omisión los filtros operan en RGB
+      lineal, y ahí un grano multiplicado a 0.84 oscurece casi el doble
+      de lo que se calculó mirando la pantalla. Se trabaja en el
+      espacio en el que se mira.                                    */}
+  <svg class="pinceles" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      {/* ── LO LEJANO: grano y bruma ─────────────────────────────────
+          La bandada del manglar del fondo, las garzas de quien más
+          está y la que llega volando. Todas al mismo aire de
+          distancia, todas con el mismo tratamiento. */}
+      <filter id="aguada-lejos" x="-18%" y="-18%" width="136%" height="136%"
+              color-interpolation-filters="sRGB">
+        {/* EL DIENTE DEL PAPEL. `fractalNoise` y no `turbulence`: el
+            segundo hace nubes con lóbulos, y el papel no tiene
+            lóbulos, tiene grano parejo. La frecuencia está puesta a
+            ojo contra el grano del shader —el ave del fondo se ve a
+            unos 50 px de alto, así que su diente tiene que ser fino o
+            se lee como ruido de vídeo. */}
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"
+                      seed="7" result="diente" />
+        <feColorMatrix in="diente" type="saturate" values="0" result="dienteGris" />
+        {/* Y SOLO OSCURECE, nunca aclara: el pigmento se acumula en los
+            valles del grano, no se retira de las crestas. El tramo va
+            de 0.86 a 1.00 — por debajo de 0.8 el ave sale sucia. */}
+        <feComponentTransfer in="dienteGris" result="grano">
+          <feFuncR type="linear" slope="0.14" intercept="0.86" />
+          <feFuncG type="linear" slope="0.14" intercept="0.86" />
+          <feFuncB type="linear" slope="0.14" intercept="0.86" />
+          <feFuncA type="linear" slope="0" intercept="1" />
+        </feComponentTransfer>
+        <feComposite in="SourceGraphic" in2="grano" operator="arithmetic"
+                     k1="1" k2="0" k3="0" k4="0" result="granosa" />
+
+        {/* LA VELADURA DE LA HORA. La silueta rellena del color de la
+            bruma, por encima. Es lo que había escrito y nunca llegó a
+            conectarse: `--vuelo-velo` lo escribe hora.js desde 2024 y
+            no lo leía nadie. El color y la opacidad se ponen desde el
+            CSS y no como atributos, porque `var()` solo existe en
+            declaraciones CSS — en un atributo de presentación no se
+            sustituye. */}
+        <feFlood id="bruma-lejos" result="niebla" />
+        <feComposite in="niebla" in2="SourceAlpha" operator="in" result="velo" />
+        <feMerge>
+          <feMergeNode in="granosa" />
+          <feMergeNode in="velo" />
+        </feMerge>
+      </filter>
+
+      {/* ── LO CERCANO: grano más grueso, menos bruma y canto mojado ──
+          La visitante se posa en el primer término y se ve a 200 px de
+          alto: cuatro veces la bandada. Su grano tiene que ser cuatro
+          veces más grueso o el diente desaparece, y su veladura mucho
+          menor, porque entre ella y quien mira no hay aire — esa es
+          justamente la diferencia entre lo cercano y lo lejano. */}
+      <filter id="aguada-cerca" x="-18%" y="-18%" width="136%" height="136%"
+              color-interpolation-filters="sRGB">
+        {/* PRIMERO, QUITARLE EL HALO AL RECORTE. La lámina viene con un
+            reborde blanquecino de un par de píxeles —resto del fondo
+            claro sobre el que se recortó— y a 200 px de alto se ve: una
+            línea clara alrededor del ave contra la raíz oscura, que es
+            la firma inconfundible de una imagen pegada.
+
+            No se borra recortando la silueta (`feMorphology`), que a
+            este tamaño se comería las patas, que miden dos píxeles. Se
+            borra doblando la curva del alfa: lo que está casi
+            transparente se hace transparente del todo —el halo va por
+            0.2 y baja a 0.09— y lo opaco se queda como está. La patita
+            de alfa 0.8 apenas pierde. */}
+        <feComponentTransfer in="SourceGraphic" result="limpia">
+          <feFuncA type="gamma" amplitude="1" exponent="1.5" offset="0" />
+        </feComponentTransfer>
+        {/* Y su alfa, que a partir de aquí sustituye a `SourceAlpha`:
+            la palabra clave siempre devuelve el alfa ORIGINAL, halo
+            incluido, así que usarla aquí sería devolverlo por la
+            puerta de atrás en la veladura y en el canto. */}
+        <feColorMatrix in="limpia" type="matrix" result="limpiaAlfa"
+                       values="0 0 0 0 0
+                               0 0 0 0 0
+                               0 0 0 0 0
+                               0 0 0 1 0" />
+
+        <feTurbulence type="fractalNoise" baseFrequency="0.42" numOctaves="3"
+                      seed="19" result="diente" />
+        <feColorMatrix in="diente" type="saturate" values="0" result="dienteGris" />
+        <feComponentTransfer in="dienteGris" result="grano">
+          <feFuncR type="linear" slope="0.17" intercept="0.83" />
+          <feFuncG type="linear" slope="0.17" intercept="0.83" />
+          <feFuncB type="linear" slope="0.17" intercept="0.83" />
+          <feFuncA type="linear" slope="0" intercept="1" />
+        </feComponentTransfer>
+        <feComposite in="limpia" in2="grano" operator="arithmetic"
+                     k1="1" k2="0" k3="0" k4="0" result="granosa" />
+
+        <feFlood id="bruma-cerca" result="niebla" />
+        <feComposite in="niebla" in2="limpiaAlfa" operator="in" result="velo" />
+        <feMerge result="pintada">
+          <feMergeNode in="granosa" />
+          <feMergeNode in="velo" />
+        </feMerge>
+
+        {/* EL CANTO MOJADO. Una aguada no termina en una línea limpia:
+            al secarse el pigmento migra al borde y deja ahí un filete
+            más oscuro que el centro. Es la firma de la acuarela, está
+            en cada raíz del manglar y era lo único que a esta lámina
+            se le notaba que le faltaba cuando ya tenía grano.
+
+            Se saca restando a la silueta su propia versión borrosa:
+            donde el desenfoque todavía no llegó —o sea justo por
+            DENTRO del contorno— la resta es positiva, y eso es el
+            filete. Ni un contorno dibujado ni una sombra: el mismo
+            borde, un punto más cargado.
+
+            Y NO SE DESPLAZA NADA. La primera versión ondulaba el
+            contorno con `feDisplacementMap`, que es más fiel todavía,
+            pero el pico teñido de `pico.js` es un elemento aparte
+            colocado en píxeles sobre la lámina: si la lámina se mueve
+            dos píxeles y el pico no, el color del pico se sale del
+            pico. El canto se pinta sin mover nada. */}
+        <feGaussianBlur in="limpiaAlfa" stdDeviation="1.3" result="borrosa" />
+        <feComposite in="limpiaAlfa" in2="borrosa" operator="arithmetic"
+                     k2="1" k3="-1" result="canto" />
+        <feFlood id="canto-cerca" result="pigmento" />
+        <feComposite in="pigmento" in2="canto" operator="in" result="filete" />
+        <feMerge>
+          <feMergeNode in="pintada" />
+          <feMergeNode in="filete" />
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+
   <div class="garzas" id="garzas"></div>
 </div>

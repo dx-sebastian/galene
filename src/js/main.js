@@ -1756,14 +1756,20 @@ function sincronizarPresencia() {
 const bandada = [];
 function poblarBandada() {
   if (!contenedor) return;
-  /* El censo, y por qué no es fijo. En una pantalla ancha caben las
-     diez; en un teléfono el árbol se ve la mitad de grande y diez aves
-     serían una mancha, además de sesenta láminas más en el DOM de un
-     aparato que puede ser de gama baja. El tramo es aleatorio porque el
-     manglar no tiene el mismo censo cada tarde. */
+  /* El censo, y por qué no es fijo. En un teléfono el árbol se ve la
+     mitad de grande y muchas aves serían una mancha, además de láminas
+     de más en el DOM de un aparato que puede ser de gama baja. El tramo
+     es aleatorio porque el manglar no tiene el mismo censo cada tarde.
+
+     Y NUNCA LLENA EL ÁRBOL: dos perchas quedan libres SIEMPRE. En esas
+     se posan las garzas de quien más está (`colocarPresentes` reparte
+     sobre las que la bandada no usa), y con la copa remedida solo hay
+     ocho — una bandada de ocho dejaba a la primera persona que llegara
+     sin rama, o sea invisible. El paisaje cede sitio a la gente. */
   const chica = viewportWidth() < 700;
-  const cuantas = Math.min(PERCHAS.length, chica ? 4 + Math.floor(Math.random() * 3)
-                                                 : 6 + Math.floor(Math.random() * (BANDADA_MAX - 5)));
+  const techo = Math.max(2, PERCHAS.length - 2);
+  const cuantas = Math.min(techo, chica ? 3 + Math.floor(Math.random() * 2)
+                                        : 4 + Math.floor(Math.random() * 3));
   /* Barajado de Fisher-Yates sobre los índices: las perchas se reparten
      sin repetir, así que dos aves nunca caen en el mismo sitio. */
   const orden = PERCHAS.map((_, i) => i);
@@ -2004,7 +2010,37 @@ function xCerca(alto, aspLam, aspecto) {
 }
 
 /* ── LAS PERCHAS DE LA BANDADA ──────────────────────────────────────
-   Doce sitios MEDIDOS sobre manglar-lejos.webp, no elegidos a ojo.
+   Sitios MEDIDOS sobre la lámina, no elegidos a ojo.
+
+   ── Y REMEDIDAS, PORQUE EL ÁRBOL YA NO ERA EL MISMO ───────────────
+   Esta tabla se midió sobre `manglar-lejos.webp`. Ese archivo LLEVA
+   TIEMPO SIN PINTARSE: el manglar del fondo es `manglar-v2.webp` desde
+   que se repintó la copa —lo dice la nota de `POSADERO`, que sí se
+   remidió entonces— y ni siquiera se publica ya (`prune-dist` no lo
+   copia a `dist/`, porque nadie lo pide).
+
+   O sea que las aves se posaban sobre el perfil de un árbol que no
+   estaba delante. Medido columna a columna sobre la lámina que hoy se
+   pinta, el desvío de la tabla vieja:
+
+     x 0.111 → la copa está 0.182 MÁS ABAJO   ← el ave, en el cielo
+     x 0.261 → 0.093 más abajo
+     x 0.339 → 0.061 más abajo
+     x 0.516 → 0.032 más arriba (el ave, dentro de la hoja)
+     el resto, por debajo de 0.03
+
+   Un ave a 0.182 de la lámina por encima de su rama es un ave de pie
+   sobre el aire, y en la portada se veía así: la de la izquierda del
+   árbol flotaba en el cielo con las patas colgando. No hay pintura ni
+   veladura que arregle eso — un ave que no toca nada se lee como una
+   calcomanía por mucho grano de papel que se le ponga encima.
+
+   La copa nueva además es más estrecha y su flanco izquierdo cae a
+   pico: entre x 0.10 y 0.21 la silueta baja medio alto de lámina en un
+   3 % de ancho y la masa de debajo no llega a 0.5 de solidez. Ahí no
+   hay percha, y por eso la bandada perdió las dos de la izquierda y
+   pasó de once sitios a ocho. Menos aves y todas posadas es mejor
+   trato que once con dos en el aire.
 
    LA REGLA: los pies caen sobre el BORDE SUPERIOR de la masa de tinta,
    nunca dentro. El ave es un elemento del DOM y se pinta ENCIMA del
@@ -2019,34 +2055,27 @@ function xCerca(alto, aspLam, aspecto) {
    lo que fallara una: solidez de la masa bajo los pies > 0.62 (una rama,
    no un jirón de silueta), variación de la silueta a ±3 % de ancho
    < 0.045 (nadie se posa en un acantilado) y separación mínima de 5.8 %
-   entre perchas. De 220 columnas pasaron 105, y repartidas quedan estas
-   doce. La cima de la copa está en y = 0.024, x = 0.384.
+   entre perchas. De 260 columnas pasaron 112, y repartidas quedan estas
+   ocho. La cima de la copa está en y = 0.038, x = 0.405.
 
-   El hueco entre 0.575 y 0.693 no es un olvido: ahí la copa cae a pico
-   y ninguna columna pasó la prueba de pendiente. */
+   Los huecos —entre 0.34 y 0.47, y entre 0.56 y 0.67— no son olvidos:
+   en el primero está reservada la percha del ave que llega, y en el
+   segundo la copa cae a pico y ninguna columna pasó la prueba de
+   pendiente. */
 const PERCHAS = [
-  [0.111, 0.230],   // solidez 0.65 · pendiente 0.032
-  [0.170, 0.238],   // solidez 0.80 · pendiente 0.028
-  [0.261, 0.095],   // solidez 0.66 · pendiente 0.039
-  [0.339, 0.035],   // solidez 0.68 · pendiente 0.037 — la cima
-  [0.457, 0.050],   // solidez 0.81 · pendiente 0.030
-  [0.516, 0.074],   // solidez 0.72 · pendiente 0.039
-  [0.575, 0.098],   // solidez 0.74 · pendiente 0.018
-  [0.693, 0.189],   // solidez 0.75 · pendiente 0.036
-  [0.757, 0.177],   // solidez 0.65 · pendiente 0.044
-  [0.816, 0.220],   // solidez 0.71 · pendiente 0.035
-  [0.898, 0.271],   // solidez 0.67 · pendiente 0.026
+  [0.259, 0.191],   // solidez 0.90 · pendiente 0.024
+  [0.336, 0.093],   // solidez 0.82 · pendiente 0.040
+  [0.467, 0.058],   // solidez 1.00 · pendiente 0.012 — junto a la cima
+  [0.556, 0.081],   // solidez 0.92 · pendiente 0.036
+  [0.668, 0.169],   // solidez 0.99 · pendiente 0.026
+  [0.741, 0.156],   // solidez 0.78 · pendiente 0.034
+  [0.830, 0.257],   // solidez 0.99 · pendiente 0.008
+  [0.896, 0.269],   // solidez 0.77 · pendiente 0.040
 ];
-/* La percha de x = 0.398 salió de la medición y NO está en la lista: es
-   la de la garza que llega, y dos aves en el mismo sitio se solapan. El
-   acontecimiento de la portada tiene preferencia sobre la bandada. */
-
-/* CUÁNTAS. «Hasta diez» es el encargo, y diez son en una pantalla que
-   pueda con ellas. Cada ave son diez láminas en el DOM, así que en un
-   teléfono —donde el árbol además se ve más pequeño y diez garzas serían
-   una mancha— se bajan a seis. El número exacto es aleatorio dentro de
-   su tramo: el manglar no tiene el mismo censo cada tarde. */
-const BANDADA_MAX = 10;
+/* Las perchas a menos de 5.8 % de x = 0.40 salieron de la medición y NO
+   están en la lista: ahí se posa la garza que llega (`POSADERO`), y dos
+   aves en el mismo sitio se solapan. El acontecimiento de la portada
+   tiene preferencia sobre la bandada. */
 
 poblarBandada();
 

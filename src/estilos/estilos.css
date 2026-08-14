@@ -1349,20 +1349,66 @@ body {
    contenedor el canvas dejó de tener z-index y pasaba por encima
    de un contenedor en -1: el ave existía y no se veía. */
 .garzas { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+/* El bloque de filtros de Mundo.astro no ocupa sitio ni se lee. Va con
+   medidas a cero, pero NO con `display: none`: un filtro dentro de un
+   subárbol apagado deja de resolverse en algunos motores y las aves
+   saldrían sin pintar. */
+.pinceles {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ── DE QUÉ COLOR ES LA VELADURA Y DE QUÉ COLOR EL CANTO ───────────
+   Los dos `feFlood` de Mundo.astro no traen color escrito: lo toman de
+   aquí, y por eso lo toman de la hora. Va en CSS y no en el atributo
+   porque `var()` no se sustituye dentro de un atributo de presentación.
+
+   `--vuelo-velo` lo escribe js/hora.js —de 0.20 de madrugada a 0.36 a
+   mediodía, más aire cuanta más luz— y hasta hoy no lo leía nadie. Ese
+   número dice CUÁNTO aire hay en el cuadro a esta hora; cuánto le toca
+   a cada plano se decide aquí, y por eso el reparto son dos cocientes.
+
+   Y son estos y no los del archivo, medidos contra el cuadro: a velo
+   entero la bandada quedaba más lavada que la copa sobre la que se
+   posa, o sea más lejos que el árbol donde está — el orden de la
+   profundidad al revés. La bandada no puede tener más aire delante que
+   el manglar que la sostiene, y ese techo es la mitad.
+
+   Lo cercano se vela a la sexta parte de lo lejano. El aire entre quien
+   mira y una garza a tres metros no es el que hay hasta el manglar del
+   fondo, y ese cociente ES la profundidad del cuadro: si los dos planos
+   se velan igual, el cuadro es plano por mucho que las aves midan
+   distinto. */
+#bruma-lejos {
+  flood-color: var(--bruma, #CDDCDE);
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.5);
+}
+#bruma-cerca {
+  flood-color: var(--bruma, #CDDCDE);
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.17);
+}
+/* El filete del borde no es negro: es el mismo pigmento del cuadro
+   cargado un punto más. Con negro sale un contorno de tebeo. */
+#canto-cerca {
+  flood-color: color-mix(in srgb, var(--bruma, #CDDCDE) 34%, #16242B);
+  flood-opacity: 0.34;
+}
+
+/* LA SOMBRA DE UN AVE NO ES NEGRA. Estaba en `rgb(0 0 0 / …)` y sobre
+   una acuarela un negro puro es lo único que no puede haber: en toda la
+   pintura no hay un solo píxel neutro. Se tiñe con la bruma de la hora,
+   que de día la vuelve azul verdosa y de noche violeta — que es de lo
+   que están hechas las sombras a esas horas. */
+:root {
+  --sombra-ave: color-mix(in srgb, var(--bruma, #CDDCDE) 22%, #0C1A17);
+}
+
 /* La garza en vuelo: tres láminas superpuestas, una visible por cuadro.
    El filtro la lleva a la luz de la hora — la lámina ya es casi
    monocroma (12–14 % de saturación), así que basta con el brillo. */
-/* Capa de tinte: la misma silueta rellena del color de la bruma,
-   superpuesta al ave. Es lo que la mete DENTRO de la paleta de la hora
-   en vez de dejarla flotando en la suya. */
-.vuelo__tinte {
-  position: absolute; top: 0; left: 0; height: auto;
-  will-change: transform;
-  background: var(--bruma, #cdd);
-  opacity: 0;
-  pointer-events: none;
-}
-
 .vuelo {
   position: absolute;
   top: 0; left: 0;
@@ -1374,10 +1420,17 @@ body {
      mundo se ha ido al color de la hora — y canta. Aquí se le baja el
      contraste, se le sube el brillo hacia la bruma y se le quita
      saturación propia: el aire que hay entre ella y quien mira.
-     Los valores los escribe js/hora.js con la luz del momento. */
+     Los valores los escribe js/hora.js con la luz del momento.
+
+     Y DESPUÉS DE LOS TRES, EL PAPEL. `url(#aguada-lejos)` es lo que le
+     pone el grano del papel y la veladura de la hora (ver Mundo.astro).
+     Va al final de la cadena a propósito: los tres primeros ajustan la
+     LÁMINA —lo que el ave es—, y la aguada la pinta sobre el papel del
+     cuadro. Al revés se granularía el gris de antes de velar. */
   filter: saturate(var(--vuelo-sat, 0.3))
           contrast(var(--vuelo-contraste, 0.72))
-          brightness(var(--vuelo-brillo, 1));
+          brightness(var(--vuelo-brillo, 1))
+          url(#aguada-lejos);
   opacity: 0;
 }
 
@@ -1406,20 +1459,42 @@ body {
      contorno: un contorno seria una calcomania.
 
      Y un pelo de contraste, que es lo que separa la panza clara del
-     dorso, no lo que la aclara. */
+     dorso, no lo que la aclara.
+
+     LAS DOS SOMBRAS VAN DESPUÉS DE LA AGUADA. `drop-shadow` se calcula
+     sobre la silueta de lo que le llega, así que puesto antes del
+     filtro la sombra entraría en el `SourceAlpha` de la veladura y se
+     velaría ella también: una sombra bruma sobre bruma, o sea ninguna
+     sombra. Detrás, la sombra se proyecta desde el ave ya pintada. */
   filter: saturate(var(--vuelo-sat, 0.3))
           contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
           brightness(var(--vuelo-brillo, 1))
-          drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.30))
-          drop-shadow(0 0 5px rgb(0 0 0 / 0.16));
+          url(#aguada-lejos)
+          drop-shadow(0 1px 1.5px color-mix(in srgb, var(--sombra-ave) 30%, transparent))
+          drop-shadow(0 0 5px color-mix(in srgb, var(--sombra-ave) 16%, transparent));
 }
 
 /* LA VISITANTE. Va delante de todo lo pintado porque se posa en el
-   primer termino, y sin el velo aereo que lleva la garza lejana: lo
-   cercano no se vela, esa es justamente la diferencia. */
+   primer termino, y por eso lleva el aire de lo cercano y no el de lo
+   lejano: casi nada de veladura, el grano cuatro veces más grueso y el
+   canto mojado que a esa escala ya se ve (ver `#aguada-cerca`).
+
+   ESTUVO SIN NADA. `saturate(1) contrast(1)` es la identidad: la única
+   ave que se mira de cerca era la única que salía tal cual venía del
+   archivo, con su gris propio y su contorno de recorte, encima de un
+   agua que sí estaba pintada. Era la que más cantaba de las dieciocho,
+   y con razón — es la que se ve entera.
+
+   UNA SOMBRA CORTA Y HACIA ABAJO. Se posa sobre una raíz, y un cuerpo
+   sobre una rama deja debajo una mancha corta, no un contorno. Dos
+   píxeles de desplazamiento y tres de radio: lo justo para que el pie
+   toque la madera en vez de flotar sobre ella. */
 .vuelo--visita {
   z-index: 2;
-  filter: saturate(var(--vuelo-sat, 1)) contrast(var(--vuelo-contraste, 1));
+  filter: saturate(var(--vuelo-sat-cerca, 0.94))
+          contrast(var(--vuelo-contraste-cerca, 0.98))
+          url(#aguada-cerca)
+          drop-shadow(1px 3px 3px color-mix(in srgb, var(--sombra-ave) 40%, transparent));
 }
 
 /* LAS DE QUIEN MÁS ESTÉ. Se posan en la copa del manglar del fondo, o
@@ -1432,8 +1507,9 @@ body {
   filter: saturate(var(--vuelo-sat, 0.3))
           contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
           brightness(var(--vuelo-brillo, 1))
-          drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.30))
-          drop-shadow(0 0 5px rgb(0 0 0 / 0.16));
+          url(#aguada-lejos)
+          drop-shadow(0 1px 1.5px color-mix(in srgb, var(--sombra-ave) 30%, transparent))
+          drop-shadow(0 0 5px color-mix(in srgb, var(--sombra-ave) 16%, transparent));
 }
 
 /* ── EL PICO TEÑIDO ────────────────────────────────────────────────
