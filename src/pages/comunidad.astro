@@ -86,6 +86,23 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
           de pantalla se entera de que ya está aquí sin depender de que
           vea el subrayado. El CSS se cuelga del mismo atributo. */}
       <a class="barra__enlace" href={base + 'comunidad'} aria-current="page">Comunidad</a>
+      <a class="barra__enlace" href={base + 'expertos'}>Panel</a>
+
+      {/* El menú del teléfono, igual que en la portada. Ver allí por qué
+          va con <details> y por qué la píldora de ayuda no entra dentro. */}
+      <details class="menu" name="barra-menu">
+        <summary class="menu__boton" aria-label="Abrir menu de navegacion">
+          <span class="menu__rayas" aria-hidden="true"></span>
+          <span class="menu__etiqueta">Menu</span>
+        </summary>
+        <div class="menu__panel">
+          <a class="barra__enlace" href={base + '#herramientas'}>Información</a>
+          <a class="barra__enlace" href={base + '#sin-hablar'}>Recursos</a>
+          <a class="barra__enlace" href={base + 'comunidad'} aria-current="page">Comunidad</a>
+          <a class="barra__enlace" href={base + 'expertos'}>Panel de expertos</a>
+        </div>
+      </details>
+
       <a class="pildora" href={base + '#sin-hablar'}>
         Buscar ayuda
         <svg class="pildora__icono" viewBox="0 0 14 12"

@@ -54,12 +54,18 @@ body {
   );
 }
 
+/* EL PANEL ABIERTO YA NO ES UN CAJÓN CON SCROLL PROPIO. Tenía altura
+   atada al viewport y su propio desplazamiento interior, que es lo que
+   hacía falta cuando el contenido flotaba dentro de un lienzo de alto
+   fijo. Ahora crece en el flujo de la página y se desplaza con ella:
+   un scroll dentro de otro scroll, en un teléfono y con el pulgar, es
+   de las cosas que peor se manejan cuando no estás fina.
+
+   `overscroll-behavior` se queda porque el mapa de dentro sí atrapa el
+   gesto y no debe arrastrar la página al llegar a su borde. */
 .mapa-herramientas--activa .mapa-herramientas__marco {
-  height: min(64rem, calc(var(--app-height) - var(--safe-top) - 5.5rem));
-  min-height: 34rem;
   overscroll-behavior: contain;
   scroll-padding-block: var(--e-5) calc(var(--safe-bottom) + var(--e-5));
-  -webkit-overflow-scrolling: touch;
 }
 
 .mapa-herramientas__escena--activa {
@@ -167,19 +173,14 @@ body {
     margin-top: var(--e-7);
   }
 
-  .mapa-herramientas__marco {
-    height: min(38rem, calc(var(--app-height) - 2rem));
-    min-height: 34rem;
-  }
-
-  .mapa-herramientas--activa .mapa-herramientas__marco {
-    height: calc(var(--app-height) - var(--safe-top) - 4.75rem);
-    min-height: 30rem;
-  }
-
+  /* AQUÍ HABÍA TRES ALTURAS FIJAS EN VH Y UNA POSICIÓN ABSOLUTA, y
+     todas existían para sostener paneles flotando dentro de un lienzo
+     de alto fijo. Ese lienzo se fue: la rejilla mide lo que mide su
+     contenido, así que en el teléfono no hay nada que recortar ni
+     ningún `--app-height` que perseguir. Lo único que queda es el
+     respiro de abajo, que sí depende del área segura del aparato. */
   .mapa-herramientas--activa .mapa-herramientas__escena--activa {
-    top: var(--e-4);
-    padding-bottom: calc(var(--safe-bottom) + var(--e-6));
+    padding-bottom: calc(var(--safe-bottom) + var(--e-4));
   }
 
   .resonancias {
@@ -187,7 +188,7 @@ body {
     padding-inline: 0.25rem;
   }
 
-  .resonancia svg {
+  .resonancia__lamina {
     max-width: min(22rem, 94vw);
   }
 
@@ -244,13 +245,9 @@ body {
     display: none;
   }
 
-  .mapa-herramientas__marco {
-    min-height: 32rem;
-  }
-
-  .mapa-herramientas__escena--ayuda { --x: 27%; --y: 27%; --escala: 0.25; }
-  .mapa-herramientas__escena--recordar { --x: 72%; --y: 36%; --escala: 0.19; }
-  .mapa-herramientas__escena--mapa { --x: 47%; --y: 73%; --escala: 0.15; }
+  /* (Aquí vivían las tres posiciones y escalas de la constelación para
+      pantallas estrechas. Murieron con el `scale()`: ninguna regla
+      consume ya `--x`, `--y` ni `--escala`.) */
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
@@ -299,7 +296,10 @@ body {
     transform: none;
   }
 
-  .mapa-herramientas__abrir span,
+  /* El `.mapa-herramientas__abrir span` que había aquí se fue con el
+     rótulo flotante: aquel <span> estaba centrado con `translate` y
+     esto era su respaldo. El emblema no centra nada con translate —lo
+     hace la rejilla— así que la regla ya solo podía descolocarlo. */
   .resonancia figcaption::before {
     transform: translateX(-50%);
   }

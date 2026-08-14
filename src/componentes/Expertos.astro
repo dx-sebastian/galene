@@ -1,0 +1,80 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — el panel de expertos, ahora como SECCIÓN PROPIA.
+
+   Vivía dentro de ComunidadExpertos.astro, compartiendo un <section>
+   con el teaser de Comunidad. Eso era cómodo de escribir y falso de
+   leer: para un lector de pantalla, y para cualquier índice, el panel
+   era un apéndice de «Comunidad» — cuando en realidad es lo contrario
+   de la comunidad. La comunidad son voces de quien pasó por ahí; esto
+   son trabajos publicados. Mezclarlos en una sola región difumina justo
+   la distinción que el propio texto se esfuerza en dejar clara.
+
+   Ahora es su propio <section aria-labelledby>, y por eso puede montarse
+   en dos sitios sin trucos: la portada lo pinta recortado, /expertos lo
+   pinta entero.
+
+   ── LAS PROPS Y POR QUÉ SON DOS Y NO UNA ───────────────────────────
+   `limite` recorta la lista. `enlace` decide si se pinta el pie con
+   «Ver todo el panel». Son independientes a propósito: la página
+   completa NO lleva enlace (no tiene a dónde ir), y algún día una
+   tercera página podría querer un recorte sin pie. Atarlas en una sola
+   prop `esPortada` sería más corto hoy y una mentira mañana.
+   ═══════════════════════════════════════════════════════════════════ */
+import { EXPERTOS } from '../datos/expertos.js';
+
+const {
+  limite = null,
+  enlace = null,
+  titulo = 'Lo que la evidencia permite decir',
+  /* La portada ya tiene un <h1> y varios <h2>; en /expertos este panel
+     ES la página, así que su encabezado sube a h1. El nivel de título
+     no es decoración: es el índice por el que se navega sin ver. */
+  nivel = 2,
+} = Astro.props;
+
+const lista = limite ? EXPERTOS.slice(0, limite) : EXPERTOS;
+const ocultos = EXPERTOS.length - lista.length;
+const Titulo = `h${nivel}`;
+---
+
+<section class="expertos" id="expertos" aria-labelledby="expertos-titulo">
+  <header class="expertos__cabecera">
+    <p class="seccion-rotulo">PANEL DE EXPERTOS</p>
+    <Titulo id="expertos-titulo">{titulo}</Titulo>
+    <p>Estas son sintesis editoriales de trabajos publicados. No son citas textuales, testimonios para Galene ni avales de sus autores. Cada tarjeta enlaza a la fuente original.</p>
+  </header>
+
+  <div class="expertos__lista">
+    {lista.map((expert) => (
+      <article class="experto">
+        <p class="experto__texto">{expert.text}</p>
+        <footer>
+          <p class="experto__nombre">{expert.name}</p>
+          <p class="experto__rol">{expert.role}</p>
+          <a href={expert.source} target="_blank" rel="noopener noreferrer">{expert.sourceLabel}</a>
+        </footer>
+      </article>
+    ))}
+  </div>
+
+  {enlace && ocultos > 0 && (
+    <p class="expertos__mas">
+      {/* EL NÚMERO VA DENTRO DEL ENLACE Y SE CALCULA, no se escribe.
+          «Ver más» a secas no dice si hay dos fichas o veinte, y un
+          «(17)» escrito a mano se queda desfasado la primera vez que
+          alguien añade una entrada al array. */}
+      <a class="expertos__mas-enlace" href={enlace}>
+        Ver todo el panel
+        <span class="expertos__mas-cuenta">{ocultos} mas</span>
+      </a>
+    </p>
+  )}
+
+  <p class="expertos__protocolo">
+    Fuente institucional complementaria:
+    <a href="https://www.justice.gov/ovw/media/1367191/dl?inline=" target="_blank" rel="noopener noreferrer">
+      Protocolo nacional de examenes medico-forenses por violencia sexual, Departamento de Justicia de EE. UU., edicion 2024
+    </a>.
+  </p>
+</section>
