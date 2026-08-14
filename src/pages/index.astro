@@ -21,7 +21,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <!doctype html>
-<html lang="es" data-tinta="oscura">
+<html lang="es" data-tinta="oscura" class="cargando">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -32,6 +32,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   <meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo" />
   <meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo." />
   <meta name="theme-color" content="#2E4256" />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
   <meta property="og:image" content={base + 'arte/1024/manglar-enterrado-a.webp'} />
 
   {/* BORRADOR: mientras las ventanas médicas no estén verificadas contra
@@ -40,9 +41,27 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+
+  {/* La clase viene en el HTML, no la añade JavaScript después: así no
+      existe un fotograma en que el contenido aparece y vuelve a taparse. */}
+  <noscript><style>.cargando .cargador{display:none}.cargando main,.cargando .mundo{visibility:visible!important;opacity:1!important}</style></noscript>
 </head>
 
 <body>
+  <div class="cargador" id="cargador" role="status" aria-live="polite"
+       aria-label="Preparando la acuarela">
+    <svg class="cargador__marca" viewBox="0 0 180 120" aria-hidden="true" focusable="false">
+      <path class="cargador__agua cargador__agua--fondo"
+            d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
+      <path class="cargador__agua cargador__agua--medio"
+            d="M17 72 C39 49 61 88 86 63 S128 49 163 70" />
+      <path class="cargador__agua cargador__agua--filo"
+            d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
+    </svg>
+    <span class="cargador__nombre">Galene</span>
+    <span class="cargador__estado">Preparando la acuarela</span>
+  </div>
+
   <Mundo />
 
   <main>

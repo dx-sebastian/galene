@@ -220,6 +220,22 @@ input, select, textarea { margin: 0; }
 
   --borde-seguro-abajo: env(safe-area-inset-bottom, 0px);
   --alto-reflejos: calc(3.25rem + var(--borde-seguro-abajo));
+
+  /* El papel de lectura no se pide durante el hero. Las URLs entran en
+     el valor calculado solo cuando la boca se acerca al viewport. */
+  --arte-papel: none;
+  --arte-aguadas: none;
+  --arte-filete-2: none;
+  --arte-filete-4: none;
+  --arte-barbas: none;
+}
+
+:root.lectura-cerca {
+  --arte-papel: url("/galene/arte/1024/papel.webp");
+  --arte-aguadas: url("/galene/arte/aguadas-seccion2.webp");
+  --arte-filete-2: url("/galene/arte/filete-2-v.webp");
+  --arte-filete-4: url("/galene/arte/filete-4-v.webp");
+  --arte-barbas: url("/galene/arte/1024/papel-barbas.webp");
 }
 
 :root[data-tinta="clara"] {
@@ -302,6 +318,94 @@ body {
   --tinta-suave: rgb(255 255 255 / 78%);
   color: var(--tinta);
   text-shadow: 0 1px 3px rgb(18 35 48 / 30%);
+}
+
+/* En móvil la acuarela se compone una vez y no treinta veces por
+   segundo. La lámina transparente mantiene el manglar del hero animado
+   sobre el mar de respaldo, con 163 KB y cero trabajo por cuadro. */
+.hero-estatico .mundo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/galene/arte/1024/manglar-v2.webp") 78% 66% / auto 68% no-repeat;
+  filter: saturate(0.72) contrast(0.94);
+  opacity: 0.94;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARGADOR — una sola pincelada, sin imagen ni dependencia de red
+   ═══════════════════════════════════════════════════════════════════ */
+.cargando { overflow: hidden; }
+.cargando body > .mundo,
+.cargando body > main {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.cargador {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  color: #eaf2f3;
+  background:
+    radial-gradient(ellipse at 48% 56%, rgb(85 129 145 / 34%), transparent 36%),
+    linear-gradient(155deg, #253d4d 0%, #345d6b 48%, #172f40 100%);
+  transition: opacity 520ms ease, visibility 520ms step-end;
+}
+.contenido-listo .cargador {
+  opacity: 0;
+  visibility: hidden;
+}
+.cargador__marca { width: min(46vw, 180px); overflow: visible; }
+.cargador__agua {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 190;
+  stroke-dashoffset: 190;
+  animation: cargador-trazo 1.45s cubic-bezier(.4,0,.2,1) infinite;
+}
+.cargador__agua--fondo {
+  stroke: rgb(205 232 230 / 18%);
+  stroke-width: 25;
+  filter: blur(7px);
+}
+.cargador__agua--medio {
+  stroke: rgb(131 190 194 / 42%);
+  stroke-width: 13;
+  filter: blur(2px);
+  animation-delay: 80ms;
+}
+.cargador__agua--filo { stroke: #dceeee; stroke-width: 1.8; }
+.cargador__nombre {
+  margin-top: -1.4rem;
+  font-family: var(--tipo-marca);
+  font-size: clamp(1.65rem, 5vw, 2.25rem);
+  letter-spacing: 0.28em;
+  margin-inline-end: -0.28em;
+  text-transform: uppercase;
+}
+.cargador__estado {
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(234 242 243 / 72%);
+}
+@keyframes cargador-trazo {
+  0% { stroke-dashoffset: 190; opacity: 0.24; }
+  58%, 78% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: -190; opacity: 0.16; }
+}
+
+/* La sección de lectura empieza varios viewports más abajo. El navegador
+   conserva su geometría pero evita pintarla durante la carga del hero. */
+.herramientas {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 7200px;
 }
 
 .hero__lienzo {
@@ -996,7 +1100,7 @@ body {
 .fondo__papel {
   position: absolute;
   inset: 0;
-  background-image: url("/galene/arte/1024/papel.webp");
+  background-image: var(--arte-papel);
   background-size: 520px;
   background-repeat: repeat;
   /* MULTIPLY DE DÍA, SCREEN DE NOCHE. Un grano de papel multiplicado
@@ -1371,7 +1475,7 @@ body {
      mismo que tienen los pétalos de la flor de referencia. */
   background-image:
     /* el grano del papel, que muerde toda la aguada */
-    url("/galene/arte/1024/papel.webp"),
+    var(--arte-papel),
     /* CINCO TOQUES QUE SE SOLAPAN. Ni uno solo llega de punta a punta:
        cada uno ocupa poco más de un tercio de la frase y se pisa con
        sus vecinos, así que donde coinciden dos el pigmento se acumula
@@ -1618,7 +1722,7 @@ body {
   background-color: var(--acuarela-tinte);
   /* El grano del papel DENTRO del pigmento. Es la lámina que ya usa el
      shader, así que no cuesta una petición nueva. */
-  background-image: url("/galene/arte/1024/papel.webp");
+  background-image: var(--arte-papel);
   background-size: 260px;
   /* `multiply`, NO `screen`. Con screen el grano del papel —que es casi
      blanco— ACLARABA el pigmento hasta dejarlo en un verde pálido, y el
@@ -1925,7 +2029,7 @@ body {
 /* El grano del papel, mordiendo las teselas y nada más. */
 .mapa__grano {
   position: absolute; inset: 0; z-index: 450; pointer-events: none;
-  background-image: url("/galene/arte/1024/papel.webp");
+  background-image: var(--arte-papel);
   background-size: 380px;
   opacity: 0.26; mix-blend-mode: multiply;
 }
@@ -2321,7 +2425,7 @@ body {
   position: absolute; inset: 2% 0 6%;
   z-index: -1;
   background-image:
-    url("/galene/arte/1024/papel.webp"),
+    var(--arte-papel),
     radial-gradient(closest-side circle at 50% 50%,
       #2F6B4F0a 0%, #2F6B4F14 58%, #2F6B4F1f 82%, transparent 100%),
     radial-gradient(closest-side circle at 50% 50%,
@@ -2480,7 +2584,7 @@ body {
   position: absolute; inset: 0 auto 0 0; width: var(--ancho, 0%);
   border-radius: 999px;
   background-color: #2F6B4F;
-  background-image: url("/galene/arte/1024/papel.webp");
+  background-image: var(--arte-papel);
   background-size: 180px;
   background-blend-mode: multiply;
 }
@@ -3109,7 +3213,7 @@ body {
    ahora sobran: lo que hacían mal lo hace bien la lámina. */
 .fondo__capa--alta,
 .fondo__capa--media {
-  background-image: url("/galene/arte/aguadas-seccion2.webp");
+  background-image: var(--arte-aguadas);
   background-size: cover;
   background-position: center;
 }
@@ -3166,7 +3270,7 @@ body {
   position: absolute;
   left: 0; top: 4%; bottom: 4%;
   width: 5px;
-  background-image: url("/galene/arte/filete-2-v.webp");
+  background-image: var(--arte-filete-2);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 0.85;
@@ -3174,7 +3278,7 @@ body {
 }
 /* Los que no caducan: trazo más flojo y más fino. */
 .consejo--siempre::before {
-  background-image: url("/galene/arte/filete-4-v.webp");
+  background-image: var(--arte-filete-4);
   width: 4px;
   opacity: 0.7;
 }
@@ -3239,6 +3343,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .entrando .mundo { animation: none !important; }
+  .cargador__agua { animation: none; stroke-dashoffset: 0; }
+  .cargador { transition-duration: 120ms; }
 }
 
 
@@ -3344,8 +3450,8 @@ body {
   height: var(--barbas);
   background: var(--papel-alto);
   scale: -1 1;
-  -webkit-mask-image: url("/galene/arte/papel-barbas.webp");
-          mask-image: url("/galene/arte/papel-barbas.webp");
+  -webkit-mask-image: var(--arte-barbas);
+          mask-image: var(--arte-barbas);
   -webkit-mask-size: auto 100%;
           mask-size: auto 100%;
   -webkit-mask-repeat: repeat-x;
@@ -3436,8 +3542,8 @@ body {
      El cuerpo sólido arranca en el 57 % de la lámina —el punto medido
      donde su alfa cruza la mitad— para que solape con ella y no quede
      una rendija transparente entre las dos. */
-  -webkit-mask-image: url("/galene/arte/papel-barbas.webp"), linear-gradient(#000, #000);
-          mask-image: url("/galene/arte/papel-barbas.webp"), linear-gradient(#000, #000);
+  -webkit-mask-image: var(--arte-barbas), linear-gradient(#000, #000);
+          mask-image: var(--arte-barbas), linear-gradient(#000, #000);
   -webkit-mask-size: auto var(--barbas), 100% calc(100% - var(--barbas) * 0.57);
           mask-size: auto var(--barbas), 100% calc(100% - var(--barbas) * 0.57);
   -webkit-mask-position: top center, bottom center;
@@ -3479,8 +3585,8 @@ body {
   height: calc(var(--barbas) * 3.4);
   background: var(--papel-arriba);
   opacity: 0.5;
-  -webkit-mask-image: url("/galene/arte/papel-barbas.webp");
-          mask-image: url("/galene/arte/papel-barbas.webp");
+  -webkit-mask-image: var(--arte-barbas);
+          mask-image: var(--arte-barbas);
   -webkit-mask-size: auto 100%;
           mask-size: auto 100%;
   -webkit-mask-position: top center;
@@ -3531,8 +3637,8 @@ body {
   height: 300vh;
   background: var(--papel);
   translate: 0 calc(var(--avance, 0) * 100vh);
-  -webkit-mask-image: url("/galene/arte/papel-barbas.webp"), linear-gradient(#000, #000);
-          mask-image: url("/galene/arte/papel-barbas.webp"), linear-gradient(#000, #000);
+  -webkit-mask-image: var(--arte-barbas), linear-gradient(#000, #000);
+          mask-image: var(--arte-barbas), linear-gradient(#000, #000);
   -webkit-mask-size: auto var(--barbas), 100% calc(100% - var(--barbas) * 0.57);
           mask-size: auto var(--barbas), 100% calc(100% - var(--barbas) * 0.57);
   -webkit-mask-position: top center, bottom center;

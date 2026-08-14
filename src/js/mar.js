@@ -2278,6 +2278,18 @@ export function crear(lienzo) {
   });
   if (!gl) return null;
 
+  /* Un WebGL emulado por CPU convierte la pintura en una tarea de varios
+     segundos. En ese entorno el respaldo CSS es visualmente completo y
+     mucho más fluido; no se intenta compilar el shader. */
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const renderer = info
+    ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL)
+    : gl.getParameter(gl.RENDERER);
+  if (/swiftshader|llvmpipe|software/i.test(String(renderer))) {
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return null;
+  }
+
   /* ── CUÁNTAS TEXTURAS CABEN DE VERDAD ──────────────────────────────
      WebGL2 solo GARANTIZA dieciséis unidades de textura en el fragment
      shader, o sea de la 0 a la 15, y este motor ya las tenía todas
