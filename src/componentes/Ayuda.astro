@@ -1,0 +1,45 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — la sección de ayuda inmediata.
+
+   Es el destino del botón «Buscar ayuda» de la barra, y por eso está
+   AQUÍ, justo debajo del hero: la regla 5 dice que la ayuda está a
+   cero clics, y un botón que manda al fondo de la página a buscar un
+   panel entre otros tres no cumple eso.
+
+   DOS CANALES Y NO DIEZ. Quien pulsa ese botón no está comparando
+   opciones, está en la primera hora: se le da UN número que se marca
+   tocándolo (155) y UNA puerta que no exige hablar (SALVIA). El resto
+   de canales —fiscalía, mapa, guardar lo que recuerdo— siguen en las
+   herramientas, enlazadas abajo, para cuando haya más aire.
+
+   Los dos datos son públicos y estatales; la casa igual los marca
+   «sin verificar» hasta que alguien del proyecto los pruebe y anote
+   la fecha, porque esa es la regla de todos los canales del sitio y
+   esta sección no es menos: es más. */
+---
+
+<section class="ayuda" id="ayuda" aria-labelledby="ayuda-titulo">
+  <p class="seccion-rotulo">SI FUE HOY, SI FUE HACE POCO</p>
+  <h2 id="ayuda-titulo">Ayuda ahora</h2>
+
+  <div class="ayuda__canales">
+    <a class="ayuda__canal" href="tel:155">
+      <span class="ayuda__numero" aria-hidden="true">155</span>
+      <strong>Línea 155</strong>
+      <span>Orientación a víctimas de violencia. Nacional y gratuita
+        desde cualquier teléfono en Colombia; marca al tocar.</span>
+    </a>
+    <a class="ayuda__canal" href="https://salvia.minigualdadyequidad.gov.co" rel="noopener">
+      <span class="ayuda__numero" aria-hidden="true">S</span>
+      <strong>SALVIA — por internet, sin hablar</strong>
+      <span>Del Ministerio de Igualdad y Equidad. Orienta y activa
+        rutas de atención sin exigir una llamada.</span>
+    </a>
+  </div>
+
+  <p class="ayuda__nota">Si hay riesgo ahora mismo: <a href="tel:123">123</a>,
+    la línea de emergencias. La atención en salud nunca exige denunciar.
+    <em class="sinfuente">Canales estatales, sin verificar por Galene.</em></p>
+  <p class="ayuda__mas"><a href="#sin-hablar">Más caminos, con calma →</a></p>
+</section>

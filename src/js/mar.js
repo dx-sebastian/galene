@@ -2285,7 +2285,18 @@ void main(){
     /* El reflejo. A calma baja está partido en tajos; a calma alta el
        arco y su reflejo casi cierran un anillo, nunca del todo. Es la
        mecánica de Muñoz hecha geometría, y es una línea de shader. */
-    float profundidadR = u_hor - uv.y;
+    /* ── EL ESPEJO NACE EN EL AGUA DEL ÁRBOL, NO EN EL HORIZONTE ────
+       Estaba anclado a u_hor, y el árbol no entra al agua en el
+       horizonte: entra en su propia línea de contacto, que queda
+       POR DEBAJO (el árbol está en primer término y su base se hunde
+       u_manglarCaja.z). Con el ancla en u_hor, toda la franja entre el
+       horizonte y los pies del árbol se rellenaba con la copa
+       reflejada — un follaje fantasma DETRÁS de las raíces, o sea el
+       árbol espejado hacia los dos lados de su línea de agua. La mitad
+       del hundimiento es donde el velo del agua se vuelve opaco sobre
+       el tronco, medido en captura. */
+    float lineaAgua = base + u_manglarCaja.z * 0.5;
+    float profundidadR = lineaAgua - uv.y;
     /* En la superficie el reflejo toca exactamente cada raiz. La
        rotura horizontal nace en cero y crece bajo el agua; antes ya
        llegaba desplazada a la linea de contacto y producia un hueco
@@ -2298,7 +2309,7 @@ void main(){
        las raices visibles y su reflejo. corteAgua es la coordenada de
        textura que cruza exactamente la superficie; desde ahi la misma
        pintura se recorre al reves, a escala uno a uno. */
-    float corteAgua = clamp((u_hor - base) / S, 0.0, 1.0);
+    float corteAgua = clamp((lineaAgua - base) / S, 0.0, 1.0);
     float escalaReflejo = 0.62;
     vec2 r2 = vec2((q.x + tajo - (cx - Sx * 0.5)) / Sx,
                    corteAgua + profundidadR / (S * escalaReflejo));
@@ -2318,7 +2329,7 @@ void main(){
       r2.x += soplaR  * 0.0270 * mascaraRef;
       r2.y += soplaR2 * 0.0135 * mascaraRef;
     }
-    if (r2.x > 0.0 && r2.x < 1.0 && r2.y > 0.0 && r2.y < 1.0 && uv.y < u_hor) {
+    if (r2.x > 0.0 && r2.x < 1.0 && r2.y > 0.0 && r2.y < 1.0 && uv.y < lineaAgua) {
       vec4 t = texture(u_manglar, r2);
       float rotura = step(0.34,
         ruido(vec2(uv.y * mix(95.0, 22.0, cn), 7.3)) + cn * 0.55);

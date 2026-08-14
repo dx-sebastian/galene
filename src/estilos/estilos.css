@@ -1493,6 +1493,7 @@ body {
   z-index: 2;
   filter: saturate(var(--vuelo-sat-cerca, 0.94))
           contrast(var(--vuelo-contraste-cerca, 0.98))
+          brightness(var(--vuelo-brillo-cerca, 1))
           url(#aguada-cerca)
           drop-shadow(1px 3px 3px color-mix(in srgb, var(--sombra-ave) 40%, transparent));
 }
