@@ -115,8 +115,8 @@ function arrancar(mar) {
   /* En móvil, más píxeles de respaldo no son más detalle visible: son
      más fragmentos del shader por cuadro. La escala puede recuperarse
      tras la sonda si el dispositivo demuestra que tiene margen. */
-  let escala = PERFIL_AHORRO ? 0.58
-    : MOVIL ? Math.min(devicePixelRatio || 1, 0.72)
+  let escala = PERFIL_AHORRO ? 0.70
+    : MOVIL ? Math.min(devicePixelRatio || 1, 0.85)
       : Math.min(devicePixelRatio || 1, 1.35);
   let horizonte = 0.44;
   let deriva = 0, punteroX = 0, punteroObjetivo = 0;
@@ -127,9 +127,7 @@ function arrancar(mar) {
      que se le escribió al lienzo, para no reescribir lo que no cambió. */
   let salida = 0, derivaScroll = 0, salidaEscrita = '';
   let fpsMar = PERFIL_AHORRO ? 20 : 30;
-  let fpsCielo = PERFIL_AHORRO ? 8 : 15;
   let intervaloMar = 1000 / fpsMar;   // compuerta — SOLO el mar
-  let intervaloCielo = 1000 / fpsCielo, ultimoCielo = 0;
 
   const estado = { t: 0, horizonte, calma, deriva: 0, papel: 0.055, luz: L };
 
@@ -296,7 +294,7 @@ function arrancar(mar) {
   function sondear() {
     if (MOVIL) {
       medidas();
-      console.info(`[mar] perfil móvil: escala ${escala}, agua ${fpsMar} fps, cielo ${fpsCielo} fps`);
+      console.info(`[mar] perfil móvil: escala ${escala}, ${fpsMar} fps`);
       return;
     }
 
@@ -650,14 +648,7 @@ function arrancar(mar) {
     estado.horizonte = horizonte;
     estado.luz = L;
     avanzarToques(dtMar);
-    /* El agua lleva la cadencia alta. El cielo, la Vía Láctea y el
-       movimiento lentísimo de la copa se renuevan aparte: entre esos
-       cuadros el framebuffer conserva exactamente el último cielo y el
-       shader solo recorre la franja inferior. */
-    const cieloNuevo = !MOVIL || !ultimoCielo || ms - ultimoCielo >= intervaloCielo;
-    if (cieloNuevo) ultimoCielo = ms;
-    const limiteAgua = Math.min(1, horizonte + 0.055);
-    mar.dibujar(estado, cieloNuevo ? 1 : limiteAgua, MOVIL);
+    mar.dibujar(estado);
     calibrarLavado();
     /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito
        del agua y arrastraba al ave fuera de cuadro igual que hacía con
@@ -802,9 +793,7 @@ function arrancar(mar) {
     const anterior = escala;
     escala = Math.max(0.50, Math.round(escala * 0.86 * 100) / 100);
     fpsMar = Math.min(fpsMar, hz < 34 ? 18 : 24);
-    fpsCielo = Math.min(fpsCielo, hz < 34 ? 8 : 10);
     intervaloMar = 1000 / fpsMar;
-    intervaloCielo = 1000 / fpsCielo;
     ajustesCadencia++;
     medidas();
     console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: escala ${anterior} → ${escala}, ${fpsMar} fps`);
