@@ -278,46 +278,21 @@ const DATOS = {
     </a>
 
     <nav class="barra__nav" aria-label="Principal">
-      <a class="barra__enlace" href="#herramientas">Información</a>
-      {/* «Recursos» apunta a #sin-hablar —«Pedir ayuda sin hablar»,
-          la lista de canales—, que es la única ancla del sitio que
-          de verdad contiene recursos. No se inventa ninguna ruta: si
-          ese bloque cambiara de id, este enlace se queda sin destino
-          y hay que traerlo aquí. */}
-      <a class="barra__enlace" href="#sin-hablar">Recursos</a>
-      {/* «Comunidad» es el ÚNICO enlace de la barra que sale de la
-          portada, y por eso lleva ruta compuesta con la base y no
-          un ancla: `#algo` viaja dentro de esta página, `comunidad`
-          es otra. En móvil se va con los otros dos rótulos (ver el
-          bloque de `.barra__enlace` a 700 px en estilos.css): la
-          barra del teléfono guarda el logotipo y la píldora, y
-          nada más. */}
-      <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
-      <a class="barra__enlace" href={base + 'expertos'}>Panel</a>
+      {/* ── SOLO EL MENÚ, A CUALQUIER ANCHO ─────────────────────────
+          La barra tuvo cuatro rótulos sueltos, un menú que aparecía a
+          los 920 px y la píldora de «Buscar ayuda». Tres formas de
+          navegar en una fila es una fila que hay que mantener tres
+          veces, y la píldora dejó de ser necesaria el día que la
+          sección #ayuda se plantó JUSTO DEBAJO del hero: la ruta de
+          cero clics ahora es bajar un scroll, no un botón compitiendo
+          con el logotipo. El menú toma su sitio, con la ayuda DENTRO
+          y en forma de píldora — sigue siendo lo primero del panel
+          que se ve y lo único con contorno.
 
-      {/* ── EL MENÚ DEL TELÉFONO ────────────────────────────────────
-          Hasta ahora, a 700 px los tres rótulos hacían `display: none`
-          y la barra del móvil se quedaba con el logotipo y la píldora:
-          cero navegación. Esto la devuelve.
-
-          VA CON <details>, NO CON JAVASCRIPT. Abrir y cerrar un
-          desplegable es exactamente lo que ese elemento hace de fábrica,
-          con su estado accesible ya cableado (`aria-expanded` lo pone el
-          navegador) y funcionando aunque el bundle no llegue nunca. En
-          un sitio cuya regla 5 es que la ayuda no dependa de JS, la
-          navegación tampoco debería.
-
-          ── LA AYUDA SE QUEDA FUERA, Y ESA ES LA DECISIÓN ────────────
-          El encargo era poner el menú donde está el botón de ayuda. Está
-          justo ahí —a su izquierda, en el mismo hueco— pero la píldora
-          NO entra dentro. Meter «Buscar ayuda» en un desplegable la pone
-          a un toque y detrás de un estado, y la regla 5 dice cero clics.
-          El menú se lleva los rótulos de navegar; la ruta a la ayuda
-          sigue siendo lo único siempre visible en la barra.
-
-          `name="barra-menu"` hace el grupo exclusivo: si algún día hay
-          un segundo <details> en la barra, abrir uno cierra el otro sin
-          una línea de script. */}
+          VA CON <details>, NO CON JAVASCRIPT: abre y cierra de
+          fábrica y con el estado accesible ya cableado. El cierre por
+          tocar-fuera y Escape lo añade js/menu.js, y es cortesía: sin
+          el módulo, el botón sigue mandando. */}
       <details class="menu" name="barra-menu">
         <summary class="menu__boton" aria-label="Abrir menu de navegacion">
           <span class="menu__rayas" aria-hidden="true"></span>
@@ -328,19 +303,18 @@ const DATOS = {
           <a class="barra__enlace" href="#sin-hablar">Recursos</a>
           <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
           <a class="barra__enlace" href={base + 'expertos'}>Panel de expertos</a>
-        </div>
-      </details>
-
-      <a class="pildora" href="#ayuda">
-        Buscar ayuda
-        <svg class="pildora__icono" viewBox="0 0 14 12"
+          <a class="pildora pildora--menu" href="#ayuda">
+            Buscar ayuda
+            <svg class="pildora__icono" viewBox="0 0 14 12"
              aria-hidden="true" focusable="false">
           <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
                 fill="none" stroke="currentColor" stroke-width="1.3"
                 stroke-linecap="round" stroke-linejoin="round"
                 vector-effect="non-scaling-stroke" />
         </svg>
-      </a>
+          </a>
+        </div>
+      </details>
     </nav>
   </header>
 
@@ -559,6 +533,7 @@ const DATOS = {
       cayera con el mar la página se quedaría sin navegación por un
       fallo en la pintura. */}
   <script>import '../js/barra.js';</script>
+  <script>import '../js/menu.js';</script>
   <script>import '../js/main.js';</script>
   <script>import '../js/paralaje.js';</script>
   {/* El descenso. Isla aparte por la misma razón que las demás: si el

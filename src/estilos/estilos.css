@@ -865,9 +865,15 @@ body {
    son los 59 px que faltan para que un aumento de un paso siga
    cabiendo.
 
-   Ocupa el hueco que pediste, a la izquierda de la píldora de ayuda.
-   La píldora NO entra dentro: ver el comentario en index.astro. */
-.menu { display: none; }
+   ── Y AHORA ES LA ÚNICA NAVEGACIÓN, A CUALQUIER ANCHO ─────────────
+   La fila tuvo tres formas de navegar —rótulos sueltos, este menú a
+   partir de 920 px, y la píldora de ayuda— y las tres había que
+   cuadrarlas en cada ancho. Desde que #ayuda vive justo debajo del
+   hero, la píldora era la misma ruta dos veces; se fue de la fila, el
+   menú tomó su sitio y la ayuda viaja dentro del panel, en píldora,
+   como lo primero que se ve al abrirlo. Una barra con dos cosas
+   —marca y menú— no tiene anchos en los que romperse. */
+.menu { display: block; }
 
 /* ── DÓNDE SE ANCLA EL PANEL, Y POR QUÉ NO AL BOTÓN ────────────────
    Medido a 375 px: colgado del propio <details> con `right: 0`, el
@@ -943,14 +949,9 @@ body {
   text-underline-offset: 0.35em;
 }
 
-/* LOS DOS LADOS DEL MISMO INTERRUPTOR, ESCRITOS JUNTOS. Los rótulos se
-   apagan y el menú se enciende en el mismo ancho; separarlos en dos
-   media queries lejanas fue justo lo que dejó el hueco de 701–880 px
-   sin navegación que cupiera. */
-@media (max-width: 920px) {
-  .barra__enlace { display: none; }
-  .menu { display: block; }
-}
+/* (El interruptor de los 920 px se fue con los rótulos sueltos: ya no
+   hay dos modos de barra que conmutar. El menú es el mismo a 320 y a
+   1920, que es la clase de regla que no se rompe en ningún ancho.) */
 
 /* `prefers-reduced-motion` APAGA, no reduce (regla 7). Aquí no hay
    animación que apagar —el panel aparece y ya— y eso es deliberado:
@@ -1004,6 +1005,19 @@ body {
   border-radius: 2px;
 }
 .pildora:focus-visible { border-radius: 999px; }
+
+/* DENTRO DEL PANEL la píldora es una fila más, a todo el ancho y con
+   la tinta del papel: el panel es hoja, no cielo, así que `--tinta`
+   —que el hero fuerza a blanco— aquí sería una píldora invisible.
+   Va la última y separada por un filete: es la salida de emergencia
+   del menú, no un destino más de la lista. */
+.pildora--menu {
+  justify-content: center;
+  margin-top: 0.5rem;
+  border-color: rgb(var(--letra-rgb) / 45%);
+  color: var(--letra);
+}
+.pildora--menu:hover { border-color: var(--letra); }
 
 @media (prefers-reduced-motion: reduce) {
   .pildora { transition: none; }
