@@ -277,6 +277,12 @@ input, select, textarea { margin: 0; }
   --arte-barbas: url("/galene/arte/1024/papel-barbas.webp");
 }
 
+@media (max-width: 700px), (pointer: coarse) {
+  :root.lectura-cerca {
+    --arte-papel: url("/galene/arte/768/papel.webp");
+  }
+}
+
 :root[data-tinta="clara"] {
   /* La noche de la sección de lectura. Morado, azul y muy poco negro:
      #141428 no es negro, es añil apagado, y por eso descansa en vez de
@@ -1999,7 +2005,7 @@ body {
   border-radius: inherit;
   pointer-events: none;
   background-image:
-    url("/galene/arte/1024/papel.webp"),
+    var(--arte-papel),
     radial-gradient(closest-side ellipse at 8% 92%,
       color-mix(in srgb, #41707F 7%, transparent) 0%,
       color-mix(in srgb, #41707F 4%, transparent) 58%,
