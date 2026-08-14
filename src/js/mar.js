@@ -127,37 +127,38 @@ void main(){
   gl_Position = vec4(p, 0.0, 1.0);
 }`;
 
-/* Reconstrucción móvil. La pintura cara vive en un buffer menor; este
-   pase solo reescala y devuelve el microcontraste que el filtrado lineal
-   borraría. Una lectura y derivadas del quad sustituyen volver a ejecutar todo el
-   mar, el cielo, las estrellas y el manglar a resolución de salida. */
+/* Reconstrucción móvil. La pintura cara vive a resolución CSS; este
+   pase la presenta a resolución física y devuelve el microcontraste que
+   el filtrado lineal borraría. Son cinco lecturas vecinas muy baratas
+   frente a volver a ejecutar todo el mar, el cielo y el manglar a DPR 2. */
 const FS_HD = `#version 300 es
 precision highp float;
 out vec4 salida;
 uniform sampler2D u_escena;
-uniform vec2 u_salida;
+uniform vec2 u_escenaTam, u_salida;
 
 float valorHD(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
 
 void main(){
   vec2 uv = gl_FragCoord.xy / u_salida;
+  vec2 texel = 1.0 / u_escenaTam;
   vec3 c = texture(u_escena, uv).rgb;
-  vec3 dx = dFdx(c), dy = dFdy(c);
+  vec3 n = texture(u_escena, uv + vec2(0.0,  texel.y)).rgb;
+  vec3 s = texture(u_escena, uv - vec2(0.0,  texel.y)).rgb;
+  vec3 e = texture(u_escena, uv + vec2(texel.x, 0.0)).rgb;
+  vec3 o = texture(u_escena, uv - vec2(texel.x, 0.0)).rgb;
+  vec3 vecindad = (n + s + e + o) * 0.25;
+  vec3 detalle = c - vecindad;
 
-  /* Las derivadas ya contienen la diferencia con los tres fragmentos
-     vecinos del quad. La paridad identifica de qué lado está este píxel:
-     se resta en el lado oscuro y se suma en el claro. No hay lecturas
-     adicionales de textura. */
-  float signoX = mod(floor(gl_FragCoord.x), 2.0) * 2.0 - 1.0;
-  float signoY = mod(floor(gl_FragCoord.y), 2.0) * 2.0 - 1.0;
-  vec3 detalle = (dx * signoX + dy * signoY) * 0.25;
-
-  /* Mucha ganancia en textura fina, poca en cantos fuertes: el papel y
-     las hojas recuperan definición sin halos alrededor de la luna ni de
-     las letras. El límite admite solo un 3 % de sobreimpulso. */
-  float contraste = max(abs(valorHD(dx)), abs(valorHD(dy)));
-  float ganancia = mix(0.72, 0.34, smoothstep(0.08, 0.36, contraste));
-  vec3 realce = clamp(detalle * ganancia, vec3(-0.055), vec3(0.055));
+  /* El detalle se calcula en texeles de la escena, no en píxeles ya
+     ampliados. La textura fina recibe más ganancia y los cantos fuertes
+     menos; el límite de sobreimpulso evita halos en luna y estrellas. */
+  float contraste = max(max(abs(valorHD(c) - valorHD(n)),
+                             abs(valorHD(c) - valorHD(s))),
+                         max(abs(valorHD(c) - valorHD(e)),
+                             abs(valorHD(c) - valorHD(o))));
+  float ganancia = mix(0.82, 0.38, smoothstep(0.055, 0.30, contraste));
+  vec3 realce = clamp(detalle * ganancia, vec3(-0.070), vec3(0.070));
   vec3 nitido = c + realce;
   salida = vec4(clamp(nitido, 0.0, 1.0), 1.0);
 }`;
@@ -2688,11 +2689,12 @@ export function crear(lienzo) {
   fuenteFS = fuenteFS.replace('__MASCARA_ESTRELLAS_REFLEJO__', perfilMovil
     ? 'float salR = clamp((lamRcampo.a - 0.501961) / 0.498039, 0.0, 1.0);'
     : mascaraReflejoAnalitica);
-  /* En un lienzo móvil las octavas cuarta y quinta ya caen por debajo
-     de un píxel después del escalado. No aportan detalle visible, pero
-     duplicaban gran parte del trabajo restante. Escritorio conserva
-     las cinco; móvil compila un programa distinto con tres. */
-  fuenteFS = fuenteFS.replace('__FBM_OCTAVAS__', perfilMovil ? '3' : '5');
+  /* A resolución CSS nativa, la tercera octava queda por debajo de un
+     píxel en las coordenadas donde se usa el FBM móvil. La textura de
+     acuarela aporta el grano visible; pagar otra muestra de ruido por
+     octava no añade detalle, solo resta presupuesto al muestreo nítido.
+     Escritorio conserva las cinco. */
+  fuenteFS = fuenteFS.replace('__FBM_OCTAVAS__', perfilMovil ? '2' : '5');
   const vs = compilar(gl, gl.VERTEX_SHADER, VS);
   const fs = compilar(gl, gl.FRAGMENT_SHADER, fuenteFS);
   if (!vs || !fs) return null;
@@ -2705,7 +2707,8 @@ export function crear(lienzo) {
   }
   gl.useProgram(p);
 
-  let pHD = null, uSalidaHD = null, escenaTex = null, escenaFbo = null;
+  let pHD = null, uEscenaTamHD = null, uSalidaHD = null;
+  let escenaTex = null, escenaFbo = null;
   if (perfilMovil) {
     const fsHD = compilar(gl, gl.FRAGMENT_SHADER, FS_HD);
     if (!fsHD) return null;
@@ -2717,6 +2720,7 @@ export function crear(lienzo) {
     }
     gl.useProgram(pHD);
     gl.uniform1i(gl.getUniformLocation(pHD, 'u_escena'), 0);
+    uEscenaTamHD = gl.getUniformLocation(pHD, 'u_escenaTam');
     uSalidaHD = gl.getUniformLocation(pHD, 'u_salida');
 
     escenaTex = gl.createTexture();
@@ -3138,11 +3142,15 @@ export function crear(lienzo) {
     redimensionar(w, h, escala) {
       anchoEscena = Math.max(1, Math.round(w * escala));
       altoEscena  = Math.max(1, Math.round(h * escala));
-      /* 1.1× de salida basta para que una pantalla retina reciba cantos
-         subpíxel nítidos; subirla al DPR completo triplicaría el pase sin
-         aportar detalle que no exista en la acuarela. */
+      /* La salida va hasta DPR 2 físico. El shader caro sigue en
+         anchoEscena×altoEscena; aquí solo corre una lectura de textura,
+         comparable a presentar un fotograma de vídeo. Limitar esto a
+         1.1 obligaba al navegador a volver a ampliar el canvas en móviles
+         DPR 2–3 y era la fuente del desenfoque que aún se veía. En DPR 3
+         queda una ampliación de 1.5× en vez de 2.7×, sin pagar los tres
+         millones de píxeles de salida que hicieron caer la cadencia. */
       const escalaSalida = perfilMovil
-        ? Math.min(Math.max(1, devicePixelRatio || 1), 1.10)
+        ? Math.min(Math.max(1, devicePixelRatio || 1), 2.0)
         : escala;
       ancho = Math.max(1, Math.round(w * escalaSalida));
       alto  = Math.max(1, Math.round(h * escalaSalida));
@@ -3202,6 +3210,7 @@ export function crear(lienzo) {
         gl.useProgram(pHD);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+        gl.uniform2f(uEscenaTamHD, anchoEscena, altoEscena);
         gl.uniform2f(uSalidaHD, ancho, alto);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
         /* El programa principal espera la lámina lejana en la unidad 0

@@ -112,15 +112,13 @@ const calma = 0.35 + 0.50 * (1 - Math.exp(-raices / TAU_CALMA));
 document.getElementById('mar')?.style.setProperty('cursor', 'grab');
 
 function arrancar(mar) {
-  /* En móvil, más píxeles de respaldo no son más detalle visible: son
-     más fragmentos del shader por cuadro. La escala puede recuperarse
-     tras la sonda si el dispositivo demuestra que tiene margen. */
   /* En móvil esta es la resolución de SIMULACIÓN, no la de salida: el
-     reconstructor HD de mar.js presenta a 1×–1.1×. El área que se ahorra
-     aquí paga el pase nítido sin aumentar el presupuesto por cuadro. */
-  let escala = PERFIL_AHORRO ? 0.68
-    : MOVIL ? Math.min(devicePixelRatio || 1, 0.82)
-      : Math.min(devicePixelRatio || 1, 1.35);
+     reconstructor HD de mar.js presenta hasta 2×. Se mantiene en 1× CSS
+     para que la acuarela se muestree con detalle real antes de ampliar. */
+  /* La red lenta cambia el peso de las láminas y la cadencia, no la
+     nitidez: después de cargar, ahorrar resolución no ahorra un byte.
+     Ningún móvil vuelve a renderizar la pintura por debajo de 1× CSS. */
+  let escala = MOVIL ? 1.0 : Math.min(devicePixelRatio || 1, 1.35);
   let horizonte = 0.44;
   let deriva = 0, punteroX = 0, punteroObjetivo = 0;
   let visible = true, corriendo = false;
@@ -776,10 +774,9 @@ function arrancar(mar) {
   /* El perfil móvil elige un buen punto de partida, pero el dato que al
      final importa es la cadencia que la persona recibe. Tras el arranque
      se observa rAF en ventanas de tres segundos. Si el navegador no
-     sostiene 48 actualizaciones, el lienzo baja resolución interna por
-     pasos; no se apaga ninguna capa y todos los relojes siguen ligados
-     al tiempo real. Tres ajustes son suficientes para llegar al suelo
-     de 0.50 sin convertir una caída puntual en una oscilación. */
+     sostiene 48 actualizaciones se reduce la frecuencia del mar, nunca
+     su resolución: las garzas y el scroll siguen ligados al refresco de
+     la pantalla y la acuarela conserva siempre detalle CSS nativo. */
   let muestraCadencia = 0, cuadrosCadencia = 0, ajustesCadencia = 0;
   const cadenciaDesde = performance.now() + 4000;
   function adaptarCadencia(ms) {
@@ -791,15 +788,13 @@ function arrancar(mar) {
     const hz = cuadrosCadencia * 1000 / lapso;
     muestraCadencia = ms;
     cuadrosCadencia = 0;
-    if (hz >= 48 || escala <= 0.50) return;
+    if (hz >= 48) return;
 
-    const anterior = escala;
-    escala = Math.max(0.50, Math.round(escala * 0.86 * 100) / 100);
-    fpsMar = Math.min(fpsMar, hz < 34 ? 18 : 24);
+    const fpsAnterior = fpsMar;
+    fpsMar = Math.min(fpsMar, hz < 34 ? 20 : 24);
     intervaloMar = 1000 / fpsMar;
     ajustesCadencia++;
-    medidas();
-    console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: escala ${anterior} → ${escala}, ${fpsMar} fps`);
+    console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: ${fpsAnterior} → ${fpsMar} fps, escala ${escala}`);
   }
 
   function bucle() {
