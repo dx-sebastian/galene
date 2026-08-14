@@ -791,11 +791,41 @@ function arrancar(mar) {
     document.documentElement.style.setProperty('--lavado-color', '#0B141A');
   }
 
+  /* La sonda GPU elige un buen punto de partida, pero el dato que al
+     final importa es la cadencia que la persona recibe. Tras el arranque
+     se observa rAF en ventanas de tres segundos. Si el navegador no
+     sostiene 48 actualizaciones, el lienzo baja resolución interna por
+     pasos; no se apaga ninguna capa y todos los relojes siguen ligados
+     al tiempo real. Tres ajustes son suficientes para llegar al suelo
+     de 0.52 sin convertir una caída puntual en una oscilación. */
+  let muestraCadencia = 0, cuadrosCadencia = 0, ajustesCadencia = 0;
+  const cadenciaDesde = performance.now() + 6000;
+  function adaptarCadencia(ms) {
+    if (!MOVIL || ms < cadenciaDesde || ajustesCadencia >= 3) return;
+    if (!muestraCadencia) { muestraCadencia = ms; cuadrosCadencia = 0; return; }
+    cuadrosCadencia++;
+    const lapso = ms - muestraCadencia;
+    if (lapso < 3000) return;
+    const hz = cuadrosCadencia * 1000 / lapso;
+    muestraCadencia = ms;
+    cuadrosCadencia = 0;
+    if (hz >= 48 || escala <= 0.52) return;
+
+    const anterior = escala;
+    escala = Math.max(0.52, Math.round(escala * 0.86 * 100) / 100);
+    fpsMar = Math.min(fpsMar, hz < 34 ? 18 : 24);
+    intervaloMar = 1000 / fpsMar;
+    ajustesCadencia++;
+    medidas();
+    console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: escala ${anterior} → ${escala}, ${fpsMar} fps`);
+  }
+
   function bucle() {
     if (corriendo) return;
     corriendo = true;
     const paso = (ms) => {
       if (!visible || quieto.matches) { corriendo = false; return; }
+      adaptarCadencia(ms);
       /* El MAR va a 30 fps porque cada cuadro es un render WebGL de
          pantalla completa. El AVE va a la tasa del monitor: son cinco
          transforms de CSS, no cuesta nada, y es justo lo que hace que
