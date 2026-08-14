@@ -25,7 +25,7 @@ const conservar = new Set([
   ...dinamicas.map((ruta) => `1024/${ruta}`),
   'aguadas-seccion2.webp', 'filete-2-v.webp', 'filete-4-v.webp',
   'papel-barbas.webp', '1024/papel-barbas.webp', '1024/filete-5.webp',
-  '1024/manglar-enterrado-a.webp',
+  '1024/manglar-enterrado-a.webp', 'mobile/manglar-v2.webp',
 ]);
 
 /* Material de trabajo que debe vivir junto al proyecto, no en la web. */
