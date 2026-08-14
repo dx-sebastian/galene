@@ -18,7 +18,11 @@ import Herramientas from '../componentes/Herramientas.astro';
 import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
 import Expertos from '../componentes/Expertos.astro';
 import Acerca from '../componentes/Acerca.astro';
+/* El panel de «tu garza». Va dentro del hero y nace cerrado: ver su
+   propia cabecera sobre por qué es opt-in y por qué es un <details>. */
+import Garza from '../componentes/Garza.astro';
 import '../estilos/nuevas-secciones.css';
+import '../estilos/garza.css';
 import '../estilos/responsive.css';
 /* Las mismas ocho palabras que pintan las fichas. Ver la cabecera de
    datos/glosario.js: un solo sitio para las tres cosas que las usan. */
@@ -450,6 +454,18 @@ const DATOS = {
           El id es lo que busca main.js; la clase, lo que anima
           js/paralaje.js. Los dos hacen falta. */}
       <p class="hero__nota" id="nota-hora"></p>
+
+      {/* CUÁNTAS MANOS HAY EN EL AGUA. Nace vacío y casi siempre lo
+          está: js/main.js le escribe una línea solo mientras alguien
+          MÁS está sosteniendo. No cuenta a quien mira — cuenta el
+          gesto, que es lo único que está pasando en pantalla. Ver la
+          nota de `refrescarManos`. */}
+      <p class="manos" role="status" aria-live="polite" data-visible="0"></p>
+
+      {/* El panel de personalizar, en la esquina de abajo a la derecha.
+          Absoluto dentro del hero, así que no entra en las dos cajas que
+          mide `medidas()` para colocar el horizonte. */}
+      <Garza />
 
       {/* EL INDICADOR DE SCROLL VA OCULTO A LA ASISTENCIA TÉCNICA, y es
           deliberado: «Desliza» no es información, es un dibujo que dice

@@ -62,6 +62,32 @@ multiplica encima un escaneo real de papel de algodón fijo a la pantalla.
 - Información sobre salud o vida sexual es dato sensible. Este proyecto
   no la almacena, y esa decisión es deliberada.
 
+### Hasta dónde llega «los demás»
+
+El foro y las garzas de presencia parecen necesitar un servidor y no lo
+tienen. Lo que hay es `BroadcastChannel`: **las otras pestañas de este
+mismo navegador**, en el mismo aparato, sin red por medio.
+
+- Un hilo escrito en la comunidad aparece en la otra ventana de Galene
+  que tengas abierta. Se guarda en `sessionStorage`, o sea que **muere al
+  cerrar la pestaña**, y hay un botón para tirarlo antes.
+- Cada otra pestaña abierta pone **una garza** en el manglar del fondo, y
+  su mano en el agua abre un anillo en tu mar y ayuda a calmarlo.
+- Nunca se inventa a nadie. Si estás sola, no hay ninguna garza de más y
+  el aviso de manos no dice nada — la regla 3 no se cumple escondiendo
+  que son pocas, se cumple no fabricando ninguna.
+
+Esto **no** es «cuánta gente ha pasado por Galene». Para eso hace falta
+contar visitas a un sitio sobre sumisión química, que es exactamente el
+registro que la regla 9 prohíbe construir. La costura por donde entraría
+un relevo que no guarde nada está en `fuente()`, en `js/presencia.js`:
+todo lo demás ya funciona con lo que le llegue.
+
+Lo que **sí** se personaliza —el color del pico de tu garza, o una de
+diez frases— vive en `sessionStorage` y se va al cerrar. Nunca es texto
+libre: por el canal viaja un índice, no una palabra (ver
+`datos/garza.js`).
+
 ## Reglas que no se negocian
 
 1. No re-escenificar el hecho. Ni la copa, ni el bar, ni la gota cayendo.
@@ -86,6 +112,38 @@ python -m http.server 5177
 
 - `?dev=1&hora=4.2` — fuerza la hora para medir cualquier luz
 - `pruebas/lamina.html?src=../arte/mar-cercano.png` — mide una lámina
+
+### De extremo a extremo
+
+```bash
+npm run test:e2e
+```
+
+Playwright, **contra el sitio compilado** —`npm run build` y un servidor
+de ficheros de veinte líneas (`pruebas/servidor.mjs`), que es como sirve
+GitHub Pages—, no contra el servidor de desarrollo. Un fallo que solo
+aparece al compilar es el que nadie descubre hasta que está publicado.
+
+Dos suites:
+
+- `pruebas/e2e/foro.spec.js` — publicar, validar, contestar, votar,
+  ordenar, filtrar, borrar lo propio, y que lo escrito sobreviva a una
+  recarga pero no a otra pestaña.
+- `pruebas/e2e/garzas.spec.js` — el panel opt-in, el pico teñido, el
+  globo al pasar el ratón, la garza que aparece cuando se abre otra
+  pestaña y desaparece al cerrarla, y el gesto de calma con una mano y
+  con dos.
+
+Dos asideros hacen falta para esto y viajan al sitio publicado a
+propósito: `window.__hero.estado()`, `window.__garzas`, `window.__foro`
+y `window.__presencia`. Son de LECTURA de cosas que ya están en pantalla
+—cuánta calma tiene el agua, qué garzas hay posadas— y no permiten hacer
+nada que no se pueda hacer con el dedo. El asidero pesado de auditoría
+(`window.__mar`, que vuelve a dibujar y lee el búfer) sigue siendo solo
+de desarrollo.
+
+`?presencia=off` apaga la presencia, y `?auditar-mar=1` fuerza el shader
+completo donde el WebGL es por software.
 
 Leyes medidas que el motor mantiene: el agua siempre más oscura que la
 bruma del cielo (si empatan, el horizonte desaparece), texto siempre sobre

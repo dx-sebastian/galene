@@ -1,0 +1,81 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Garza — el panel de «tu garza», y todo lo que tiene de callado.
+
+   Va en la esquina de abajo a la derecha del hero, que es el único
+   rincón del cuadro que está vacío en las tres composiciones: en móvil
+   el árbol se centra y la garza cercana entra por la izquierda, y en
+   escritorio el árbol se va a la derecha pero por arriba del agua. Se
+   comprobó a 320, 390, 768, 1440 y 1920, y en apaisado.
+
+   NACE CERRADO, y esa es la mitad del encargo: «solo si quieren
+   personalizarlo». Un <details> cerrado es una palabra subrayada; no
+   pregunta nada, no tapa nada y no hay que descartarlo. Quien venga a
+   buscar un teléfono no se entera de que existe.
+
+   Y VA CON <details>, NO CON JAVASCRIPT, por lo mismo que el menú de la
+   barra: abrir y cerrar es exactamente lo que ese elemento hace de
+   fábrica, con su estado accesible ya cableado. Lo que sí depende del
+   script es el CONTENIDO —los seis picos y las diez frases nacen con
+   `hidden` y lo quita js/garza.js— porque seis botones que no cambian
+   nada serían controles muertos, y de eso este proyecto no deja ni uno
+   en pantalla.
+   ═══════════════════════════════════════════════════════════════════ */
+import { FRASES, PICOS } from '../datos/garza.js';
+---
+
+<details class="garza-yo">
+  <summary class="garza-yo__abrir">
+    {/* La misma silueta de pico que lleva el emblema del mapa, a este
+        tamaño: el símbolo dice de qué va el panel antes de abrirlo, y
+        hereda la tinta del cuadro con `currentColor` como todo lo que
+        se dibuja en línea en este sitio. */}
+    <svg class="garza-yo__icono" viewBox="0 0 20 16" aria-hidden="true" focusable="false">
+      <path d="M4 14 C 4 9, 6 6, 9 5 L 18 2.5 L 12.5 6.5 C 11 8, 10 11, 10 14"
+            fill="none" stroke="currentColor" stroke-width="1.3"
+            stroke-linecap="round" stroke-linejoin="round"
+            vector-effect="non-scaling-stroke" />
+    </svg>
+    <span>Tu garza</span>
+  </summary>
+
+  <div class="garza-yo__panel" data-garza-panel hidden="hidden">
+    {/* Se dice lo que pasa, en una línea y sin adornar: la garza es
+        suya, la ven las otras pestañas abiertas, y nada de esto se
+        guarda al cerrar. Es la misma honestidad que el aviso del foro,
+        y por el mismo motivo — aquí no se promete alcance. */}
+    <p class="garza-yo__nota">La que está posada en la rama de delante es
+      la tuya. Puedes dejarla como está.</p>
+
+    <fieldset class="garza-yo__grupo">
+      <legend>El color del pico</legend>
+      <div class="garza-yo__picos" data-garza-picos>
+        {PICOS.map((p) => (
+          <button class="pico" type="button" data-pico={p.id ? p.color : ''}
+                  aria-pressed="false" style={`--pico: ${p.color}`}>
+            <span class="visualmente-oculto">{p.nombre}</span>
+          </button>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="garza-yo__grupo">
+      <legend>O una frase, para quien pase el ratón por encima</legend>
+      <div class="garza-yo__frases" data-garza-frases>
+        {FRASES.map((f, i) => (
+          <button class="garza-yo__frase" type="button" data-frase={i}
+                  aria-pressed="false">{f}</button>
+        ))}
+      </div>
+    </fieldset>
+
+    <button class="garza-yo__olvidar" type="button" data-garza-olvidar hidden="hidden">
+      Dejarla como estaba
+    </button>
+
+    {/* Lo que se elige pasa a treinta píxeles de aquí, dentro de un
+        cuadro que un lector de pantalla no puede describir. Esto lo
+        dice en palabras. */}
+    <p class="garza-yo__parte" role="status" aria-live="polite" data-garza-parte></p>
+  </div>
+</details>

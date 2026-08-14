@@ -1381,6 +1381,45 @@ body {
   z-index: 2;
   filter: saturate(var(--vuelo-sat, 1)) contrast(var(--vuelo-contraste, 1));
 }
+
+/* LAS DE QUIEN MÁS ESTÉ. Se posan en la copa del manglar del fondo, o
+   sea EXACTAMENTE donde está la bandada y a la misma distancia, así que
+   llevan su mismo tratamiento: el velo aéreo y las dos sombras cortas.
+   Que sean personas y no paisaje no se dice con el color —eso sería una
+   garza de otro cuadro— se dice con el pico y con la frase. */
+.vuelo--presencia {
+  will-change: auto;
+  filter: saturate(var(--vuelo-sat, 0.3))
+          contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
+          brightness(var(--vuelo-brillo, 1))
+          drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.30))
+          drop-shadow(0 0 5px rgb(0 0 0 / 0.16));
+}
+
+/* ── EL PICO TEÑIDO ────────────────────────────────────────────────
+   Un rectángulo del color elegido, enmascarado con la propia lámina del
+   ave y recortado a la caja del pico. Lo coloca js/pico.js copiando la
+   colocación de la lámina que se está viendo, así que aquí solo está lo
+   que no cambia entre cuadros.
+
+   `mix-blend-mode: multiply` y no un color plano: sobre una acuarela,
+   el pigmento se pone ENCIMA del que ya hay y deja pasar su granulado y
+   sus bordes mojados. Con un color opaco el pico saldría liso y se
+   leería como una pegatina de vector sobre una pintura — que es
+   justamente el error que este archivo lleva evitando desde el primer
+   manglar. */
+.pico-tinte {
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  will-change: transform;
+}
 @media (prefers-reduced-motion: reduce) {
   .vuelo--visita { transition: none; }
 }

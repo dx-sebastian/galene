@@ -1,0 +1,260 @@
+/* ═══════════════════════════════════════════════════════════════════
+   garza.css — EL PANEL DE «TU GARZA» Y EL GLOBO DE LA FRASE.
+
+   Dos piezas y una regla común: las dos viven ENCIMA de la pintura, así
+   que las dos llevan el tratamiento que este sitio ya tiene para eso —
+   tipografía plana, alineación exacta y el contorno de la tinta de la
+   hora. «La imperfección vive en el mundo; el instrumento es exacto.»
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── EL DESPLEGABLE, EN LA ESQUINA VACÍA ───────────────────────────
+   `position: absolute` dentro de `.hero`, y eso NO estorba a nada de lo
+   que main.js mide: `medidas()` mide la caja del hero y la de
+   `.hero__texto`, y un absoluto no entra en ninguna de las dos. Si
+   algún día se le pone al panel un sitio en la rejilla, hay que volver
+   a mirar el cálculo del horizonte.
+
+   El área segura del aparato se respeta a mano porque este elemento se
+   sale del padding del hero: en un teléfono con barra de gestos, sin
+   `--safe-bottom` el panel queda debajo de la barra. */
+.garza-yo {
+  position: absolute;
+  z-index: 3;
+  right: max(clamp(1.25rem, 4vw, 3rem), calc(var(--safe-right, 0px) + 1rem));
+  bottom: max(clamp(1.25rem, 4vw, 3rem), calc(var(--safe-bottom, 0px) + 1rem));
+  max-width: min(22rem, calc(100vw - 2.5rem));
+  color: var(--tinta);
+  text-align: left;
+}
+
+/* CERRADO ES UNA PALABRA SUBRAYADA, no un botón. La misma forma que
+   `.hero__enlace`, que es el otro texto pulsable del cuadro: si los dos
+   se pulsan, los dos tienen que parecerse. */
+.garza-yo__abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 2.75rem;          /* dedo, como todo lo pulsable del sitio */
+  padding-inline: 0.15rem;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--t-xs);
+  letter-spacing: 0.16em;
+  list-style: none;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgb(18 35 48 / 35%);
+}
+.garza-yo__abrir::-webkit-details-marker { display: none; }
+.garza-yo__abrir:hover { text-decoration: underline; text-underline-offset: 0.45em; }
+.garza-yo__abrir:focus-visible {
+  outline: 3px solid var(--tinta);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.garza-yo__icono { width: 1.35em; height: 1.1em; flex: none; overflow: visible; }
+
+/* ── ABIERTO ───────────────────────────────────────────────────────
+   Opaco, y a propósito. Detrás hay un shader que se mueve, y un panel
+   translúcido sobre agua en movimiento es texto que parpadea — el mismo
+   argumento que ya está escrito en `.menu__panel`, y aquí con más razón
+   porque aquí hay diez frases que leer.
+
+   `--letra` y no `--tinta`: dentro del panel el fondo es papel, así que
+   la tinta que toca es la del papel. El hero fuerza `--tinta: #FFFFFF`
+   y sin esto las diez frases saldrían blancas sobre papel claro. */
+.garza-yo__panel {
+  margin-top: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: 4px;
+  background: var(--papel);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 22%);
+  color: var(--letra);
+  text-shadow: none;
+  /* Diez frases y seis picos no siempre caben en una ventana apaisada
+     de 390 px de alto. Antes de desbordar, se desplaza — y solo él. */
+  max-height: min(60svh, 26rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.garza-yo__nota {
+  margin: 0 0 0.85rem;
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: rgb(var(--letra-rgb) / 78%);
+}
+
+.garza-yo__grupo { margin: 0 0 0.9rem; padding: 0; border: 0; }
+.garza-yo__grupo legend {
+  padding: 0 0 0.4rem;
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  color: rgb(var(--letra-rgb) / 72%);
+  text-transform: uppercase;
+}
+
+/* ── LOS SEIS PICOS ────────────────────────────────────────────────
+   Círculos de color, y el marcado es un <button> con el nombre dentro
+   en texto oculto: un cuadradito de color sin nombre no existe para
+   quien no ve. `aria-pressed` dice cuál está puesto — el anillo de
+   fuera es su forma visible, no su única forma. */
+.garza-yo__picos { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pico {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.pico::before {
+  content: "";
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--pico);
+  box-shadow: inset 0 0 0 1px rgb(var(--letra-rgb) / 22%);
+}
+.pico[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--letra); }
+.pico:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* ── LAS DIEZ FRASES ───────────────────────────────────────────────
+   En columna y en tipografía de lectura, no en píldoras: son frases que
+   alguien va a decirle a quien llegue, y hay que poder leerlas antes de
+   elegir. La marcada se invierte, igual que la ficha de ciudad del
+   mapa — es el gesto de «puesto» que este sitio ya usa. */
+.garza-yo__frases { display: grid; gap: 0.25rem; }
+.garza-yo__frase {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgb(var(--letra-rgb) / 14%);
+  border-radius: 2px;
+  background: var(--papel-alto);
+  color: var(--letra);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+  text-align: left;
+}
+.garza-yo__frase[aria-pressed="true"] {
+  background: var(--letra);
+  color: var(--contra);
+  border-color: var(--letra);
+}
+.garza-yo__frase:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+.garza-yo__olvidar {
+  min-height: 2.5rem;
+  padding: 0 0.8rem;
+  border: 1px dashed rgb(var(--letra-rgb) / 30%);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--letra);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-xs);
+}
+.garza-yo__olvidar:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+.garza-yo__parte {
+  margin: 0.6rem 0 0;
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  color: rgb(var(--letra-rgb) / 72%);
+}
+
+/* ═══ EL GLOBO DE LA FRASE ═════════════════════════════════════════
+   Aparece al pasar por encima de una garza que lleve frase. Lo coloca
+   js/main.js en píxeles, porque quien sabe dónde está cada ave es el
+   mismo bucle que la dibuja; aquí solo está su forma.
+
+   VA CON `pointer-events: none`, y no es un detalle: si el globo
+   capturara el puntero, aparecer debajo del cursor lo taparía y el
+   ratón dejaría de estar «sobre la garza» — el globo se apagaría solo,
+   volvería a aparecer, y así en bucle. Es el parpadeo clásico de los
+   tooltips mal montados.
+
+   Y VA FUERA DE `#garzas`: ese contenedor lo escala y lo hunde el
+   paralaje del scroll (ver la nota del mundo en estilos.css), así que
+   un globo dentro se deformaría con él. */
+.globo-garza {
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  max-width: min(16rem, 70vw);
+  padding: 0.45rem 0.7rem;
+  border-radius: 3px;
+  background: var(--lamina);
+  color: var(--lamina-tinta);
+  font-size: var(--t-sm);
+  line-height: 1.35;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms linear;
+  /* `translate` lo escribe main.js con el sitio del ave. Se declara
+     aquí para que la primera escritura no herede un valor raro. */
+  translate: 0 0;
+}
+.globo-garza[data-visible="1"] { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .globo-garza { transition: none; }
+}
+
+/* ── EL AVISO DE LAS MANOS ─────────────────────────────────────────
+   Cuando alguien más está sosteniendo el agua, se dice. Una línea, en
+   el mismo sitio y con el mismo tratamiento que la nota de la hora
+   («El sol sale a las 5:54»), porque es la misma clase de susurro: algo
+   que está pasando y que no pide nada.
+
+   Nace vacío y casi siempre lo está. */
+.manos {
+  position: absolute;
+  z-index: 3;
+  left: max(clamp(1.25rem, 4vw, 3rem), calc(var(--safe-left, 0px) + 1rem));
+  bottom: max(clamp(1.25rem, 4vw, 3rem), calc(var(--safe-bottom, 0px) + 1rem));
+  margin: 0;
+  max-width: min(18rem, 60vw);
+  color: var(--tinta-suave);
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgb(18 35 48 / 35%);
+  opacity: 0;
+  transition: opacity 400ms linear;
+  pointer-events: none;
+}
+.manos[data-visible="1"] { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .manos { transition: none; }
+}
+
+/* En una ventana baja y apaisada el panel abierto y el aviso de manos
+   se pelean con «Desliza», que ya se apaga ahí (ver responsive.css).
+   El panel se queda —es el control— y el aviso cede. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .manos { display: none; }
+}
+
+/* ── Y EN UN TELÉFONO, TRES COSAS NO CABEN EN UNA FILA ─────────────
+   Abajo del hero viven el aviso de manos (izquierda), «Desliza»
+   (centrado) y el disparador de «tu garza» (derecha). En 1440 px sobra
+   sitio; en 320 el aviso mide 192 px, «Desliza» empieza en 130 y el
+   disparador acaba en 300 — los tres encima. El aviso sube a su propia
+   línea y se estira: es el único de los tres que es una frase, y una
+   frase partida por un rótulo no se lee. */
+@media (max-width: 560px) {
+  .manos {
+    left: max(clamp(1.25rem, 4vw, 3rem), calc(var(--safe-left, 0px) + 1rem));
+    right: max(clamp(1.25rem, 4vw, 3rem), calc(var(--safe-right, 0px) + 1rem));
+    bottom: calc(max(clamp(1.25rem, 4vw, 3rem), var(--safe-bottom, 0px) + 1rem) + 3.4rem);
+    max-width: none;
+  }
+}

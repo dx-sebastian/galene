@@ -11,6 +11,14 @@
 import { luz, aplicar, horaAhora, notaAmanecer } from './hora.js';
 import { crear, viento, encogeCerca, VIENTO_COPA, VIENTO_RAMA } from './mar.js';
 import { viewportHeight, viewportWidth } from './viewport.js';
+/* Quién más está, ahora mismo, en este mismo navegador. Ver la cabecera
+   de presencia.js: no hay servidor y no se inventa a nadie. */
+import * as presencia from './presencia.js';
+/* La garza de quien mira: su pico y su frase. El panel lo monta
+   garza.js sobre el marcado de Garza.astro. */
+import { perfil as miPerfil, montarPanel, alCambiar as alCambiarGarza } from './garza.js';
+import { colorDePico, fraseDe } from '../datos/garza.js';
+import * as pico from './pico.js';
 
 /* La barra de reflejos —salida rápida y línea de atención— salió del
    sitio: la urgencia se traslada a una app móvil, y aquí volverá más
@@ -477,11 +485,31 @@ function arrancar(mar) {
     sosteniendo = { x: q.x, y: q.y, fuerza: 0, edad: 0 };
     TOQUES.push(sosteniendo);
     while (TOQUES.length > 6) TOQUES.shift();
+    /* Y se dice. Lo que viaja es un punto del lienzo y nada más — ver
+       presencia.js. En las otras pestañas abre su propio anillo, así
+       que el gesto se ve donde está la otra mano y no en un contador. */
+    presencia.anunciar({ sostiene: { x: q.x, y: q.y } });
   }
-  const soltarToque = () => { sosteniendo = null; };
+  const soltarToque = () => {
+    sosteniendo = null;
+    presencia.anunciar({ sostiene: null });
+  };
 
   hero.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('a, button, input, textarea, label')) return;
+    /* `summary` y el panel de la garza entran en la lista: abrirlo es un
+       clic, y un clic dentro de un control no puede además calmar el
+       mar. Sin esto, elegir una frase abriría un anillo en el agua. */
+    if (e.target.closest('a, button, input, textarea, label, summary, [data-garza-panel]')) return;
+
+    /* ── UN TOQUE SOBRE UNA GARZA ENSEÑA SU FRASE Y NO CALMA ────────
+       En un teléfono no hay «pasar por encima», así que el globo tiene
+       que poder abrirse tocando. Y tiene que ser lo uno O lo otro: un
+       gesto que enseñe una frase Y calme el mar a la vez no se puede
+       deshacer ni entender. Manda la garza, que es lo más pequeño y por
+       tanto lo que hay que apuntar a propósito. */
+    const sobre = pico.aveEn(e.clientX, e.clientY);
+    if (sobre) { pico.fijar(sobre); return; }
+
     empezarToque(e.clientX, e.clientY);
   });
   addEventListener('pointerup', soltarToque);
@@ -498,11 +526,60 @@ function arrancar(mar) {
   });
   addEventListener('keyup', (e) => { if (e.code === 'Space') soltarToque(); });
 
+  /* ── LO QUE SOSTIENEN LAS OTRAS MANOS ────────────────────────────
+     `sostenido` es el tiempo de ESTA mano. `ajeno` es el de las demás
+     sumado, y se acumula igual: sube mientras alguien aguanta y no baja
+     nunca. Dos manos durante diez segundos calman lo mismo que una
+     durante veinte — que es lo que significa que la calma es de la
+     gente y no de nadie en particular.
+
+     Va con su propio tope por sesión, y por el mismo motivo que el
+     otro: para que nadie deje la pestaña sujeta y suba el mar entero.
+
+     Las tres declaraciones van ANTES de la función que las usa, y no es
+     por gusto: este archivo ya pagó una vez el fallo de declarar un
+     `const` de módulo por debajo de quien lo lee (ver la nota de
+     `despegue`, arriba del todo). Un `const` existe a partir de su
+     línea, no desde el principio del ámbito. */
+  let ajeno = 0;
+  const ajenos = new Map();
+  const ajenosVivos = [];
+
   function avanzarToques(dt) {
     if (sosteniendo && sostenido < TOPE_SESION) {
       sostenido += dt;
       sosteniendo.fuerza = Math.min(1, sosteniendo.fuerza + dt * 1.6);
     }
+
+    /* ── LOS ANILLOS DE LAS OTRAS ──────────────────────────────────
+       Se pintan en el MISMO array que los propios, así que salen del
+       mismo shader y con el mismo pigmento: no hay un anillo «de otro»
+       dibujado de otra manera. Lo que los distingue no es el estilo, es
+       que aparecen donde no está tu dedo — y eso es exactamente lo que
+       se quería que se notara.
+
+       Se reconstruyen cada cuadro a partir de la última noticia de cada
+       sesión, en vez de guardarlos: una pestaña que se cierra deja de
+       latir y su anillo se cierra solo, sin nada que limpiar. */
+    const fuera = presencia.toquesAjenos();
+    ajenosVivos.length = 0;
+    for (const t of fuera) {
+      let a = ajenos.get(t.id);
+      if (!a) { a = { x: t.x, y: t.y, fuerza: 0, edad: 0 }; ajenos.set(t.id, a); }
+      a.x = t.x; a.y = t.y;
+      a.fuerza = Math.min(1, a.fuerza + dt * 1.6);
+      a.edad = 0;
+      ajenosVivos.push(a);
+    }
+    for (const [id, a] of ajenos) {
+      if (fuera.some((t) => t.id === id)) continue;
+      /* Soltó: su anillo se cierra con el mismo ritmo que los propios y
+         después se olvida. */
+      a.edad = Math.min(1, a.edad + dt * 0.45);
+      if (a.edad >= 1) ajenos.delete(id); else ajenosVivos.push(a);
+    }
+    if (fuera.length && ajeno < TOPE_SESION) ajeno += dt * fuera.length;
+
     for (const t of TOQUES) {
       // La edad solo corre cuando NO se está sosteniendo: el anillo se
       // cierra al soltar, no mientras se aguanta.
@@ -518,14 +595,38 @@ function arrancar(mar) {
        Asi ninguno tapa al otro cuando lleguen las raices de verdad, y
        la suma sigue siendo MONOTONA: ninguno baja nunca. Lo que dejas,
        queda — al soltar, lo calmado se queda calmado. */
-    const cRaices = 1 - Math.exp(-(raices + sostenido * 1.5) / TAU_CALMA);
-    const cSesion = TECHO_SESION * (1 - Math.exp(-sostenido / TAU_SESION));
+    /* ── Y LAS OTRAS MANOS ENTRAN POR LOS DOS SITIOS ────────────────
+       Por las RAÍCES, porque eso es lo que son: comunidad, el velo lento
+       del README, gente que no eres tú calmando el mismo mar.
+
+       Y TAMBIÉN POR LA SESIÓN, con menos peso. Solo por las raíces no se
+       veía: MEDIDO con dos pestañas, tres segundos de mano ajena movían
+       la calma de 0.3500 a 0.3506 — o sea nada, y el encargo era
+       justamente que se notara cuando varios sostienen. Con 0.6 de peso,
+       dos manos calman el mar visiblemente más rápido que una y la
+       propia sigue mandando: tu gesto se ve como tuyo, y el de al lado
+       se ve como ayuda. Que es lo que es. */
+    const cRaices = 1 - Math.exp(-(raices + (sostenido + ajeno) * 1.5) / TAU_CALMA);
+    const cSesion = TECHO_SESION * (1 - Math.exp(-(sostenido + ajeno * 0.6) / TAU_SESION));
     estado.calma = 0.35 + 0.50 * (1 - (1 - cRaices) * (1 - cSesion));
     /* El roce decae solo: si la mano se para, el agua se vuelve a
        aquietar en algo mas de un segundo. */
     rocef.z = Math.max(0, rocef.z - dt * 0.75);
     mar.roce(rocef);
-    mar.toques(TOQUES);
+    /* Seis es el tope del shader (`u_toques`), así que hay que elegir.
+       LAS MANOS PUESTAS AHORA VAN PRIMERO —la propia y las ajenas—, y
+       después los anillos que se están cerrando. Al revés, seis toques
+       viejos míos apagándose podían tapar la mano de otra persona, que
+       es justo lo único que este cambio existe para que se vea. */
+    const cerrando = TOQUES.filter((t) => t !== sosteniendo);
+    mar.toques([
+      ...(sosteniendo ? [sosteniendo] : []),
+      ...ajenosVivos.filter((a) => a.edad === 0),
+      ...cerrando,
+      ...ajenosVivos.filter((a) => a.edad > 0),
+    ].slice(0, 6));
+
+    refrescarManos();
   }
 
   /* Pausar cuando el mar sale de pantalla: batería real en gama media. */
@@ -727,6 +828,15 @@ function arrancar(mar) {
     animarGarzas(estado.t, estado.paralaje, dt);
     animarVisita(estado.t, estado.paralaje);
     animarBandada(estado.t, estado.paralaje);
+    /* Las de quien más esté van con el mismo reloj que la visitante: es
+       el mismo suceso —alguien llegó— pintado en el otro plano. */
+    for (const ave of presentes.values()) {
+      animarCaida(ave, estado.t, estado.paralaje);
+    }
+    /* El globo sigue al ave, no solo al ratón: si el puntero está
+       quieto encima de una garza que se remueve, la frase tiene que
+       seguirla. */
+    pico.refrescar();
   }
 
   /* ── EL LAVADO ADAPTATIVO ────────────────────────────────────────
@@ -895,6 +1005,11 @@ function arrancar(mar) {
         paisajeSegunScroll();
         animarGarzas(ms / 1000, estado.paralaje, dtAve);
         animarVisita(ms / 1000, estado.paralaje);
+        /* Las de presencia también, y por la misma razón que la
+           visitante: mientras CAEN es un vuelo, y un vuelo a 30 fps se
+           ve a tirones. Ya posadas el gasto es el mismo que el de la
+           bandada, que es casi ninguno. */
+        for (const ave of presentes.values()) animarCaida(ave, ms / 1000, estado.paralaje);
         /* Y el ave que despega, por lo mismo: es un vuelo, y un vuelo a
            30 fps se ve a tirones. Solo ella —el resto de la bandada se
            balancea medio grado y no merece el gasto. */
@@ -931,6 +1046,26 @@ function arrancar(mar) {
       estado: () => ({ t: estado.t, calma: estado.calma, sostenido }),
     };
   }
+
+  /* ── Y UNA LECTURA DEL ESTADO QUE SÍ VIAJA AL SITIO PUBLICADO ─────
+     `__mar` es una herramienta de auditoría: vuelve a dibujar el cuadro
+     y lee el búfer entero, así que se queda en desarrollo. Esto otro es
+     solo LEER cuatro números que ya están pintados en pantalla — cuánta
+     calma tiene el agua, cuánto se ha sostenido y cuántas manos hay— y
+     va siempre, porque las pruebas de extremo a extremo corren contra el
+     sitio compilado y ahí es donde hay que comprobar que el gesto de
+     calma funciona. No permite hacer nada que no se pueda hacer con el
+     dedo. */
+  window.__hero = {
+    estado: () => ({
+      t: estado.t,
+      calma: estado.calma,
+      sostenido,
+      ajeno,
+      manos: presencia.manos(),
+      manosAjenas: presencia.manosAjenas(),
+    }),
+  };
   if (PARAMS.has('dev'))
     window.__galene = { estado, cuadro, mar, luz: () => L, calcularPosadero,
                         vuelo: () => vuelo, bandada, despegue: () => despegue,
@@ -1392,6 +1527,15 @@ let vuelo = null;
 const CAIDA = ['l01','l02','l03','l04','l05','l06','l07','l08'];
 const CAIDA_ESPERA = 1.1;    // s antes de aparecer: la pagina se asienta
 const CAIDA_DURA   = 3.4;    // s de caida y aterrizaje
+/* Las láminas que necesita un ave que cae y luego se queda: los ocho
+   cuadros del aterrizaje y las seis poses de reposo. Vive aquí arriba
+   porque ahora la usan dos sitios —la visitante y las de presencia— y
+   dos listas iguales en dos sitios son dos listas el día que alguien
+   toque una. */
+const LAMINAS_CAIDA = [...CAIDA, 'posada', 'pAlerta', 'pEncoge',
+                       'pUnaPata', 'pMira', 'pAlas'];
+const crearTinteAve = () =>
+  contenedor ? pico.crearTinte(contenedor, (k) => VUELO[k].src) : null;
 let visita = null;
 let inicioContenido = null;
 addEventListener('galene:contenido-listo', () => {
@@ -1422,8 +1566,7 @@ if (contenedor) {
 
 if (contenedor) {
   const capas = {};
-  for (const clave of [...CAIDA, 'posada', 'pAlerta', 'pEncoge',
-                       'pUnaPata', 'pMira', 'pAlas']) {
+  for (const clave of LAMINAS_CAIDA) {
     const v = VUELO[clave];
     const img = new Image();
     diferirImagen(img, v.src);
@@ -1448,9 +1591,151 @@ if (contenedor) {
   /* UNA. La visitante es una y solo una, y no es una restricción de
      dibujo sino de sentido: representa a quien acaba de abrir el sitio,
      y quien abre el sitio es una persona. La rama cercana no admite
-     bandada — si hubiera dos, ya no sería ella. */
+     bandada — si hubiera dos, ya no sería ella.
+
+     Y ESO SIGUE SIENDO CIERTO CON LA PRESENCIA. Las garzas de quien más
+     esté no vienen aquí: se posan en la copa del manglar del fondo, con
+     la bandada. La rama de delante es de quien mira, y por eso es la
+     única que se puede personalizar desde el panel. */
   visita = { capas, px: 0, py: 0, vx: 0, vy: 0, arrancado: false,
+             id: 'yo', plano: 1.35, espeja: true,
+             tinte: crearTinteAve(),
+             sena: { pico: null, frase: null },
              reposo: nuevoReposo([8.0, 21.0], [4.0, 8.0]) };
+}
+
+/* ═══ LAS GARZAS DE QUIEN MÁS ESTÁ ════════════════════════════════
+   Una por cada OTRA sesión con Galene abierto. Entran cayendo, igual
+   que la de quien mira, y se posan en la copa del manglar del fondo.
+   Cuando esa pestaña se cierra, su garza se va.
+
+   ── QUÉ SIGNIFICAN EXACTAMENTE, PORQUE IMPORTA ────────────────────
+   Significan «hay alguien más ahora». NO significan «han pasado por
+   aquí N personas»: eso necesitaría un servidor que cuente visitas a un
+   sitio sobre sumisión química, que es el registro que la regla 9
+   prohíbe construir. Lo que se pinta es lo único que se puede saber sin
+   guardar nada de nadie, y se pinta sin inventar ni una — ver la
+   cabecera de presencia.js.
+
+   ── POR QUÉ NO SE MEZCLAN CON LA BANDADA ─────────────────────────
+   La bandada es paisaje: son las garzas del manglar, y llevan ahí desde
+   antes. Estas son personas, y por eso son las únicas —con la de quien
+   mira— que pueden llevar pico de color y frase. Se reparten las mismas
+   PERCHAS para que no se solapen con ella, pero son otra lista y otra
+   vida.
+
+   ── EL TOPE ──────────────────────────────────────────────────────
+   Seis. No por pantalla sino por sentido: pasadas seis, más garzas
+   dejan de leerse como personas y pasan a ser una mancha, que es
+   justamente lo contrario de lo que esto cuenta. Si un día hay más
+   sesiones que perchas, las que no caben simplemente no se pintan y el
+   aviso de abajo sigue diciendo la verdad. */
+const PRESENTES_MAX = 6;
+const presentes = new Map();          // id de sesión → ave
+
+/* ── EL AVISO DE LAS MANOS ─────────────────────────────────────────
+   Que se note cuando varios están calmando el mar a la vez. Lo que de
+   verdad lo dice son los ANILLOS —aparece uno donde no está tu dedo— y
+   esto es la línea que lo pone en palabras: para quien no ve el cuadro,
+   y para quien lo ve pero no sabe qué está mirando.
+
+   NO ES UN CONTADOR DE VISITAS, y por eso no dice nada cuando nadie
+   sostiene. Solo aparece mientras hay manos puestas, y cuenta MANOS EN
+   EL AGUA, no personas mirando. La diferencia no es de redacción:
+   contar a quien está en el sitio sería el recuento que la regla 9
+   prohíbe; describir cuántas manos hay en un gesto que está ocurriendo
+   en pantalla es contar lo que se ve.
+
+   Aparece con la primera mano AJENA, no con la propia: quien sostiene
+   ya sabe que sostiene, y decírselo sería un cartel. */
+const avisoManos = document.querySelector('.manos');
+let manosEscritas = -1;
+function refrescarManos() {
+  if (!avisoManos) return;
+  const ajenas = presencia.manosAjenas();
+  const n = presencia.manos();
+  if (n === manosEscritas) return;
+  manosEscritas = n;
+  if (ajenas <= 0) { avisoManos.dataset.visible = '0'; return; }
+  /* Se cuenta lo que hay en el agua, la propia incluida. Con una sola
+     —la de otra persona, porque si fuera la tuya no habría aviso— se
+     dice en palabras y no con un número: «hay 1 manos» no lo dice
+     nadie, y «hay 1 mano» sigue siendo un contador donde lo que hace
+     falta es una frase. */
+  avisoManos.textContent = n === 1
+    ? 'Alguien más está calmando el mar.'
+    : `Hay ${n} manos en el agua.`;
+  avisoManos.dataset.visible = '1';
+}
+
+function crearAvePresencia(id) {
+  if (!contenedor) return null;
+  const capas = {};
+  for (const clave of LAMINAS_CAIDA) {
+    const v = VUELO[clave];
+    const img = new Image();
+    /* SIN `diferirImagen`: estas aves nacen tarde, cuando alguien abre
+       otra pestaña, y para entonces el diferidor ya vació su cola. Se
+       piden directamente y con prioridad baja — son adorno, y el mar ya
+       está pintado. */
+    img.src = v.src;
+    img.fetchPriority = 'low';
+    img.alt = '';
+    img.className = 'vuelo vuelo--presencia';
+    img.decoding = 'async';
+    const ox = v.cx + (v.pies[0] - v.cx);
+    const oy = v.cy + (v.pies[1] - v.cy);
+    img.style.transformOrigin = (ox * 100).toFixed(1) + '% ' + (oy * 100).toFixed(1) + '%';
+    img.style.opacity = '0';
+    contenedor.appendChild(img);
+    capas[clave] = img;
+  }
+  return {
+    capas, id,
+    /* En la copa del fondo, con la bandada: mismo plano, mismo paralaje
+       y sin espejar. */
+    plano: 0.45, espeja: false,
+    tinte: crearTinteAve(),
+    sena: { pico: null, frase: null },
+    /* Su reloj empieza AHORA: acaba de llegar. `t0` es tiempo del bucle
+       del mar, el mismo que usa `inicioContenido`. */
+    t0: performance.now() / 1000,
+    reposo: nuevoReposo([7.0, 19.0], [3.0, 6.5]),
+    alto: 0, pieX: 0, pieY: 0, entraX: 0, entraY: 0, vela: 0, h0: 0,
+  };
+}
+
+function quitarAvePresencia(ave) {
+  for (const el of Object.values(ave.capas)) el.remove();
+  ave.tinte?.quitar();
+  pico.registrar(ave.id, null);
+  presentes.delete(ave.id);
+}
+
+/* Se llama cada vez que cambia quién está. Crea las que faltan, quita
+   las que se fueron y les copia su pico y su frase. NO recoloca: de eso
+   se encarga `colocarGarzas`, que es quien sabe dónde está el árbol. */
+function sincronizarPresencia() {
+  if (!contenedor) return;
+  const vivas = presencia.vivas().slice(0, PRESENTES_MAX);
+  const ids = new Set(vivas.map((f) => f.id));
+
+  for (const ave of [...presentes.values()]) {
+    if (!ids.has(ave.id)) quitarAvePresencia(ave);
+  }
+  for (const f of vivas) {
+    let ave = presentes.get(f.id);
+    if (!ave) {
+      ave = crearAvePresencia(f.id);
+      if (!ave) return;
+      presentes.set(f.id, ave);
+    }
+    /* El pico llega como color y la frase como ÍNDICE: lo que viaja por
+       el canal es un número, no un texto. Ver datos/garza.js. */
+    ave.sena = { pico: f.pico ? colorDePico(f.pico) : null, frase: fraseDe(f.frase) };
+  }
+  colocarPresentes();
+  refrescarManos();
 }
 
 /* ── LA BANDADA DEL MANGLAR LEJANO ─────────────────────────────────
@@ -1949,6 +2234,73 @@ function colocarGarzas(w, h, horDesdeArriba) {
     visita.entraY = -h * 0.14;
     visita.h0 = h;
   }
+
+  /* Y las de presencia, sobre las perchas que le quedaron libres a la
+     bandada. Va aquí dentro y no en su propio oyente porque necesita
+     `usadas`: si se colocaran por su cuenta se posarían encima de una
+     garza del manglar, y dos aves en la misma rama se leen como una
+     lámina duplicada. */
+  colocarPresentes(usadas);
+}
+
+/* Coloca las garzas de presencia. Se llama desde `colocarGarzas` con el
+   reparto de perchas ya hecho, y también sola cuando alguien entra o
+   sale sin que cambie nada más — ahí se recalcula el reparto entero,
+   que es barato y evita tener dos caminos que puedan discrepar. */
+function colocarPresentes(usadasFuera) {
+  if (!vuelo || !vuelo.w || !presentes.size) return;
+  const w = vuelo.w, h = vuelo.h;
+  const cajaM = mar.cajaManglar();
+  const FACTOR_MAX = 1.285;
+  const AIRE = 8;
+
+  const usadas = usadasFuera || new Set(
+    bandada.filter((a) => !a.oculta && !a.ida).map((a) => a.perchaIdx));
+
+  /* Se reparten en orden de llegada, y siempre el mismo orden: quien
+     lleva más rato conserva su rama cuando entra alguien nuevo. Una
+     bandada que se recoloca entera cada vez que llega alguien no se lee
+     como gente llegando, se lee como un fallo. */
+  for (const ave of presentes.values()) {
+    let puesta = false;
+    /* Si ya tenía percha y sigue libre, se queda con ella. */
+    const orden = ave.perchaIdx !== undefined
+      ? [ave.perchaIdx, ...PERCHAS.map((_, i) => i)]
+      : PERCHAS.map((_, i) => i);
+
+    for (const idx of orden) {
+      if (usadas.has(idx) && idx !== ave.perchaIdx) continue;
+      const q = calcularPosadero(cajaM, w, h, vuelo.linea,
+                                 [PERCHAS[idx][0], PERCHAS[idx][1]]);
+      /* Del tamaño de una de la bandada: están en el mismo árbol y a la
+         misma distancia, así que miden lo mismo. Que sean personas no
+         las hace más grandes — eso lo dice el pico, no la escala. */
+      const alto = q.altoManglar * 0.105;
+      if (q.y - alto * FACTOR_MAX / VUELO.posada.altoTinta < AIRE) continue;
+      usadas.add(idx);
+      ave.perchaIdx = idx;
+      ave.pieX = q.x;
+      ave.pieY = q.y;
+      ave.alto = alto;
+      const altura = 1 - PERCHAS[idx][1];
+      ave.vela = VIENTO_COPA * altura * altura * q.altoManglar * cajaM[3];
+      /* Entra desde arriba y desde el lado por el que hay cielo: si
+         cayera en vertical sobre su percha parecería soltada. */
+      ave.entraX = q.x + w * 0.10;
+      ave.entraY = -h * 0.16;
+      ave.h0 = h;
+      puesta = true;
+      break;
+    }
+    /* Sin percha libre en esta ventana no se pinta. Se apaga entera en
+       vez de aparecer flotando en el aire. */
+    if (!puesta) {
+      ave.alto = 0;
+      for (const el of Object.values(ave.capas)) el.style.opacity = '0';
+      ave.tinte?.apagar();
+      pico.registrar(ave.id, null);
+    }
+  }
 }
 
 const suave3 = (p) => p * p * (3 - 2 * p);
@@ -2176,14 +2528,29 @@ function animarGarzas(t, paralaje, dt) {
    curva es un ease-out cubico sobre la vertical y lineal sobre la
    horizontal, que es lo que hace un ave que se deja caer en diagonal y
    abre las alas al llegar. */
-function animarVisita(t, paralaje) {
-  if (!visita || !visita.alto || inicioContenido === null) return;
-  t -= inicioContenido;
+/* ── Y SIRVE PARA LAS DOS CLASES DE AVE CON NOMBRE ────────────────
+   Era `animarVisita(t, paralaje)` y leía la `visita` del módulo. Ahora
+   recibe el ave, porque hay más de una que cae: la de quien mira, que
+   se posa en la rama de delante, y una por cada OTRA SESIÓN que tenga
+   Galene abierto, que se posan en el manglar del fondo (ver
+   `sincronizarPresencia`).
+
+   Lo que cambia entre ellas son cuatro datos que vienen en el propio
+   ave y no en esta función: cuándo entra (`t0`), si mira a la derecha
+   (`espeja`), cuánto paralaje le toca según su plano (`plano`), y qué
+   pico y qué frase lleva (`sena`). El gesto es el mismo para todas —
+   una caída y luego estar— porque es el mismo suceso: alguien llegó. */
+function animarCaida(ave, t, paralaje) {
+  const visita = ave;
+  if (!visita || !visita.alto || visita.t0 === null || visita.t0 === undefined) return;
+  t -= visita.t0;
   const p0 = CAIDA_ESPERA, p1 = CAIDA_ESPERA + CAIDA_DURA;
 
   if (t < p0) {                                   // todavia no ha entrado
     for (const el of Object.values(visita.capas))
       if (el.style.opacity !== '0') el.style.opacity = '0';
+    visita.tinte?.apagar();
+    pico.registrar(visita.id, null);
     return;
   }
 
@@ -2210,10 +2577,13 @@ function animarVisita(t, paralaje) {
     y -= alza * visita.alto;
   }
 
-  /* El mismo paralaje que el fragmento cercano del shader, que es 1.35
-     — el triple que el manglar lejano. Si no, el ave se resbala de la
-     rama al mover el puntero. */
-  x -= paralaje * 1.35 * visita.h0;
+  /* El mismo paralaje que el plano en el que está posada. La de la rama
+     de delante va con el fragmento cercano del shader (1.35, el triple
+     que el manglar lejano); las que se posan en la copa del fondo van
+     con el manglar (0.45), que es el factor que ya usa la bandada. Con
+     cualquier otro se resbalan de su rama al mover el puntero, que es
+     el error que este archivo ya pagó dos veces. */
+  x -= paralaje * (visita.plano ?? 1.35) * visita.h0;
   /* Y la mece su rama. Solo cuando ya está posada: durante la caída
      manda la caída. Sumar en `y` la baja en pantalla, que es a donde se
      va la lámina cuando el shader le suma a su coordenada vertical. */
@@ -2223,26 +2593,66 @@ function animarVisita(t, paralaje) {
     || ((mezcla > 0 && siguiente && siguiente !== clave)
       ? [[clave, 1 - mezcla], [siguiente, mezcla]] : [[clave, 1]]);
 
+  /* MIRA HACIA LA DERECHA — la de la rama de delante. Las laminas estan
+     pintadas mirando a la izquierda, asi que se espeja. El origen de
+     transformacion ya esta en los PIES, de modo que el espejo gira
+     alrededor de ellos y el ave no se mueve de la rama: si girase sobre
+     su centro, saltaria media envergadura al voltearse.
+
+     Y mirando a la derecha mira HACIA el manglar y hacia el mar, no
+     fuera del cuadro. Quien acaba de llegar mira lo que hay.
+
+     Las de presencia NO se espejan: estan en la copa del fondo, con la
+     bandada, y ahi todas miran al mismo lado. Una sola vuelta del reves
+     en mitad del dormidero se ve como un error de montaje. */
+  const espejo = visita.espeja === false ? '' : ' scaleX(-1)';
+
+  /* Lo que hace falta para el pico teñido y para el globo: cuál es la
+     lámina que de verdad se está viendo y dónde cayó en pantalla. Se
+     queda con la de más peso del cruce. */
+  let dom = null;
+
   for (const [k, el] of Object.entries(visita.capas)) {
     const enc = visibles.find(([c]) => c === k);
     if (!enc) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
     const v = VUELO[k];
     const altoPx = visita.alto * (v.factor || 1) / v.altoTinta;
     const anchoPx = altoPx * v.aspecto;
+    const izq = x - v.pies[0] * anchoPx;
+    const arr = y - v.pies[1] * altoPx;
     el.style.opacity = enc[1].toFixed(3);
     el.style.width = anchoPx.toFixed(1) + 'px';
-    /* MIRA HACIA LA DERECHA. Las laminas estan pintadas mirando a la
-       izquierda, asi que se espeja. El origen de transformacion ya esta
-       en los PIES, de modo que el espejo gira alrededor de ellos y el
-       ave no se mueve de la rama: si girase sobre su centro, saltaria
-       media envergadura al voltearse.
-
-       Y mirando a la derecha mira HACIA el manglar y hacia el mar, no
-       fuera del cuadro. Quien acaba de llegar mira lo que hay. */
     el.style.transform =
-      'translate3d(' + (x - v.pies[0] * anchoPx).toFixed(1) + 'px, ' +
-      (y - v.pies[1] * altoPx).toFixed(1) + 'px, 0) scaleX(-1)';
+      `translate3d(${izq.toFixed(1)}px, ${arr.toFixed(1)}px, 0)${espejo}`;
+    if (!dom || enc[1] > dom.peso) {
+      dom = { clave: k, peso: enc[1], anchoPx, altoPx, izq, arr,
+              origen: el.style.transformOrigin };
+    }
   }
+
+  /* ── LA SEÑA: EL PICO Y LA FRASE ────────────────────────────────
+     Solo la llevan las aves con identidad, y solo si quien las trae
+     eligió algo. Sin elección no hay tinte y no hay globo: la garza es
+     exactamente la que era antes de que existiera este módulo. */
+  if (dom && visita.tinte) {
+    visita.tinte.poner(dom.clave, visita.sena?.pico || null,
+                       dom.anchoPx, dom.altoPx, dom.izq, dom.arr,
+                       espejo, dom.origen);
+  }
+  if (dom) {
+    pico.registrar(visita.id, visita.sena?.frase
+      ? { x: dom.izq, y: dom.arr, w: dom.anchoPx, h: dom.altoPx,
+          frase: visita.sena.frase }
+      : null);
+  }
+}
+
+/* La de quien mira. Su reloj es el del contenido: entra cuando la
+   página se ha asentado, no cuando llega el shader. */
+function animarVisita(t, paralaje) {
+  if (!visita || inicioContenido === null) return;
+  visita.t0 = inicioContenido;
+  animarCaida(visita, t, paralaje);
 }
 
 /* ── LA BANDADA, CUADRO A CUADRO ───────────────────────────────────
@@ -2623,6 +3033,30 @@ function animarDespegue(ave, t, paralaje) {
   }
 }
 
+/* ═══ LA GARZA DE QUIEN MIRA, Y LAS DE QUIEN MÁS ESTÉ ═════════════
+   Tres enchufes y ninguna lógica: el panel se monta sobre el marcado
+   que ya existe, el globo se crea una vez, y cuando cambia cualquiera
+   de las dos cosas —tu elección o quién está— se repinta.
+
+   Va aquí abajo, después de que existan `visita` y `presentes`, y
+   ANTES de arrancar el mar: así el primer cuadro ya sale con el pico
+   puesto en vez de teñirlo un instante después. */
+function repintarSena() {
+  const p = miPerfil();
+  /* Solo se tiñe si se eligió algo. Sin panel tocado, `sena` va vacía y
+     el ave es exactamente la de antes de que existiera este módulo. */
+  if (visita) visita.sena = p.elegido ? { pico: p.pico, frase: p.frase } : { pico: null, frase: null };
+}
+
+if (contenedor) {
+  pico.montarGlobo();
+  montarPanel();
+  alCambiarGarza(repintarSena);
+  repintarSena();
+  presencia.alCambiar(sincronizarPresencia);
+  sincronizarPresencia();
+}
+
 /* Asidero de medición, SOLO en desarrollo. El ave tarda 39 s en llegar y
    el navegador estrangula los temporizadores cuando la pestaña no está
    delante, así que esperar al reloj no sirve para medir: hay que poder
@@ -2632,6 +3066,17 @@ if (import.meta.env.DEV) {
   window.__galene = { animarGarzas, animarVisita, VUELO, ATERRIZA, FASES,
                       vuelo: () => vuelo, visita: () => visita };
 }
+
+/* Y este NO es de desarrollo: las pruebas E2E corren contra el sitio
+   compilado y necesitan poder preguntar cuántas garzas de presencia hay
+   posadas sin contar píxeles. No expone nada que no esté ya en
+   pantalla. */
+window.__garzas = {
+  presentes: () => [...presentes.values()].map((a) => ({
+    id: a.id, puesta: a.alto > 0, pico: a.sena?.pico || null, frase: a.sena?.frase || null,
+  })),
+  mia: () => (visita ? { pico: visita.sena?.pico || null, frase: visita.sena?.frase || null } : null),
+};
 
 /* ── ARRANQUE ──────────────────────────────────────────────────────
    Al final: el mar es lo último que se enciende, después de que los
