@@ -24,6 +24,7 @@ const dinamicas = [...texturasHero, ...aves, ...aterriza, ...posada];
 const conservar = new Set([
   ...dinamicas,
   ...dinamicas.map((ruta) => `1024/${ruta}`),
+  ...dinamicas.map((ruta) => `768/${ruta}`),
   'aguadas-seccion2.webp', 'filete-2-v.webp', 'filete-4-v.webp',
   'papel-barbas.webp', '1024/papel-barbas.webp', '1024/filete-5.webp',
   '1024/manglar-enterrado-a.webp', 'mobile/manglar-v2.webp',

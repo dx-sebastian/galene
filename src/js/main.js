@@ -41,7 +41,7 @@ refrescarHora();
 setInterval(refrescarHora, 30_000);
 
 /* ── LÁMINAS SEGÚN LA PANTALLA ─────────────────────────────────────
-   Dos juegos: 2048 px y 1024 px. En un teléfono el lienzo mide unos
+   Tres juegos: 2048, 1024 y 768 px. En un teléfono el lienzo mide unos
    400×800, así que bajarse láminas de 2048 es pagar el doble de bytes
    y el doble de memoria de textura para nada. Medido: 4.8 MB contra
    2.2 MB, y 49 MB de textura contra ~13 MB.
@@ -59,8 +59,8 @@ const LAMINAS_CHICAS = PERFIL_AHORRO || ANCHO_REAL <= 1280;
 /* BASE_URL lo resuelve Vite en compilación: '/' en local y '/galene/'
    en producción. Nunca se escribe la ruta a mano. */
 const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-const ARTE = BASE + (LAMINAS_CHICAS ? 'arte/1024/' : 'arte/');
-const ANCHO_MAX = LAMINAS_CHICAS ? 1024 : 2048;
+const ARTE = BASE + (MOVIL ? 'arte/768/' : LAMINAS_CHICAS ? 'arte/1024/' : 'arte/');
+const ANCHO_MAX = MOVIL ? 768 : LAMINAS_CHICAS ? 1024 : 2048;
 
 /* Las poses que no participan en la llegada inicial no compiten con el
    mar por la red. Se conectan después de abrirse el contenido. */
@@ -115,8 +115,8 @@ function arrancar(mar) {
   /* En móvil, más píxeles de respaldo no son más detalle visible: son
      más fragmentos del shader por cuadro. La escala puede recuperarse
      tras la sonda si el dispositivo demuestra que tiene margen. */
-  let escala = PERFIL_AHORRO ? 0.85
-    : MOVIL ? Math.min(devicePixelRatio || 1, 1.0)
+  let escala = PERFIL_AHORRO ? 0.64
+    : MOVIL ? Math.min(devicePixelRatio || 1, 0.78)
       : Math.min(devicePixelRatio || 1, 1.35);
   let horizonte = 0.44;
   let deriva = 0, punteroX = 0, punteroObjetivo = 0;
@@ -126,7 +126,7 @@ function arrancar(mar) {
      `derivaScroll` es su huella en el agua y `salidaEscrita` lo último
      que se le escribió al lienzo, para no reescribir lo que no cambió. */
   let salida = 0, derivaScroll = 0, salidaEscrita = '';
-  let fpsMar = PERFIL_AHORRO ? 20 : MOVIL ? 24 : 30;
+  let fpsMar = PERFIL_AHORRO ? 20 : 30;
   let intervaloMar = 1000 / fpsMar;   // compuerta — SOLO el mar
 
   const estado = { t: 0, horizonte, calma, deriva: 0, papel: 0.055, luz: L };
@@ -289,30 +289,46 @@ function arrancar(mar) {
 
   /* Sonda real de rendimiento. `hardwareConcurrency >= 8` no sirve:
      Helio G85 y Unisoc T606 son octa-core y se arrastran. En móvil se
-     fuerza a la GPU a terminar el lote: medir solo el tiempo de enviar
-     comandos confundía una cola rápida con un shader rápido. */
+     mide el lienzo A SU TAMAÑO REAL; la antigua muestra de 96×96 decía
+     que el shader era rápido y luego le pedía diez veces más fragmentos
+     al pintar la pantalla completa. El temporizador de GPU es asíncrono:
+     medir nunca congela la interfaz. La fluidez se compra reduciendo
+     píxeles internos, no quitando capas de la escena. */
   function sondear() {
-    const lado = MOVIL ? 96 : 64;
-    const repeticiones = MOVIL ? 1 : 30;
+    if (MOVIL) {
+      medidas();
+      mar.medirGpu(estado).then((ms) => {
+        if (ms === null) {
+          console.info(`[mar] sin temporizador GPU → escala ${escala}, ${fpsMar} fps`);
+          return;
+        }
+        const presupuesto = 18;
+        if (ms > presupuesto) {
+          const proporcion = Math.sqrt(presupuesto / ms) * 0.94;
+          escala = Math.max(0.52, Math.min(escala, escala * proporcion));
+        }
+        escala = Math.round(escala * 100) / 100;
+        fpsMar = ms > 38 ? Math.min(fpsMar, 18)
+               : ms > 26 ? Math.min(fpsMar, 20)
+               : ms > 18 ? Math.min(fpsMar, 24)
+               : fpsMar;
+        intervaloMar = 1000 / fpsMar;
+        medidas();
+        console.info(`[mar] sonda real: ${ms.toFixed(2)} ms/cuadro → escala ${escala}, ${fpsMar} fps`);
+      });
+      return;
+    }
+
+    const lado = 64;
+    const repeticiones = 30;
     mar.redimensionar(lado, lado, 1);
     const t0 = performance.now();
     for (let i = 0; i < repeticiones; i++) {
       estado.t = i * 0.033;
       mar.dibujar(estado);
     }
-    if (MOVIL) mar.sincronizar();
     const ms = (performance.now() - t0) / repeticiones;
-    if (MOVIL && ms > 6.0) {
-      escala = Math.min(escala, 0.45);
-      fpsMar = Math.min(fpsMar, 15);
-    } else if (MOVIL && ms > 2.0) {
-      escala = Math.min(escala, 0.58);
-      fpsMar = Math.min(fpsMar, 18);
-    } else if (MOVIL && ms > 0.9) {
-      escala = Math.min(escala, 0.74);
-      fpsMar = Math.min(fpsMar, 20);
-    }
-    else if (ms > 4.0)          escala = Math.min(escala, 0.60);
+    if (ms > 4.0)               escala = Math.min(escala, 0.60);
     else if (ms > 1.6)          escala = Math.min(escala, 1.0);
     intervaloMar = 1000 / fpsMar;
     console.info(`[mar] sonda: ${ms.toFixed(2)} ms/cuadro → escala ${escala}, ${fpsMar} fps`);
@@ -702,7 +718,12 @@ function arrancar(mar) {
   const ZONAS = [
     { sel: '.hero__texto', prop: '--lavado', v: 0 },
   ];
-  let contadorLavado = 14, primeraCalibracion = true;
+  /* `readPixels` sincroniza CPU y GPU. Dos lecturas por segundo eran un
+     microtirón periódico en móvil aunque el shader cupiera en el cuadro.
+     La luz real solo se actualiza cada 30 s: una medida cada 10 s mantiene
+     el contraste protegido sin serruchar la animación. */
+  const cadaLavado = MOVIL ? 300 : 15;
+  let contadorLavado = cadaLavado - 1, primeraCalibracion = true;
   lavadoAdaptativo = true;
 
   const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
@@ -710,7 +731,7 @@ function arrancar(mar) {
   const hexArr = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16) / 255);
 
   function calibrarLavado() {
-    if (++contadorLavado % 15 !== 0) return;         // ~2 Hz a 30 fps
+    if (++contadorLavado % cadaLavado !== 0) return;
     const caja = hero.getBoundingClientRect();
     const k = lienzo.width / Math.max(1, caja.width);
 
@@ -883,13 +904,31 @@ function arrancar(mar) {
 
   const anunciarListo = (modo) =>
     dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo } }));
-  const cargarDecorativas = () => mar.cargar(decorativas, ANCHO_MAX)
-    .then((n) => {
-      if (n.includes('papel')) estado.papel = 0.55;
-      medidas();
-      cuadro(performance.now());
-    })
-    .catch((e) => console.warn('[mar] decoración parcial:', e.message));
+  /* En móvil no se suben diez texturas a la GPU en el mismo instante:
+     esa ráfaga producía el tirón que se sentía justo después del loader.
+     Entran en tres tandas ociosas; el resultado final es idéntico. */
+  const gruposDecorativos = MOVIL ? [
+    ['medioCalmo', 'cercanoCalmo', 'manglarCerca'],
+    ['corales', 'luces', 'astro', 'camino'],
+    ['papel', 'grafito', 'nubes', 'estrellas'],
+  ] : [Object.keys(decorativas)];
+  const cargarDecorativas = async () => {
+    for (const nombres of gruposDecorativos) {
+      const grupo = Object.fromEntries(nombres
+        .filter((nombre) => decorativas[nombre])
+        .map((nombre) => [nombre, decorativas[nombre]]));
+      if (!Object.keys(grupo).length) continue;
+      try {
+        const n = await mar.cargar(grupo, ANCHO_MAX);
+        if (n.includes('papel')) estado.papel = 0.55;
+      } catch (e) {
+        console.warn('[mar] decoración parcial:', e.message);
+      }
+      if (MOVIL) await new Promise((resolver) => setTimeout(resolver, 360));
+    }
+    medidas();
+    cuadro(performance.now());
+  };
 
   mar.cargar(criticas, ANCHO_MAX).then((n) => {
     console.info('[mar] láminas conectadas:', n.join(', '));
@@ -906,7 +945,9 @@ function arrancar(mar) {
     cuadro(performance.now());
     anunciarListo('pintura');
     const ocioso = window.requestIdleCallback || ((fn) => setTimeout(fn, 120));
-    ocioso(cargarDecorativas, { timeout: 1400 });
+    const conectarDecoracion = () => ocioso(cargarDecorativas, { timeout: 1400 });
+    if (MOVIL) setTimeout(conectarDecoracion, 1800);
+    else conectarDecoracion();
   }).catch((e) => {
     console.warn('[mar] sin láminas:', e.message);
     anunciarListo('procedural');
