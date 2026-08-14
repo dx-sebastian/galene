@@ -13,3 +13,10 @@ Thumbs.db
 dist/
 .astro/
 tmp/
+
+# Playwright: los artefactos de UNA ejecución (trazas, capturas del
+# fallo, informe HTML). Se regeneran solos y pesan; lo que sí viaja en
+# el repo son las pruebas, que están en pruebas/e2e/.
+test-results/
+playwright-report/
+blob-report/

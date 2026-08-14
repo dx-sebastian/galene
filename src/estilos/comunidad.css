@@ -644,6 +644,173 @@
 .interruptor input { width: 1.1rem; height: 1.1rem; accent-color: #2F6B4F; }
 .escribir .boton { border-radius: 999px; }
 
+/* ── LO QUE EL COMPOSITOR ESTRENA AL DEJAR DE SER UNA MAQUETA ──────
+   El título, la etiqueta, el nombre y el aviso de validación. Todo con
+   los tokens que ya existen: aquí no hay un color, un radio ni una
+   sombra que no estuvieran en la hoja. */
+.escribir__campo { display: grid; gap: 0.35rem; min-width: 0; }
+.escribir__rotulo {
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  color: rgb(var(--letra-rgb) / 72%);
+  text-transform: uppercase;
+}
+/* El campo de una línea comparte TODO con el de varias menos el alto:
+   dos declaraciones distintas para el mismo campo son dos campos el día
+   que alguien toque uno. */
+.escribir__campo input[type="text"],
+.escribir__campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgb(var(--letra-rgb) / 16%);
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: var(--letra);
+  font: inherit;
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+.escribir__campo input[type="text"]:focus-visible {
+  outline: 3px solid var(--letra); outline-offset: 2px;
+}
+.escribir__campo input::placeholder,
+.escribir__campo textarea::placeholder { color: rgb(var(--letra-rgb) / 45%); }
+
+.escribir__grupo { margin: 0; padding: 0; border: 0; min-width: 0; }
+.escribir__etiquetas { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* El chip de elegir es el MISMO chip que el de filtrar, con una radio
+   dentro en vez de un `aria-pressed`: elegir dónde va tu hilo y filtrar
+   por dónde están los demás son la misma operación vista de los dos
+   lados. La radio se esconde y el chip entero es su etiqueta, así que
+   sigue siendo un control de formulario de verdad — con teclado, con
+   flechas y con lector de pantalla. */
+.chip--radio { cursor: pointer; }
+.chip--radio input {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.chip--radio:has(input:checked) {
+  border-color: var(--pigmento);
+  box-shadow: inset 0 0 0 1px var(--pigmento);
+  color: var(--letra);
+}
+.chip--radio:has(input:focus-visible) {
+  outline: 3px solid var(--letra); outline-offset: 2px;
+}
+
+.escribir__nombre select {
+  min-height: 2.4rem;
+  padding: 0 0.6rem;
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: var(--letra);
+  font: inherit;
+  font-size: var(--t-sm);
+}
+.escribir__nombre select:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* El aviso de validación y el acuse de publicación comparten región,
+   y se distinguen por el color del filete, no por un icono: un aspa
+   roja al lado de «te falta el título» convierte un descuido en un
+   error del sistema. */
+.escribir__parte {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: var(--t-sm);
+  line-height: 1.45;
+  color: rgb(var(--letra-rgb) / 80%);
+}
+.escribir__parte:not(:empty) {
+  padding-left: 0.7rem;
+  border-left: 3px solid rgb(var(--letra-rgb) / 25%);
+}
+.escribir__parte[data-mal="1"] { border-left-color: #C4553F; }
+
+/* ── EL COMPOSITOR DE RESPUESTAS ───────────────────────────────────
+   Se muda al hilo que lo pida, así que no tiene sitio propio: hereda la
+   sangría de la columna del hilo y se separa con aire, no con una caja
+   dentro de otra caja. */
+.responder {
+  display: grid;
+  gap: var(--e-3);
+  margin-top: var(--e-4);
+  padding-top: var(--e-3);
+  border-top: 1px solid rgb(var(--letra-rgb) / 12%);
+}
+.responder__campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgb(var(--letra-rgb) / 16%);
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: var(--letra);
+  font: inherit;
+  font-size: var(--t-md);
+  line-height: 1.5;
+  resize: vertical;
+}
+.responder__campo textarea:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.responder__fila { display: flex; flex-wrap: wrap; gap: var(--e-3); align-items: center; }
+.responder .boton { border-radius: 999px; }
+.responder__cerrar {
+  border: 0;
+  background: transparent;
+  color: rgb(var(--letra-rgb) / 70%);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-sm);
+  min-height: 2.75rem;
+  padding-inline: 0.4rem;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+.responder__cerrar:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.responder__parte { margin: 0; font-size: var(--t-sm); color: #C4553F; }
+
+/* «Contestar» y «Borrar» en el pie de la tarjeta: mismo peso que el
+   contador de respuestas, porque son de la misma familia — cosas que se
+   hacen con el hilo, no adornos. */
+.hilo__borrar,
+.hilos__item .hebra__responder {
+  border: 0;
+  background: transparent;
+  color: rgb(var(--letra-rgb) / 72%);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-sm);
+  min-height: 2.75rem;
+  padding-inline: 0.3rem;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+.hilo__borrar:hover, .hilos__item .hebra__responder:hover { color: var(--letra); }
+.hilo__borrar:focus-visible,
+.hilos__item .hebra__responder:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* Borrar todo lo escrito. Va en el pie, con contorno discontinuo: no es
+   una acción del sitio, es una que quien mira se hace a sí misma. */
+.comunidad__vaciar {
+  justify-self: start;
+  margin-bottom: var(--e-4);
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border: 1px dashed rgb(var(--letra-rgb) / 32%);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--letra);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-sm);
+}
+.comunidad__vaciar:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+
 /* ═══════════════════════════════════════════════════════════════════
    LOS HILOS
    ═══════════════════════════════════════════════════════════════════ */

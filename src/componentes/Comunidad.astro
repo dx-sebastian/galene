@@ -52,6 +52,11 @@ import Comentario from './Comentario.astro';
 import Sello from './Sello.astro';
 import Votos from './Votos.astro';
 import { HILOS, ETIQUETAS, respuestasDe } from '../datos/comunidad.js';
+/* Los límites y los once nombres de agua salen del mismo sitio que los
+   usa al publicar (js/foro.js): el `maxlength` del campo y el corte al
+   guardar tienen que ser el mismo número, o el navegador deja escribir
+   algo que el almacén recorta sin decirlo. */
+import { LIMITES, NOMBRES } from '../datos/foro.js';
 
 const deEtiqueta = (id) => ETIQUETAS.find((e) => e.id === id) || ETIQUETAS[0];
 
@@ -142,45 +147,101 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   </div>
 
   {/* ── ESCRIBIR ─────────────────────────────────────────────────────
-      Y AQUÍ NO SE FINGE. Va como <details>, así que abre y cierra sin
-      JavaScript, y lo que dice al abrirse es la verdad: este sitio no
-      tiene servidor —ni base de datos, ni cuentas, ni analítica— así
-      que no hay dónde guardar un mensaje. El botón de publicar está
-      apagado y explica por qué.
+      Va como <details>, así que abre y cierra sin JavaScript.
 
-      Se puede escribir en el campo de todas formas. No es un adorno:
-      ordenar lo que uno quiere decir sirve aunque no se envíe, y lo
-      escrito se puede copiar y llevar a donde sí haya alguien
-      escuchando. Lo que no se hace es prometer que llega. */}
+      ── EL BOTÓN ESTUVO APAGADO, Y EL MOTIVO SIGUE SIENDO CIERTO ─────
+      Decía: «no hay servidor, así que no hay dónde guardar un mensaje».
+      Lo sigue sin haber. Lo que cambió es que eso ya no obliga a que el
+      botón no haga nada — un hilo puede existir de verdad sin salir del
+      aparato de quien lo escribe.
+
+      Lo que se promete es exactamente lo que pasa, y está escrito
+      arriba del campo: se queda en esta pestaña, aparece en las otras
+      ventanas de este mismo navegador, y se va al cerrar. Ni una
+      palabra más. Un foro que promete alcance y no lo tiene sería peor
+      que el botón apagado que había aquí.
+
+      El <form> es un <form> de verdad, con `novalidate` porque los
+      mensajes los escribe el propio sitio en su voz y no el navegador
+      en la suya. Sin JavaScript no se envía a ninguna parte —no hay
+      `action`— y por eso el botón nace deshabilitado y lo enciende
+      js/comunidad.js: un botón que no publica porque el script no llegó
+      es un control muerto, y de esos aquí no queda ninguno. */}
   <details class="escribir" id="escribir">
     <summary class="escribir__senuelo">
       <Sello autora={{ nombre: 'quien llega', pose: 'mira-abajo', mirar: 1 }} />
       <span class="escribir__frase">Escribir en la comunidad…</span>
     </summary>
 
-    <div class="escribir__panel">
-      <p class="escribir__aviso"><strong>Esto es una maqueta.</strong> Galene
-        no tiene servidor, ni cuentas, ni base de datos, y eso es una
-        decisión: lo que se escribe sobre salud o vida sexual es dato
-        sensible, y este proyecto eligió no guardarlo. Mientras no exista
-        un sitio donde recibirlo con ese cuidado, aquí no se publica nada.</p>
+    <form class="escribir__panel" id="escribir-form" novalidate>
+      <p class="escribir__aviso">Lo que escribas <strong>se queda en este
+        aparato</strong>: aparece en las otras ventanas de Galene que
+        tengas abiertas y se va al cerrar la pestaña. No hay servidor, ni
+        cuentas, ni base de datos, y eso es una decisión — lo que se
+        escribe sobre lo que pasó después es dato sensible, y este
+        proyecto eligió no guardarlo en ninguna parte.</p>
 
       <label class="escribir__campo">
-        <span class="visualmente-oculto">Lo que quieres decir</span>
-        <textarea rows="4" placeholder="Se queda en tu pantalla."></textarea>
+        <span class="escribir__rotulo">De qué quieres hablar</span>
+        <input type="text" name="titulo" autocomplete="off"
+               maxlength={LIMITES.titulo.max}
+               placeholder="Una línea basta." />
       </label>
+
+      <label class="escribir__campo">
+        <span class="escribir__rotulo">Lo que quieres decir</span>
+        <textarea name="cuerpo" rows="4"
+                  maxlength={LIMITES.cuerpo.max}
+                  placeholder="Aquí nadie pregunta qué pasó."></textarea>
+      </label>
+
+      {/* La etiqueta, con los mismos chips y los mismos pigmentos que el
+          filtro de arriba: elegir dónde va tu hilo y filtrar por dónde
+          están los demás son la misma operación vista de los dos lados,
+          y tienen que verse igual. Radios y no botones, porque es una
+          elección exclusiva y el navegador ya sabe hacer eso. */}
+      <fieldset class="escribir__grupo">
+        <legend class="escribir__rotulo">Dónde va</legend>
+        <div class="escribir__etiquetas">
+          {ETIQUETAS.map((e, i) => (
+            <label class="chip chip--radio" style={`--pigmento: ${e.pigmento}`} title={e.pie}>
+              <input type="radio" name="etiqueta" value={e.id} checked={i === 0} />
+              <span>{e.nombre}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <div class="escribir__fila">
         <label class="interruptor">
-          <input type="checkbox" checked />
+          <input type="checkbox" name="anonima" checked />
           <span>Publicar sin nombre</span>
         </label>
-        <button class="boton" type="button" disabled
-                title="No hay servidor: todavía no hay dónde publicarlo.">
+
+        {/* El nombre no es un campo de texto, y por lo mismo que las
+            frases de la garza: un nombre escrito a mano en un sitio
+            sobre sumisión química es una forma de identificarse, y aquí
+            nadie tiene por qué. Once nombres de agua, como los de los
+            hilos de ejemplo. Nace oculto: solo aparece si se desmarca
+            «sin nombre». */}
+        <label class="escribir__nombre" data-escribir-nombre hidden="hidden">
+          <span class="visualmente-oculto">Con qué nombre</span>
+          <select name="nombre">
+            {NOMBRES.map((n) => <option value={n}>{n}</option>)}
+          </select>
+        </label>
+
+        <button class="boton" type="submit" disabled
+                title="Se activa cuando carga el módulo del foro.">
           Publicar
         </button>
       </div>
-    </div>
+
+      {/* Los avisos de validación y el acuse de publicación. Uno solo y
+          en directo: dos regiones que hablan a la vez se pisan en un
+          lector de pantalla. */}
+      <p class="escribir__parte" role="status" aria-live="polite" data-escribir-parte></p>
+    </form>
   </details>
 
   {/* ── LOS HILOS ────────────────────────────────────────────────────
@@ -305,6 +366,108 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       );
     })}
   </ol>
+
+  {/* ── LOS MOLDES ───────────────────────────────────────────────────
+      Un hilo vacío y un comentario vacío, con LOS MISMOS COMPONENTES
+      que pintan los de arriba. js/comunidad.js los clona y les escribe
+      los campos.
+
+      POR QUÉ UN <template> Y NO DOM CONSTRUIDO EN JAVASCRIPT: porque un
+      hilo escrito a mano en el módulo sería una SEGUNDA copia de este
+      marcado, y este proyecto ya tiene escrito lo que pasa con las
+      copias que hay que sincronizar a mano (ver la nota del glosario en
+      index.astro: «un espejo que hay que sincronizar es un espejo que un
+      día miente»). Aquí la copia no existe: el molde sale de
+      `Comentario.astro`, `Sello.astro` y `Votos.astro`, así que el día
+      que a una tarjeta le cambie una clase, le cambia también a las que
+      se escriben.
+
+      Van dentro de <template>, o sea que no se pintan, no se leen y no
+      cargan sus imágenes hasta que alguien los clona. Sin JavaScript no
+      existen y no estorban. */}
+  <template data-molde-hilo>
+    <li class="hilos__item" data-indice="0" data-etiqueta="" data-minutos="0"
+        data-votos="0" data-respuestas="0" data-nuevo="1">
+      <article class="hilo">
+        <Sello autora={{ nombre: 'Anónima', pose: 'reposo', mirar: 1 }} grande={true} />
+        <div class="hilo__col">
+          <header class="hilo__cabeza">
+            <span class="hilo__autora"></span>
+            <span class="hilo__cuando"></span>
+            <span class="etiqueta"></span>
+          </header>
+          <h2 class="hilo__titulo"></h2>
+          <div class="hilo__cuerpo"></div>
+          <div class="hilo__pie">
+            <Votos votos={0} />
+            <button class="hebra__abrir" type="button" aria-expanded="false" hidden>
+              <svg class="hebra__globo" viewBox="0 0 16 14" aria-hidden="true" focusable="false">
+                <path d="M2.2 3.4 C 2.2 2.2, 3.2 1.5, 4.6 1.5 L11.4 1.5
+                         C 12.8 1.5, 13.8 2.3, 13.8 3.5 L13.8 7.8
+                         C 13.8 9, 12.8 9.8, 11.4 9.8 L6.4 9.8
+                         L3.4 12.4 L3.7 9.7 C 2.7 9.4, 2.2 8.7, 2.2 7.7 Z"
+                      fill="none" stroke="currentColor" stroke-width="1.4"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      vector-effect="non-scaling-stroke" />
+              </svg>
+              <span class="hebra__cuenta">0</span>
+              <span>respuestas</span>
+            </button>
+            <p class="hilo__sola">Nadie ha respondido todavía.</p>
+            {/* «Contestar» abre el compositor DENTRO del hilo. Es un
+                botón y no un enlace a #escribir porque aquí sí hay a
+                dónde ir: el sitio de la respuesta es este hilo. Los de
+                los hilos de ejemplo siguen siendo enlaces —no se puede
+                contestar a algo que no existe— y eso también es honesto. */}
+            <button class="hebra__responder" type="button" data-responder>Contestar</button>
+            {/* Solo en lo propio: un hilo que llegó de otra ventana no
+                se borra desde aquí. Ver `borrar()` en js/foro.js. */}
+            <button class="hilo__borrar" type="button" data-borrar hidden>Borrar</button>
+          </div>
+          <div class="hebra" hidden>
+            <ol class="hebra__lista"></ol>
+          </div>
+        </div>
+      </article>
+    </li>
+  </template>
+
+  <template data-molde-nodo>
+    <li class="nodo">
+      <article class="nodo__caja">
+        <Sello autora={{ nombre: 'Anónima', pose: 'reposo', mirar: 1 }} />
+        <div class="nodo__col">
+          <header class="nodo__cabeza">
+            <span class="nodo__autora"></span>
+            <span class="nodo__insignia" hidden>abrió el hilo</span>
+            <span class="nodo__cuando"></span>
+          </header>
+          <p class="nodo__texto"></p>
+          <div class="nodo__pie">
+            <Votos votos={0} compacto={true} />
+          </div>
+        </div>
+      </article>
+    </li>
+  </template>
+
+  {/* El compositor de respuestas, uno solo y prestado: se mueve al hilo
+      que lo pida. Dos formularios abiertos a la vez en una lista de
+      hilos son dos sitios donde se puede estar escribiendo, y al enviar
+      uno no se sabe cuál era. */}
+  <template data-molde-respuesta>
+    <form class="responder" novalidate>
+      <label class="responder__campo">
+        <span class="visualmente-oculto">Tu respuesta</span>
+        <textarea name="texto" rows="3" placeholder="Lo que le dirías a alguien que acaba de contártelo."></textarea>
+      </label>
+      <div class="responder__fila">
+        <button class="boton" type="submit">Responder</button>
+        <button class="responder__cerrar" type="button" data-cerrar>Dejarlo</button>
+      </div>
+      <p class="responder__parte" role="status" aria-live="polite"></p>
+    </form>
+  </template>
 
   {/* ── EL PIE ───────────────────────────────────────────────────────
       Lo último de la página no es la comunidad: es la ayuda. Quien haya
