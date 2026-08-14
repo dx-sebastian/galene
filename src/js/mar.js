@@ -679,9 +679,19 @@ void main(){
        noche (h21) eso dejaba el factor de noche en 0.20, o sea que las
        estrellas y la via lactea apenas se veian a la hora que el sitio
        muestra por defecto. Las dos anclas nocturnas —h21 e h03— tienen
-       que leer cielo lleno de estrellas; el desvanecido es cosa del
-       crepusculo (int 0.72-0.76), no de la propia noche. */
-    float noche = 1.0 - smoothstep(0.55, 0.85, u_int);
+       que leer cielo lleno de estrellas.
+
+       ── Y EL TECHO BAJA DE 0.85 A 0.74, MEDIDO EN LAS ANCLAS ──────
+       Con (0.55, 0.85), al alba (int 0.72) el factor quedaba en 0.34 y
+       al ocaso (0.76) en 0.25: TERCIO DE CAMPO ESTRELLADO encima de un
+       cielo con el disco POSADO en el horizonte y nubes encendidas.
+       Eso no pasa en ningun cielo: cuando el sol toca la linea, las
+       estrellas ya se fueron — quedan dos o tres, no un campo. Con el
+       techo en 0.74 el alba conserva un rastro (0.04, las dos o tres
+       ultimas) y el ocaso ninguna, y las anclas nocturnas —int 0.50 y
+       0.35— siguen leyendo el cielo LLENO, porque el suelo no se toca:
+       el desvanecido es cosa del crepusculo, no de la propia noche. */
+    float noche = 1.0 - smoothstep(0.50, 0.74, u_int);
     if (noche > 0.004) {
       /* Rejilla en unidades de ALTO (q), no de uv: si fuera en uv, las
          estrellas se estirarían con la ventana y en apaisado saldrían
@@ -818,7 +828,24 @@ void main(){
       col = mix(col, papelBlanco(), motaVia * noche * 0.85);
 
 //#ESTRELLAS
-      if (u_hayEstrellas < 0.5) {
+      /* ── QUIEN PINTA EL CAMPO, Y POR QUE NO ES LA LAMINA EN PC ────
+         __CAMPO_LAMINA__ se sustituye al compilar: en escritorio vale
+         0.0 y este if es SIEMPRE cierto — el campo estrellado es el
+         procedural de abajo, que es el que tiene cumulos y huecos,
+         tres tallas, color por estrella y respiracion por fase. En
+         movil vale u_hayEstrellas y el campo sale de la lamina, que
+         cuesta una lectura en vez de nueve celdas.
+
+         Esto DESHACE una optimizacion que costo el cuadro: cuando la
+         lamina paso a pintar el campo tambien en escritorio, el cielo
+         entero se volvio una TRAMA — misma densidad en todas partes,
+         sin grumos ni vacios, o sea sal esparcida, que es el defecto
+         que este bloque lleva evitando desde el principio. Y encima
+         de una trama, la via lactea dejaba de leerse: era ruido sobre
+         ruido. La lamina se queda para lo que la pintura hace mejor
+         que el calculo —la MATERIA de la banda, sus grumos y vetas—
+         y el campo vuelve a ser dibujado estrella a estrella. */
+      if (__CAMPO_LAMINA__ < 0.5) {
 //#FIN
 //#ESTRELLAS_PROCEDURALES
       vec2 rej = vec2(q.x, uv.y) * 340.0;
@@ -916,13 +943,24 @@ void main(){
         float altura = smoothstep(-0.02, 0.035, gy);
         float lejosDeLaLuna = smoothstep(0.10, 0.42, length(q - fuenteQ));
         float respira = 0.84 + 0.16 * sin(u_t * 0.23 + tonoCampo * TAU);
-        float f = motaCampo * noche * altura * respira
+        /* ── LOS GRUMOS, QUE LA LAMINA SOLA NO DA ────────────────────
+           El salpicado de la lamina es parejo —el acuarelista salpico
+           la hoja entera— y un campo parejo se lee como TRAMA, no como
+           cielo. El procedural de escritorio resuelve esto moviendo el
+           umbral con un ruido de periodo largo (hay zonas cuajadas y
+           zonas casi vacias); aqui se hace lo mismo por fuera: el mismo
+           ruido, aplicado como puerta sobre la mota ya detectada. Una
+           sola muestra de FBM —dos octavas en movil— contra las nueve
+           celdas que se ahorraron: los grumos vuelven y la cuenta no. */
+        float cumulo = fbm(vec2(q.x * 2.1 + 3.0, uv.y * 1.6 - 8.0));
+        float grumos = mix(0.12, 1.0, smoothstep(0.30, 0.68, cumulo));
+        float f = motaCampo * noche * altura * respira * grumos
                 * mix(0.45, 1.0, lejosDeLaLuna);
         vec3 tinte = mix(vec3(0.58, 0.74, 1.00), vec3(1.00, 0.78, 0.70),
                          smoothstep(0.58, 0.94, tonoCampo));
         col = mix(col, papelBlanco() * tinte, f);
         col += tinte * smoothstep(0.58, 0.96, motaCampo)
-             * noche * altura * 0.24;
+             * noche * altura * grumos * 0.24;
       }
 //#FIN
     }
@@ -1284,7 +1322,25 @@ void main(){
            las nubes, el pasto y las garzas. */
         vec3 colAstro = mix(u_reguero, papelBlanco(),
                             smoothstep(0.52, 0.94, valor(ta.rgb)));
-        col = mix(col, colAstro, ta.a * clamp(0.26 + 0.54 * u_int, 0.0, 0.86));
+        /* ── EL DISCO DE LA LUNA NO SE DILUYE EN SU BLOOM ─────────
+           Con un solo peso, de noche todo el atlas entraba al 45 % y
+           la luna salia como algodon: el disco —que en la lamina esta
+           MEDIDO en 0.93 de luminancia contra 0.75 del bloom— quedaba
+           a treinta puntos de un velo tenue, o sea invisible. Una luna
+           sin disco no es una luna, es una nube clara.
+
+           El disco se detecta por valor en la propia lamina (la banda
+           0.84-0.945 separa disco de bloom con margen por los dos
+           lados) y DE NOCHE entra casi a pleno: es lo mas claro que
+           hay en el cuadro nocturno, el papel en reserva del que sale
+           toda la luz. El bloom sigue al peso de siempre — la aguada
+           alrededor es atmosfera, no fuente. De dia la rama del sol no
+           cambia: el smoothstep del final la apaga. */
+        float discoAstro = smoothstep(0.84, 0.945, valor(ta.rgb)) * ta.a;
+        float pesoAstro = ta.a * clamp(0.26 + 0.54 * u_int, 0.0, 0.86);
+        pesoAstro = max(pesoAstro, discoAstro
+                        * 0.85 * (1.0 - smoothstep(0.42, 0.78, u_int)));
+        col = mix(col, colAstro, pesoAstro);
       }
     } else {
       float d = length(q - f);
@@ -1533,11 +1589,13 @@ void main(){
 
 
     /* NOCHE DEL AGUA, con su propia puerta —la misma curva que apaga
-       las estrellas—, no con diaAgua: diaAgua todavia vale 0.35 a las
-       nueve de la noche (int:0.50), que dejaba pasar un tercio del
-       verde crudo de la lamina. De noche el agua no tiene pigmento
-       propio, solo refleja: la puerta tiene que cerrar de verdad. */
-    float nocheAgua = 1.0 - smoothstep(0.55, 0.85, u_int);
+       las estrellas, y si aquella cambia esta cambia con ella o el agua
+       refleja un cielo que no existe—, no con diaAgua: diaAgua todavia
+       vale 0.35 a las nueve de la noche (int:0.50), que dejaba pasar un
+       tercio del verde crudo de la lamina. De noche el agua no tiene
+       pigmento propio, solo refleja: la puerta tiene que cerrar de
+       verdad. */
+    float nocheAgua = 1.0 - smoothstep(0.50, 0.74, u_int);
 
     /* Devolver el pigmento propio de la lámina. El duotono puro aplana
        la separación de color del granulado, y esa separación es la
@@ -1563,16 +1621,23 @@ void main(){
       float luzR = 0.0;
       vec3 tinteR = vec3(0.0);
 //#ESTRELLAS
-      if (u_hayEstrellas > 0.5) {
+      /* El reflejo repite la decision del cielo: quien pinta arriba
+         pinta abajo, o el agua devuelve un cielo que no existe. En
+         escritorio __CAMPO_LAMINA__ es 0.0 y refleja el procedural;
+         en movil, la lamina. Y con los mismos grumos: un reflejo no
+         puede tener mas estrellas que su cielo. */
+      if (__CAMPO_LAMINA__ > 0.5) {
         vec2 lamRuv = vec2(q.x * 0.62, uvEsp * 1.88);
         vec4 lamRcampo = texture(u_estrellas, lamRuv);
         __MASCARA_ESTRELLAS_REFLEJO__
+        float cumuloR = fbm(vec2(q.x * 2.1 + 3.0, uvEsp * 1.6 - 8.0));
+        salR *= mix(0.12, 1.0, smoothstep(0.30, 0.68, cumuloR));
         float faseR = hash(floor(lamRuv * vec2(896.0, 296.0)));
         luzR = salR * (0.84 + 0.16 * sin(u_t * 0.23 + faseR * TAU));
         tinteR = luzR * mix(vec3(0.58, 0.74, 1.00), vec3(1.00, 0.78, 0.70),
                             smoothstep(0.58, 0.94, faseR));
       }
-      if (u_hayEstrellas < 0.5) {
+      if (__CAMPO_LAMINA__ < 0.5) {
 //#FIN
 //#ESTRELLAS_PROCEDURALES
       for (int i = -1; i <= 1; i++) {
@@ -2687,24 +2752,39 @@ export function crear(lienzo) {
   }`;
   fuenteFS = fuenteFS.replace('__RUIDO_FUNCION__',
                               perfilMovil ? ruidoMovil : ruidoAnalitico);
+  /* ── EL UMBRAL DE LA MOTA VUELVE A (0.02, 0.13) ────────────────────
+     Estuvo asi desde que se escribio la deteccion, y una optimizacion
+     lo bajo a (0.008, 0.075): a 0.008 de contraste pasa EL GRANO DEL
+     PAPEL — cada fibra de la lamina se convertia en estrella y el
+     cielo entero salia como ruido de television, de canto a canto y
+     tambien en su reflejo. Una mota de sal de verdad levanta mas de
+     0.02 sobre su vecindad; lo que levanta menos es textura, y la
+     textura no se pinta como luz. */
   const mascaraCieloAnalitica = `float e = 0.0022;
         float vecina = (valor(texture(u_estrellas, lamUV + vec2( e, 0.0)).rgb)
                       + valor(texture(u_estrellas, lamUV + vec2(-e, 0.0)).rgb)
                       + valor(texture(u_estrellas, lamUV + vec2(0.0,  e)).rgb)
                       + valor(texture(u_estrellas, lamUV + vec2(0.0, -e)).rgb)) * 0.25;
-        float contrasteMota = smoothstep(0.008, 0.075, valor(lam.rgb) - vecina);`;
+        float contrasteMota = smoothstep(0.02, 0.13, valor(lam.rgb) - vecina);`;
   const mascaraReflejoAnalitica = `float eR = 0.0022;
         float vecinaR = (valor(texture(u_estrellas, lamRuv + vec2( eR, 0.0)).rgb)
                        + valor(texture(u_estrellas, lamRuv + vec2(-eR, 0.0)).rgb)
                        + valor(texture(u_estrellas, lamRuv + vec2(0.0,  eR)).rgb)
                        + valor(texture(u_estrellas, lamRuv + vec2(0.0, -eR)).rgb)) * 0.25;
-        float salR = smoothstep(0.008, 0.075, valor(lamRcampo.rgb) - vecinaR);`;
+        float salR = smoothstep(0.02, 0.13, valor(lamRcampo.rgb) - vecinaR);`;
   fuenteFS = fuenteFS.replace('__MASCARA_ESTRELLAS_CIELO__', perfilMovil
     ? 'float contrasteMota = clamp((lam.a - 0.501961) / 0.498039, 0.0, 1.0);'
     : mascaraCieloAnalitica);
   fuenteFS = fuenteFS.replace('__MASCARA_ESTRELLAS_REFLEJO__', perfilMovil
     ? 'float salR = clamp((lamRcampo.a - 0.501961) / 0.498039, 0.0, 1.0);'
     : mascaraReflejoAnalitica);
+  /* Quien pinta el CAMPO estrellado (no la via, que siempre es de la
+     lamina): en escritorio 0.0 —el `if (__CAMPO_LAMINA__ < 0.5)` queda
+     siempre cierto y el campo es el procedural, que es el dibujado
+     estrella a estrella—; en movil u_hayEstrellas, y el campo sale de
+     la lamina empaquetada. Ver la nota larga en el propio shader. */
+  fuenteFS = fuenteFS.replaceAll('__CAMPO_LAMINA__',
+                                 perfilMovil ? 'u_hayEstrellas' : '0.0');
   /* A resolución CSS nativa, la tercera octava queda por debajo de un
      píxel en las coordenadas donde se usa el FBM móvil. La textura de
      acuarela aporta el grano visible; pagar otra muestra de ruido por
@@ -2949,7 +3029,11 @@ export function crear(lienzo) {
         const p = y * w + x;
         const vecina = (luma[y * w + xa] + luma[y * w + xs]
                       + luma[ya * w + x] + luma[ys * w + x]) * 0.25;
-        let t = Math.max(0, Math.min(1, (luma[p] - vecina - 2.04) / 17.085));
+        /* El mismo umbral que la mascara analitica de escritorio,
+           (0.02, 0.13) en luminancia 0-1 → (5.1, 33.15) en 0-255. El
+           que hubo aqui —(2.04, 19.1), o sea (0.008, 0.075)— dejaba
+           pasar el grano del papel y el cielo del movil era ruido. */
+        let t = Math.max(0, Math.min(1, (luma[p] - vecina - 5.1) / 28.05));
         t = t * t * (3 - 2 * t);
         /* Alfa nunca baja de 128: Canvas guarda RGB premultiplicado y
            un alfa cero destruiría el color de la acuarela. */
