@@ -127,6 +127,41 @@ void main(){
   gl_Position = vec4(p, 0.0, 1.0);
 }`;
 
+/* Reconstrucción móvil. La pintura cara vive en un buffer menor; este
+   pase solo reescala y devuelve el microcontraste que el filtrado lineal
+   borraría. Una lectura y derivadas del quad sustituyen volver a ejecutar todo el
+   mar, el cielo, las estrellas y el manglar a resolución de salida. */
+const FS_HD = `#version 300 es
+precision highp float;
+out vec4 salida;
+uniform sampler2D u_escena;
+uniform vec2 u_salida;
+
+float valorHD(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / u_salida;
+  vec3 c = texture(u_escena, uv).rgb;
+  vec3 dx = dFdx(c), dy = dFdy(c);
+
+  /* Las derivadas ya contienen la diferencia con los tres fragmentos
+     vecinos del quad. La paridad identifica de qué lado está este píxel:
+     se resta en el lado oscuro y se suma en el claro. No hay lecturas
+     adicionales de textura. */
+  float signoX = mod(floor(gl_FragCoord.x), 2.0) * 2.0 - 1.0;
+  float signoY = mod(floor(gl_FragCoord.y), 2.0) * 2.0 - 1.0;
+  vec3 detalle = (dx * signoX + dy * signoY) * 0.25;
+
+  /* Mucha ganancia en textura fina, poca en cantos fuertes: el papel y
+     las hojas recuperan definición sin halos alrededor de la luna ni de
+     las letras. El límite admite solo un 3 % de sobreimpulso. */
+  float contraste = max(abs(valorHD(dx)), abs(valorHD(dy)));
+  float ganancia = mix(0.72, 0.34, smoothstep(0.08, 0.36, contraste));
+  vec3 realce = clamp(detalle * ganancia, vec3(-0.055), vec3(0.055));
+  vec3 nitido = c + realce;
+  salida = vec4(clamp(nitido, 0.0, 1.0), 1.0);
+}`;
+
 const FS = `#version 300 es
 precision highp float;
 out vec4 salida;
@@ -2670,6 +2705,37 @@ export function crear(lienzo) {
   }
   gl.useProgram(p);
 
+  let pHD = null, uSalidaHD = null, escenaTex = null, escenaFbo = null;
+  if (perfilMovil) {
+    const fsHD = compilar(gl, gl.FRAGMENT_SHADER, FS_HD);
+    if (!fsHD) return null;
+    pHD = gl.createProgram();
+    gl.attachShader(pHD, vs); gl.attachShader(pHD, fsHD); gl.linkProgram(pHD);
+    if (!gl.getProgramParameter(pHD, gl.LINK_STATUS)) {
+      console.error('[mar] link HD:', gl.getProgramInfoLog(pHD));
+      return null;
+    }
+    gl.useProgram(pHD);
+    gl.uniform1i(gl.getUniformLocation(pHD, 'u_escena'), 0);
+    uSalidaHD = gl.getUniformLocation(pHD, 'u_salida');
+
+    escenaTex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0,
+                  gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    escenaFbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, escenaFbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                            gl.TEXTURE_2D, escenaTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(p);
+  }
+
   const u = {};
   for (const n of ['u_res','u_t','u_hor','u_calma','u_deriva','u_comp','u_int',
                    'u_fuente','u_papel','u_laminas','u_cieloAlto','u_cieloBajo',
@@ -2835,7 +2901,9 @@ export function crear(lienzo) {
 
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-  let ancho = 0, alto = 0;
+  /* ancho/alto son la salida que ve el navegador; la escena cara tiene
+     su propio tamaño y solo en móvil pasa por la reconstrucción HD. */
+  let ancho = 0, alto = 0, anchoEscena = 0, altoEscena = 0;
   const cargadas = new Set();
 
   /* La máscara de sal se calcula UNA vez al decodificar la acuarela y
@@ -3068,14 +3136,44 @@ export function crear(lienzo) {
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
     redimensionar(w, h, escala) {
-      ancho = Math.max(1, Math.round(w * escala));
-      alto  = Math.max(1, Math.round(h * escala));
+      anchoEscena = Math.max(1, Math.round(w * escala));
+      altoEscena  = Math.max(1, Math.round(h * escala));
+      /* 1.1× de salida basta para que una pantalla retina reciba cantos
+         subpíxel nítidos; subirla al DPR completo triplicaría el pase sin
+         aportar detalle que no exista en la acuarela. */
+      const escalaSalida = perfilMovil
+        ? Math.min(Math.max(1, devicePixelRatio || 1), 1.10)
+        : escala;
+      ancho = Math.max(1, Math.round(w * escalaSalida));
+      alto  = Math.max(1, Math.round(h * escalaSalida));
       lienzo.width = ancho; lienzo.height = alto;
+
+      if (perfilMovil) {
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8,
+                      anchoEscena, altoEscena, 0,
+                      gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, escenaFbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                                gl.TEXTURE_2D, escenaTex, 0);
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+          console.error('[mar] framebuffer HD incompleto');
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, tex.lejano);
+      }
       gl.viewport(0, 0, ancho, alto);
     },
     dibujar(e) {
+      if (perfilMovil) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, escenaFbo);
+        gl.viewport(0, 0, anchoEscena, altoEscena);
+      } else {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, ancho, alto);
+      }
       gl.useProgram(p);
-      gl.uniform2f(u.u_res, ancho, alto);
+      gl.uniform2f(u.u_res, anchoEscena, altoEscena);
       gl.uniform1f(u.u_t, e.t);
       gl.uniform1f(u.u_hor, e.horizonte);
       gl.uniform1f(u.u_calma, e.calma);
@@ -3083,7 +3181,7 @@ export function crear(lienzo) {
       gl.uniform1f(u.u_paralaje, e.paralaje || 0);
       gl.uniform1f(u.u_comp, e.luz.compresion);
       gl.uniform1f(u.u_viento, viento(e.t));
-      gl.uniform1f(u.u_encoge, encogeCerca(ancho / Math.max(1, alto)));
+      gl.uniform1f(u.u_encoge, encogeCerca(anchoEscena / Math.max(1, altoEscena)));
       gl.uniform1f(u.u_cielo, e.luz.cielo || 0);
       gl.uniform1f(u.u_int, e.luz.int);
       gl.uniform2f(u.u_fuente, e.luz.fuenteX,
@@ -3097,6 +3195,21 @@ export function crear(lienzo) {
       gl.uniform3fv(u.u_reguero,   e.luz.reguero);
       gl.uniform3fv(u.u_bruma,     e.luz.bruma);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      if (perfilMovil) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, ancho, alto);
+        gl.useProgram(pHD);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+        gl.uniform2f(uSalidaHD, ancho, alto);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        /* El programa principal espera la lámina lejana en la unidad 0
+           en el cuadro siguiente. Restaurarla cuesta un bind, no una
+           copia ni una descarga. */
+        gl.bindTexture(gl.TEXTURE_2D, tex.lejano);
+        gl.useProgram(p);
+      }
     },
     /* Lee lo que quedó pintado detrás de una zona (píxeles del lienzo,
        origen abajo-izquierda). Hay que llamarlo en el MISMO cuadro que
