@@ -127,6 +127,42 @@ void main(){
   gl_Position = vec4(p, 0.0, 1.0);
 }`;
 
+/* Reconstrucción móvil. La pintura cara vive a resolución CSS; este
+   pase la presenta a resolución física y devuelve el microcontraste que
+   el filtrado lineal borraría. Son cinco lecturas vecinas muy baratas
+   frente a volver a ejecutar todo el mar, el cielo y el manglar a DPR 2. */
+const FS_HD = `#version 300 es
+precision highp float;
+out vec4 salida;
+uniform sampler2D u_escena;
+uniform vec2 u_escenaTam, u_salida;
+
+float valorHD(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / u_salida;
+  vec2 texel = 1.0 / u_escenaTam;
+  vec3 c = texture(u_escena, uv).rgb;
+  vec3 n = texture(u_escena, uv + vec2(0.0,  texel.y)).rgb;
+  vec3 s = texture(u_escena, uv - vec2(0.0,  texel.y)).rgb;
+  vec3 e = texture(u_escena, uv + vec2(texel.x, 0.0)).rgb;
+  vec3 o = texture(u_escena, uv - vec2(texel.x, 0.0)).rgb;
+  vec3 vecindad = (n + s + e + o) * 0.25;
+  vec3 detalle = c - vecindad;
+
+  /* El detalle se calcula en texeles de la escena, no en píxeles ya
+     ampliados. La textura fina recibe más ganancia y los cantos fuertes
+     menos; el límite de sobreimpulso evita halos en luna y estrellas. */
+  float contraste = max(max(abs(valorHD(c) - valorHD(n)),
+                             abs(valorHD(c) - valorHD(s))),
+                         max(abs(valorHD(c) - valorHD(e)),
+                             abs(valorHD(c) - valorHD(o))));
+  float ganancia = mix(0.82, 0.38, smoothstep(0.055, 0.30, contraste));
+  vec3 realce = clamp(detalle * ganancia, vec3(-0.070), vec3(0.070));
+  vec3 nitido = c + realce;
+  salida = vec4(clamp(nitido, 0.0, 1.0), 1.0);
+}`;
+
 const FS = `#version 300 es
 precision highp float;
 out vec4 salida;
@@ -183,6 +219,7 @@ uniform vec4  u_toques[6];
 uniform vec3  u_escalas;        // repeticiones por banda: lejos, medio, cerca
 uniform float u_croma;          // cuánto pigmento propio de la lámina se conserva
 uniform sampler2D u_papelTex;
+uniform sampler2D u_ruidoTex;
 uniform float u_hayPapel, u_papelTam, u_papelMedia;
 uniform sampler2D u_nubes;
 uniform float u_hayNubes;
@@ -230,15 +267,12 @@ float hash(vec2 p){
   p += dot(p, p + 19.19);
   return fract(p.x * p.y);
 }
-float ruido(vec2 p){
-  vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
-             mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
-}
+__RUIDO_FUNCION__
 float fbm(vec2 p){
   float s = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++){ s += a * ruido(p); p *= 2.03; a *= 0.5; }
+  for (int i = 0; i < __FBM_OCTAVAS__; i++){
+    s += a * ruido(p); p *= 2.03; a *= 0.5;
+  }
   return s;
 }
 float bordeDeMancha(float m, float umbral, float grosor){
@@ -713,26 +747,26 @@ void main(){
          aporta la pintura es lo que solo la pintura tiene: los grumos y
          las vetas de polvo. */
       float motaVia = 0.0;
+      float motaCampo = 0.0;
+      float tonoCampo = 0.0;
 //#ESTRELLAS
       if (u_hayEstrellas > 0.5) {
         vec2 lamUV = vec2(q.x * 0.62, uv.y * 1.88);
-        vec3 lam = texture(u_estrellas, lamUV).rgb;
+        vec4 lam = texture(u_estrellas, lamUV);
         /* MEDIDA, la aguada vive entre 0.547 y 0.980 de luminancia con
            la mediana en 0.806: el pigmento —1 menos eso— solo llega a
            0.45. La ventana va contra ese rango y no contra [0,1], que
            es lo que antes la dejaba casi toda multiplicada por cero. */
-        float pig = smoothstep(0.10, 0.42, 1.0 - valor(lam));
+        float pig = smoothstep(0.10, 0.42, 1.0 - valor(lam.rgb));
         via = clamp(perfil * (0.45 + 1.20 * pig), 0.0, 1.0);
         viaNucleo = via * smoothstep(0.35, 0.95, via);
         /* El salpicado de sal, detectado por CONTRASTE LOCAL y no por
            brillo absoluto: el papel de la lamina es tan claro como una
            mota, y con umbral fijo se pintaban zonas enteras. */
-        float e = 0.0022;
-        float vecina = (valor(texture(u_estrellas, lamUV + vec2( e, 0.0)).rgb)
-                      + valor(texture(u_estrellas, lamUV + vec2(-e, 0.0)).rgb)
-                      + valor(texture(u_estrellas, lamUV + vec2(0.0,  e)).rgb)
-                      + valor(texture(u_estrellas, lamUV + vec2(0.0, -e)).rgb)) * 0.25;
-        motaVia = smoothstep(0.02, 0.13, valor(lam) - vecina) * perfil;
+        __MASCARA_ESTRELLAS_CIELO__
+        motaVia = contrasteMota * perfil;
+        motaCampo = contrasteMota;
+        tonoCampo = hash(floor(lamUV * vec2(896.0, 296.0)));
       }
 //#FIN
       /* Los dos colores de la referencia, uno dentro del otro: el halo
@@ -767,6 +801,10 @@ void main(){
          como MILES DE ESTRELLAS y no como una nube pintada. */
       col = mix(col, papelBlanco(), motaVia * noche * 0.85);
 
+//#ESTRELLAS
+      if (u_hayEstrellas < 0.5) {
+//#FIN
+//#ESTRELLAS_PROCEDURALES
       vec2 rej = vec2(q.x, uv.y) * 340.0;
       vec2 celda = floor(rej);
       float luzEstrellas = 0.0;
@@ -853,6 +891,24 @@ void main(){
            vez de quedarse en un parche de papel sin pintar. */
         col += tinte * clamp(luzEstrellas - 0.55, 0.0, 1.4) * noche * altura * 0.5;
       }
+//#FIN
+//#ESTRELLAS
+      } else if (motaCampo > 0.001) {
+        /* La lámina ya contiene las motas reales de sal. Reutilizarlas
+           evita construir nueve celdas procedurales —cada una con FBM,
+           hashes, potencias y exponenciales— para cada píxel del cielo. */
+        float altura = smoothstep(-0.02, 0.035, gy);
+        float lejosDeLaLuna = smoothstep(0.10, 0.42, length(q - fuenteQ));
+        float respira = 0.84 + 0.16 * sin(u_t * 0.23 + tonoCampo * TAU);
+        float f = motaCampo * noche * altura * respira
+                * mix(0.45, 1.0, lejosDeLaLuna);
+        vec3 tinte = mix(vec3(0.58, 0.74, 1.00), vec3(1.00, 0.78, 0.70),
+                         smoothstep(0.58, 0.94, tonoCampo));
+        col = mix(col, papelBlanco() * tinte, f);
+        col += tinte * smoothstep(0.58, 0.96, motaCampo)
+             * noche * altura * 0.24;
+      }
+//#FIN
     }
 
     if (u_hayNubes > 0.5) {
@@ -1490,6 +1546,19 @@ void main(){
       vec2 celdaR = floor(rejR);
       float luzR = 0.0;
       vec3 tinteR = vec3(0.0);
+//#ESTRELLAS
+      if (u_hayEstrellas > 0.5) {
+        vec2 lamRuv = vec2(q.x * 0.62, uvEsp * 1.88);
+        vec4 lamRcampo = texture(u_estrellas, lamRuv);
+        __MASCARA_ESTRELLAS_REFLEJO__
+        float faseR = hash(floor(lamRuv * vec2(896.0, 296.0)));
+        luzR = salR * (0.84 + 0.16 * sin(u_t * 0.23 + faseR * TAU));
+        tinteR = luzR * mix(vec3(0.58, 0.74, 1.00), vec3(1.00, 0.78, 0.70),
+                            smoothstep(0.58, 0.94, faseR));
+      }
+      if (u_hayEstrellas < 0.5) {
+//#FIN
+//#ESTRELLAS_PROCEDURALES
       for (int i = -1; i <= 1; i++) {
         for (int j = -1; j <= 1; j++) {
           vec2 c = celdaR + vec2(float(i), float(j));
@@ -1509,6 +1578,10 @@ void main(){
           }
         }
       }
+//#FIN
+//#ESTRELLAS
+      }
+//#FIN
       float profR = horX - uv.y;
       /* Un reflejo se apaga con la distancia a la linea —cerca es
          coherente, lejos lo deshace el oleaje— y lo quiebra la calma
@@ -2530,9 +2603,10 @@ function compilar(gl, tipo, fuente) {
 }
 
 export function crear(lienzo) {
+  const perfilMovil = matchMedia('(max-width: 700px), (pointer: coarse)').matches;
   const gl = lienzo.getContext('webgl2', {
     antialias: false, alpha: false, depth: false, stencil: false,
-    powerPreference: 'low-power', preserveDrawingBuffer: false,
+    powerPreference: 'high-performance', preserveDrawingBuffer: false,
   });
   if (!gl) return null;
 
@@ -2576,6 +2650,51 @@ export function crear(lienzo) {
   let fuenteFS = recortar(FS, 'GARZAS');
   const CABE_ESTRELLAS = UNIDADES_MAX > 15;
   if (!CABE_ESTRELLAS) fuenteFS = recortar(fuenteFS, 'ESTRELLAS');
+  if (perfilMovil && CABE_ESTRELLAS)
+    fuenteFS = recortar(fuenteFS, 'ESTRELLAS_PROCEDURALES');
+  /* En móvil el ruido de valor se consulta en una LUT diminuta que cabe
+     completa en caché. Cada muestra reemplaza cuatro hashes, cuatro dot,
+     varios fract y los mix del ruido analítico. Conserva la misma
+     interpolación suave y las mismas coordenadas: cambia el grano, no el
+     movimiento. Escritorio mantiene el ruido original sin tocar. */
+  const ruidoAnalitico = `float ruido(vec2 p){
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
+               mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
+  }`;
+  const ruidoMovil = `float ruido(vec2 p){
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    vec2 celda = mod(floor(p), 128.0);
+    return texture(u_ruidoTex, (celda + f + 0.5) / 128.0).r;
+  }`;
+  fuenteFS = fuenteFS.replace('__RUIDO_FUNCION__',
+                              perfilMovil ? ruidoMovil : ruidoAnalitico);
+  const mascaraCieloAnalitica = `float e = 0.0022;
+        float vecina = (valor(texture(u_estrellas, lamUV + vec2( e, 0.0)).rgb)
+                      + valor(texture(u_estrellas, lamUV + vec2(-e, 0.0)).rgb)
+                      + valor(texture(u_estrellas, lamUV + vec2(0.0,  e)).rgb)
+                      + valor(texture(u_estrellas, lamUV + vec2(0.0, -e)).rgb)) * 0.25;
+        float contrasteMota = smoothstep(0.008, 0.075, valor(lam.rgb) - vecina);`;
+  const mascaraReflejoAnalitica = `float eR = 0.0022;
+        float vecinaR = (valor(texture(u_estrellas, lamRuv + vec2( eR, 0.0)).rgb)
+                       + valor(texture(u_estrellas, lamRuv + vec2(-eR, 0.0)).rgb)
+                       + valor(texture(u_estrellas, lamRuv + vec2(0.0,  eR)).rgb)
+                       + valor(texture(u_estrellas, lamRuv + vec2(0.0, -eR)).rgb)) * 0.25;
+        float salR = smoothstep(0.008, 0.075, valor(lamRcampo.rgb) - vecinaR);`;
+  fuenteFS = fuenteFS.replace('__MASCARA_ESTRELLAS_CIELO__', perfilMovil
+    ? 'float contrasteMota = clamp((lam.a - 0.501961) / 0.498039, 0.0, 1.0);'
+    : mascaraCieloAnalitica);
+  fuenteFS = fuenteFS.replace('__MASCARA_ESTRELLAS_REFLEJO__', perfilMovil
+    ? 'float salR = clamp((lamRcampo.a - 0.501961) / 0.498039, 0.0, 1.0);'
+    : mascaraReflejoAnalitica);
+  /* A resolución CSS nativa, la tercera octava queda por debajo de un
+     píxel en las coordenadas donde se usa el FBM móvil. La textura de
+     acuarela aporta el grano visible; pagar otra muestra de ruido por
+     octava no añade detalle, solo resta presupuesto al muestreo nítido.
+     Escritorio conserva las cinco. */
+  fuenteFS = fuenteFS.replace('__FBM_OCTAVAS__', perfilMovil ? '2' : '5');
   const vs = compilar(gl, gl.VERTEX_SHADER, VS);
   const fs = compilar(gl, gl.FRAGMENT_SHADER, fuenteFS);
   if (!vs || !fs) return null;
@@ -2588,6 +2707,39 @@ export function crear(lienzo) {
   }
   gl.useProgram(p);
 
+  let pHD = null, uEscenaTamHD = null, uSalidaHD = null;
+  let escenaTex = null, escenaFbo = null;
+  if (perfilMovil) {
+    const fsHD = compilar(gl, gl.FRAGMENT_SHADER, FS_HD);
+    if (!fsHD) return null;
+    pHD = gl.createProgram();
+    gl.attachShader(pHD, vs); gl.attachShader(pHD, fsHD); gl.linkProgram(pHD);
+    if (!gl.getProgramParameter(pHD, gl.LINK_STATUS)) {
+      console.error('[mar] link HD:', gl.getProgramInfoLog(pHD));
+      return null;
+    }
+    gl.useProgram(pHD);
+    gl.uniform1i(gl.getUniformLocation(pHD, 'u_escena'), 0);
+    uEscenaTamHD = gl.getUniformLocation(pHD, 'u_escenaTam');
+    uSalidaHD = gl.getUniformLocation(pHD, 'u_salida');
+
+    escenaTex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0,
+                  gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    escenaFbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, escenaFbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                            gl.TEXTURE_2D, escenaTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(p);
+  }
+
   const u = {};
   for (const n of ['u_res','u_t','u_hor','u_calma','u_deriva','u_comp','u_int',
                    'u_fuente','u_papel','u_laminas','u_cieloAlto','u_cieloBajo',
@@ -2597,7 +2749,7 @@ export function crear(lienzo) {
                    'u_manglar',
                    'u_vLejano','u_vMedio','u_vCercano',
                    'u_hayManglar','u_manglarCaja','u_escalas','u_croma',
-                   'u_papelTex','u_hayPapel','u_papelTam','u_papelMedia',
+                   'u_papelTex','u_ruidoTex','u_hayPapel','u_papelTam','u_papelMedia',
                    'u_nubes','u_hayNubes','u_manglarCerca','u_corales','u_luces',
                    'u_hayCerca','u_hayCorales','u_hayLuces','u_astro','u_camino',
                    'u_hayAstro','u_hayCamino','u_roce','u_cercaCaja','u_coralesCaja',
@@ -2617,6 +2769,27 @@ export function crear(lienzo) {
                   gl.UNSIGNED_BYTE, new Uint8Array([128, 140, 148, 255]));
     return t;
   }
+  function texturaRuido() {
+    const lado = 128;
+    const datos = new Uint8Array(lado * lado);
+    for (let y = 0; y < lado; y++) {
+      for (let x = 0; x < lado; x++) {
+        let n = Math.imul(x + 1, 374761393) + Math.imul(y + 1, 668265263);
+        n = Math.imul(n ^ (n >>> 13), 1274126177);
+        datos[y * lado + x] = (n ^ (n >>> 16)) & 255;
+      }
+    }
+    const t = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE8);
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, lado, lado, 0,
+                  gl.RED, gl.UNSIGNED_BYTE, datos);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    return t;
+  }
   const tex = { lejano: texturaVacia(), medio: texturaVacia(),
                 cercano: texturaVacia(), cercanoCalmo: texturaVacia(),
                 manglar: texturaVacia(), papel: texturaVacia(),
@@ -2624,7 +2797,7 @@ export function crear(lienzo) {
                 nubes: texturaVacia(), manglarCerca: texturaVacia(),
                 corales: texturaVacia(), luces: texturaVacia(),
                 astro: texturaVacia(), camino: texturaVacia(),
-                estrellas: texturaVacia() };
+                estrellas: texturaVacia(), ruido: texturaRuido() };
 
   /* La 7 y la 8 eran de las garzas del shader, que ya no se pintan; la
      via lactea hereda la 7. */
@@ -2637,6 +2810,7 @@ export function crear(lienzo) {
     gl.uniform1i(u.u_estrellas, unidades.estrellas);
     gl.uniform1f(u.u_hayEstrellas, 0);
   }
+  gl.uniform1i(u.u_ruidoTex, 8);
   gl.uniform1i(u.u_manglarCerca, 11);
   gl.uniform1i(u.u_corales, 12);
   gl.uniform1i(u.u_luces, 13);
@@ -2731,8 +2905,44 @@ export function crear(lienzo) {
 
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-  let ancho = 0, alto = 0;
+  /* ancho/alto son la salida que ve el navegador; la escena cara tiene
+     su propio tamaño y solo en móvil pasa por la reconstrucción HD. */
+  let ancho = 0, alto = 0, anchoEscena = 0, altoEscena = 0;
   const cargadas = new Set();
+
+  /* La máscara de sal se calcula UNA vez al decodificar la acuarela y
+     viaja en alfa. Así cielo y reflejo leen una sola muestra cada uno;
+     antes cada píxel hacía cinco lecturas para redescubrir el mismo
+     contraste local treinta veces por segundo. RGB no se toca. */
+  function empaquetarEstrellas(fuente) {
+    const w = fuente.width || fuente.naturalWidth;
+    const h = fuente.height || fuente.naturalHeight;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(fuente, 0, 0, w, h);
+    const imagen = ctx.getImageData(0, 0, w, h);
+    const d = imagen.data;
+    const luma = new Float32Array(w * h);
+    for (let i = 0, p = 0; i < d.length; i += 4, p++)
+      luma[p] = d[i] * 0.2126 + d[i + 1] * 0.7152 + d[i + 2] * 0.0722;
+    for (let y = 0; y < h; y++) {
+      const ya = Math.max(0, y - 1), ys = Math.min(h - 1, y + 1);
+      for (let x = 0; x < w; x++) {
+        const xa = Math.max(0, x - 2), xs = Math.min(w - 1, x + 2);
+        const p = y * w + x;
+        const vecina = (luma[y * w + xa] + luma[y * w + xs]
+                      + luma[ya * w + x] + luma[ys * w + x]) * 0.25;
+        let t = Math.max(0, Math.min(1, (luma[p] - vecina - 2.04) / 17.085));
+        t = t * t * (3 - 2 * t);
+        /* Alfa nunca baja de 128: Canvas guarda RGB premultiplicado y
+           un alfa cero destruiría el color de la acuarela. */
+        d[p * 4 + 3] = 128 + Math.round(t * 127);
+      }
+    }
+    ctx.putImageData(imagen, 0, 0);
+    return c;
+  }
 
   async function cargar(mapa, anchoMax = 2048) {
     /* Lo que no cabe no se descarga siquiera: en un aparato con las
@@ -2764,6 +2974,7 @@ export function crear(lienzo) {
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
         fuente = c;
       }
+      if (n === 'estrellas' && perfilMovil) fuente = empaquetarEstrellas(fuente);
 
       gl.activeTexture(gl.TEXTURE0 + unidades[n]);
       gl.bindTexture(gl.TEXTURE_2D, tex[n]);
@@ -2928,45 +3139,49 @@ export function crear(lienzo) {
     roce(r) { gl.useProgram(p); gl.uniform3f(u.u_roce, r.x, r.y, r.z); },
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
-    /* Cronometra un cuadro en la GPU sin bloquear el hilo principal.
-       Si el dispositivo no ofrece la extensión, el perfil móvil inicial
-       ya es conservador y se mantiene tal cual. */
-    medirGpu(e) {
-      const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
-      if (!ext) return Promise.resolve(null);
-      const consulta = gl.createQuery();
-      gl.beginQuery(ext.TIME_ELAPSED_EXT, consulta);
-      this.dibujar(e);
-      gl.endQuery(ext.TIME_ELAPSED_EXT);
-      return new Promise((resolver) => {
-        const vence = performance.now() + 3000;
-        const consultar = () => {
-          const disponible = gl.getQueryParameter(consulta, gl.QUERY_RESULT_AVAILABLE);
-          const invalida = gl.getParameter(ext.GPU_DISJOINT_EXT);
-          if (!disponible) {
-            if (performance.now() >= vence) {
-              gl.deleteQuery(consulta);
-              resolver(null);
-              return;
-            }
-            setTimeout(consultar, 16);
-            return;
-          }
-          const ns = gl.getQueryParameter(consulta, gl.QUERY_RESULT);
-          gl.deleteQuery(consulta);
-          resolver(invalida ? null : ns / 1e6);
-        };
-        setTimeout(consultar, 0);
-      });
-    },
     redimensionar(w, h, escala) {
-      ancho = Math.max(1, Math.round(w * escala));
-      alto  = Math.max(1, Math.round(h * escala));
+      anchoEscena = Math.max(1, Math.round(w * escala));
+      altoEscena  = Math.max(1, Math.round(h * escala));
+      /* La salida va hasta DPR 2 físico. El shader caro sigue en
+         anchoEscena×altoEscena; aquí solo corre una lectura de textura,
+         comparable a presentar un fotograma de vídeo. Limitar esto a
+         1.1 obligaba al navegador a volver a ampliar el canvas en móviles
+         DPR 2–3 y era la fuente del desenfoque que aún se veía. En DPR 3
+         queda una ampliación de 1.5× en vez de 2.7×, sin pagar los tres
+         millones de píxeles de salida que hicieron caer la cadencia. */
+      const escalaSalida = perfilMovil
+        ? Math.min(Math.max(1, devicePixelRatio || 1), 2.0)
+        : escala;
+      ancho = Math.max(1, Math.round(w * escalaSalida));
+      alto  = Math.max(1, Math.round(h * escalaSalida));
       lienzo.width = ancho; lienzo.height = alto;
+
+      if (perfilMovil) {
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8,
+                      anchoEscena, altoEscena, 0,
+                      gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, escenaFbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                                gl.TEXTURE_2D, escenaTex, 0);
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+          console.error('[mar] framebuffer HD incompleto');
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, tex.lejano);
+      }
       gl.viewport(0, 0, ancho, alto);
     },
     dibujar(e) {
-      gl.uniform2f(u.u_res, ancho, alto);
+      if (perfilMovil) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, escenaFbo);
+        gl.viewport(0, 0, anchoEscena, altoEscena);
+      } else {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, ancho, alto);
+      }
+      gl.useProgram(p);
+      gl.uniform2f(u.u_res, anchoEscena, altoEscena);
       gl.uniform1f(u.u_t, e.t);
       gl.uniform1f(u.u_hor, e.horizonte);
       gl.uniform1f(u.u_calma, e.calma);
@@ -2974,7 +3189,7 @@ export function crear(lienzo) {
       gl.uniform1f(u.u_paralaje, e.paralaje || 0);
       gl.uniform1f(u.u_comp, e.luz.compresion);
       gl.uniform1f(u.u_viento, viento(e.t));
-      gl.uniform1f(u.u_encoge, encogeCerca(ancho / Math.max(1, alto)));
+      gl.uniform1f(u.u_encoge, encogeCerca(anchoEscena / Math.max(1, altoEscena)));
       gl.uniform1f(u.u_cielo, e.luz.cielo || 0);
       gl.uniform1f(u.u_int, e.luz.int);
       gl.uniform2f(u.u_fuente, e.luz.fuenteX,
@@ -2988,6 +3203,22 @@ export function crear(lienzo) {
       gl.uniform3fv(u.u_reguero,   e.luz.reguero);
       gl.uniform3fv(u.u_bruma,     e.luz.bruma);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      if (perfilMovil) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, ancho, alto);
+        gl.useProgram(pHD);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, escenaTex);
+        gl.uniform2f(uEscenaTamHD, anchoEscena, altoEscena);
+        gl.uniform2f(uSalidaHD, ancho, alto);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        /* El programa principal espera la lámina lejana en la unidad 0
+           en el cuadro siguiente. Restaurarla cuesta un bind, no una
+           copia ni una descarga. */
+        gl.bindTexture(gl.TEXTURE_2D, tex.lejano);
+        gl.useProgram(p);
+      }
     },
     /* Lee lo que quedó pintado detrás de una zona (píxeles del lienzo,
        origen abajo-izquierda). Hay que llamarlo en el MISMO cuadro que
