@@ -111,7 +111,7 @@ const DATOS = {
 ---
 
 <!doctype html>
-<html lang="es" data-tinta="oscura">
+<html lang="es" data-tinta="oscura" class="cargando">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -171,6 +171,14 @@ const DATOS = {
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
+
+  {/* El móvil usa la misma escena WebGL que el escritorio. Estas cuatro
+      láminas forman el primer cuadro y avanzan mientras llega el motor. */}
+  {['mar-lejano.webp', 'mar-medio.webp', 'mar-cercano.webp', 'manglar-v2.webp'].map((lamina) => (
+    <link rel="preload" as="image" type="image/webp" fetchpriority="high"
+          media="(max-width: 700px)" href={base + 'arte/1024/' + lamina} />
+  ))}
 
   {/* SIN JAVASCRIPT LA BARRA SE VE, Y SE VE SIEMPRE.
 
@@ -203,6 +211,9 @@ const DATOS = {
       ficha —el grano, el charco, el trazo del canto— es la misma con
       script y sin él. */}
   <noscript><style>
+    .cargando .cargador { display: none !important; }
+    .cargando body > main,
+    .cargando body > .mundo { visibility: visible !important; opacity: 1 !important; }
     .barra--flotante {
       translate: none !important;
       opacity: 1 !important;
@@ -215,6 +226,20 @@ const DATOS = {
 </head>
 
 <body>
+  <div class="cargador" id="cargador" role="status" aria-live="polite"
+       aria-label="Preparando la acuarela">
+    <svg class="cargador__marca" viewBox="0 0 180 120" aria-hidden="true" focusable="false">
+      <path class="cargador__agua cargador__agua--fondo"
+            d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
+      <path class="cargador__agua cargador__agua--medio"
+            d="M17 72 C39 49 61 88 86 63 S128 49 163 70" />
+      <path class="cargador__agua cargador__agua--filo"
+            d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
+    </svg>
+    <span class="cargador__nombre">Galene</span>
+    <span class="cargador__estado">Preparando la acuarela</span>
+  </div>
+
   {/* ── LA BARRA, FUERA DEL CUADRO ──────────────────────────────────
       Estuvo dentro del hero, como fila 1 de su rejilla, y ahí el
       argumento era que pertenecía a la pintura. Ahora no aparece hasta

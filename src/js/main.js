@@ -48,13 +48,38 @@ setInterval(refrescarHora, 30_000);
 
    El 67.5 % del tráfico en Colombia es móvil, y esto se abre a las
    cuatro de la mañana con mala señal y el 3 % de batería. */
+const CONEXION = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+const RED_LENTA = Boolean(CONEXION?.saveData)
+  || /(^|-)2g$|3g/.test(CONEXION?.effectiveType || '');
+const MEMORIA_AJUSTADA = Number(navigator.deviceMemory || 8) <= 4;
+const MOVIL = matchMedia('(max-width: 700px), (pointer: coarse)').matches;
+const PERFIL_AHORRO = RED_LENTA || (MOVIL && MEMORIA_AJUSTADA);
 const ANCHO_REAL = Math.min(2048, viewportWidth() * Math.min(devicePixelRatio || 1, 2));
-const LAMINAS_CHICAS = ANCHO_REAL <= 1100;
+const LAMINAS_CHICAS = PERFIL_AHORRO || ANCHO_REAL <= 1280;
 /* BASE_URL lo resuelve Vite en compilación: '/' en local y '/galene/'
    en producción. Nunca se escribe la ruta a mano. */
 const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const ARTE = BASE + (LAMINAS_CHICAS ? 'arte/1024/' : 'arte/');
 const ANCHO_MAX = LAMINAS_CHICAS ? 1024 : 2048;
+
+/* Las poses que no participan en la llegada inicial no compiten con el
+   mar por la red. Se conectan después de abrirse el contenido. */
+const IMAGENES_DIFERIDAS = [];
+function diferirImagen(img, src) {
+  img.fetchPriority = 'low';
+  IMAGENES_DIFERIDAS.push([img, src]);
+}
+addEventListener('galene:contenido-listo', () => {
+  if (document.documentElement.classList.contains('hero-estatico')) {
+    IMAGENES_DIFERIDAS.length = 0;
+    return;
+  }
+  const conectar = () => {
+    for (const [img, src] of IMAGENES_DIFERIDAS) img.src = src;
+    IMAGENES_DIFERIDAS.length = 0;
+  };
+  (window.requestIdleCallback || ((fn) => setTimeout(fn, 80)))(conectar, { timeout: 700 });
+}, { once: true });
 
 /* ── 3 · EL MAR ───────────────────────────────────────────────────── */
 
@@ -87,7 +112,12 @@ const calma = 0.35 + 0.50 * (1 - Math.exp(-raices / TAU_CALMA));
 document.getElementById('mar')?.style.setProperty('cursor', 'grab');
 
 function arrancar(mar) {
-  let escala = Math.min(devicePixelRatio || 1, 1.5);
+  /* En móvil, más píxeles de respaldo no son más detalle visible: son
+     más fragmentos del shader por cuadro. La escala puede recuperarse
+     tras la sonda si el dispositivo demuestra que tiene margen. */
+  let escala = PERFIL_AHORRO ? 0.85
+    : MOVIL ? Math.min(devicePixelRatio || 1, 1.0)
+      : Math.min(devicePixelRatio || 1, 1.35);
   let horizonte = 0.44;
   let deriva = 0, punteroX = 0, punteroObjetivo = 0;
   let visible = true, corriendo = false;
@@ -96,7 +126,8 @@ function arrancar(mar) {
      `derivaScroll` es su huella en el agua y `salidaEscrita` lo último
      que se le escribió al lienzo, para no reescribir lo que no cambió. */
   let salida = 0, derivaScroll = 0, salidaEscrita = '';
-  const CUADRO = 1000 / 30;        // compuerta a 30 fps — SOLO el mar
+  let fpsMar = PERFIL_AHORRO ? 20 : MOVIL ? 24 : 30;
+  let intervaloMar = 1000 / fpsMar;   // compuerta — SOLO el mar
 
   const estado = { t: 0, horizonte, calma, deriva: 0, papel: 0.055, luz: L };
 
@@ -257,16 +288,34 @@ function arrancar(mar) {
   }
 
   /* Sonda real de rendimiento. `hardwareConcurrency >= 8` no sirve:
-     Helio G85 y Unisoc T606 son octa-core y se arrastran. Se dibuja
-     de verdad y se mide con reloj de pared. */
+     Helio G85 y Unisoc T606 son octa-core y se arrastran. En móvil se
+     fuerza a la GPU a terminar el lote: medir solo el tiempo de enviar
+     comandos confundía una cola rápida con un shader rápido. */
   function sondear() {
-    mar.redimensionar(64, 64, 1);
+    const lado = MOVIL ? 96 : 64;
+    const repeticiones = MOVIL ? 1 : 30;
+    mar.redimensionar(lado, lado, 1);
     const t0 = performance.now();
-    for (let i = 0; i < 30; i++) { estado.t = i * 0.033; mar.dibujar(estado); }
-    const ms = (performance.now() - t0) / 30;
-    if (ms > 4.0)      escala = 0.6;
-    else if (ms > 1.6) escala = Math.min(devicePixelRatio || 1, 1.0);
-    console.info(`[mar] sonda: ${ms.toFixed(2)} ms/cuadro → escala ${escala}`);
+    for (let i = 0; i < repeticiones; i++) {
+      estado.t = i * 0.033;
+      mar.dibujar(estado);
+    }
+    if (MOVIL) mar.sincronizar();
+    const ms = (performance.now() - t0) / repeticiones;
+    if (MOVIL && ms > 6.0) {
+      escala = Math.min(escala, 0.45);
+      fpsMar = Math.min(fpsMar, 15);
+    } else if (MOVIL && ms > 2.0) {
+      escala = Math.min(escala, 0.58);
+      fpsMar = Math.min(fpsMar, 18);
+    } else if (MOVIL && ms > 0.9) {
+      escala = Math.min(escala, 0.74);
+      fpsMar = Math.min(fpsMar, 20);
+    }
+    else if (ms > 4.0)          escala = Math.min(escala, 0.60);
+    else if (ms > 1.6)          escala = Math.min(escala, 1.0);
+    intervaloMar = 1000 / fpsMar;
+    console.info(`[mar] sonda: ${ms.toFixed(2)} ms/cuadro → escala ${escala}, ${fpsMar} fps`);
   }
 
   sondear();
@@ -738,7 +787,7 @@ function arrancar(mar) {
          y por eso se veía irreal. */
       const dtAve = ultimoAve ? (ms - ultimoAve) / 1000 : 1 / 60;
       ultimoAve = ms;
-      if (ms - ultimo >= CUADRO) { ultimo = ms; cuadro(ms, dtAve); }
+      if (ms - ultimo >= intervaloMar) { ultimo = ms; cuadro(ms, dtAve); }
       else {
         /* El hundido del mundo va a la tasa DEL MONITOR, no a la del
            mar: está atado al scroll, y una página que se desliza a
@@ -797,13 +846,23 @@ function arrancar(mar) {
      al arte: si no cargan, el mar sigue siendo procedural y el sitio
      entero sigue funcionando. */
   mar.ventana('Lejano', 0.10, 0.86);   // recorta el margen de papel
-  mar.cargar({
+  /* Primer sorbo: solo lo que compone el cuadro reconocible. En móvil
+     son ~250 KB. El loader espera este grupo; todo lo decorativo entra
+     después con prioridad ociosa y jamás bloquea el contenido. */
+  const criticas = {
     lejano:       ARTE + 'mar-lejano.webp',
     medio:        ARTE + 'mar-medio.webp',
-    medioCalmo:   ARTE + 'mar-medio-calmo.webp',
     cercano:      ARTE + 'mar-cercano.webp',
-    cercanoCalmo: ARTE + 'mar-cercano-calmo.webp',
     manglar:      ARTE + 'manglar-v2.webp',
+  };
+  /* De noche la Vía Láctea no es adorno: es el sujeto del cielo pulido.
+     El loader espera sus ~58 KB para no abrir primero una noche distinta
+     y sustituirla un instante después. De día sigue entrando ociosa. */
+  const nocheVisible = L.int <= 0.62;
+  if (nocheVisible) criticas.estrellas = ARTE + 'estrellas.webp';
+  const decorativas = {
+    medioCalmo:   ARTE + 'mar-medio-calmo.webp',
+    cercanoCalmo: ARTE + 'mar-cercano-calmo.webp',
     manglarCerca: ARTE + 'manglar-cerca.webp',
     corales:      ARTE + 'corales.webp',
     luces:        ARTE + 'luces.webp',
@@ -816,16 +875,27 @@ function arrancar(mar) {
        payne, que es como se pinta a mano una via lactea. Va de adorno,
        asi que si el aparato no tiene unidad libre se cae sola y quedan
        las estrellas procedurales. */
-    estrellas:    ARTE + 'estrellas.webp',
+    ...(nocheVisible ? {} : { estrellas: ARTE + 'estrellas.webp' }),
     /* Las garzas ya NO se pintan en el shader: allí estaban paradas en
        mar abierto, y una garza vadea en somero. Ahora hay una sola, en
        el DOM, que llega volando y se posa sobre la copa del manglar. */
-  }, ANCHO_MAX).then((n) => {
+  };
+
+  const anunciarListo = (modo) =>
+    dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo } }));
+  const cargarDecorativas = () => mar.cargar(decorativas, ANCHO_MAX)
+    .then((n) => {
+      if (n.includes('papel')) estado.papel = 0.55;
+      medidas();
+      cuadro(performance.now());
+    })
+    .catch((e) => console.warn('[mar] decoración parcial:', e.message));
+
+  mar.cargar(criticas, ANCHO_MAX).then((n) => {
     console.info('[mar] láminas conectadas:', n.join(', '));
     /* Con papel de verdad el grano se modula contra su propia media.
        0.55, no 1.15: a fuerza alta el papel deja de ser soporte y pasa
        a ser un filtro de textura encima de todo. */
-    if (n.includes('papel')) estado.papel = 0.55;
     /* Y SE VUELVE A MEDIR. El aspecto real del manglar solo se conoce
        cuando su lámina ha cargado, pero la composición —el techo de
        altura, el posadero de la garza— se calcula en el arranque con el
@@ -834,7 +904,13 @@ function arrancar(mar) {
        se quedó dibujado con el encuadre de la anterior. */
     medidas();
     cuadro(performance.now());
-  }).catch((e) => console.warn('[mar] sin láminas:', e.message));
+    anunciarListo('pintura');
+    const ocioso = window.requestIdleCallback || ((fn) => setTimeout(fn, 120));
+    ocioso(cargarDecorativas, { timeout: 1400 });
+  }).catch((e) => {
+    console.warn('[mar] sin láminas:', e.message);
+    anunciarListo('procedural');
+  });
   if (!quieto.matches) bucle();
   quieto.addEventListener('change', () => { if (!quieto.matches) bucle(); else cuadro(performance.now()); });
 }
@@ -1199,12 +1275,16 @@ const CAIDA = ['l01','l02','l03','l04','l05','l06','l07','l08'];
 const CAIDA_ESPERA = 1.1;    // s antes de aparecer: la pagina se asienta
 const CAIDA_DURA   = 3.4;    // s de caida y aterrizaje
 let visita = null;
+let inicioContenido = null;
+addEventListener('galene:contenido-listo', () => {
+  inicioContenido = performance.now() / 1000;
+}, { once: true });
 if (contenedor) {
   contenedor.innerHTML = '';
   const capas = {};
   for (const [clave, v] of Object.entries(VUELO)) {
     const img = new Image();
-    img.src = v.src;
+    diferirImagen(img, v.src);
     img.alt = '';
     img.className = 'vuelo';
     img.decoding = 'async';
@@ -1228,7 +1308,7 @@ if (contenedor) {
                        'pUnaPata', 'pMira', 'pAlas']) {
     const v = VUELO[clave];
     const img = new Image();
-    img.src = v.src;
+    diferirImagen(img, v.src);
     img.alt = '';
     img.className = 'vuelo vuelo--visita';
     img.decoding = 'async';
@@ -1294,7 +1374,7 @@ function poblarBandada() {
     for (const clave of LAMINAS_POSADA) {
       const v = VUELO[clave];
       const img = new Image();
-      img.src = v.src;
+      diferirImagen(img, v.src);
       img.alt = '';
       /* SIN `will-change`. Las de la bandada se mueven despacio y poco, y
          promover diez aves por diez láminas serían cien capas de
@@ -1902,7 +1982,8 @@ function animarGarzas(t, paralaje, dt) {
    horizontal, que es lo que hace un ave que se deja caer en diagonal y
    abre las alas al llegar. */
 function animarVisita(t, paralaje) {
-  if (!visita || !visita.alto) return;
+  if (!visita || !visita.alto || inicioContenido === null) return;
+  t -= inicioContenido;
   const p0 = CAIDA_ESPERA, p1 = CAIDA_ESPERA + CAIDA_DURA;
 
   if (t < p0) {                                   // todavia no ha entrado
@@ -2135,7 +2216,7 @@ if (contenedor) {
   for (const clave of CICLO) {
     const v = VUELO[clave];
     const img = new Image();
-    img.src = v.src;
+    diferirImagen(img, v.src);
     img.alt = '';
     /* `vuelo` a secas, la clase de la que vuela: mismo tratamiento de
        color que la bandada y además `will-change`, que aquí sí se paga
@@ -2360,10 +2441,15 @@ if (import.meta.env.DEV) {
 /* ── ARRANQUE ──────────────────────────────────────────────────────
    Al final: el mar es lo último que se enciende, después de que los
    reflejos, la hora y las garzas ya existen. */
+/* La escena es la misma en escritorio y móvil. El perfil de arriba
+   reduce resolución, láminas y cadencia cuando hace falta, pero nunca
+   sustituye el cielo, el agua o las garzas por otra composición. */
 const mar = crear(lienzo);
 if (!mar) {
   lienzo.remove();                 // el respaldo CSS ya es un mar
   hero?.setAttribute('data-mar', 'sin-webgl');
+  document.documentElement.classList.add('hero-estatico');
+  dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo: 'css' } }));
 } else {
   arrancar(mar);
 }

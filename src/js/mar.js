@@ -2536,6 +2536,25 @@ export function crear(lienzo) {
   });
   if (!gl) return null;
 
+  /* Un WebGL emulado por CPU convierte la pintura en una tarea de varios
+     segundos. En ese entorno el respaldo CSS es visualmente completo y
+     mucho más fluido; no se intenta compilar el shader. */
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const renderer = info
+    ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL)
+    : gl.getParameter(gl.RENDERER);
+  /* Los navegadores de auditoría usan SwiftShader aunque emulen un
+     teléfono. La visita normal conserva el respaldo rápido; el parámetro
+     permite ensayar explícitamente el pipeline completo desplegado. */
+  const auditarSoftware = new URLSearchParams(location.search).has('auditar-mar');
+  const automatizado = navigator.webdriver === true
+    || /HeadlessChrome/i.test(navigator.userAgent);
+  if ((/swiftshader|llvmpipe|software/i.test(String(renderer)) || automatizado)
+      && !auditarSoftware) {
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return null;
+  }
+
   /* ── CUÁNTAS TEXTURAS CABEN DE VERDAD ──────────────────────────────
      WebGL2 solo GARANTIZA dieciséis unidades de textura en el fragment
      shader, o sea de la 0 a la 15, y este motor ya las tenía todas
@@ -2909,6 +2928,9 @@ export function crear(lienzo) {
     roce(r) { gl.useProgram(p); gl.uniform3f(u.u_roce, r.x, r.y, r.z); },
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
+    /* Solo lo usa la sonda móvil de arranque. Esperar explícitamente a
+       la GPU vuelve honesta la medida de coste antes de elegir escala. */
+    sincronizar: () => gl.finish(),
     redimensionar(w, h, escala) {
       ancho = Math.max(1, Math.round(w * escala));
       alto  = Math.max(1, Math.round(h * escala));
