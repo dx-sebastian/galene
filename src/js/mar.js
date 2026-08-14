@@ -2928,9 +2928,37 @@ export function crear(lienzo) {
     roce(r) { gl.useProgram(p); gl.uniform3f(u.u_roce, r.x, r.y, r.z); },
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
-    /* Solo lo usa la sonda móvil de arranque. Esperar explícitamente a
-       la GPU vuelve honesta la medida de coste antes de elegir escala. */
-    sincronizar: () => gl.finish(),
+    /* Cronometra un cuadro en la GPU sin bloquear el hilo principal.
+       Si el dispositivo no ofrece la extensión, el perfil móvil inicial
+       ya es conservador y se mantiene tal cual. */
+    medirGpu(e) {
+      const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+      if (!ext) return Promise.resolve(null);
+      const consulta = gl.createQuery();
+      gl.beginQuery(ext.TIME_ELAPSED_EXT, consulta);
+      this.dibujar(e);
+      gl.endQuery(ext.TIME_ELAPSED_EXT);
+      return new Promise((resolver) => {
+        const vence = performance.now() + 3000;
+        const consultar = () => {
+          const disponible = gl.getQueryParameter(consulta, gl.QUERY_RESULT_AVAILABLE);
+          const invalida = gl.getParameter(ext.GPU_DISJOINT_EXT);
+          if (!disponible) {
+            if (performance.now() >= vence) {
+              gl.deleteQuery(consulta);
+              resolver(null);
+              return;
+            }
+            setTimeout(consultar, 16);
+            return;
+          }
+          const ns = gl.getQueryParameter(consulta, gl.QUERY_RESULT);
+          gl.deleteQuery(consulta);
+          resolver(invalida ? null : ns / 1e6);
+        };
+        setTimeout(consultar, 0);
+      });
+    },
     redimensionar(w, h, escala) {
       ancho = Math.max(1, Math.round(w * escala));
       alto  = Math.max(1, Math.round(h * escala));
