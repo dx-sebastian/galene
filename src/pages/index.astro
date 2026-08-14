@@ -16,12 +16,16 @@ import Mundo from '../componentes/Mundo.astro';
 import Boca from '../componentes/Boca.astro';
 import Herramientas from '../componentes/Herramientas.astro';
 import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
+import Expertos from '../componentes/Expertos.astro';
 import Acerca from '../componentes/Acerca.astro';
 import '../estilos/nuevas-secciones.css';
 import '../estilos/responsive.css';
 /* Las mismas ocho palabras que pintan las fichas. Ver la cabecera de
    datos/glosario.js: un solo sitio para las tres cosas que las usan. */
 import { TERMINOS } from '../datos/glosario.js';
+/* Cuántas fichas de expertos caben en la portada. Vive con los datos,
+   no aquí: quien añada una entrada al panel ve el corte al lado. */
+import { LIMITE_PORTADA } from '../datos/expertos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
@@ -226,8 +230,7 @@ const DATOS = {
 </head>
 
 <body>
-  <div class="cargador" id="cargador" role="status" aria-live="polite"
-       aria-label="Preparando la acuarela">
+  <div class="cargador" id="cargador" role="status" aria-live="polite">
     <svg class="cargador__marca" viewBox="0 0 180 120" aria-hidden="true" focusable="false">
       <path class="cargador__agua cargador__agua--fondo"
             d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
@@ -237,7 +240,7 @@ const DATOS = {
             d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
     </svg>
     <span class="cargador__nombre">Galene</span>
-    <span class="cargador__estado">Preparando la acuarela</span>
+
   </div>
 
   {/* ── LA BARRA, FUERA DEL CUADRO ──────────────────────────────────
@@ -288,6 +291,44 @@ const DATOS = {
           barra del teléfono guarda el logotipo y la píldora, y
           nada más. */}
       <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
+      <a class="barra__enlace" href={base + 'expertos'}>Panel</a>
+
+      {/* ── EL MENÚ DEL TELÉFONO ────────────────────────────────────
+          Hasta ahora, a 700 px los tres rótulos hacían `display: none`
+          y la barra del móvil se quedaba con el logotipo y la píldora:
+          cero navegación. Esto la devuelve.
+
+          VA CON <details>, NO CON JAVASCRIPT. Abrir y cerrar un
+          desplegable es exactamente lo que ese elemento hace de fábrica,
+          con su estado accesible ya cableado (`aria-expanded` lo pone el
+          navegador) y funcionando aunque el bundle no llegue nunca. En
+          un sitio cuya regla 5 es que la ayuda no dependa de JS, la
+          navegación tampoco debería.
+
+          ── LA AYUDA SE QUEDA FUERA, Y ESA ES LA DECISIÓN ────────────
+          El encargo era poner el menú donde está el botón de ayuda. Está
+          justo ahí —a su izquierda, en el mismo hueco— pero la píldora
+          NO entra dentro. Meter «Buscar ayuda» en un desplegable la pone
+          a un toque y detrás de un estado, y la regla 5 dice cero clics.
+          El menú se lleva los rótulos de navegar; la ruta a la ayuda
+          sigue siendo lo único siempre visible en la barra.
+
+          `name="barra-menu"` hace el grupo exclusivo: si algún día hay
+          un segundo <details> en la barra, abrir uno cierra el otro sin
+          una línea de script. */}
+      <details class="menu" name="barra-menu">
+        <summary class="menu__boton" aria-label="Abrir menu de navegacion">
+          <span class="menu__rayas" aria-hidden="true"></span>
+          <span class="menu__etiqueta">Menu</span>
+        </summary>
+        <div class="menu__panel">
+          <a class="barra__enlace" href="#herramientas">Información</a>
+          <a class="barra__enlace" href="#sin-hablar">Recursos</a>
+          <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
+          <a class="barra__enlace" href={base + 'expertos'}>Panel de expertos</a>
+        </div>
+      </details>
+
       <a class="pildora" href="#sin-hablar">
         Buscar ayuda
         <svg class="pildora__icono" viewBox="0 0 14 12"
@@ -438,6 +479,12 @@ const DATOS = {
     <Herramientas />
 
     <ComunidadExpertos />
+
+    {/* SEIS DE VEINTITRÉS. El recorte no es por peso —son ~4 KB de
+        texto— sino porque veintitrés tarjetas seguidas dejan de leerse
+        y pasan a ojearse, y estas están para leerse. El resto vive en
+        /expertos, a un clic y con la cuenta escrita en el enlace. */}
+    <Expertos limite={LIMITE_PORTADA} enlace={base + 'expertos'} />
 
     <Acerca />
 

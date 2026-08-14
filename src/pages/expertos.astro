@@ -1,0 +1,118 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — el panel de expertos, entero.
+
+   A donde lleva el «Ver todo el panel» de la portada. Se construye como
+   /comunidad y por las mismas razones: sin mar —el shader es una
+   pintura terminada, no una cabecera de listado— pero con el mismo
+   MATERIAL, papel de algodón y la luz de la hora local escrita por
+   luz.js. Así esto es una hoja clara a las nueve de la mañana y la
+   misma hoja de noche a las nueve, sin duplicar una regla de CSS.
+
+   ── ESTA PÁGINA SÍ ES INDEXABLE, y es la única decisión discutible ──
+   El resto del sitio lleva `noindex` porque sus plazos clínicos no
+   están verificados contra fuente primaria (ver README, «Antes de
+   publicar»). Aquí NO hay plazos: hay veintitrés síntesis de trabajos
+   publicados, cada una enlazando a su original comprobado. Nada que
+   pueda dar un dato equivocado en el peor momento.
+
+   Aun así se queda con `noindex` mientras el sitio entero lo lleve. Un
+   apartado suelto siendo el único encontrable de un borrador manda a
+   gente a una página sin la portada que la contextualiza, y el aviso de
+   borrador vive en la portada. Se levanta cuando se levante el del
+   sitio, no antes y no por separado.
+   ═══════════════════════════════════════════════════════════════════ */
+import '../estilos/estilos.css';
+import '../estilos/nuevas-secciones.css';
+import '../estilos/responsive.css';
+import Expertos from '../componentes/Expertos.astro';
+import { EXPERTOS } from '../datos/expertos.js';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const TITULO = 'Panel de expertos — Galene';
+const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
+  'publicados sobre sumision quimica, memoria, inmovilidad tonica y ' +
+  'atencion despues de una agresion. Cada una enlaza a su fuente.';
+---
+
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>{TITULO}</title>
+  <meta name="description" content={RESUMEN} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={TITULO} />
+  <meta property="og:description" content={RESUMEN} />
+  <meta name="theme-color" content="#2E4256" />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
+
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+</head>
+
+<body class="pagina-papel">
+
+  {/* La misma barra de /comunidad: sobre papel, sin lavado. El menú
+      móvil y la píldora de ayuda salen del mismo parcial que la
+      portada — ver BarraNav.astro sobre por qué la ayuda NO entra en
+      el desplegable. */}
+  <header class="barra barra--papel">
+    <a class="marca" href={base}>
+      <span class="marca__nombre">Galene</span>
+      <svg class="marca__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
+           aria-hidden="true" focusable="false">
+        <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
+                 S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
+              fill="none" stroke="currentColor" stroke-width="1.15"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      </svg>
+    </a>
+
+    <nav class="barra__nav" aria-label="Principal">
+      <details class="menu" name="barra-menu">
+        <summary class="menu__boton" aria-label="Abrir menu de navegacion">
+          <span class="menu__rayas" aria-hidden="true"></span>
+          <span class="menu__etiqueta">Menu</span>
+        </summary>
+        <div class="menu__panel">
+          <a class="barra__enlace" href={base + '#herramientas'}>Información</a>
+          <a class="barra__enlace" href={base + '#sin-hablar'}>Recursos</a>
+          <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
+          <a class="barra__enlace" href={base + 'expertos'} aria-current="page">Panel de expertos</a>
+        </div>
+      </details>
+
+      <a class="pildora" href={base + '#sin-hablar'}>
+        Buscar ayuda
+        <svg class="pildora__icono" viewBox="0 0 14 12"
+             aria-hidden="true" focusable="false">
+          <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
+                fill="none" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"
+                vector-effect="non-scaling-stroke" />
+        </svg>
+      </a>
+    </nav>
+  </header>
+
+  <main class="expertos-pagina">
+    <Expertos
+      nivel={1}
+      titulo="Lo que la evidencia permite decir"
+    />
+
+    <p class="expertos-pagina__volver">
+      <a href={base}>← Volver a la portada</a>
+    </p>
+  </main>
+
+  <script>import '../js/viewport.js';</script>
+  <script>import '../js/luz.js';</script>
+</body>
+</html>
