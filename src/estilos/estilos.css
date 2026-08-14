@@ -47,7 +47,24 @@
   --reguero:     #FFF4E2;
   --bruma:       #CDDCDE;
   --acento:      #C4703F;
+}
 
+/* ── Y ESTAS CUATRO REGLAS VAN FUERA DE `:root`, A PROPÓSITO ───────
+   Estuvieron DENTRO. La llave de `:root` se abre arriba y no se cerró
+   hasta después de la escala, así que `p { … }` se leía como `& p`
+   anidado y valía lo que vale `:root p` — especificidad (0,1,1).
+
+   Un reajuste de base que pesa más que una clase deja de ser una base:
+   pisa a los componentes en vez de servirles de suelo. Y lo hacía en
+   silencio, que es lo peor. Medido en `#acerca`: `.acerca__concepto` y
+   `.acerca__cierre` declaran `margin: var(--e-8) auto 0` —(0,1,0)— y
+   perdían contra el reajuste, así que las dos salían con `margin-top:
+   0px` y quedaban pegadas al bloque de arriba. El respiro de 112 px
+   que sí se veía entre los principios era el de `.acerca__principios`,
+   que es un <div> y por eso no lo tocaba la regla de `p`.
+
+   Fuera de `:root` el reajuste vuelve a valer (0,0,1) y cualquier
+   clase lo gana, que es como se pidió que funcionara.                */
 
 /* ── EL RITMO MANDA TAMBIÉN SOBRE EL NAVEGADOR ─────────────────────
    Al medir el resultado quedaban doce valores de margen en vez de los
@@ -75,6 +92,10 @@ input, select, textarea { margin: 0; }
    ocultos que se veían y un panel de aviso vacío pintado debajo del
    mapa. Un elemento marcado como oculto no se ve, y punto. */
 [hidden] { display: none !important; }
+
+/* Y aquí se retoma la raíz. Dos bloques `:root` se funden en uno; lo
+   que no se funde es la especificidad, y esa era la avería. */
+:root {
 
 /* ═══════════════════════════════════════════════════════════════════
    LA ESCALA — una sola, y todo sale de ella
@@ -697,24 +718,43 @@ body {
 
    El degradado se apaga del todo antes del canto de abajo: así no hay
    ninguna línea donde el velo termine, que es lo que lo distingue de
-   una banda. Se dibuja la mitad más alto que la barra (`bottom: -50%`)
-   para que la caída entera ocurra POR DEBAJO de la fila: detrás de las
-   letras el velo es opaco, y donde se apaga ya no hay letra ninguna.
+   una banda. La caída entera tiene que ocurrir POR DEBAJO de la fila:
+   detrás de las letras el velo es opaco, y donde se apaga ya no hay
+   letra ninguna.
+
+   ── Y LA MEDIDA VA EN REM, NO EN PORCENTAJE ───────────────────────
+   Estuvo en porcentajes (`bottom: -50%`, opaco hasta el 62 %) y eso
+   ataba el reparto a lo que midiera la fila. Medido a 1440: la barra
+   mide 76 px, el velo 114, y el 62 % caía en 71 — CINCO PÍXELES POR
+   ENCIMA del canto de la barra. O sea que la caída empezaba dentro de
+   la fila, y el renglón que pasaba por ahí salía a medio borrar justo
+   al lado del logotipo. En la captura se ve «La memoria incompleta no»
+   en gris fantasma pegado a la línea de «GALENE»: no parece una
+   veladura, parece texto roto.
+
+   Con `rem` el reparto es exacto y no depende del alto de la fila: el
+   velo baja 3 rem por debajo de la barra, se mantiene opaco durante
+   los primeros 12 px de esa cola —el aire que separa— y se apaga en
+   los 36 restantes. Detrás de la fila SIEMPRE opaco; el desvanecido,
+   siempre fuera.
 
    El color es `--papel`, que es donde se queda el degradado de la
    sección de lectura (ver `.herramientas`) y por tanto la superficie
-   que esta barra tiene debajo el 90 % del recorrido. */
+   que esta barra tiene debajo el 90 % del recorrido. Contra
+   `--papel-arriba` —las dos secciones de comunidad— la diferencia es
+   de tres puntos de luminancia repartidos en 36 px de rampa: no hay
+   canto que se vea. */
 .barra--flotante::before {
   content: "";
   position: absolute;
-  inset: 0 0 -50%;
+  inset: 0 0 -3rem;
   z-index: -1;
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    var(--papel) 0%,
-    var(--papel) 62%,
-    color-mix(in srgb, var(--papel) 55%, transparent) 82%,
+    var(--papel) 0,
+    var(--papel) calc(100% - 2.25rem),
+    color-mix(in srgb, var(--papel) 55%, transparent) calc(100% - 0.9rem),
     transparent 100%
   );
 }

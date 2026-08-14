@@ -306,36 +306,75 @@
   line-height: 1.6;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   ACERCA — UN SOLO EJE, Y ESA ES TODA LA REPARACIÓN
+
+   Medido a 1600 px, esta sección tenía CUATRO ejes verticales
+   compitiendo en 1400 px de alto: el rótulo y el título empezaban en
+   224, la entradilla en 960, el concepto —centrado por `margin: auto`—
+   en 449, el cierre —también centrado, pero con otro ancho— en 497, y
+   el texto de los principios en 272 porque el `padding` del <article>
+   lo metía 48 px por dentro de la raya que lo enmarcaba.
+
+   Cuatro ejes no son una composición, son cuatro decisiones tomadas
+   por separado. Aquí TODO cuelga del mismo canto izquierdo: el mismo
+   del que cuelgan `#comunidad-panel` y `#expertos`, que son las dos
+   secciones con las que esta comparte hoja. Lo único que se sale es
+   la entradilla, y solo mientras haya sitio de sobra para que salirse
+   signifique algo.
+   ═══════════════════════════════════════════════════════════════════ */
 .acerca {
   padding-block: clamp(5rem, 11vw, 9rem);
   background: var(--papel);
 }
 
+/* La columna de lectura la marca ya el `padding-inline` de `.acerca`
+   —`max(…, calc((100% - 72rem) / 2))`, o sea que la caja de contenido
+   nunca pasa de 72 rem—, así que ningún bloque de dentro repite el
+   tope ni se recentra: todos nacen en el mismo canto izquierdo y solo
+   declaran hasta dónde llegan.
+
+   Nada de `.acerca > *` para esto, por muy cómodo que sea: eso vale
+   (0,1,1) y le ganaría a cualquier clase de dentro, que es la avería
+   que acaba de costar esta sección entera (ver estilos.css, la nota de
+   las cuatro reglas que estaban dentro de `:root`). */
 .acerca__cabecera {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(17rem, 0.8fr);
-  column-gap: var(--e-8);
-  max-width: 72rem;
-  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem);
+  column-gap: var(--e-7);
 }
 
 .acerca__cabecera .seccion-rotulo,
 .acerca__cabecera h2 { grid-column: 1; }
+
+/* EL TÍTULO LLEVA MEDIDA PROPIA y no la que le toque a la columna. Sin
+   tope, al apilarse en una ventana media se estiraba a 1000 px con
+   letra de 60: veinticinco palabras en un renglón, que es exactamente
+   lo que una Didone de rotulación no aguanta. Con `ch` la medida es la
+   misma en las dos disposiciones, así que el título se lee igual antes
+   y después del salto. */
+.acerca__cabecera h2 { max-width: 17ch; }
+
+/* LA ENTRADILLA ES EL CONTRAPUNTO, colgada del canto de abajo del
+   título. `align-self: end` la alinea con la base del bloque de la
+   izquierda: es una nota al margen, no una segunda columna de texto
+   corrido, y por eso se posa donde el título termina en vez de
+   empezar arriba con él. */
 .acerca__cabecera > p:last-child {
   grid-column: 2;
   grid-row: 1 / span 2;
   align-self: end;
-  max-width: 48ch;
   color: rgb(var(--letra-rgb) / 72%);
   font-size: var(--t-md);
   line-height: 1.65;
 }
 
 /* El concepto prestado va antes de los principios y no compite con ellos:
-   ancho de lectura, mismo gris que el cuerpo, sin caja ni realce. */
+   ancho de lectura, mismo gris que el cuerpo, sin caja ni realce. Y en
+   el eje, no centrado: es el cuerpo del texto que sigue al título. */
 .acerca__concepto {
-  max-width: 60ch;
-  margin: var(--e-8) auto 0;
+  max-width: 62ch;
+  margin: var(--e-8) 0 0;
   color: rgb(var(--letra-rgb) / 72%);
   font-size: var(--t-md);
   line-height: 1.7;
@@ -347,16 +386,34 @@
   unicode-bidi: isolate;
 }
 
+/* ── LOS TRES PRINCIPIOS, A SANGRE ─────────────────────────────────
+   Las rayas de arriba y de abajo van de canto a canto de la columna,
+   así que el texto tiene que ir de canto a canto también: si la raya
+   empieza en 224 y la primera palabra en 272, la raya se lee como un
+   marco mal centrado. Antes pasaba eso en los dos extremos —48 px por
+   la izquierda y 48 por la derecha— porque el respiro entre columnas
+   estaba puesto como `padding` de cada artículo.
+
+   Ahora el respiro es la CALLE de la rejilla, y la raya divisoria va
+   en el centro exacto de la calle: el artículo se corre media calle a
+   la izquierda con `margin` para que su borde caiga ahí, y recupera el
+   texto con el mismo `padding`. Las tres medidas quedan iguales y las
+   dos rayas verticales, a la misma distancia de los dos textos que
+   separan. */
 .acerca__principios {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  max-width: 72rem;
-  margin: var(--e-8) auto 0;
+  column-gap: var(--e-7);
+  margin-top: var(--e-8);
   border-block: 1px solid rgb(var(--letra-rgb) / 14%);
 }
 
-.acerca__principios article { padding: var(--e-6); }
-.acerca__principios article + article { border-left: 1px solid rgb(var(--letra-rgb) / 14%); }
+.acerca__principios article { padding-block: var(--e-6); }
+.acerca__principios article + article {
+  margin-left: calc(var(--e-7) / -2);
+  padding-left: calc(var(--e-7) / 2);
+  border-left: 1px solid rgb(var(--letra-rgb) / 14%);
+}
 .acerca__numero { color: #b98e4f; font-variant-numeric: tabular-nums; }
 .acerca__principios h3 {
   margin: 0 0 var(--e-4);
@@ -370,29 +427,64 @@
   line-height: 1.65;
 }
 
+/* EL CIERRE CIERRA, y para cerrar tiene que rimar con lo que abrió:
+   misma letra que el título, mismo canto izquierdo, medida corta. Fue
+   un bloque centrado, y centrado no cerraba nada — flotaba debajo de
+   una parrilla alineada a la izquierda sin pertenecer a ella. */
 .acerca__cierre {
-  max-width: 30ch;
-  margin: var(--e-8) auto 0;
+  max-width: 34ch;
+  margin-top: var(--e-8);
   font-family: var(--tipo-titulo);
   font-size: var(--t-xl);
   line-height: 1.35;
-  text-align: center;
   text-wrap: balance;
+}
+
+/* ── CUÁNDO DEJA DE HABER SITIO PARA LA NOTA AL MARGEN ─────────────
+   La entradilla ocupa 24 rem y la calle otras 4.5: por debajo de
+   1200 px lo que queda para el título son 456 px con letra de 60,
+   o sea siete caracteres por renglón. Antes el salto estaba en 760 y
+   entre 760 y 1200 la sección se veía así, con el título partido en
+   seis líneas y la nota en columna de veinte caracteres.
+
+   Apilada, la nota deja de ser nota y pasa a ser el párrafo de
+   entrada: se pone en el eje, con medida de lectura y el respiro de
+   párrafo que le toca. */
+@media (max-width: 1200px) {
+  .acerca__cabecera { grid-template-columns: minmax(0, 1fr); }
+  .acerca__cabecera > p:last-child {
+    grid-column: 1;
+    grid-row: auto;
+    max-width: 54ch;
+    margin-top: var(--e-5);
+  }
 }
 
 @media (max-width: 760px) {
   .resonancias { grid-template-columns: 1fr; gap: var(--e-7); }
   .resonancia:nth-of-type(even) { translate: none; }
-  .comunidad-panel__entrada,
-  .acerca__cabecera { grid-template-columns: 1fr; }
+  .comunidad-panel__entrada { grid-template-columns: 1fr; }
   .comunidad-panel__enlace { grid-column: 1; grid-row: auto; justify-self: start; margin-top: var(--e-4); }
   .expertos__lista { grid-template-columns: 1fr; }
   .experto { min-height: 0; }
   .experto:nth-child(2) { translate: none; }
-  .acerca__cabecera > p:last-child { grid-column: 1; grid-row: auto; }
-  .acerca__principios { grid-template-columns: 1fr; }
-  .acerca__principios article { padding-inline: 0; }
+}
+
+/* ── Y LOS TRES PRINCIPIOS SE APILAN ANTES QUE EL RESTO ────────────
+   Tres columnas de texto corrido necesitan sitio: por debajo de 960 px
+   la calle se come lo suyo y cada medida baja de 30 caracteres —a 768
+   eran 24—, que es donde un párrafo deja de leerse y empieza a
+   deletrearse. Se apilan aquí y no en el salto general de 760 porque
+   el problema aparece antes.
+
+   En una columna la calle desaparece, y con ella el desplazamiento de
+   media calle que colocaba la raya vertical: si no se deshace, los
+   principios 2 y 3 quedan 36 px a la izquierda del 1. */
+@media (max-width: 960px) {
+  .acerca__principios { grid-template-columns: minmax(0, 1fr); }
   .acerca__principios article + article {
+    margin-left: 0;
+    padding-left: 0;
     border-top: 1px solid rgb(var(--letra-rgb) / 14%);
     border-left: 0;
   }
@@ -654,6 +746,22 @@
     transparent 100%);
   background-size: 1px 100%;
   background-repeat: no-repeat;
+}
+/* Apilados, esa raya deja de ser vertical. El degradado se gira y se
+   pega al canto de arriba, que es donde el salto de 960 pone el
+   `border-top`. Sin esto quedaba un filete de un pixel colgando a la
+   izquierda de los principios 2 y 3, separando nada. */
+@media (max-width: 960px) {
+  :root[data-tinta="clara"] .acerca__principios article + article {
+    border-top-color: transparent;
+    background-image: linear-gradient(90deg,
+      transparent 0%,
+      rgb(var(--letra-rgb) / 20%) 12%,
+      rgb(var(--letra-rgb) / 7%) 52%,
+      rgb(var(--letra-rgb) / 15%) 86%,
+      transparent 100%);
+    background-size: 100% 1px;
+  }
 }
 
 /* ── 5 · EL PIE DE LAS RESONANCIAS ─────────────────────────────────
