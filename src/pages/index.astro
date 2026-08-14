@@ -15,9 +15,99 @@ import '../estilos/estilos.css';
 import Mundo from '../componentes/Mundo.astro';
 import Boca from '../componentes/Boca.astro';
 import Herramientas from '../componentes/Herramientas.astro';
-import Cierre from '../componentes/Cierre.astro';
+import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
+import Acerca from '../componentes/Acerca.astro';
+import '../estilos/nuevas-secciones.css';
+import '../estilos/responsive.css';
+/* Las mismas ocho palabras que pintan las fichas. Ver la cabecera de
+   datos/glosario.js: un solo sitio para las tres cosas que las usan. */
+import { TERMINOS } from '../datos/glosario.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+/* ── LAS URLS ABSOLUTAS, COMPUESTAS Y NO ESCRITAS A MANO ────────────
+   `Astro.site` es lo que hay en astro.config.mjs; `base` es el prefijo
+   de GitHub Pages. Un canonical o una `og:image` escritos a mano se
+   quedan apuntando a localhost el día que alguien pruebe en local y
+   copie, y eso en una etiqueta que no se ve al mirar la página es un
+   fallo que dura meses. `new URL` además normaliza las barras. */
+const absoluta = (ruta) => new URL(base + ruta, Astro.site).href;
+const canonica = absoluta('');
+const portada  = absoluta('arte/1024/manglar-enterrado-a.webp');
+
+const TITULO = 'Qué es la sumisión química: cómo reconocerla y qué hacer';
+const RESUMEN = 'Qué es la sumisión química, en qué se diferencia la ' +
+  'proactiva de la oportunista y por qué sin capacidad de decidir no hay ' +
+  'consentimiento. Qué se puede hacer después, hasta cuándo, y dónde ' +
+  'pedir ayuda en Colombia.';
+
+/* ── EL GLOSARIO, TAMBIÉN EN DATOS ─────────────────────────────────
+   Las mismas ocho palabras que están en Herramientas.astro, declaradas
+   como `DefinedTermSet`. Es el tipo que schema.org tiene para
+   exactamente esto —un conjunto de términos con su definición— y no
+   hace falta inventarse nada.
+
+   NO SE MARCA COMO `MedicalWebPage`, y esa es la decisión importante.
+   Sería el tipo más goloso —habilita presentaciones especiales en
+   buscadores— y sería mentir: ese tipo declara contenido médico, y esta
+   página dice de sí misma, en su propio HTML, que sus plazos clínicos
+   todavía no los ha verificado nadie con criterio. Marcado estructurado
+   que afirma más de lo que el texto sostiene es exactamente la clase de
+   SEO que acaba en una penalización, y aquí además sería deshonesto con
+   quien lo lea.
+
+   ── Y YA NO ES UNA COPIA A MANO ────────────────────────────────────
+   Esto fue una lista de ocho pares escritos aquí, con una nota que
+   avisaba de que era un ESPEJO del HTML y que había que tocar los dos a
+   la vez. Un espejo que hay que sincronizar a mano es un espejo que un
+   día miente, y el que miente en silencio es siempre este: nadie ve los
+   datos estructurados al mirar la página.
+
+   Ahora sale del mismo fichero que pinta las fichas —
+   src/datos/glosario.js— así que no hay nada que sincronizar. La
+   descripción junta la frase corta y el matiz: en la página el matiz
+   está plegado, pero un buscador no pliega nada y la definición
+   completa es la buena. */
+const GLOSARIO = TERMINOS.map((t) => [
+  t.palabra,
+  t.larga ? `${t.corta} ${t.larga}` : t.corta,
+]);
+
+const DATOS = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': canonica,
+      url: canonica,
+      name: TITULO,
+      description: RESUMEN,
+      inLanguage: 'es-CO',
+      primaryImageOfPage: portada,
+      /* El `about` es el tema, y el `mainEntity` es lo que la página
+         contiene de verdad: el conjunto de términos. */
+      about: { '@type': 'Thing', name: 'Sumisión química' },
+      mainEntity: { '@id': canonica + '#glosario' },
+    },
+    {
+      '@type': 'DefinedTermSet',
+      '@id': canonica + '#glosario',
+      name: 'Las palabras que vas a oír',
+      inLanguage: 'es-CO',
+      hasDefinedTerm: GLOSARIO.map(([nombre, definicion], i) => ({
+        '@type': 'DefinedTerm',
+        name: nombre,
+        description: definicion,
+        inDefinedTermSet: { '@id': canonica + '#glosario' },
+        /* Ancla real, y de la FICHA, no del bloque: `#t-consentimiento`
+           existe en la página y js/palabras.js la abre al llegar. Un
+           `url` que no aterriza en nada es un dato roto; uno que
+           aterriza en una caja cerrada es peor, porque parece que sí. */
+        url: canonica + '#t-' + TERMINOS[i].id,
+      })),
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -26,28 +116,113 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <title>Galene — Sumisión química: qué hacer, y hasta cuándo</title>
-  <meta name="description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo. Ventanas de tiempo y rutas de atención en Colombia." />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo" />
-  <meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo." />
-  <meta name="theme-color" content="#2E4256" />
-  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
-  <meta property="og:image" content={base + 'arte/1024/manglar-enterrado-a.webp'} />
+  {/* EL TÍTULO EMPIEZA POR LA PREGUNTA Y NO POR LA MARCA. «Galene —»
+      delante gastaba los primeros caracteres —los únicos que se leen
+      enteros en un resultado— en una palabra que nadie busca. La marca
+      se va al final, donde sigue apareciendo y ya no estorba. Y la
+      frase es la misma que encabeza la sección (`Qué es la sumisión
+      química`), porque el título y el H2 tienen que contestar la misma
+      pregunta o uno de los dos está mintiendo sobre la página. */}
+  <title>{TITULO} · Galene</title>
+  <meta name="description" content={RESUMEN} />
 
-  {/* BORRADOR: mientras las ventanas médicas no estén verificadas contra
-      fuente primaria, esto no debe ser encontrable. */}
+  {/* La canónica es lo que impide que la versión con barra final, la
+      del dominio de pruebas y la de local se cuenten como tres páginas
+      distintas con el mismo texto. */}
+  <link rel="canonical" href={canonica} />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Galene" />
+  <meta property="og:locale" content="es_CO" />
+  <meta property="og:url" content={canonica} />
+  <meta property="og:title" content={TITULO} />
+  <meta property="og:description" content={RESUMEN} />
+  <meta property="og:image" content={portada} />
+  {/* El alt de la imagen social: quien recibe el enlace por un lector
+      de pantalla oye esto y nada más. */}
+  <meta property="og:image:alt" content="Un manglar al amanecer, pintado en acuarela." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={TITULO} />
+  <meta name="twitter:description" content={RESUMEN} />
+  <meta name="twitter:image" content={portada} />
+  <meta name="theme-color" content="#2E4256" />
+
+  {/* ── EL DATO ESTRUCTURADO ────────────────────────────────────────
+      `WebPage` + `DefinedTermSet`, compuestos arriba en el frontmatter.
+      `set:html` y no una plantilla de texto: Astro escribe el JSON tal
+      cual, sin escapar las comillas, que es lo que un <script> de tipo
+      ld+json necesita. */}
+  <script type="application/ld+json" set:html={JSON.stringify(DATOS)} />
+
+  {/* ── Y AQUÍ ESTÁ EL FRENO, QUE NO ES UN DESCUIDO ─────────────────
+      Todo lo de arriba está bien puesto y no va a servir de nada
+      mientras esta línea siga aquí: `noindex` le dice a un buscador que
+      no incluya la página, y ninguna otra etiqueta discute con eso.
+
+      Y tiene que seguir. Los plazos médicos del reloj todavía no los ha
+      verificado nadie con criterio clínico —lo dice la propia página, en
+      el bloque de fuentes—, y una página sobre qué hacer después de una
+      agresión no puede ser encontrable con datos sin confirmar. Cuando
+      esa verificación exista, se borra esta línea y el trabajo de
+      encontrabilidad ya está hecho: por eso se hace ahora y no después.
+      Ver la nota de BORRADOR en el bloque de fuentes de
+      Herramientas.astro. */}
   <meta name="robots" content="noindex, nofollow" />
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
-  <link rel="preload" as="image" type="image/webp" fetchpriority="high"
-        media="(max-width: 700px)"
-        href={base + 'arte/mobile/manglar-v2.webp'} />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
 
-  {/* La clase viene en el HTML, no la añade JavaScript después: así no
-      existe un fotograma en que el contenido aparece y vuelve a taparse. */}
-  <noscript><style>.cargando .cargador{display:none}.cargando main,.cargando .mundo{visibility:visible!important;opacity:1!important}</style></noscript>
+  {/* El móvil usa la misma escena WebGL que el escritorio. Estas cuatro
+      láminas forman el primer cuadro y avanzan mientras llega el motor. */}
+  {['mar-lejano.webp', 'mar-medio.webp', 'mar-cercano.webp', 'manglar-v2.webp'].map((lamina) => (
+    <link rel="preload" as="image" type="image/webp" fetchpriority="high"
+          media="(max-width: 700px)" href={base + 'arte/1024/' + lamina} />
+  ))}
+
+  {/* SIN JAVASCRIPT LA BARRA SE VE, Y SE VE SIEMPRE.
+
+      La barra ya no está dentro del hero: vive pegada al viewport y solo
+      baja cuando la pintura se ha ido (ver `.barra--flotante` en
+      estilos.css y js/barra.js). Ese estado de partida —arriba, fuera de
+      cuadro— lo escribe el CSS, no el JS: si lo pusiera el JS habría un
+      cuadro con la barra encima del mar antes de que el módulo corriera.
+
+      El precio de esa decisión es que sin JavaScript nadie la baja nunca,
+      y este sitio no puede quedarse sin navegación por eso. Aquí se paga:
+      cuando no hay scripting, la barra se queda puesta y quieta, que es
+      exactamente como estaba antes de este cambio. `!important` porque
+      esta hoja tiene que ganarle a la regla de estado sin depender de en
+      qué orden acabe inyectando Astro la suya. */}
+  {/* SIN JAVASCRIPT EL GLOSARIO SE LEE ENTERO.
+
+      Dos cosas, y las dos por la misma razón que la barra: el estado
+      «plegado» lo pone el CSS —si lo pusiera el JS habría un cuadro con
+      las ocho fichas abiertas y la sección daría un salto al cargar—, y
+      eso obliga a desplegarlo aquí cuando no hay quien lo abra.
+
+      Las fichas se abren todas. El matiz de cada palabra estaba en el
+      HTML desde el principio (js/palabras.js no escribe contenido, solo
+      decide qué se ve), así que desplegarlas no revela nada nuevo:
+      enseña lo que ya estaba. Y con todo desplegado, la marca de «hay
+      más» sobra y el botón deja de fingir que se pulsa.
+
+      Basta con abrir la fila de la rejilla del pliegue: el resto de la
+      ficha —el grano, el charco, el trazo del canto— es la misma con
+      script y sin él. */}
+  <noscript><style>
+    .cargando .cargador { display: none !important; }
+    .cargando body > main,
+    .cargando body > .mundo { visibility: visible !important; opacity: 1 !important; }
+    .barra--flotante {
+      translate: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    .glosario__pliegue { grid-template-rows: 1fr !important; }
+    .glosario__mas { display: none !important; }
+    .glosario__boton { cursor: default !important; }
+  </style></noscript>
 </head>
 
 <body>
@@ -65,78 +240,84 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <span class="cargador__estado">Preparando la acuarela</span>
   </div>
 
+  {/* ── LA BARRA, FUERA DEL CUADRO ──────────────────────────────────
+      Estuvo dentro del hero, como fila 1 de su rejilla, y ahí el
+      argumento era que pertenecía a la pintura. Ahora no aparece hasta
+      que la pintura se ha ido: el hero queda con el rótulo solo —que es
+      lo que la referencia pide— y la navegación llega cuando empieza a
+      haber sitio al que navegar.
+
+      Al salir del hero recupera el landmark `banner`, que dentro no
+      tenía: un <header> solo cuenta como banner cuando cuelga del
+      <body>. Y va PRIMERA en el documento porque es lo que espera quien
+      navega con lector de pantalla, aunque en pantalla llegue tarde.
+
+      Su sitio en pantalla, su fondo y quién la baja: `.barra--flotante`
+      en estilos.css y js/barra.js. */}
+  <header class="barra barra--flotante">
+    {/* EL LOGOTIPO. La palabra y, debajo, un filete de ola del ancho
+        exacto de la palabra. La ola va en SVG EN LÍNEA y con
+        `stroke: currentColor` a propósito: así hereda la tinta de la
+        hora igual que la letra, y a las 20:00 se aclara con ella. Una
+        imagen no podría — sería un trazo oscuro fijo sobre un papel
+        que ya se volvió noche. */}
+    <a class="marca" href="#mar">
+      <span class="marca__nombre">Galene</span>
+      <svg class="marca__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
+           aria-hidden="true" focusable="false">
+        <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
+                 S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
+              fill="none" stroke="currentColor" stroke-width="1.15"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      </svg>
+    </a>
+
+    <nav class="barra__nav" aria-label="Principal">
+      <a class="barra__enlace" href="#herramientas">Información</a>
+      {/* «Recursos» apunta a #sin-hablar —«Pedir ayuda sin hablar»,
+          la lista de canales—, que es la única ancla del sitio que
+          de verdad contiene recursos. No se inventa ninguna ruta: si
+          ese bloque cambiara de id, este enlace se queda sin destino
+          y hay que traerlo aquí. */}
+      <a class="barra__enlace" href="#sin-hablar">Recursos</a>
+      {/* «Comunidad» es el ÚNICO enlace de la barra que sale de la
+          portada, y por eso lleva ruta compuesta con la base y no
+          un ancla: `#algo` viaja dentro de esta página, `comunidad`
+          es otra. En móvil se va con los otros dos rótulos (ver el
+          bloque de `.barra__enlace` a 700 px en estilos.css): la
+          barra del teléfono guarda el logotipo y la píldora, y
+          nada más. */}
+      <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
+      <a class="pildora" href="#sin-hablar">
+        Buscar ayuda
+        <svg class="pildora__icono" viewBox="0 0 14 12"
+             aria-hidden="true" focusable="false">
+          <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
+                fill="none" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"
+                vector-effect="non-scaling-stroke" />
+        </svg>
+      </a>
+    </nav>
+  </header>
+
   <Mundo />
 
   <main>
     <section class="hero" id="mar">
 
-      {/* ── LA BARRA ────────────────────────────────────────────────────
-          Va DENTRO del hero y no antes de <main>, y no es un descuido:
-          `.hero` es la rejilla que reparte la altura de la pantalla
-          (auto 1fr auto auto) y el paisaje se agacha o se levanta según
-          dónde acabe el bloque de texto. Una barra flotando por fuera
-          de esa rejilla se solaparía con la fila 2 en cuanto la ventana
-          fuera baja, que es exactamente el caso que este hero ya sabe
-          resolver. El precio es que <header> aquí dentro NO es el
-          landmark `banner` —solo lo es cuando cuelga del <body>—; el
-          <nav> sí conserva el suyo, que es el que se usa para saltar.
+      {/* (LA BARRA YA NO ESTÁ AQUÍ. Estuvo dentro de esta rejilla como
+          fila 1 y el argumento era bueno: `.hero` reparte la altura de
+          la pantalla y una barra por fuera se solapaba con la fila 2 en
+          cuanto la ventana era baja. Lo que lo dejó sin efecto es que
+          ahora la barra NO está en pantalla mientras se ve el hero, así
+          que no hay nada con lo que solaparse.
 
-          Sin fondo ni caja: la barra se para sobre la pintura, como
-          todo lo demás del hero. Lo que la hace legible al crepúsculo
-          es el mismo lavado que protege el título, no una banda opaca
-          — ver `.barra::before` en estilos.css. */}
-      <header class="barra">
-        {/* EL LOGOTIPO. La palabra y, debajo, un filete de ola del ancho
-            exacto de la palabra. La ola va en SVG EN LÍNEA y con
-            `stroke: currentColor` a propósito: así hereda la tinta de la
-            hora igual que la letra, y a las 20:00 se aclara con ella. Una
-            imagen no podría — sería un trazo oscuro fijo sobre un cielo
-            que ya se volvió noche. */}
-        <a class="marca" href="#mar">
-          <span class="marca__nombre">Galene</span>
-          <svg class="marca__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
-               aria-hidden="true" focusable="false">
-            <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
-                     S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
-                  fill="none" stroke="currentColor" stroke-width="1.15"
-                  stroke-linecap="round" vector-effect="non-scaling-stroke" />
-          </svg>
-        </a>
-
-        <nav class="barra__nav" aria-label="Principal">
-          <a class="barra__enlace" href="#herramientas">Información</a>
-          {/* «Recursos» apunta a #sin-hablar —«Pedir ayuda sin hablar»,
-              la lista de canales—, que es la única ancla del sitio que
-              de verdad contiene recursos. No se inventa ninguna ruta: si
-              ese bloque cambiara de id, este enlace se queda sin destino
-              y hay que traerlo aquí. */}
-          <a class="barra__enlace" href="#sin-hablar">Recursos</a>
-          {/* «Comunidad» es el ÚNICO enlace de la barra que sale de la
-              portada, y por eso lleva ruta compuesta con la base y no
-              un ancla: `#algo` viaja dentro de esta página, `comunidad`
-              es otra. En móvil se va con los otros dos rótulos (ver el
-              bloque de `.barra__enlace` a 700 px en estilos.css): la
-              barra del teléfono guarda el logotipo y la píldora, y
-              nada más. */}
-          <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
-          {/* LA PÍLDORA es la ruta a la ayuda y por eso es lo último de
-              la fila —lo último que se lee es lo que se recuerda— y lo
-              único con contorno. Va a #salir, «Que alguien venga por
-              mí», que es la primera puerta de la misma sección: mandarla
-              al principio de #herramientas la obligaría a leerse la
-              definición antes de poder pedir que alguien vaya. */}
-          <a class="pildora" href="#salir">
-            Buscar ayuda
-            <svg class="pildora__icono" viewBox="0 0 14 12"
-                 aria-hidden="true" focusable="false">
-              <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
-                    fill="none" stroke="currentColor" stroke-width="1.3"
-                    stroke-linecap="round" stroke-linejoin="round"
-                    vector-effect="non-scaling-stroke" />
-            </svg>
-          </a>
-        </nav>
-      </header>
+          La fila 1 se queda declarada y vacía —colapsa a cero— y el
+          bloque de texto sube esa media altura de barra. Eso no
+          empeora el lavado: sube, y el problema medido de este hero
+          está abajo, en las raíces del manglar. Ver la nota del lastre
+          en `.hero__texto`.) */}
 
       {/* SEO: el H1 lleva la FRASE DE BÚSQUEDA, no la marca. Nadie
           busca "Galene"; buscan "sumisión química qué hacer". La marca
@@ -256,12 +437,10 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
     <Herramientas />
 
-    {/* Y EL CIERRE, después de todo. La página no terminaba, se
-        cortaba: ahora la hoja se descuelga y vuelve a aparecer el mar,
-        que es por donde se entró. También sin palabras — ver
-        Cierre.astro, donde está el razonamiento de por qué no lleva
-        una frase de despedida ni repite la de las 72 horas. */}
-    <Cierre />
+    <ComunidadExpertos />
+
+    <Acerca />
+
   </main>
 
   {/* (AQUÍ IBAN LOS DOS LIENZOS DEL ENTE. La idea del humo se retiró.
@@ -308,19 +487,34 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   {/* La entrada va PRIMERA para que la clase se ponga antes de que
       el mar pinte su primer cuadro. Si llegara después, el mundo
       aparecería montado y luego se desharía para volver a montarse. */}
+  <script>import '../js/viewport.js';</script>
   <script>import '../js/entrada.js';</script>
-  <script>import '../js/hero.js';</script>
+  {/* La barra. Isla propia, y de las que más falta le hace: lo único
+      que hace este módulo es bajarla cuando el mar se ha ido, y si se
+      cayera con el mar la página se quedaría sin navegación por un
+      fallo en la pintura. */}
+  <script>import '../js/barra.js';</script>
+  <script>import '../js/main.js';</script>
   <script>import '../js/paralaje.js';</script>
   {/* El descenso. Isla aparte por la misma razón que las demás: si el
       mar o el paralaje se caen, los bloques de ayuda siguen llegando
       con su tiempo, y si se cae ESTE, la página de abajo se ve entera
       y quieta — que es su estado por defecto, no un modo degradado. */}
   <script>import '../js/desplazamiento.js';</script>
-  {/* Las escenas: la boca, el reloj y el cierre. Isla propia — si esto
-      no llega, las tres se ven en su estado final, quietas y enteras.
-      No es un modo degradado: es la misma página sin el tiempo. */}
+  {/* The remaining entrance scene keeps its own isolated module. */}
   <script>import '../js/escenas.js';</script>
+  <script>import '../js/mapa-herramientas.js';</script>
   <script>import '../js/herramientas.js';</script>
-  <script>import '../js/decidir.js';</script>
+  {/* El glosario. Isla propia: si esto no llega, las ocho fichas se
+      leen enteras y quietas —el <noscript> de arriba las abre— y lo
+      único que se pierde es poder buscar. Ninguna palabra de la sección
+      depende de este fichero. */}
+  <script>import '../js/palabras.js';</script>
+  {/* (Aquí iba `decidir.js`, el reloj de la sección «¿Pudiste decidir?».
+      La sección se retiró de la página, así que su isla se va con ella:
+      dejarla cargando sería bajarse un módulo que recorre 300 vh
+      buscando una sección que ya no existe. El fichero sigue en
+      src/js/ y el componente en src/componentes/Decidir.astro — no se
+      han borrado, solo desenchufado.) */}
 </body>
 </html>

@@ -31,6 +31,22 @@ const fuentesListas = document.fonts?.ready?.catch?.(() => undefined)
 const limite = new Promise((resolver) => setTimeout(resolver, MAXIMO));
 
 let cerrado = false;
+function secarPintura() {
+  if (quieto.matches) return;
+  raiz.classList.add('entrando');
+  let terminado = false;
+  const eventos = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'];
+  const terminarSecado = () => {
+    if (terminado) return;
+    terminado = true;
+    raiz.classList.remove('entrando');
+    for (const evento of eventos) removeEventListener(evento, terminarSecado);
+  };
+  for (const evento of eventos)
+    addEventListener(evento, terminarSecado, { passive: true, once: true });
+  setTimeout(terminarSecado, 2000);
+}
+
 async function terminar() {
   if (cerrado) return;
   cerrado = true;
@@ -39,6 +55,7 @@ async function terminar() {
   raiz.classList.add('contenido-listo');
   raiz.classList.remove('cargando');
   raiz.classList.add('entrada-hecha');
+  secarPintura();
   cargador?.setAttribute('aria-hidden', 'true');
   dispatchEvent(new CustomEvent('galene:contenido-listo'));
   setTimeout(() => cargador?.remove(), quieto.matches ? 0 : 620);

@@ -208,12 +208,21 @@ export function montarMapa(host) {
     </div>`;
   }
 
+  /* CUÁNTOS PUNTOS CABEN EN UN MAPA ANTES DE QUE DEJE DE SER UN MAPA.
+     Bogotá devuelve más de quinientos sitios en once kilómetros, y
+     pintados todos a la vez el resultado es una mancha: no se distingue
+     un hospital de un consultorio y no se ve la calle por debajo. Se
+     dibujan los CIEN MÁS CERCANOS al centro de la búsqueda —que ya
+     vienen ordenados así— y se dice en el listado cuántos hay en total.
+     Quien quiera ver otros mueve el mapa y cambia el centro. */
+  const TOPE_PUNTOS = 100;
+
   function puntosEmergencia() {
     /* Los verificados por nosotros van SIEMPRE, aunque su capa esté
        apagada nunca se esconden por error: se filtran igual que el
        resto, pero se dibujan encima y con otra marca. */
     const propios = porCiudad(est.ciudad.id).filter((l) => est.capas.has(l.capa));
-    const ajenos  = est.osm.filter((l) => est.capas.has(l.capa));
+    const ajenos  = est.osm.filter((l) => est.capas.has(l.capa)).slice(0, TOPE_PUNTOS);
     for (const l of ajenos) {
       L.marker(l.ll, { icon: icono(capaPor(l.capa).pigmento), keyboard: true,
         alt: `${capaPor(l.capa).nombre}: ${l.nombre}` })
@@ -259,16 +268,30 @@ export function montarMapa(host) {
     const propios = porCiudad(est.ciudad.id).filter((l) => est.capas.has(l.capa));
     const ajenos  = est.osm.filter((l) => est.capas.has(l.capa)).slice(0, 40);
 
+    /* Antes de que la sección despierte no se ha preguntado nada, así
+       que no se puede decir «no hay nada»: se diría de un sitio donde
+       ni se ha mirado, y en esta página una frase así se lee como una
+       puerta cerrada. */
+    if (!est.despierto && !propios.length) {
+      return `<p class="mapa__vacio">Los sitios de atención aparecen aquí en
+        cuanto el mapa cargue. <strong>El 123 de arriba no necesita esperar
+        a nada.</strong></p>`;
+    }
     if (est.cargando) {
       return `<p class="mapa__vacio">Preguntando a OpenStreetMap qué hay en
         ${esc(donde())}… <strong>puede tardar unos segundos.</strong>
         El 123 de arriba funciona ya.</p>`;
     }
     if (est.fallo && !propios.length) {
+      /* OpenStreetMap se consulta contra servidores gratuitos que a
+         veces están a rebosar. Reintentar suele bastar —y a esa hora
+         nadie va a recargar la página entera para averiguarlo—, así que
+         el botón está aquí mismo, debajo de la razón del fallo. */
       return `<p class="mapa__vacio mapa__vacio--malo">
         No se pudo traer el listado de ${esc(donde())}: ${esc(est.fallo)}.
         <strong>El 123 funciona igual</strong>, y en cualquier urgencia de un
-        hospital tienen que atenderte sin denuncia y sin cita.</p>`;
+        hospital tienen que atenderte sin denuncia y sin cita.<br>
+        <button type="button" class="enlace-boton" data-reintentar="1">Volver a intentarlo</button></p>`;
     }
     if (!propios.length && !ajenos.length) {
       return `<p class="mapa__vacio">No aparece nada en ${esc(donde())}
@@ -303,7 +326,7 @@ export function montarMapa(host) {
       <p class="mapa__cuenta">${est.osm.length > ajenos.length
           ? `Los ${ajenos.length} sitios más cercanos ${est.ciudad.propia ? 'a ti' : 'al centro'}, de ${est.osm.length} en ${esc(donde())}`
           : `${propios.length + ajenos.length} sitios en ${esc(donde())}`}.
-        Están todos en el mapa.
+        En el mapa están los ${Math.min(est.osm.length, TOPE_PUNTOS)} más cercanos.
         <strong>Llama antes de ir si puedes</strong>: los horarios de
         OpenStreetMap los pone gente voluntaria y pueden estar viejos.
         ${est.truncado ? 'Y puede faltar alguno: la zona tiene más de los que caben en una consulta.' : ''}</p>
@@ -686,6 +709,18 @@ export function montarMapa(host) {
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(mapa);
     grupo = L.layerGroup().addTo(mapa);
 
+    /* LEAFLET MIDE UNA VEZ Y NO VUELVE A MIRAR. Si el contenedor cambia
+       de tamaño después —y aquí cambia: el mapa nace en diferido, con la
+       sección a medio componer y con un ancho que todavía depende de la
+       tipografía que está cargando— se queda pidiendo las teselas del
+       tamaño viejo y deja media caja en blanco. Pasó, y se veía como un
+       mapa roto. Se le avisa cada vez que la caja cambia. */
+    let remedir = null;
+    new ResizeObserver(() => {
+      clearTimeout(remedir);
+      remedir = setTimeout(() => mapa.invalidateSize({ animate: false }), 120);
+    }).observe(lienzo);
+
     mapa.on('focus', () => mapa.scrollWheelZoom.enable());
     mapa.on('blur',  () => mapa.scrollWheelZoom.disable());
     mapa.on('click', (e) => { if (est.marcando) ponerPunto(e.latlng); });
@@ -763,6 +798,7 @@ export function montarMapa(host) {
     if (e.target.closest('[data-limpiar]')) {
       marcas.limpiar(est.modo); pintarPuntos(); pintarListado(); return;
     }
+    if (e.target.closest('[data-reintentar]')) { traerAyuda(); return; }
     if (e.target.closest('[data-mover]')) { empezarMarca(); return; }
     if (e.target.closest('[data-cancelar]')) { cancelarMarca(); pintarPuntos(); return; }
     if (e.target.closest('[data-importar]')) {

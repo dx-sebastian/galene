@@ -164,16 +164,31 @@ input, select, textarea { margin: 0; }
 
      `--letra-rgb` va en componentes sueltas para poder pedir la misma
      tinta con cualquier transparencia sin duplicar el color. */
-  --papel:        #F3F5F4;
-  --papel-arriba: #E7EDEC;
-  --papel-alto:   #FFFFFF;   /* tarjetas y campos, lo que sobresale */
+  /* ── EL PAPEL ES MARFIL, NO BLANCO FRÍO ───────────────────────────
+     Estuvo en #F3F5F4: un blanco con verde y azul dentro. Sobre ese
+     soporte cualquier aguada cálida se apaga —el papel le está restando
+     su propio color— y lo que queda es la sensación de hoja de impresora
+     seca. Ningún acuarelista pinta sobre eso; se pinta sobre algodón,
+     que es marfil.
+
+     Estos cuatro llevan el mismo grano de amarillo. No es un color
+     nuevo: es el papel de la referencia de marca, el mismo sobre el que
+     se apoyan sus aguadas de durazno y lavanda. Con él las capas de
+     abajo ya no tienen que pelearse con el fondo para leerse como
+     pigmento.
+
+     Medido contra `--letra` (#16222E): 15.8:1, o sea que el cambio no
+     le cuesta contraste a nadie — el blanco frío daba 15.9. */
+  --papel:        #F8F5F0;
+  --papel-arriba: #F1ECE4;
+  --papel-alto:   #FFFDFA;   /* tarjetas y campos, lo que sobresale */
   /* ESTOS DOS ESTABAN ROTOS: `--papel-hondo: var(--papel-hondo)` es una
      variable definida como sí misma, o sea inválida en tiempo de
      cálculo, o sea que TODO lo que pedía un panel hundido o la letra
      del botón principal se quedaba sin valor con papel claro. Se veía
      poco porque casi todos esos fondos caen sobre papel claro de todas
      formas; el mapa, que se apoya en los dos, lo destapó. */
-  --papel-hondo:  #EAEFEE;   /* paneles hundidos */
+  --papel-hondo:  #F0EBE3;   /* paneles hundidos */
   --letra-rgb:    22 34 46;
   --letra:        rgb(var(--letra-rgb));
   --contra:       #FFFFFF;   /* letra sobre el botón principal */
@@ -183,6 +198,30 @@ input, select, textarea { margin: 0; }
   --tinta-suave:   #1C2A30b3;
   --lamina:        #10202699;
   --lamina-tinta:  var(--contra);
+
+  /* ── EL PAPEL QUE BAJA DEL CIELO ──────────────────────────────────
+     Papel teñido con la bruma de la hora. Es el color con el que
+     empiezan las dos cosas que descienden sobre el mar —la hoja de la
+     boca y el canto superior de la sección— para que el cambio de
+     pintura a documento no ocurra en una línea, sino a lo largo de una
+     caída.
+
+     VA AQUÍ Y NO EN CADA SITIO porque son dos elementos distintos que
+     tienen que empezar EXACTAMENTE en el mismo color: la hoja de la boca
+     se solapa con la sección (ver el margen negativo de `.boca`), y un
+     par de puntos de diferencia entre las dos dibuja justo el escalón
+     que este degradado existe para no tener.
+
+     EL 52 % SALE DE MEDIR, no de elegir. Por debajo del 40 el tinte no
+     se distingue del papel y esto vuelve a ser un borde; por encima del
+     65 la franja se lee como una BANDA de color con su propio canto
+     abajo — o sea otro borde, en otro sitio. En 52 el cielo está y no
+     se puede señalar dónde acaba.
+
+     `--bruma` la reescribe js/hora.js cada 30 s. El `color-mix` se
+     resuelve en el momento de usarse, así que esto sigue a la hora sin
+     que nadie lo recalcule. */
+  --papel-cielo: color-mix(in srgb, var(--bruma) 52%, var(--papel-arriba));
 
   --horizonte: 56%;
 
@@ -320,9 +359,8 @@ body {
   text-shadow: 0 1px 3px rgb(18 35 48 / 30%);
 }
 
-/* En móvil la acuarela se compone una vez y luego se mueve por capas de
-   compositor. Conserva vida visible sin descargar ni compilar el shader
-   de escritorio: agua, copa y aves tienen relojes distintos. */
+/* Respaldo animado si WebGL no existe. Una visita normal —también en
+   móvil— pinta el canvas completo y nunca activa estas reglas. */
 .hero-estatico .mundo::before {
   content: "";
   position: absolute;
@@ -358,39 +396,6 @@ body {
   animation: mangle-movil 8.8s ease-in-out infinite;
 }
 
-.movil-vida { display: none; }
-.hero-estatico .movil-vida {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  display: block;
-  overflow: hidden;
-}
-.movil-ave {
-  position: absolute;
-  display: block;
-  width: clamp(54px, 18vw, 78px);
-  height: auto;
-  aspect-ratio: 1.5;
-  left: 108%;
-  filter: brightness(var(--vuelo-brillo, 0.8)) saturate(0.34) contrast(0.78);
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: garza-movil 19s linear infinite;
-}
-.movil-ave--alta {
-  top: 22%;
-  /* Ya está cruzando al abrir: el movimiento se reconoce sin esperar. */
-  animation-delay: -9s;
-}
-.movil-ave--baja {
-  top: 31%;
-  width: clamp(38px, 13vw, 56px);
-  animation-duration: 25s;
-  animation-delay: -4s;
-  opacity: 0.42;
-}
-
 @keyframes agua-movil {
   0%   { transform: translate3d(-2.8%, 0, 0) scale(1.04, 0.98); opacity: 0.42; }
   48%  { transform: translate3d(1.4%, 1.2%, 0) scale(1.07, 1.02); opacity: 0.64; }
@@ -401,19 +406,9 @@ body {
   45%      { transform: rotate(0.46deg) skewX(0.24deg) translate3d(1.5px, -0.5px, 0); }
   72%      { transform: rotate(0.12deg) skewX(0.08deg) translate3d(0.5px, 0, 0); }
 }
-@keyframes garza-movil {
-  0%   { transform: translate3d(0, 5px, 0) rotate(2deg); opacity: 0; }
-  8%   { opacity: 0.58; }
-  46%  { transform: translate3d(-67vw, -13px, 0) rotate(-1deg); opacity: 0.58; }
-  74%  { opacity: 0.45; }
-  100% { transform: translate3d(-138vw, 7px, 0) rotate(1deg); opacity: 0; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hero-estatico .mundo::before,
-  .hero-estatico .mundo::after,
-  .hero-estatico .movil-ave { animation: none !important; }
-  .hero-estatico .movil-vida { display: none; }
+  .hero-estatico .mundo::after { animation: none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -499,22 +494,14 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LA BARRA — fila 1 de la rejilla del hero.
+   LA BARRA — la fila del logotipo y los enlaces.
 
-   Sin fondo, sin caja y sin sombra: se para sobre la pintura igual que
-   el título. Cualquier banda opaca aquí arriba habría partido el cielo
-   en dos justo donde el degradado de la hora tiene su tramo más limpio,
-   y ese cielo es el protagonista del cuadro (ver `medidas()` en
-   js/main.js, que le da dos tercios largos del encuadre).
-
-   Nada de `position: fixed`. Una barra pegada al viewport se quedaría
-   flotando sobre las herramientas al bajar, encima de un papel que
-   invierte de color con la hora — y ahí su tinta, que es la del cielo,
-   dejaría de tener nada que ver con el fondo que tiene debajo. Sube con
-   la página porque pertenece a la pintura, no al documento.
+   Es la misma en las dos páginas: en la comunidad va en el flujo, sobre
+   papel (`.barra--papel`, en comunidad.css); en la portada va pegada al
+   viewport y solo baja cuando el hero se ha ido (`.barra--flotante`).
+   Esto de aquí es lo común a las dos: una fila, y nada más.
    ═══════════════════════════════════════════════════════════════════ */
 .barra {
-  grid-row: 1;
   position: relative;
   z-index: 1;
   display: flex;
@@ -524,63 +511,108 @@ body {
   color: var(--tinta);
 }
 
-/* EL LAVADO DE LA BARRA, PRESTADO Y CON RECARGO.
+/* ═══════════════════════════════════════════════════════════════════
+   LA BARRA DE LA PORTADA — fuera de cuadro hasta que el cuadro se va.
 
-   `calibrarLavado()` (js/main.js) mide UNA sola zona —la caja de
-   `.hero__texto`— y escribe en `--lavado` el alfa mínimo que la lleva a
-   5.4:1. Esta fila no tiene medidor propio, así que toma prestado ese
-   número. La pregunta es si vale, y se contestó midiendo las dos zonas
-   sobre los píxeles del shader cada 45 minutos de las 24 horas:
+   Aquí estuvo escrito, y con razones, que esta barra NUNCA sería
+   `position: fixed`: pegada al viewport se quedaría flotando sobre las
+   herramientas, encima de un papel que invierte de color con la hora, y
+   su tinta —que era la del cielo— dejaría de tener nada que ver con lo
+   que tiene debajo.
 
-     hora   0    1.5   3    6    7.5   9-13.5  15   16.5   18
-     texto  0.14 0.54  0.52 0.38 0.16   0      0.04 0.20   0.32
-     barra  0.24 0.56  0.48 0.36 0.18   0      0.02 0.22   0.28
+   El argumento sigue siendo cierto y es exactamente lo que esta regla
+   resuelve, en vez de esquivarlo: la barra flotante NO lleva la tinta
+   del cielo, lleva la del PAPEL (`--letra`), porque solo existe cuando
+   lo que hay debajo es papel. Sobre la pintura no se la ve nunca — no
+   está. Y por eso puede ir sin fondo: no hay nada de lo que separarla.
 
-   Se siguen casi uno a uno —es el mismo cielo— salvo a medianoche, que
-   es cuando la LUNA cruza por detrás de la barra y no por detrás del
-   texto: ahí la barra pide 0.24 y el texto 0.14, o sea 1.7 veces más.
+   Lo que la baja es js/barra.js, escribiendo `data-barra` cuando el
+   hero ya recorrió media pantalla. El estado de partida —arriba y
+   transparente— lo pone ESTA hoja y no el JS: puesto por JS habría un
+   cuadro con la barra encima del mar antes de que el módulo corriera.
+   Sin JavaScript nadie la baja nunca, y de eso se encarga el <noscript>
+   de index.astro, que la deja puesta y quieta.
 
-   El recargo de 1.25 sale de barrer el multiplicador contra el peor
-   contraste de las 24 horas:
+   `z-index: 1000` y no un número pequeño: el mapa tiene capas propias
+   que llegan a 900 —el panel del permiso— y las de Leaflet suben hasta
+   ahí. Una barra por debajo se metería detrás del mapa al pasar por él.
+   ═══════════════════════════════════════════════════════════════════ */
+.barra--flotante {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  /* Más aire arriba que abajo. No es simetría lo que se busca: la fila
+     tiene que colgar del canto de la pantalla sin pegarse a él, y el
+     hueco de debajo ya lo pone el papel que viene detrás. */
+  padding-block: var(--e-4) var(--e-3);
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
 
-     ×0.75 → 3.43:1   NO PASA          ×1.25 → 4.90:1
-     ×1.00 → 4.65:1   pasa, pelado     ×1.50 → 5.12:1
+  /* LA TINTA, Y LOS DOS ALIAS QUE HAY QUE APAGAR CON ELLA.
 
-   Se queda en 1.25: pasa el 4.5:1 con margen real y solo lava un cuarto
-   de más, que sobre un alfa que casi siempre vale cero no se ve. A ×1.5
-   el margen no mejora lo bastante para pagar el velo extra al amanecer.
+     La barra pide `--letra`, que es la tinta del PAPEL. Pero sus piezas
+     —la ola del logotipo, el contorno de la píldora— no piden `--letra`:
+     piden `--tinta` y `--tinta-suave`, que son la tinta del CUADRO,
+     porque se escribieron cuando esta fila vivía dentro del hero. Y el
+     hero fuerza `--tinta: #FFFFFF` a todas horas.
 
-   PENDIENTE, Y NO ES CSS: lo correcto es que la barra tenga su propia
-   zona medida. Eso son unas líneas en `calibrarLavado()` y js/main.js
-   está fuera de este encargo. Mientras tanto, esto es una correlación
-   medida, no una suposición — pero es una correlación. */
-/* RESUELTO: la barra YA NO TOMA PRESTADO NADA. `calibrarLavado()` mide
-   tres zonas —el bloque de texto, el logotipo y la fila de enlaces— y
-   escribe un alfa para cada una. El recargo de 1.25 se fue con ellas.
+     Mientras la barra estuvo dentro, eso era lo correcto. Fuera, basta
+     con que alguien vuelva a meter esta fila bajo cualquier caja que
+     redefina `--tinta` para que la ola y el contorno salgan BLANCOS
+     sobre papel claro, sin que ninguna regla de aquí lo diga. Así que
+     los dos alias se reescriben aquí dentro: en esta barra, tinta
+     quiere decir la del papel, la pida quien la pida. */
+  --tinta: var(--letra);
+  --tinta-suave: rgb(var(--letra-rgb) / 70%);
+  color: var(--letra);
+  /* SIN FONDO NINGUNO. Ni papel translúcido, ni desenfoque, ni filo
+     abajo: la fila se para sobre la página como el rótulo se paraba
+     sobre la pintura, y lo único que se ve de ella son las letras.
 
-   Y son dos lavados y no uno para la barra entera porque el logotipo y
-   los enlaces están en esquinas opuestas: con un solo alfa, el que menos
-   lo necesita carga con el velo del otro, y en una pantalla ancha eso es
-   una cinta de lado a lado cruzando el cielo. Dos manchas pequeñas y
-   sueltas es lo que haría un acuarelista, y además es más barato de
-   mirar. */
-/* Misma elipse desenfocada que el bloque de texto, y por lo mismo: un
-   degradado dentro de una caja enseña la caja. Aquí el desenfoque va más
-   corto porque las dos manchas son pequeñas y un blur grande sobre una
-   caja de 40 px de alto se convierte en niebla de lado a lado. */
-.marca::before,
-.barra__nav::before {
-  content: "";
-  position: absolute;
-  inset: -0.7rem -1.0rem;
-  z-index: -1;
+     Lo que lo hace posible es DÓNDE aparece. Debajo de esta barra hay
+     hoja —la sección de herramientas empieza justo donde el hero
+     acaba—, y la hoja es una superficie de valor parejo con la misma
+     tinta que la barra: sobre papel, letra sin caja se lee igual que el
+     resto de la página. Por eso no hace falta velo, y por eso la barra
+     no existe mientras se ve el mar, que es lo único que había debajo
+     con lo que no podría.
+
+     Queda un caso al descubierto y conviene tenerlo escrito: el MAPA y
+     el CIERRE no son papel liso —teselas y mar—, y ahí la fila pasa por
+     encima de imagen. Se lee, porque el mapa va virado a la paleta de
+     la hoja y el cierre queda casi al final, pero es el sitio por donde
+     esto se rompería si algún día se le mete color a esas dos zonas. Si
+     pasa, lo que toca no es una banda: es el mismo lavado medido que ya
+     tuvo esta barra cuando vivía sobre el cuadro. */
+  background: transparent;
+  /* El estado de partida: fuera de cuadro por arriba. */
+  translate: 0 -100%;
+  opacity: 0;
   pointer-events: none;
-  background: var(--lavado-color, transparent);
-  border-radius: 50% / 46%;
-  filter: blur(clamp(14px, 1.7vw, 26px));
+  transition: translate 300ms cubic-bezier(.2,.7,.2,1),
+              opacity   240ms linear;
 }
-.marca::before,
-.barra__nav::before { opacity: 0; }
+
+/* CUANDO BAJA. Dos condiciones y no una:
+
+   `data-barra="visible"` es el scroll, que es el encargo.
+
+   `:focus-within` es el teclado, y hace falta porque la barra sigue
+   siendo el primer elemento del documento aunque no se vea. Quien entra
+   con Tab desde la barra de direcciones la enfoca ANTES de haber hecho
+   scroll: sin esta línea estaría tabulando por enlaces invisibles.
+   Por eso el estado oculto es `opacity` y no `visibility: hidden` —con
+   visibilidad apagada los enlaces no son enfocables y `:focus-within`
+   no llegaría a dispararse nunca. */
+.barra--flotante[data-barra="visible"],
+.barra--flotante:focus-within {
+  translate: 0 0;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra--flotante { transition: none; }
+}
 
 /* ── EL LOGOTIPO ────────────────────────────────────────────────────
    La palabra y, debajo, una ola. El truco de que la ola mida
@@ -598,8 +630,6 @@ body {
   justify-items: stretch;
   color: inherit;
   text-decoration: none;
-  /* Contexto para su propio lavado, que va en `::before`. */
-  position: relative;
 }
 .marca__nombre {
   font-family: var(--tipo-marca);
@@ -630,8 +660,6 @@ body {
   display: flex;
   align-items: center;
   gap: clamp(1rem, 2.4vw, 2.25rem);
-  /* Contexto para su propio lavado, que va en `::before`. */
-  position: relative;
 }
 .barra__enlace {
   color: inherit;
@@ -1007,7 +1035,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   EL HERO EN MÓVIL — la barra se queda en dos piezas.
+   EL TELÉFONO — la barra se queda en dos piezas.
 
    «Información» y «Recursos» se van, y no se sustituyen por un menú
    plegado. Un botón de hamburguesa aquí sería una capa más entre quien
@@ -1147,7 +1175,31 @@ body {
      `::before` con el canto de barbas: con la boca puesta habría dos
      costuras seguidas contando lo mismo dos veces. Hay una sola, y
      está en la boca. */
-  background: linear-gradient(to bottom, var(--papel-arriba) 0, var(--papel) 9rem);
+  /* ── Y LA HOJA BAJA DEL CIELO ─────────────────────────────────────
+     Este degradado iba de `--papel-arriba` a `--papel` en 9 rem: dos
+     blancos casi iguales, o sea papel liso. La hoja empezaba donde
+     empezaba, sin venir de ningún sitio.
+
+     Ahora su primer tramo lleva `--papel-cielo`, que es papel teñido con
+     la BRUMA de la hora — el mismo token que pinta la franja del
+     horizonte en el shader de arriba. Consecuencia: el canto superior de
+     la sección tiene el color del cielo que se acaba de dejar, y lo
+     suelta hacia abajo hasta quedarse en papel. No es una transición
+     dibujada entre dos cosas: es la misma luz cayendo sobre las dos.
+
+     Y SE RETIÑE SOLO. `--bruma` la escribe js/hora.js cada 30 s, así que
+     a las seis de la mañana la hoja baja rosada y a medianoche baja
+     añil, sin una sola regla más. Un degradado con dos colores fijos
+     habría acertado a una hora y mentido a las otras veintitrés.
+
+     LARGO, Y ESE ES EL PUNTO. 16 rem hasta el papel puro y 26 hasta el
+     fondo: por debajo de unas diez el ojo encuentra dónde acaba el cielo
+     y vuelve a ser un borde, que es justo lo que se quería quitar. */
+  background: linear-gradient(to bottom,
+    var(--papel-cielo) 0,
+    color-mix(in srgb, var(--papel-cielo) 45%, var(--papel-arriba)) 7rem,
+    var(--papel-arriba) 16rem,
+    var(--papel) 26rem);
 }
 /* Todo lo que no sea el fondo va POR ENCIMA de él. Sin esto las aguadas
    se pintarían sobre el texto en vez de debajo. */
@@ -1185,7 +1237,17 @@ body {
   position: absolute;
   inset: 0;
   background-image: var(--arte-papel);
-  background-size: 520px;
+  /* MÁS GRANDE Y MÁS FLOJO. Estaba en 520 px al 50 % de opacidad, y ese
+     era el principal motivo de que la sección se sintiera SECA: a ese
+     tamaño y esa fuerza, el grano es lo primero que ve el ojo, y un
+     grano que se ve es papel sin agua encima. En una acuarela mojada el
+     grano no desaparece — queda debajo del pigmento, insinuado, y solo
+     se hace visible donde la aguada se ha secado del todo.
+
+     820 px y 0.3: sigue estando (quítalo del todo y la pantalla se
+     vuelve plástico), pero ahora está DEBAJO de las aguadas en vez de
+     por delante. */
+  background-size: 820px;
   background-repeat: repeat;
   /* MULTIPLY DE DÍA, SCREEN DE NOCHE. Un grano de papel multiplicado
      sobre un papel oscuro no se ve —negro sobre negro— y encima roba
@@ -1193,175 +1255,140 @@ body {
      misma textura vista al revés, que es lo que pasa de verdad cuando
      miras papel con poca luz. */
   mix-blend-mode: multiply;
-  opacity: 0.5;
+  opacity: 0.3;
 }
 :root[data-tinta="clara"] .fondo__papel {
   mix-blend-mode: screen;
-  opacity: 0.16;
+  opacity: 0.12;
 }
 
-/* LAS CAPAS. js/paralaje.js les escribe `translate`; el factor de
-   profundidad viaja en data-hondo, no aquí, porque es geometría y no
-   estilo. Sin JavaScript se quedan quietas y siguen siendo un cuadro. */
+/* ════════════════════════════════════════════════════════════════════
+   LAS DOS AGUADAS — contenidas, y fuera de la lectura.
+
+   ── LO QUE PASÓ AQUÍ, PORQUE NO PUEDE VOLVER A PASAR ───────────
+
+   Esto llegó a ser OCHO manchas a sangre cubriendo la sección entera, y
+   en pantalla eran bloques de color con costuras verticales cruzándolo
+   todo. El motivo estaba escrito tres párrafos más abajo, en un
+   comentario que seguía ahí mientras yo hacía justo lo contrario:
+
+       NINGUNA LÁMINA ENSEÑA SU CANTO.
+
+   Un <div> rectangular con una acuarela dentro no se lee como pintura:
+   se lee como una foto pegada, porque el ojo encuentra los cuatro
+   bordes rectos antes que el pigmento. La máscara elíptica que evitaba
+   eso llevaba años puesta; la quité al reescribir el bloque.
+
+   Y había un error más de fondo: LA REFERENCIA DE MARCA NO LLEVA
+   FONDOS A SANGRE. Sus tarjetas son papel limpio con la acuarela
+   CONTENIDA en una figura y con aire alrededor. Ocho aguadas por debajo
+   del texto no eran una versión discreta de eso — eran otra cosa.
+
+   ── LO QUE HAY AHORA ───────────────────────────────────
+
+   Papel limpio, y DOS aguadas. Tres condiciones, y las tres son la
+   diferencia entre un acento y una mancha:
+
+     1 · CONTENIDAS. Ninguna pasa de 46 rem ni cubre más de media
+         pantalla de alto. Una aguada que llega a los dos bordes deja de
+         ser una figura y pasa a ser un fondo.
+     2 · SIN CANTO. Máscara radial que las disuelve mucho antes de su
+         borde. Lo que define la forma es dónde se acaba el pigmento, no
+         dónde se acaba el archivo.
+     3 · FUERA DE LA COLUMNA. Las dos caen en el margen —arriba a la
+         derecha, abajo a la izquierda— y desbordan hacia afuera, así
+         que no pasan por debajo de una sola línea de texto. Eso no es
+         prudencia estética: es lo que hace que el contraste medido no
+         dependa de dónde caiga una mancha.
+
+   ── EL COLOR ──────────────────────────────────────────
+
+   La lámina `aguadas-seccion2.webp` es acuarela escaneada de verdad
+   —bordes mojados, granulado, pigmento empozado— pero en azul frío. No
+   se sustituye, se retiñe:
+
+       background-image: <la tinta de la marca>, <la lámina>
+       background-blend-mode: color;
+
+   `color` toma el TONO y la SATURACIÓN de la capa de arriba y la
+   LUMINOSIDAD de la de abajo: la forma y la textura son las del papel
+   escaneado, el color es el de la marca.
+   ═══════════════════════════════════════════════════════════════════ */
 .fondo__capa {
   position: absolute;
-  left: 50%;
-  width: min(1400px, 190%);
   translate: 0 0;
-  margin-left: min(-700px, -95%);
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
   mix-blend-mode: multiply;
   will-change: translate;
 }
-/* De noche las aguadas aclaran en vez de oscurecer, por lo mismo que el
-   grano: pigmento oscuro sobre papel oscuro no es una aguada, es una
-   mancha que se traga la pantalla. Y con menos fuerza, porque sobre
-   fondo oscuro el ojo detecta mucho antes una diferencia de valor. */
-:root[data-tinta="clara"] .fondo__capa { mix-blend-mode: screen; }
-:root[data-tinta="clara"] .fondo__capa--alta    { opacity: 0.22; }
-:root[data-tinta="clara"] .fondo__capa--media   { opacity: 0.26; }
-:root[data-tinta="clara"] .fondo__capa--cercana { opacity: 0.20; }
 
-/* NINGUNA LÁMINA ENSEÑA SU CANTO.
-   Una lámina rectangular puesta sobre el papel se lee como una foto
-   pegada, por difuminada que esté: el ojo encuentra los cuatro bordes
-   rectos y ya no ve pintura, ve un recorte. La banda de mar lo hacía
-   de la peor manera posible —un canto horizontal cruzando la pantalla
-   entera de lado a lado.
 
-   La máscara elíptica disuelve la lámina antes de que llegue a su
-   borde, así que no queda ni un tramo recto en toda la sección. Lo que
-   define la forma es dónde se acaba el pigmento, no dónde se acaba el
-   archivo. */
-.fondo__capa {
-  -webkit-mask-image: radial-gradient(ellipse 62% 54% at 48% 50%,
-    #000 0%, #000 34%, #0009 62%, #0000 88%);
-  mask-image: radial-gradient(ellipse 62% 54% at 48% 50%,
-    #000 0%, #000 34%, #0009 62%, #0000 88%);
-}
-
-/* EL EMPOZADO. En acuarela de verdad el pigmento no se reparte parejo:
-   se acumula donde el agua tardó más en secar y deja el centro más
-   claro. Eso es lo que hace que una mancha se lea redonda y viva en
-   vez de plana. Aquí van tres charcos por capa, de tamaños primos
-   entre sí para que no se note el patrón, cada uno más oscuro en su
-   corona que en su centro. */
-.fondo__capa::after {
-  content: "";
+.aguada {
+  /* Quietas y ancladas al papel. Estuvieron dentro del paralaje y con un
+     factor de profundidad casi 1, o sea prácticamente clavadas al
+     viewport: la mancha te seguía media página abajo. Una aguada que
+     acompaña al lector no decora, compite. Estas se quedan donde están
+     pintadas y se van cuando pasas. */
   position: absolute;
-  inset: -10%;
-  background-repeat: no-repeat;
-  /* ── DOS AGUADAS, NO TRES, Y SIN ANILLO ──────────────────────────
-     Aquí había tres charcos por capa con el canto más cargado que el
-     centro. La idea era correcta —al secarse, el agua arrastra el
-     pigmento a la orilla— pero a ESTE tamaño el resultado no fue una
-     aguada: fue una POMPA. Nueve círculos con el borde marcado y el
-     medio claro es, exactamente, el dibujo de una burbuja, y había
-     nueve flotando por detrás de un texto que hay que poder leer.
 
-     Dos cosas cambian y las dos van en la misma dirección:
+  /* La rampa de la marca. Dos pigmentos dentro de una sola aguada, para
+     que sangre uno en otro como lo hace el agua — un tinte plano no da
+     eso por muy bien elegido que esté. */
+  --tinta-a: #E8B9AC;
+  --tinta-b: #B7A6D0;
 
-     1 · MENOS Y MÁS GRANDES. Dos por capa, y las dos DESBORDAN su
-         propia caja (128 % y 96 %). Un charco cuyo borde no cabe en la
-         pantalla no tiene borde: deja de ser una forma y pasa a ser
-         atmósfera. Lo que convierte una mancha en objeto no es su
-         color, es que se le vea el canto.
-
-     2 · SIN EL ANILLO. El pigmento sigue subiendo hacia fuera, pero
-         muy despacio y muriendo mucho antes del final, así que ya no
-         hay una línea que seguir con el ojo. Fluido, no dibujado.
-
-     El resultado es agua quieta vista de lejos, que es lo que esta
-     sección tiene que ser: algo que se siente y no se mira. */
   background-image:
-    radial-gradient(closest-side ellipse at 50% 50%,
-      var(--charco-a) 0%, var(--charco-b) 38%,
-      var(--charco-c) 68%, transparent 100%),
-    radial-gradient(closest-side ellipse at 50% 50%,
-      var(--charco-a) 0%, var(--charco-b) 46%,
-      var(--charco-c) 74%, transparent 100%);
-  background-size: 128% 104%, 96% 82%;
-  background-position: 12% 26%, 78% 72%;
+    linear-gradient(150deg, var(--tinta-a) 0%, var(--tinta-b) 100%),
+    url("/galene/arte/aguadas-seccion2.webp");
+  background-blend-mode: color;
+  background-size: cover, cover;
+  background-position: center, center;
+
+  /* LA MÁSCARA, QUE ES LA REGLA QUE NO SE PUEDE VOLVER A QUITAR. El
+     pigmento muere al 72 % del radio, muy dentro de la caja, así que el
+     rectángulo del <div> no llega a existir para el ojo. */
+  -webkit-mask-image: radial-gradient(ellipse 58% 52% at 50% 50%,
+    #000 0%, #000 26%, #0008 52%, #0000 72%);
+  mask-image: radial-gradient(ellipse 58% 52% at 50% 50%,
+    #000 0%, #000 26%, #0008 52%, #0000 72%);
+
+  /* Y el desenfoque encima: deshace la matemática que le queda a la
+     máscara y deja un canto de agua, no una curva calculada. */
+  filter: blur(clamp(14px, 2vw, 30px));
+  /* Medido mirando la pantalla, no calculado: a 0.5 la aguada existía
+     pero no se veía —papel con una sombra— y a 0.9 volvía a competir
+     con el texto. 0.72 es donde se lee como pigmento sin que nadie
+     tenga que fijarse para encontrarlo. */
+  opacity: 0.72;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   LAS TRES AGUADAS — azul, azul y rojo. Los pigmentos del ente.
-
-   Antes eran el paisaje del hero repetido en pequeño: nubes, mar y
-   manglar, todo en un verde azulado. Fallaba por dos motivos y los dos
-   se veían a simple vista.
-
-   1 · SIN SUJETO, UNA MANCHA GRIS ES SUCIEDAD. Los charcos no dibujaban
-       nada reconocible, así que no se leían como agua ni como cielo: se
-       leían como manchas grises en mitad de un texto. Una aguada
-       abstracta necesita COLOR para ser una decisión; sin él parece que
-       la pantalla está sucia.
-   2 · Y LA CERCANA TRAÍA LÁMINA: manglar-lejos.webp otra vez, o sea el
-       mismo árbol que ya protagoniza el hero, aquí abajo y a media
-       tinta, asomando por la esquina como un fantasma. El mismo dibujo
-       dos veces en la misma página no es un eco, es una repetición.
-
-   Ahora no representan nada y no lo disimulan: son aguadas, en azul y
-   rojo, sobre el papel. La sección entera queda en esos dos pigmentos
-   —el realce de la frase, el pájaro del reloj y el fondo— y por eso se
-   lee como una sola pintura en vez de como un texto con adornos
-   encima.
-
-   (Los dos pigmentos venían del ente, que ya no está. Se quedan: no
-   eran suyos por origen sino por reparto, y el reparto sigue siendo el
-   correcto para esta sección.)
-
-   EL REPARTO ES EL DE UNA ACUARELA: mucho azul, poco rojo, y el rojo
-   siempre abajo y al flanco. El rojo es el color del daño en este sitio
-   y está reservado; aquí entra como el rescoldo que asoma por debajo de
-   una veladura fría, no como la mitad del cuadro. */
-
-/* La más alta y la más quieta: es lo más lejano que hay. Azul lavado,
-   apenas una veladura. */
-.fondo__capa--alta {
-  top: 0vh; height: 78vh;
-  --charco-a: #5B93AC12;
-  --charco-b: #3E6E8E1e;
-  --charco-c: #2C4E7432;
-  opacity: 0.42;
+/* ARRIBA A LA DERECHA — el amanecer, en el margen de la cabecera.
+   Desborda por la derecha: la mitad que se ve es la que entra en el
+   cuadro, y la que se sale es la que impide que se le adivine el
+   centro. */
+.aguada--1 {
+  top: 4vh; right: -16%;
+  width: min(46rem, 62%); height: 62vh;
+  --tinta-a: #EFC6B6; --tinta-b: #E3C07A;
 }
 
-/* La media, ancha y desbordada por los dos lados para que no se le vea
-   ningún canto. Es el azul con más cuerpo del conjunto. */
-.fondo__capa--media {
-  top: 26vh; height: 84vh;
-  width: 128%; margin-left: -64%;
-  --charco-a: #3E6E8E16;
-  --charco-b: #2C4E7426;
-  --charco-c: #2C4E743c;
-  opacity: 0.46;
-}
-
-/* La cercana, y la única roja. Al flanco derecho y fuera del ancho de
-   lectura, así que no pasa nunca por debajo de un párrafo — que es la
-   condición para que un rojo pueda estar aquí sin restarle contraste a
-   una sola palabra. Sin lámina: se fue el árbol. */
-.fondo__capa--cercana {
-  /* Sube a 44vh —estaba en 72— porque a esa altura el rojo entraba en
-     pantalla cuando ya no quedaba nada que leer: aparecía y se iba sin
-     que nadie lo viera. Aquí acompaña al bloque de la definición por
-     su flanco, que es donde el reparto de una acuarela pone el
-     rescoldo cálido: abajo y a un lado, nunca en el centro. */
-  top: 44vh; height: 96vh;
-  left: auto; right: -8%;
-  width: min(620px, 64%); margin-left: 0;
-  --charco-a: #CC5F4A14;
-  --charco-b: #C4553F22;
-  --charco-c: #B8556A38;
-  opacity: 0.36;
+/* ABAJO A LA IZQUIERDA — la lavanda, ya bajando hacia el glosario. Más
+   floja: es el eco de la primera, no una segunda afirmación. */
+.aguada--2 {
+  top: 78vh; left: -18%;
+  width: min(42rem, 58%); height: 58vh;
+  --tinta-a: #C9B6D8; --tinta-b: #9FC6C0;
+  opacity: 0.38;
 }
 
 @media (max-width: 900px) {
-  /* En móvil el texto ocupa todo el ancho: la roja se retira casi del
-     todo para no quedar nunca debajo de una línea. */
-  .fondo__capa--cercana { opacity: 0.26; right: -30%; }
+  /* En un teléfono el texto ocupa todo el ancho y no hay margen por
+     donde dejarlas pasar: se retiran casi fuera y bajan de fuerza.
+     Siguen estando —el papel no puede quedarse desnudo— pero solo asoma
+     el hombro de cada una. */
+  .aguada { opacity: 0.28; }
+  .aguada--1 { right: -42%; }
+  .aguada--2 { left: -42%; }
 }
 .herramientas__titulo {
   font-family: var(--tipo-titulo);
@@ -1409,12 +1436,86 @@ body {
      Y es la misma maquetación en móvil que en escritorio, que es la
      otra mitad del encargo: lo que cambia entre las dos es el ancho de
      la medida, no la estructura. Nada se recoloca al girar el teléfono. */
+/* ── EL AIRE DE LA CABECERA ─────────────────────────────────────────
+   Esta caja no llevaba ni un margen propio: se apoyaba en el
+   `padding-block` de la sección y arrancaba a 2–4.5 rem del canto. Con
+   la hoja bajando ahora del cielo, eso la metía DENTRO del descuelgue —
+   el título caía en mitad del degradado, donde el fondo todavía se está
+   moviendo, y una pregunta leída sobre un fondo que cambia se lee peor
+   sin que nadie sepa por qué.
+
+   Los 9 rem de arriba la bajan hasta donde el degradado ya casi ha
+   llegado al papel (ver los topes de `.herramientas`: 7 rem para el
+   primer tramo, 16 para el papel puro). Y los 10 de abajo la separan
+   del glosario lo mismo que un canto de hoja separa dos capítulos: esta
+   sección contesta UNA pregunta y las fichas contestan otra, y entre
+   dos preguntas distintas hace falta silencio.
+
+   En `clamp` porque en un teléfono 9 rem de aire por arriba son media
+   pantalla gastada antes de la primera palabra. */
 .cabecera {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  margin-block: clamp(3rem, 7vw, 9rem) clamp(4rem, 8vw, 10rem);
+  /* Y CENTRADA. En cuanto la caja tiene medida propia (44rem, abajo)
+     deja de ocupar el ancho de la sección, y sin márgenes automáticos
+     se queda pegada a la izquierda con medio cuadro vacío a la derecha.
+     En una pantalla estrecha no se nota porque la medida no llega a
+     entrar; en un monitor, es lo primero que se ve. */
+  margin-inline: auto;
+
+  /* ── EL AIRE DE DENTRO, QUE ERA EL QUE FALTABA ────────────────────
+     Esta caja tenía aire por fuera —los márgenes de arriba— y ninguno
+     por dentro: el título, los tres párrafos y el rótulo iban pegados
+     entre sí con el margen por defecto de un párrafo, 1.25 rem. Debajo
+     de un rótulo de 56 px eso no es una separación, es un amontonamiento:
+     el ojo lee las cuatro piezas como un solo bloque de texto y no
+     encuentra dónde empieza cada idea.
+
+     El `gap` de la columna las separa a todas por igual y con la
+     ventana. Y el título pide MÁS que el resto, porque el salto entre
+     un rótulo y su cuerpo tiene que ser mayor que el que hay entre dos
+     párrafos del mismo cuerpo — si son iguales, la jerarquía la lleva
+     solo el tamaño de la letra y se lee floja. */
+  gap: clamp(1.25rem, 1.8vw, 2rem);
+
+  /* ── UNA SOLA COLUMNA, Y ESTE ERA EL FALLO DE COMPOSICIÓN ─────────
+     El título salía a 788 px y los párrafos a 656, los dos centrados.
+     Centrados y de anchos distintos = DOS CANTOS IZQUIERDOS a 66 px uno
+     del otro, y el ojo los ve los dos. Eso es lo que se leía como
+     «poco distribuido»: no era falta de aire, era que el bloque no
+     tenía un borde por el que alinearse.
+
+     Con una medida común, el título y el cuerpo comparten los dos
+     cantos y el conjunto se lee como una pieza. El título pasa a dos
+     renglones, que además es lo que quiere una pregunta de este tamaño:
+     a una sola línea de 800 px hay que barrerla con la cabeza.
+
+     44 rem y no 56ch: la medida la manda ahora la CAJA y no el párrafo,
+     porque hay dos cosas que alinear. El cuerpo queda en unos 52
+     caracteres, dentro del rango de lectura cómoda. */
+  max-width: 44rem;
 }
+.cabecera > .herramientas__titulo {
+  margin-bottom: clamp(0.5rem, 1.4vw, 1.5rem);
+  /* `balance` reparte los dos renglones del título en vez de dejar una
+     palabra suelta debajo. En un rótulo de dos líneas eso es la
+     diferencia entre una pregunta y un texto que no cupo. */
+  text-wrap: balance;
+}
+/* Los párrafos sueltan su techo propio y toman el de la caja: si
+   conservan 56ch vuelven a ser más estrechos que el título y estamos
+   donde estábamos. */
+.cabecera > .herramientas__intro { max-width: 100%; }
+
+/* Y LOS PÁRRAFOS SUELTAN SU MARGEN. Con `gap` gobernando la columna, el
+   margen inferior que la hoja le pone a todo `<p>` se SUMA al hueco y
+   deja los tres párrafos separados un 60 % más que el título de su
+   primer párrafo — el ritmo al revés. El `gap` manda; los márgenes
+   propios sobran. */
+.cabecera > p { margin-block: 0; }
 /* EL BLOQUE SE CENTRA, EL PÁRRAFO NO. Centrar renglones de cuerpo deja
    los dos cantos dentados y obliga al ojo a buscar dónde empieza cada
    línea: en un texto de cuatro renglones eso se paga en velocidad de
@@ -1637,6 +1738,480 @@ body {
    mismo de los avisos y de las marcas sin fuente, y no hay ninguna
    otra aguada con la que confundirlo. */
 
+/* ═══════════════════════════════════════════════════════════════════
+   EL TÉRMINO — la palabra que se está explicando.
+
+   Se usa:  <dfn class="termino">sumisión oportunista</dfn>
+
+   ── POR QUÉ NO ES UN `.realce` DE OTRO COLOR ────────────────────────
+
+   Era el arreglo evidente: la misma aguada, otro pigmento. Y está
+   prohibido dos comentarios más arriba, con razón: el rojo de `.realce`
+   no marca «cosas importantes», marca LAS TRES AFIRMACIONES QUE
+   DESCRIBEN UN DAÑO. Meter ocho conceptos más con la misma forma —aunque
+   fuera en verde— convierte la aguada en un estilo de párrafo y la
+   sección pierde de golpe lo único que tenía jerarquizado.
+
+   Así que lo que cambia no es el color: es EL GESTO. El realce es una
+   mancha DETRÁS de la palabra —el pincel cargado, plano, tapando—. El
+   término es un TRAZO DEBAJO: una pasada de pincel casi seco por el
+   renglón de abajo, que es lo que hace cualquiera leyendo con un pincel
+   en la mano cuando quiere volver a esa palabra. Dos gestos distintos
+   se leen como dos cosas distintas aunque compartan la paleta, y a
+   ninguno hay que explicarle al ojo lo que significa.
+
+   ── Y ADEMÁS NO TOCA EL CONTRASTE ───────────────────────────────────
+   El realce tuvo que fijar su tinta (`color: #16222E`) porque la
+   palabra queda ENCIMA del pigmento y su fondo deja de ser el papel.
+   Aquí el trazo pasa por debajo de la línea base: la letra sigue sobre
+   papel, conserva `--letra` y su contraste es el del cuerpo del texto,
+   sea la hora que sea. Un realce que no puede bajar el contraste es un
+   realce que se puede usar ocho veces sin medir ocho veces.
+
+   ── EL PIGMENTO ES DE VALOR MEDIO, Y ESO ES LO QUE LO SALVA ─────────
+   `#41707F` —el azul del agua honda— está por debajo del papel claro y
+   por encima del papel de noche, así que el trazo se ve en las dos
+   horas sin necesitar una regla para cada una. Un pigmento claro habría
+   necesitado invertirse a medianoche, y esta hoja ya tiene bastante que
+   invertir. Fijo y no tokenizado, por lo mismo que el realce: lo que
+   manda aquí es el papel, no la hora.
+   ═══════════════════════════════════════════════════════════════════ */
+.termino {
+  --termino-tinte: #41707F;
+
+  /* `font-style: normal` a la fuerza: el navegador pone <dfn> en
+     cursiva por su cuenta, y una cursiva dentro de un párrafo ya es un
+     énfasis — con el trazo debajo serían dos formas de decir lo mismo
+     sobre la misma palabra. */
+  font-style: normal;
+  font-weight: 700;
+  color: inherit;
+  /* El aire de abajo es donde cabe el trazo. Sin él, la pasada de
+     pincel muerde las descendentes de la palabra. */
+  padding: 0 0.14em 0.38em;
+  margin: 0 -0.10em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+
+  /* TRES TOQUES, NO UNA BARRA. La misma ley que el realce: una banda de
+     lado a lado vuelve a ser un subrayador por mucho que se le
+     difuminen los cantos. Son tres charcos aplastados —anchos
+     distintos, alturas distintas, ninguno del ancho de la palabra— que
+     se solapan por los extremos, así que el trazo tiene más carga por
+     donde el pincel se paró y menos por donde iba de paso.
+
+     Y el de más a la derecha se sale un poco (105 %): un trazo hecho a
+     mano se pasa siempre del final de la palabra. Cuando termina justo
+     donde termina la letra, es una caja. */
+  /* SIN EL GRANO DEL PAPEL, y esto fue un fallo mío que solo se ve
+     mirando. La lámina iba a 180 px sobre un trazo de 60 px de ancho y
+     6 de alto: a esa escala no cabe ni un grano, así que lo que
+     multiplicaba era un gris plano. Resultado en pantalla: una barra
+     gris uniforme debajo de la palabra —una tachadura de censura, no
+     una pincelada—. El grano solo es grano por encima de cierto tamaño;
+     por debajo es suciedad.
+
+     Lo que hace que esto se lea como pincel son los tres charcos, y
+     ahora se les ve: sin el gris encima, el pigmento vuelve a tener
+     color propio. */
+  background-image:
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, var(--termino-tinte) 82%, transparent) 0%,
+      color-mix(in srgb, var(--termino-tinte) 54%, transparent) 58%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, var(--termino-tinte) 64%, transparent) 0%,
+      color-mix(in srgb, var(--termino-tinte) 34%, transparent) 62%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, var(--termino-tinte) 72%, transparent) 0%,
+      color-mix(in srgb, var(--termino-tinte) 40%, transparent) 56%,
+      transparent 100%);
+  /* Alturas de 0.24em a 0.34em. Estuvieron en 0.16–0.24 y medido sobre
+     el cuerpo real de esta página —18 px— eso daba trazos de 2.9 a 4.3
+     px: a ese grosor los tres charcos dejan de leerse como una pasada de
+     pincel y se leen como un subrayado de procesador de textos, que es
+     justo lo que este realce existe para no ser. A 0.24–0.34 son 4.3 a
+     6.1 px, que es el rastro que deja un pincel redondo del 4 — y sigue
+     por debajo del grosor de la letra, así que no compite con ella.
+     El grano va grande (180px) para que dentro de una banda tan baja se
+     lea como papel y no como ruido. */
+  /* MÁS FINOS Y MÁS DESIGUALES. Estaban en 0.24–0.34 em y con anchos
+     parecidos, y tres bandas casi iguales seguidas vuelven a sumar una
+     barra. Ahora ninguno mide lo mismo que otro ni empieza donde acaba
+     el anterior: se solapan por los extremos y dejan el trazo cargado
+     por el medio, que es por donde el pincel apoya. */
+  background-size:
+    38% 0.22em, 30% 0.15em, 46% 0.26em;
+  background-position:
+    -4% 100%, 40% 92%, 106% 100%;
+  background-repeat: no-repeat;
+}
+
+/* De noche el pigmento tiene que ACLARAR, no oscurecer: un azul medio
+   sobre papel añil se hunde. Se sube el tinte a la mitad clara de la
+   rampa y el trazo vuelve a verse, con el mismo gesto. (Antes esto
+   invertía el modo de fusión del grano; el grano se fue.) */
+:root[data-tinta="clara"] .termino { --termino-tinte: #8FBFCF; }
+
+/* CUANDO EL TÉRMINO LLEVA A SU FICHA. El enlace va DENTRO del <dfn> y
+   no al revés: el trazo es del término, y si envolviera el enlace se
+   pintaría dos veces cuando una palabra definida aparezca sin destino.
+
+   Sin subrayado propio, y no es un descuido: el trazo de acuarela YA es
+   la marca de que ahí hay algo, y un subrayado encima de un subrayado
+   pintado a mano son dos rayas discutiendo. Lo que confirma que se
+   pulsa es el cursor y, al pasar por encima, que el pigmento se carga —
+   como cuando el pincel vuelve sobre un trazo que aún no secó. */
+.termino a {
+  color: inherit;
+  text-decoration: none;
+}
+.termino:hover { --termino-tinte: #35606F; }
+.termino:has(a) { cursor: pointer; }
+.termino a:focus-visible {
+  outline: 3px solid var(--letra);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL GLOSARIO — las palabras difíciles, contestadas una a una.
+
+   Es un <dl>, y no una lista de párrafos con negritas, porque es
+   literalmente lo que un <dl> significa: pares de término y
+   descripción. Lo que se gana no es pureza —es que un lector de
+   pantalla anuncia «término» y «definición», y quien busca en Google
+   una de estas palabras cae en una página donde la relación entre la
+   palabra y su explicación está declarada, no solo maquetada.
+
+   CADA PAR ES UNA FICHA SUELTA y no una fila de tabla: quien llega aquí
+   no lee el glosario, busca SU palabra. Fichas sueltas se saltan con la
+   vista; una tabla obliga a recorrerla.
+   ═══════════════════════════════════════════════════════════════════ */
+/* El bloque del glosario respira más ancho que los demás: son fichas en
+   dos columnas, no prosa, y a 54rem la segunda columna se quedaba en
+   24rem justos — el punto donde una definición de cuatro renglones pasa
+   a siete. El techo de medida de la PROSA no cambia: lo pone `.bloque p`
+   y aquí dentro no hay ni un párrafo ancho.
+
+   CENTRADO, y es el único bloque de la sección que lo está. Los demás
+   son prosa y su canto izquierdo alineado con el de la sección es lo que
+   deja leerlos en vertical, sin buscar dónde empieza cada uno. Este no
+   es prosa: es una retícula de ocho piezas iguales, y una retícula
+   descentrada dentro de una caja ancha se lee como un fallo de maqueta,
+   no como una decisión. */
+/* CON LAS DOS CLASES, Y NO POR GUSTO. `.bloque` se declara más abajo en
+   esta misma hoja y fija `margin: 0 0 var(--e-7)` — un ATAJO, que
+   reescribe también los márgenes laterales y los deja en cero. A
+   igualdad de especificidad gana el último, así que un `margin-inline:
+   auto` escrito aquí con una sola clase no llegaba a aplicarse nunca y
+   el bloque se quedaba pegado a la izquierda sin que ninguna regla lo
+   dijera. Se sube a dos clases en vez de mover la regla de sitio: el
+   orden de esta hoja es temático, y romperlo para ganar una cascada es
+   pagar la legibilidad de todo el fichero por una línea. */
+.bloque.bloque--glosario {
+  max-width: 62rem;
+  margin-inline: auto;
+}
+/* El TÍTULO se centra; el texto de las fichas NO. Es la misma regla que
+   ya lleva escrita `.cabecera`: se centra la caja y lo corto, y los
+   renglones de cuerpo siguen alineados a la izquierda. Centrar tres
+   renglones de definición deja los dos cantos dentados y obliga al ojo a
+   buscar dónde empieza cada línea — en una página que se abre asustada,
+   eso se paga en velocidad de lectura. */
+.bloque--glosario > h3 { text-align: center; }
+
+.glosario {
+  display: grid;
+  gap: var(--e-4);
+  margin: var(--e-5) 0 0;
+  padding: 0;
+  text-align: left;
+  /* Dos columnas solo cuando de verdad caben dos medidas de lectura.
+     Por debajo, una: dos columnas de 30 caracteres son peor que una de
+     sesenta, siempre. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA FICHA — un recorte de papel con un trazo al canto.
+
+   Era una caja de esquinas rectas con un borde izquierdo de 3 px. Se
+   leía como una tarjeta de panel de administración: correcta y de otro
+   sitio. Lo que sigue la mete en la paleta de la página SIN inventarse
+   una técnica nueva — son exactamente los tres gestos que esta hoja ya
+   usa en `.realce`, en `.termino` y en `.acuarela`:
+
+     1 · CUATRO RADIOS DISTINTOS, con los horizontales y los verticales
+         cruzados. Nada recortado a mano tiene las cuatro esquinas
+         iguales. Van pequeños —de 4 a 12 px— porque esto es un canto de
+         papel, no una pastilla: se tiene que notar sin poder señalarlo.
+     2 · EL GRANO DEL PAPEL DENTRO, la misma lámina que ya viaja en
+         caché para el shader, en `multiply` para que muerda y nunca
+         destiña (la lección está escrita en `.acuarela`: con `screen`
+         el grano aclaraba el pigmento hasta romper el contraste).
+     3 · EL TRAZO DEL CANTO ES UN TRAZO, no un borde. Ver `::after`.
+
+   Y el contraste no se toca: todo esto ocurre por DEBAJO del texto —
+   `z-index: -1` en las dos aguadas—, así que la letra sigue sobre
+   `--papel-alto` limpio y su ratio es el del cuerpo de la página. Es la
+   misma razón por la que el trazo del término va debajo de la línea
+   base y no detrás de la palabra.
+   ═══════════════════════════════════════════════════════════════════ */
+.glosario__ficha {
+  position: relative;
+  /* Las dos aguadas van en `z-index: -1`. Sin aislar, ese -1 las manda
+     detrás del fondo de la SECCIÓN y desaparecen: aislada, la ficha es
+     su propio contexto y el -1 solo las pone detrás de su texto. */
+  isolation: isolate;
+  background: var(--papel-alto);
+  border-radius: 10px 4px 12px 5px / 5px 12px 4px 11px;
+  /* El filete de tinta al 9 %: lo justo para que la ficha tenga canto
+     sobre el papel de la sección, que es casi del mismo valor. Más que
+     eso y vuelve a ser una caja dibujada. */
+  border: 1px solid rgb(var(--letra-rgb) / 9%);
+  /* La ficha entera se enfoca al llegar por un enlace `#t-*` (ver
+     `irA()` en js/palabras.js). Sin esto, el anillo del foco se dibuja
+     pegado al texto y no alrededor de la caja. */
+  outline-offset: 3px;
+  /* La retícula reparte por columnas y las fichas de una misma fila se
+     estiran a la más alta. Con las cerradas eso dejaba una banda de
+     papel vacío debajo de las cortas; alineadas arriba, cada una mide
+     lo que dice. */
+  align-self: start;
+  transition: border-color 700ms linear;
+}
+.glosario__ficha:focus-visible { outline: 3px solid var(--letra); }
+
+/* EL GRANO Y EL CHARCO, en una sola capa y dos fondos.
+
+   El charco es un óvalo de pigmento muy aguado en la esquina de abajo a
+   la izquierda — donde nace el trazo del canto, que es por donde el agua
+   correría de verdad. Al 7 % no se ve como color: se ve como que ese
+   rincón del papel está un poco más mojado que el resto, que es todo lo
+   que tiene que hacer. */
+.glosario__ficha::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    url("/galene/arte/1024/papel.webp"),
+    radial-gradient(closest-side ellipse at 8% 92%,
+      color-mix(in srgb, #41707F 7%, transparent) 0%,
+      color-mix(in srgb, #41707F 4%, transparent) 58%,
+      transparent 100%);
+  background-size: 300px, 150% 120%;
+  background-position: 0 0, 0 100%;
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  opacity: 0.62;
+  transition: opacity 700ms linear;
+}
+/* De noche el papel es añil y `multiply` no muerde: oscurece hasta
+   tapar. Se invierte a `screen`, como en `.termino` y en el grano del
+   mapa. */
+:root[data-tinta="clara"] .glosario__ficha::before {
+  background-blend-mode: screen, normal;
+  opacity: 0.34;
+}
+
+/* ── EL TRAZO DEL CANTO ─────────────────────────────────────────────
+   Antes era `border-left: 3px solid`, o sea una barra de color parejo
+   de arriba abajo. Un pincel no hace eso: deja más pigmento donde se
+   apoya y donde se para, y menos por donde va de paso. Este degradado
+   es esa pasada — carga al 38 % y vuelve a cargar al final, que es
+   donde el agua se acumula por gravedad.
+
+   Va separado del borde y con sus propios radios para que tenga los dos
+   extremos redondeados y no llegue a tocar las esquinas de la ficha: un
+   trazo que empieza y acaba exactamente en el canto es una barra otra
+   vez. */
+.glosario__ficha::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 8%;
+  bottom: 8%;
+  width: 4px;
+  z-index: -1;
+  border-radius: 3px 2px 4px 2px / 9px 12px 10px 11px;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, #41707F 28%, transparent) 0%,
+    color-mix(in srgb, #41707F 76%, transparent) 38%,
+    color-mix(in srgb, #41707F 52%, transparent) 70%,
+    color-mix(in srgb, #41707F 88%, transparent) 100%);
+  transition: inset 700ms cubic-bezier(.25,.8,.3,1),
+              opacity 700ms linear;
+}
+
+/* AL PASAR POR ENCIMA Y AL ABRIR, EL PIGMENTO SE EXTIENDE. Lento —700 ms
+   como la difusión de `.acuarela`— porque una acuarela no reacciona: se
+   difunde. Lo que se mueve es el agua, no la caja: ni desplazamiento, ni
+   escala, ni sombra. Esta hoja no tiene una sola sombra proyectada y no
+   va a empezar en una ficha de glosario. */
+@media (hover: hover) {
+  .glosario__ficha:hover { border-color: rgb(var(--letra-rgb) / 16%); }
+  .glosario__ficha:hover::before { opacity: 0.78; }
+  .glosario__ficha:hover::after { top: 4%; bottom: 4%; }
+}
+:root[data-tinta="clara"] .glosario__ficha:hover::before { opacity: 0.44; }
+
+.glosario__ficha--abierta { border-color: rgb(var(--letra-rgb) / 16%); }
+.glosario__ficha--abierta::after { top: 3%; bottom: 3%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glosario__ficha,
+  .glosario__ficha::before,
+  .glosario__ficha::after { transition: none; }
+}
+
+/* ── LA CABECERA DE LA FICHA ES EL BOTÓN ────────────────────────────
+   Y ocupa la ficha entera de lado a lado. Un icono de desplegar al
+   margen sería un objetivo de 24 px para un dedo que puede no venir
+   firme; así el objetivo es toda la línea del título. El `min-height`
+   de 3rem es lo que garantiza que además tenga altura de dedo cuando la
+   palabra es corta.
+
+   Botón desnudo: sin fondo, sin borde y con la tipografía del título.
+   Lo que dice que se pulsa no es una caja gris — es la marca de la
+   derecha y que el cursor cambie. */
+.glosario__boton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--e-3) var(--e-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.glosario__boton:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; }
+/* Una ficha sin matiz que abrir no finge que se abre: el botón queda
+   inerte (`disabled` desde js/palabras.js) y se le devuelve el cursor
+   de texto. Ver el bucle de arranque de ese módulo. */
+.glosario__ficha--llana .glosario__boton { cursor: default; }
+.glosario__ficha--llana .glosario__mas { display: none; }
+
+.glosario__palabra {
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* LA MARCA DE «HAY MÁS». Un charco de acuarela con una cruz dentro que
+   se convierte en raya al abrir — no un triángulo. El giro de 90° es lo
+   que hace la transformación con una sola forma: la barra vertical de
+   la cruz se tumba y desaparece contra la horizontal.
+
+   En pseudoelementos y no en un SVG porque son dos rectángulos: un
+   fichero, una petición y un `fill` que retintar por dos barras de
+   3 px. */
+.glosario__mas {
+  position: relative;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 46% 54% 52% 48% / 50% 46% 54% 50%;
+  background: color-mix(in srgb, #41707F 16%, transparent);
+  transition: rotate 260ms cubic-bezier(.2,.7,.2,1),
+              background-color 260ms linear;
+}
+.glosario__mas::before,
+.glosario__mas::after {
+  content: "";
+  position: absolute;
+  inset: 50% 28%;
+  translate: 0 -1px;
+  height: 2px;
+  border-radius: 1px;
+  background: #2F5A6B;
+}
+.glosario__mas::after { rotate: 90deg; transition: opacity 200ms linear; }
+
+.glosario__ficha--abierta .glosario__mas {
+  rotate: 90deg;
+  background: color-mix(in srgb, #41707F 30%, transparent);
+}
+/* La barra que sobra se va, y así lo que queda es un signo de menos —
+   la forma universal de «esto se cierra». */
+.glosario__ficha--abierta .glosario__mas::after { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glosario__mas, .glosario__mas::after { transition: none; }
+}
+
+/* `margin-inline-start: 0` porque el navegador sangra los <dd> 40px por
+   su cuenta, y aquí la ficha ya es la sangría. */
+.glosario__que {
+  margin: 0;
+  margin-inline-start: 0;
+  padding: 0 var(--e-4) var(--e-4);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.glosario__corta { margin: 0; }
+
+/* ── EL MATIZ, CERRADO POR DEFECTO ──────────────────────────────────
+   El estado cerrado lo pone ESTA hoja y no el JavaScript, por lo mismo
+   que el de la barra flotante: puesto por script habría un cuadro con
+   las ocho fichas abiertas y la sección daría un salto de media
+   pantalla al cargar. Y sin script se quedan todas abiertas, que es el
+   estado bueno — lo pone el <noscript> de index.astro.
+
+   `grid-template-rows: 0fr → 1fr` y no `max-height`: es la única forma
+   de animar hasta la altura REAL del contenido sin inventarse un techo
+   en píxeles que un día se queda corto y corta una frase por la mitad.
+
+   SON DOS CAJAS Y HACEN FALTA LAS DOS. La de fuera es la rejilla que
+   pasa de 0fr a 1fr; la de dentro es la que lleva `overflow: hidden` y
+   se deja recortar. Con una sola no funciona, y el motivo es fino: el
+   texto suelto dentro de una rejilla genera una caja ANÓNIMA, y a una
+   caja anónima no se le puede poner `overflow` porque no hay selector
+   que la alcance. La fila mediría 0 y el texto seguiría dibujándose
+   fuera, encima de la ficha siguiente. */
+.glosario__pliegue {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms cubic-bezier(.2,.7,.2,1);
+}
+.glosario__pliegue > div { overflow: hidden; }
+.glosario__ficha--abierta .glosario__pliegue { grid-template-rows: 1fr; }
+
+/* El aire entre la frase corta y el matiz va DENTRO del pliegue, no
+   como margen del pliegue: un margen fuera no se recorta con la fila y
+   deja un hueco de 12 px debajo de las fichas cerradas — ocho huecos
+   que nadie sabe de dónde salen. */
+.glosario__larga { margin: var(--e-3) 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glosario__pliegue { transition: none; }
+}
+
+.glosario__ruta {
+  color: inherit;
+  font-weight: 700;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+}
+
+/* (Aquí vivían el campo de búsqueda, su etiqueta, el recuento y el
+    estado vacío. Se retiraron con el buscador. La razón está en
+    Herramientas.astro: lo que justificaba el campo era que ocho fichas
+    largas costaban pantalla y media de saltar, y plegadas a una frase ya
+    no cuesta.) */
+
 /* EL LEMA — una sola frase, sola en su línea, del tamaño de una
    afirmación. No es un párrafo corto: es lo que queda si alguien lee
    una sola cosa de toda la sección. */
@@ -1733,8 +2308,240 @@ body {
   font-family: var(--tipo-titulo); font-weight: 400;
   font-size: var(--t-2xl); margin: 0 0 var(--e-2);
 }
+
+/* (AQUI VIVIA EL ROTULO DE CAPITULO: encima de cada titulo iba la
+    pregunta a la que ese bloque contesta —«que me paso», «donde
+    estoy»— con una pincelada del pigmento del capitulo delante.
+
+    Se retira entero. La idea era buena sobre el papel y en pantalla
+    hacia lo contrario de lo que pretendia: encima de cada titulo habia
+    ahora DOS lineas de rotulo, una en versalitas y otra grande, y el
+    ojo tiene que resolver cual de las dos es el titulo antes de poder
+    leer nada. Nueve secciones, nueve dudas.
+
+    Lo que agrupaba los capitulos ya lo hace el corte entre secciones,
+    que es donde tiene que estar: un cambio de tema se dice con un
+    silencio, no con una etiqueta. Esta en el historial.) */
 .bloque p { line-height: 1.6; max-width: 58ch; text-wrap: pretty; }
 .bloque__intro { color: rgb(var(--letra-rgb) / 75%); font-size: var(--t-sm); }
+
+.bloque--panel {
+  --panel-accent: #41707F;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3.5vw, 2.75rem);
+  border: 1px solid rgb(var(--letra-rgb) / 12%);
+  border-top: 0.3rem solid var(--panel-accent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--papel-alto) 88%, transparent);
+}
+
+.bloque--panel > h3 {
+  margin-bottom: var(--e-4);
+  padding-bottom: var(--e-3);
+  border-bottom: 1px solid rgb(var(--letra-rgb) / 12%);
+}
+
+#recordar { --panel-accent: #2F6B4F; }
+#mapa { --panel-accent: #A85A47; }
+
+/* Interactive tool map. Each scene keeps its real content and is
+   reduced only while the overview is visible. */
+.mapa-herramientas {
+  max-width: 72rem;
+  margin: var(--e-8) auto 0;
+}
+
+.mapa-herramientas__cabecera {
+  position: relative;
+  max-width: 44rem;
+  margin: 0 auto var(--e-5);
+  text-align: center;
+}
+
+.mapa-herramientas__rotulo {
+  margin-bottom: var(--e-2);
+  color: rgb(var(--letra-rgb) / 62%);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mapa-herramientas__cabecera h2 {
+  margin: 0 0 var(--e-2);
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-3xl);
+  font-weight: 400;
+}
+
+.mapa-herramientas__cabecera > p:last-of-type {
+  max-width: 48ch;
+  margin-inline: auto;
+  color: rgb(var(--letra-rgb) / 72%);
+}
+
+.mapa-herramientas__volver {
+  min-height: 2.75rem;
+  margin-top: var(--e-3);
+  padding-inline: 1rem;
+  border: 1px solid rgb(var(--letra-rgb) / 28%);
+  border-radius: 999px;
+  background: var(--papel-alto);
+  color: var(--letra);
+  font: inherit;
+  cursor: zoom-out;
+}
+
+.mapa-herramientas__marco {
+  position: relative;
+  height: clamp(38rem, 72vw, 48rem);
+  overflow: hidden;
+  border: 1px solid rgb(var(--letra-rgb) / 14%);
+  border-radius: clamp(0.75rem, 2vw, 1.5rem);
+  background:
+    radial-gradient(circle at 24% 28%, rgb(65 112 127 / 12%), transparent 24%),
+    radial-gradient(circle at 76% 68%, rgb(47 107 79 / 11%), transparent 27%),
+    color-mix(in srgb, var(--papel-hondo) 72%, transparent);
+  transition: height 500ms ease, background-color 500ms ease;
+}
+
+.mapa-herramientas__ruta {
+  position: absolute;
+  inset: 14% 12%;
+  border: 2px dashed rgb(var(--letra-rgb) / 18%);
+  border-radius: 48% 52% 44% 56%;
+  rotate: -8deg;
+}
+
+.mapa-herramientas__escena {
+  --escala: 0.3;
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: min(60rem, calc(100% - 2rem));
+  transform: translate(-50%, -50%) scale(var(--escala));
+  transform-origin: center;
+  transition: left 650ms cubic-bezier(.2, .72, .2, 1),
+              top 650ms cubic-bezier(.2, .72, .2, 1),
+              transform 650ms cubic-bezier(.2, .72, .2, 1),
+              opacity 300ms ease;
+}
+
+.mapa-herramientas__escena--ayuda {
+  --x: 28%;
+  --y: 30%;
+  --escala: 0.4;
+}
+
+.mapa-herramientas__escena--recordar {
+  --x: 70%;
+  --y: 34%;
+  --escala: 0.31;
+}
+
+.mapa-herramientas__escena--mapa {
+  --x: 48%;
+  --y: 73%;
+  --escala: 0.24;
+}
+
+.mapa-herramientas__escena > .bloque { margin: 0; }
+.mapa-herramientas__escena > .bloque--glosario { max-width: 60rem; }
+
+.mapa-herramientas__abrir {
+  position: absolute;
+  z-index: 20;
+  inset: -5rem -2rem -2rem;
+  border: 0;
+  background: transparent;
+  color: var(--letra);
+  cursor: zoom-in;
+}
+
+.mapa-herramientas__abrir span {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  min-width: max-content;
+  translate: -50% 0;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: 999px;
+  background: var(--papel-alto);
+  font-family: var(--tipo-titulo);
+  font-size: 3.6rem;
+  line-height: 1;
+  box-shadow: 0 0.8rem 2.2rem rgb(var(--letra-rgb) / 10%);
+}
+
+.mapa-herramientas__abrir:focus-visible span {
+  outline: 0.5rem solid var(--letra);
+  outline-offset: 0.35rem;
+}
+
+.mapa-herramientas--activa .mapa-herramientas__marco {
+  height: clamp(42rem, 82vh, 64rem);
+  overflow: auto;
+  background-color: var(--papel);
+}
+
+.mapa-herramientas--activa .mapa-herramientas__ruta { opacity: 0; }
+
+.mapa-herramientas--activa .mapa-herramientas__escena {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mapa-herramientas--activa .mapa-herramientas__escena--activa {
+  left: 50%;
+  top: var(--e-5);
+  z-index: 30;
+  padding-bottom: var(--e-7);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.mapa-herramientas__escena--activa .mapa-herramientas__abrir { display: none; }
+
+@media (max-width: 700px) {
+  .mapa-herramientas__marco { height: 38rem; }
+  .mapa-herramientas__escena { width: calc(100% - 1.5rem); }
+  .mapa-herramientas__escena--ayuda { --x: 28%; --y: 28%; --escala: 0.27; }
+  .mapa-herramientas__escena--recordar { --x: 70%; --y: 35%; --escala: 0.21; }
+  .mapa-herramientas__escena--mapa { --x: 48%; --y: 72%; --escala: 0.17; }
+  .mapa-herramientas--activa .mapa-herramientas__marco { height: 82vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-herramientas__marco,
+  .mapa-herramientas__escena { transition: none; }
+}
+
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__marco {
+  display: grid;
+  height: auto;
+  gap: var(--e-7);
+  overflow: visible;
+  border: 0;
+  background: none;
+}
+
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__ruta,
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__abrir,
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__volver {
+  display: none;
+}
+
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__escena {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  transform: none;
+}
 
 .boton {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1939,12 +2746,28 @@ body {
 .ventana__sinfuente { margin: var(--e-2) 0 0; font-size: var(--t-xs); color: #A33B2A; }
 
 /* ── Guardar lo que recuerdo ────────────────────────────────────── */
-#recuerdo { display: grid; gap: 0.9rem; margin-top: var(--e-4); max-width: 34rem; }
+#recuerdo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-4);
+  margin-top: var(--e-5);
+  max-width: none;
+}
 #recuerdo label { display: grid; gap: 0.3rem; }
 #recuerdo span { font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 75%); }
 #recuerdo input, #recuerdo textarea {
+  width: 100%; box-sizing: border-box;
   padding: 0.7rem 0.8rem; border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
   font: inherit; font-size: var(--t-md); resize: vertical;
+}
+#recuerdo label:nth-of-type(n + 5),
+#recuerdo .salida__acciones { grid-column: 1 / -1; }
+
+@media (max-width: 700px) {
+  #sin-hablar .enlaces,
+  #recuerdo { grid-template-columns: 1fr; }
+  #recuerdo label,
+  #recuerdo .salida__acciones { grid-column: 1; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -2088,8 +2911,16 @@ body {
 .mapa__lienzo:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; }
 
 /* El viraje de cada mapa, sobre las teselas y solo sobre ellas. */
+/* Emergencia se aprieta un poco más que los otros dos: es donde hace
+   falta distinguir una calle de otra.
+
+   Y OJO CON EL CONTRASTE, que ya costó una vuelta: la tesela clara es
+   casi toda blanco, y `contrast()` pivota sobre el gris medio, así que
+   subirlo empuja los grises claros —o sea las calles— hacia el blanco y
+   BORRA el mapa. Con 1.42 la caja se quedó en blanco. Lo que funciona
+   es bajar primero el brillo y apretar poco. */
 .mapa[data-modo="emergencia"] .leaflet-tile-pane {
-  filter: saturate(0.55) contrast(1.16) brightness(0.99);
+  filter: saturate(0.62) brightness(0.94) contrast(1.12);
 }
 .mapa[data-modo="luz"] .leaflet-tile-pane {
   filter: grayscale(1) sepia(0.55) saturate(0.8) brightness(1.04) contrast(0.96);
@@ -2391,6 +3222,13 @@ body {
 .enlaces a { color: var(--letra); font-size: var(--t-md); }
 .enlaces span { display: block; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%); }
 
+#sin-hablar .enlaces { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#sin-hablar .enlaces li {
+  padding: var(--e-4);
+  border-left: 0.25rem solid var(--panel-accent);
+  background: var(--papel-hondo);
+}
+
 .ramas { display: grid; gap: 0.75rem; margin-top: var(--e-6); }
 .ramas a { color: var(--letra); font-size: var(--t-md); }
 
@@ -2425,10 +3263,13 @@ body {
   max-width: 60rem;
   margin-bottom: 0;
   margin-top: var(--e-4);
-  padding-top: 2.75rem;
-  /* La misma línea que separa la pregunta de la cabecera. Es una pausa,
-     no un cambio de tema: lo que viene es el cierre de lo anterior. */
-  border-top: 1px solid rgb(var(--letra-rgb) / 12%);
+  /* SIN FILETE ARRIBA, y esto era la mitad del problema del corte.
+     Justo encima de este bloque hay un `.hoja`, o sea un separador de
+     sección entero. Con el filete puesto había DOS cortes seguidos
+     —silencio, línea, y otra vez texto— diciendo lo mismo a diez píxeles
+     uno del otro, y el resultado no era doble separación: era ninguna,
+     porque el ojo deja de creerse un corte que se repite.
+     El corte lo da el `.hoja`. Aquí no hace falta nada. */
 }
 .rr__entrada { max-width: 46ch; }
 
@@ -3287,25 +4128,20 @@ body {
    81 %. Ese 0.57 es el número que aparece en todas las reglas que
    usan esta lámina, y de ahí sale.) */
 
-/* ── 2 · LAS AGUADAS, PINTADAS ──────────────────────────────────────
-   Las dos capas de fondo dejan de ser `radial-gradient` y pasan a ser
-   una acuarela de verdad. Un degradado nunca va a tener el pigmento
-   acumulado en el canto ni el grano separándose; esta lámina lo trae
-   pintado.
+/* (AQUI ESTABA LA REGLA QUE PISABA EL FONDO ENTERO, y se retira con
+    una nota porque el fallo que causo merece quedar escrito.
 
-   Los charcos de CSS se apagan (el `::after` que los dibujaba) porque
-   ahora sobran: lo que hacían mal lo hace bien la lámina. */
-.fondo__capa--alta,
-.fondo__capa--media {
-  background-image: var(--arte-aguadas);
-  background-size: cover;
-  background-position: center;
-}
-.fondo__capa--alta::after,
-.fondo__capa--media::after { content: none; }
-/* La lámina es una sola, así que la segunda capa se voltea: con la
-   misma imagen dos veces se vería el calco. */
-.fondo__capa--media { scale: -1 1; }
+    Le ponia `background-image: url(aguadas-seccion2.webp)` a dos capas
+    definidas dos mil lineas mas arriba con degradados, y les apagaba
+    los charcos con `content: none`. O sea que todo aquel sistema de
+    arriba --tres capas, sus pigmentos, sus comentarios-- NO SE PINTABA:
+    lo que se veia era esta lamina, y cualquiera que tocara la paleta
+    arriba estaba editando codigo muerto sin enterarse. Paso.
+
+    La lamina sigue siendo lo bueno de ese fondo y no se ha ido a
+    ninguna parte: ahora es la UNICA fuente de forma de las manchas y
+    vive con ellas en `.mancha`, junto a los pigmentos que la retinen.
+    Un sitio, un sistema.) */
 
 /* ── 3 · LOS FILETES ────────────────────────────────────────────────
    El canto izquierdo de las tarjetas deja de ser un `border-left` de
@@ -3492,73 +4328,97 @@ body {
    Es decorativa entera: `aria-hidden` en el marcado y sin texto. Un
    lector de pantalla no encuentra nada aquí, que es lo correcto — el
    capítulo lo marcan los encabezados, que ya están. */
+/* ════════════════════════════════════════════════════════════════════
+   EL CORTE ENTRE SECCIONES
+
+   Esto era un canto de papel rasgado: una banda de `--papel-alto` con
+   la lámina de barbas como máscara y una sombra proyectada, como una
+   hoja apoyada encima de otra. La idea es bonita y en pantalla no
+   funcionaba, por dos motivos que solo se ven mirando:
+
+   1 · EL ESCALÓN DE VALOR SE FUE. `--papel-alto` y `--papel` están a
+       tres puntos uno de otro desde que el papel se volvió marfil, así
+       que la «hoja de encima» no se leía como una hoja: se leía como
+       una banda blanca flotando en mitad de la nada, con un canto
+       rasgado arriba y un corte recto abajo.
+   2 · Y NO SEPARABA. Justo debajo venía otro separador —el filete de
+       `.bloque--rescate`—, así que había DOS cortes seguidos diciendo
+       lo mismo y ninguno de los dos conseguía decir «aquí empieza otra
+       cosa».
+
+   Lo que separa dos capitulos es el SILENCIO, y el silencio se mide.
+   Aquí hay tres pantallas de altura repartidas así: mucho aire, un
+   trazo corto y centrado, y más aire. El trazo no divide —no llega ni
+   a un tercio del ancho—: solo marca que el silencio es deliberado y
+   no un hueco que se quedó ahí.
+
+   Es la misma pincelada del filete del hero, con la técnica de los
+   charcos que ya usan `.termino` y el realce: tres óvalos solapados,
+   más carga por donde el pincel apoya y los extremos secos.
+   ═══════════════════════════════════════════════════════════════════ */
 .hoja {
   position: relative;
-  height: calc(var(--barbas) + 3rem);
-  margin-block: var(--e-7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* EL SILENCIO, MEDIDO OTRA VEZ Y MÁS CORTO. Estuvo en 11 rem y con el
+     margen de los bloques a cada lado sumaba 380 px entre el final de
+     una sección y el título de la siguiente: eso ya no es una pausa, es
+     una página en blanco que hay que cruzar. Un corte no se hace largo,
+     se hace CLARO. */
+  height: clamp(2rem, 4vw, 3.5rem);
+  /* Y el aire va aquí, no en los bloques: repartido a los dos lados del
+     trazo, así que la separación es simétrica y se controla desde un
+     solo sitio. */
+  margin-block: clamp(1.5rem, 3vw, 2.75rem);
   pointer-events: none;
 }
 
-/* El cuerpo de la hoja nueva. Arranca en el canto y muere tres rem más
-   abajo: lo justo para que el ojo lea «esto es otra hoja» y no lo
-   suficiente para que se vea dónde acaba. */
+/* ── EL TRAZO ───────────────────────────────────────────────────────
+   Estuvo en 96 px centrados en una pantalla de 1400 y no separaba
+   nada: a esa proporción no se lee como una raya, se lee como una mota
+   que alguien dejó ahí. Un corte tiene que CRUZAR — si no llega de un
+   lado al otro, el ojo lo salta.
+
+   Ahora ocupa la medida entera del bloque, con los dos extremos secos:
+   el pigmento nace y muere antes de tocar los cantos, así que cruza sin
+   ser una línea de tabla. */
 .hoja::before {
   content: "";
-  position: absolute;
-  left: 0; right: 0;
-  top: calc(var(--barbas) * 0.57);
-  height: 3rem;
-  background: linear-gradient(to bottom,
-    var(--papel-alto) 0,
-    color-mix(in srgb, var(--papel-alto), transparent 100%) 100%);
+  width: min(54rem, 100%);
+  height: 0.3rem;
+  border-radius: 2px;
+  opacity: 0.85;
+  /* CUATRO PASADAS QUE SE SOLAPAN, no una barra. La carga sube y baja a
+     lo largo del trazo —más pigmento donde el pincel apoya, menos por
+     donde va de paso— y los dos extremos se secan antes del canto. Eso
+     es lo que separa una raya pintada de un `border-bottom`: el grosor
+     es constante, la tinta no. */
+  background-image:
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, #41707F 92%, transparent) 0%,
+      color-mix(in srgb, #41707F 58%, transparent) 64%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, #41707F 74%, transparent) 0%,
+      color-mix(in srgb, #41707F 42%, transparent) 62%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, #41707F 88%, transparent) 0%,
+      color-mix(in srgb, #41707F 50%, transparent) 60%,
+      transparent 100%),
+    radial-gradient(closest-side ellipse at 50% 50%,
+      color-mix(in srgb, #41707F 66%, transparent) 0%,
+      color-mix(in srgb, #41707F 36%, transparent) 58%,
+      transparent 100%);
+  background-size: 32% 100%, 26% 72%, 30% 88%, 24% 64%;
+  background-position: 0% 50%, 30% 50%, 66% 50%, 100% 50%;
+  background-repeat: no-repeat;
 }
+:root[data-tinta="clara"] .hoja::before { opacity: 0.9; }
 
-/* Y su canto. Mismo tratamiento que el de arriba y por la misma razón
-   medida: la lámina entra como MÁSCARA y el color lo pone el token de
-   la hora, así que de noche es un canto oscuro y no una banda blanca.
-
-   La sombra va con `drop-shadow` y no con `box-shadow`: `box-shadow`
-   dibuja la sombra de la CAJA —un rectángulo, o sea justo el borde
-   recto del que venimos huyendo— mientras que `drop-shadow` sigue el
-   alfa de la máscara, así que la sombra tiene la forma del canto
-   deshilachado. Es la diferencia entre una hoja apoyada y una hoja
-   dibujada.
-
-   Se espeja respecto al canto de arriba (`scale: -1 1`) para que las
-   cuatro hojas de la página no enseñen el mismo dibujo cuatro veces:
-   con una sola lámina, lo único que evita el calco es voltearla. */
-.hoja::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0;
-  height: var(--barbas);
-  background: var(--papel-alto);
-  scale: -1 1;
-  -webkit-mask-image: var(--arte-barbas);
-          mask-image: var(--arte-barbas);
-  -webkit-mask-size: auto 100%;
-          mask-size: auto 100%;
-  -webkit-mask-repeat: repeat-x;
-          mask-repeat: repeat-x;
-  -webkit-mask-position: top center;
-          mask-position: top center;
-  filter: drop-shadow(0 -5px 9px rgb(var(--letra-rgb) / 12%));
-}
-
-/* De noche la hoja de encima no puede ser MÁS CLARA que la de debajo y
-   además llevar sombra: dos señales de profundidad contradictorias. Con
-   papel oscuro lo que hay arriba está más cerca de la luz, así que la
-   sombra sobra y basta con el escalón de valor. */
-:root[data-tinta="clara"] .hoja::after {
-  filter: drop-shadow(0 -5px 9px rgb(0 0 0 / 28%));
-}
-
-@media (max-width: 700px) {
-  /* En móvil el hueco entre bloques ya es casi todo lo que se ve de una
-     vez: la hoja se estrecha para no gastar media pantalla en un canto. */
-  .hoja { height: calc(var(--barbas) + 1.5rem); margin-block: var(--e-6); }
-  .hoja::before { height: 1.5rem; }
-}
+/* (La regla de móvil que había aquí encogía el canto de barbas. Ya no
+    hace falta: el silencio va en `clamp` y se encoge solo.) */
 
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3589,7 +4449,73 @@ body {
      estática de siempre. Con script: 220 vh de escena. */
   height: var(--barbas);
 }
-.boca.escena--viva { height: 220vh; }
+/* ── CUÁNTO DURA LA COSTURA ────────────────────────────────────────
+   Estuvo en 220 vh, y el número venía de querer que la escena se
+   pudiera mirar. Medido en la página: la escena pegada solo avanza con
+   lo que SOBRA por encima de una pantalla, así que 220 vh son 120 vh de
+   scroll —una pantalla y cuarto— antes de que la hoja termine de subir.
+   Quien bajaba tres dedos veía mar, mar y mar.
+
+   Eso contaba mal lo que pasa aquí. Esta costura no es una escena que
+   se contempla: es la respuesta a un gesto. Se baja, y lo que tiene que
+   sentirse de inmediato es que ABAJO HAY PAPEL.
+
+   Y NO SE ARREGLA CON UN NÚMERO MÁS PEQUEÑO SIN ENTENDER CUÁL. Se probó
+   en 150 vh y seguía habiendo un hueco grande, porque lo que se lee como
+   hueco NO es la cola de la escena: es la escena entera. Mientras la
+   hoja no ha subido del todo, la franja de arriba de la pantalla sigue
+   siendo mar, y todo el recorrido de la escena es scroll en el que no
+   aparece contenido. Medido con la página delante: con 150 vh eran
+   1 080 px —una pantalla y media— desde que acaba el hero hasta que
+   empieza a haber algo que leer.
+
+   118 vh son 18 vh de recorrido: la costura ocurre entera en menos de un
+   quinto de pantalla. Con la curva de salida (`data-curva` en Boca.astro
+   y escenas.js) la mitad de ese quinto se gasta en el primer empujón de
+   rueda, así que la hoja salta a la primera y el texto viene detrás sin
+   que haya que buscarlo. Sigue siendo la misma escena de tres capas —el
+   canto de barbas, el lavado y la sangría siguen ahí— pero pasa a la
+   velocidad de un gesto y no a la de una secuencia.
+
+   El techo de esto es 100 vh: por debajo no hay recorrido que repartir
+   (la escena pegada solo avanza con lo que sobra por encima de una
+   pantalla) y la costura se vuelve un corte seco.
+
+   ── Y AQUÍ ESTABA EL HUECO DE VERDAD ───────────────────────────────
+
+   Acortar la escena no bastó, y la medida explica por qué. De los 850 px
+   que ocupaba la boca, el barrido gastaba 130: los otros 720 —UNA
+   PANTALLA EXACTA— eran la altura del propio `.boca__escena` pasando por
+   delante después de que la hoja ya estuviera puesta. O sea papel en
+   blanco, del canto de la pantalla al otro, durante un scroll entero,
+   con el texto esperando debajo.
+
+   Ese sobrante no es un número mal elegido: es estructural. Una escena
+   pegada tiene que medir lo que mide la pantalla PARA PODER TAPARLA, y
+   además el recorrido. Recortarlo por altura es imposible sin romper la
+   costura.
+
+   Lo que sí se puede es que no EMPUJE. El margen negativo de una
+   pantalla no cambia la caja de la boca —la escena se pega y se despega
+   exactamente igual— sino dónde empieza lo siguiente: `#herramientas`
+   arranca en cuanto el barrido termina y sube por detrás de la escena en
+   vez de hacer cola detrás de ella.
+
+   Y funciona sin trucos de apilamiento porque las dos son papel opaco y
+   el orden del documento ya dice quién va encima: la sección viene
+   después de la boca y las dos están en `z-index: auto`, así que la
+   hoja de la sección tapa la de la escena mientras sube. Papel sobre
+   papel — la costura no se ve porque no hay nada que ver. */
+.boca.escena--viva {
+  height: 118vh;
+  margin-bottom: -100svh;
+  margin-bottom: -100dvh;
+}
+/* Decorativa entera y ahora además SOLAPADA con el contenido: sin esto,
+   la mitad superior de la sección tendría por encima un div invisible
+   que se come las pulsaciones. `aria-hidden` la esconde del lector de
+   pantalla; esto la esconde del dedo. */
+.boca { pointer-events: none; }
 
 .boca__escena {
   position: relative;
@@ -3617,7 +4543,22 @@ body {
   position: absolute;
   left: 0; right: 0; top: 0;
   height: 300vh;                       /* de sobra para tapar por debajo */
-  background: var(--papel-arriba);
+  /* EL MISMO DESCUELGUE QUE LA SECCIÓN. La hoja era `--papel-arriba`
+     plano, así que llegaba al mar siendo ya documento: el canto de
+     barbas cortaba el cielo con papel blanco y ahí estaba el borde duro.
+     Ahora su primer tramo lleva `--papel-cielo` —papel teñido con la
+     bruma de la hora— y se aclara hacia el papel a lo largo de un tercio
+     de pantalla. El canto sigue siendo irregular, pero ya no separa dos
+     mundos: separa dos momentos de la misma luz.
+
+     Empieza en el MISMO token que `#herramientas` a propósito: las dos
+     se solapan (ver el margen negativo de `.boca`) y cualquier diferencia
+     entre sus primeros píxeles sería el escalón que esto viene a quitar.
+     El tramo es más corto aquí —30 vh contra 16 rem— porque de esta hoja
+     solo se ve la franja de arriba: por debajo la tapa la sección. */
+  background: linear-gradient(to bottom,
+    var(--papel-cielo) 0,
+    var(--papel-arriba) 30vh);
   translate: 0 calc((1 - var(--avance, 1)) * 100vh);
   /* DOS CAPAS DE MÁSCARA: el canto de barbas arriba y un bloque sólido
      para todo lo demás. Sin la segunda, la lámina se estiraría a lo

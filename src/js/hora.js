@@ -65,9 +65,9 @@ const A = {
      seguimos a un orden de magnitud, la tinta sigue siendo clara y el
      texto blanco sigue por encima de 12:1. El color cambia, el valor
      no. */
-  h03: { cieloAlto:'#172A56', cieloBajo:'#40376A', cieloHorizonte:'#6A5786',
-         agua:'#152840', altas:'#325A7C',
-         reguero:'#DCE4F4', bruma:'#26375E', acento:'#B06A4A', elev:12, int:0.35 },
+  h03: { cieloAlto:'#080E24', cieloBajo:'#141A3C', cieloHorizonte:'#3C3352',
+         agua:'#10122E', altas:'#323C74',
+         reguero:'#DCE4F4', bruma:'#221E42', acento:'#B06A4A', elev:12, int:0.35 },
   /* ── EL AMANECER Y EL OCASO SON SU PROPIA HORA ────────────────────
      Esto es lo que faltaba de verdad, y no era un color: era un ANCLA.
 
@@ -264,9 +264,15 @@ const A = {
      Que las dos noches sean distintas es la misma ley que obligó a
      separar la mañana de la tarde — si no, todas las horas oscuras son
      la misma imagen. */
-  h21: { cieloAlto:'#182448', cieloBajo:'#4A3866', cieloHorizonte:'#7E5E7A',
-         agua:'#16283F', altas:'#3F6480',
-         reguero:'#E0D4F0', bruma:'#28365C', acento:'#A8664C', elev:26, int:0.50 },
+  /* La franja del horizonte se levanta y se entibia. En la referencia
+     de noche el cielo no muere en el mar: hay un resplandor bajo —luz
+     de orilla, aire cargado— que separa el agua del cielo y da a la
+     via lactea contra que recortarse. Y entra por ESTE canal, que es
+     el que no pesa en lumTexto (ver la nota de arriba), asi que la
+     tinta del rotulo no se entera. */
+  h21: { cieloAlto:'#0A1230', cieloBajo:'#1A1F48', cieloHorizonte:'#4E3A5E',
+         agua:'#12142E', altas:'#383F7C',
+         reguero:'#E0D4F0', bruma:'#241E44', acento:'#A8664C', elev:26, int:0.50 },
 };
 
 /* PENDIENTE (sección 14): sustituir por cálculo real por latitud antes
