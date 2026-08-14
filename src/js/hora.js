@@ -498,9 +498,18 @@ export function aplicar(L, escribirLavado = true) {
   r.style.setProperty('--reguero',    aCss(L.reguero));
   r.style.setProperty('--bruma',      aCss(L.bruma));
   r.style.setProperty('--acento',     aCss(L.acento));
-  // La garza en vuelo vive en el DOM: se lleva a la luz de la hora
-  // con brillo, no con color — la lámina ya es casi monocroma.
-  r.style.setProperty('--vuelo-brillo', (0.55 + 0.5 * L.int).toFixed(3));
+  /* La garza en vuelo vive en el DOM: se lleva a la luz de la hora
+     con brillo, no con color — la lámina ya es casi monocroma.
+
+     LA PENDIENTE SE EMPINÓ, medida contra el árbol. De noche (int 0.35)
+     la fórmula vieja daba 0.73 y el manglar es una silueta casi negra:
+     ocho garzas blancas encendidas sobre una copa apagada, cada una un
+     agujero en la noche. Un ave dormida en un árbol a oscuras es un
+     bulto apenas más claro que la hoja, no una lámpara. Con 0.42 de
+     suelo, a mediodía queda igual (1.02 antes, 1.05 ahora) y de noche
+     baja a 0.64 — todavía se ven, que es lo que pide la presencia,
+     pero ya son cuerpos EN el árbol y no encima de él. */
+  r.style.setProperty('--vuelo-brillo', (0.42 + 0.63 * L.int).toFixed(3));
   /* Cuanta más luz, más aire entre el ave y quien mira: de día se lava
      más que de noche, igual que el agua lejana. */
   r.style.setProperty('--vuelo-sat', (0.34 - 0.12 * L.int).toFixed(3));
