@@ -320,16 +320,100 @@ body {
   text-shadow: 0 1px 3px rgb(18 35 48 / 30%);
 }
 
-/* En móvil la acuarela se compone una vez y no treinta veces por
-   segundo. La lámina transparente mantiene el manglar del hero animado
-   sobre el mar de respaldo, con 163 KB y cero trabajo por cuadro. */
+/* En móvil la acuarela se compone una vez y luego se mueve por capas de
+   compositor. Conserva vida visible sin descargar ni compilar el shader
+   de escritorio: agua, copa y aves tienen relojes distintos. */
+.hero-estatico .mundo::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: -16%; right: -16%;
+  top: 54%; bottom: -8%;
+  background:
+    repeating-radial-gradient(ellipse 72% 18% at 50% -8%,
+      transparent 0 17px,
+      rgb(205 231 232 / 14%) 18px 19px,
+      transparent 21px 37px),
+    linear-gradient(105deg,
+      transparent 18%, rgb(220 238 237 / 11%) 42%, transparent 65%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+          mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  mix-blend-mode: screen;
+  opacity: 0.58;
+  transform: translate3d(-2.5%, 0, 0) scale(1.04);
+  will-change: transform, opacity;
+  animation: agua-movil 7.5s ease-in-out infinite alternate;
+}
+
 .hero-estatico .mundo::after {
   content: "";
   position: absolute;
+  z-index: 1;
   inset: 0;
   background: url("/galene/arte/mobile/manglar-v2.webp") 78% 66% / auto 68% no-repeat;
   filter: saturate(0.72) contrast(0.94);
   opacity: 0.94;
+  transform-origin: 78% 83%;
+  will-change: transform, filter;
+  animation: mangle-movil 8.8s ease-in-out infinite;
+}
+
+.movil-vida { display: none; }
+.hero-estatico .movil-vida {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+}
+.movil-ave {
+  position: absolute;
+  display: block;
+  width: clamp(54px, 18vw, 78px);
+  height: auto;
+  aspect-ratio: 1.5;
+  left: 108%;
+  filter: brightness(var(--vuelo-brillo, 0.8)) saturate(0.34) contrast(0.78);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: garza-movil 19s linear infinite;
+}
+.movil-ave--alta {
+  top: 22%;
+  /* Ya está cruzando al abrir: el movimiento se reconoce sin esperar. */
+  animation-delay: -9s;
+}
+.movil-ave--baja {
+  top: 31%;
+  width: clamp(38px, 13vw, 56px);
+  animation-duration: 25s;
+  animation-delay: -4s;
+  opacity: 0.42;
+}
+
+@keyframes agua-movil {
+  0%   { transform: translate3d(-2.8%, 0, 0) scale(1.04, 0.98); opacity: 0.42; }
+  48%  { transform: translate3d(1.4%, 1.2%, 0) scale(1.07, 1.02); opacity: 0.64; }
+  100% { transform: translate3d(3.2%, -0.8%, 0) scale(1.04, 1); opacity: 0.48; }
+}
+@keyframes mangle-movil {
+  0%, 100% { transform: rotate(-0.28deg) skewX(-0.16deg) translate3d(-1px, 0, 0); }
+  45%      { transform: rotate(0.46deg) skewX(0.24deg) translate3d(1.5px, -0.5px, 0); }
+  72%      { transform: rotate(0.12deg) skewX(0.08deg) translate3d(0.5px, 0, 0); }
+}
+@keyframes garza-movil {
+  0%   { transform: translate3d(0, 5px, 0) rotate(2deg); opacity: 0; }
+  8%   { opacity: 0.58; }
+  46%  { transform: translate3d(-67vw, -13px, 0) rotate(-1deg); opacity: 0.58; }
+  74%  { opacity: 0.45; }
+  100% { transform: translate3d(-138vw, 7px, 0) rotate(1deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-estatico .mundo::before,
+  .hero-estatico .mundo::after,
+  .hero-estatico .movil-ave { animation: none !important; }
+  .hero-estatico .movil-vida { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
