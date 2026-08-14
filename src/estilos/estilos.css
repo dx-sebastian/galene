@@ -681,6 +681,99 @@ body {
   text-underline-offset: 0.45em;
 }
 
+/* ═══ EL MENÚ DEL TELÉFONO ═════════════════════════════════════════
+   NO EXISTE EN ESCRITORIO. Ahí los cuatro rótulos están escritos en la
+   barra y un botón que los repita detrás de un toque sería una segunda
+   forma de llegar al mismo sitio — ruido, y un estado más que mantener.
+   Aparece exactamente donde los rótulos se apagan: 700 px.
+
+   Ocupa el hueco que pediste, a la izquierda de la píldora de ayuda.
+   La píldora NO entra dentro: ver el comentario en index.astro. */
+.menu { display: none; }
+
+/* ── DÓNDE SE ANCLA EL PANEL, Y POR QUÉ NO AL BOTÓN ────────────────
+   Medido a 375 px: colgado del propio <details> con `right: 0`, el
+   panel de 208 px arrancaba en x = −2. Se salía de la pantalla por la
+   izquierda, porque el botón NO es lo más a la derecha de la barra —la
+   píldora de ayuda está a su derecha— así que alinearse con su borde
+   derecho empuja el panel dos píxeles fuera.
+
+   Se cuelga del <nav>, cuyo borde derecho SÍ es el de la barra. Ahí el
+   panel cae alineado con la píldora y entra entero a cualquier ancho,
+   sin números mágicos ni media queries de rescate. */
+.barra__nav { position: relative; }
+
+.menu__boton {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+  /* 44 px es el mínimo táctil de las pautas de accesibilidad, y aquí no
+     es un número de manual: esta barra se toca con el pulgar y a una
+     mano en el peor momento posible. */
+  min-height: 44px;
+  padding-inline: 0.5rem;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--t-xs);
+  letter-spacing: 0.20em;
+  list-style: none;
+  text-transform: uppercase;
+}
+/* Safari pinta el triangulito con un pseudo propio que `list-style` no
+   apaga. Sin esto, el botón sale con una flecha negra al lado. */
+.menu__boton::-webkit-details-marker { display: none; }
+.menu__boton:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; border-radius: 2px; }
+
+/* Las tres rayas son UNA caja y dos sombras, no tres <span>. El icono
+   no significa nada por sí mismo —el rótulo «Menú» al lado es lo que
+   lo dice— así que no merece tres elementos en el árbol. */
+.menu__rayas {
+  width: 1.05rem;
+  height: 1px;
+  background: currentColor;
+  box-shadow: 0 -5px 0 currentColor, 0 5px 0 currentColor;
+}
+
+.menu__panel {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  z-index: 3;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 13rem;
+  padding: 0.75rem 0.5rem;
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: 4px;
+  /* Opaco a propósito. Detrás puede haber mar en movimiento, y un panel
+     traslúcido sobre un shader que se mueve es texto que parpadea. */
+  background: var(--papel);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 18%);
+}
+
+/* Dentro del panel los enlaces vuelven a existir: el `display: none` de
+   los 700 px es para los que están sueltos en la barra, no para estos. */
+.menu__panel .barra__enlace {
+  display: block;
+  padding: 0.7rem 0.75rem;
+  color: var(--letra);
+  line-height: 1.2;
+}
+.menu__panel .barra__enlace[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.35em;
+}
+
+@media (max-width: 700px) {
+  .menu { display: block; }
+}
+
+/* `prefers-reduced-motion` APAGA, no reduce (regla 7). Aquí no hay
+   animación que apagar —el panel aparece y ya— y eso es deliberado:
+   un desplegable que se despliega es justo el tipo de movimiento que
+   no aporta nada y sí puede molestar. */
+
 /* LA PÍLDORA — la ruta a la ayuda, y la única forma cerrada de la
    barra. Contorno de 1 px y fondo transparente: el contorno es lo que
    la separa de los otros dos enlaces sin darle un color propio que
@@ -2400,153 +2493,292 @@ body {
   cursor: zoom-out;
 }
 
+/* ── EL MARCO: ALTURA AUTOMÁTICA, NO UN LIENZO DE ALTO FIJO ────────
+   Tenía `height: clamp(38rem, 72vw, 48rem)` porque dentro flotaban tres
+   paneles en posición absoluta y algo tenía que sostener la caja. Con
+   los emblemas en rejilla, el contenido ya mide lo que mide: el alto
+   fijo solo podría sobrar o faltar, y a ciertos anchos hacía las dos
+   cosas a la vez. Se va, y con él una familia entera de bugs de
+   responsive que se arreglaban a base de media queries. */
 .mapa-herramientas__marco {
   position: relative;
-  height: clamp(38rem, 72vw, 48rem);
-  overflow: hidden;
+  padding: clamp(1.25rem, 4vw, 2.75rem);
   border: 1px solid rgb(var(--letra-rgb) / 14%);
   border-radius: clamp(0.75rem, 2vw, 1.5rem);
-  background:
-    radial-gradient(circle at 24% 28%, rgb(65 112 127 / 12%), transparent 24%),
-    radial-gradient(circle at 76% 68%, rgb(47 107 79 / 11%), transparent 27%),
-    color-mix(in srgb, var(--papel-hondo) 72%, transparent);
-  transition: height 500ms ease, background-color 500ms ease;
+  /* ── AQUÍ HABÍA UN `transition: background-color 500ms` Y ERA UN BUG
+        DE VERDAD, no una preferencia de estilo.
+
+     Diagnosticado en el navegador: `getAnimations()` devolvía una
+     CSSTransition de `background-color` en estado `running` con
+     `currentTime: 0`, permanentemente. luz.js reescribe los tokens de
+     la hora de forma continua, así que la transición se reiniciaba
+     antes de avanzar un solo fotograma y el fondo se quedaba clavado en
+     su valor de partida: TRANSPARENTE.
+
+     El síntoma era desconcertante — dentro de la MISMA regla, el
+     `border-color` se aplicaba y el `background-color` no— y mandó por
+     el desagüe un buen rato buscando el fallo en la especificidad y en
+     `color-mix()`, que no tenían nada que ver.
+
+     Se va. Un fondo que se funde al cambiar la luz es justo lo que este
+     sitio no quiere: la luz de la hora es continua por diseño, no una
+     conmutación entre dos temas que haya que suavizar. */
+  /* Y el fondo de día, por lo mismo que el de noche: con `--viva`, para
+     que no lo gane por empate la regla de «sin JavaScript». */
+  /* ── SEPARADO EN DOS, Y NO POR ESTILO ──────────────────────────────
+     Esto era un atajo `background:` de tres capas con un `color-mix()`
+     en la última. MEDIDO en el navegador: la tercera capa acababa en
+     `background-image: none` y `background-color: transparent` — el
+     color se PERDÍA. Las dos aguadas se pintaban y el papel del lienzo
+     no, así que el marco era un rectángulo hueco con dos manchas.
+
+     En el atajo, la ranura final es ambigua entre <image> y <color>, y
+     un `color-mix()` con un `var()` dentro cae del lado equivocado. En
+     propiedades separadas no hay ranura que adivinar. */
 }
 
+.mapa-herramientas--viva .mapa-herramientas__marco {
+  background-image:
+    radial-gradient(circle at 24% 28%, rgb(65 112 127 / 12%), transparent 24%),
+    radial-gradient(circle at 76% 68%, rgb(47 107 79 / 11%), transparent 27%);
+  /* Sin `color-mix()`: el token, tal cual. Medido en el navegador, la
+     versión con `color-mix()` en ESTA declaración se descartaba —el
+     `border-color` de la misma regla sí aplicaba y el fondo no— y el
+     lienzo se quedaba transparente. No merece la pena averiguar por qué
+     cuando el valor que se quería es un token que ya existe. */
+  background-color: var(--papel-hondo);
+}
+
+/* ── EL LIENZO NEGRO DE LA NOCHE ───────────────────────────────────
+   El papel nocturno del sitio es añil (#1A1832) y eso NO se toca: está
+   razonado donde se declara —un negro puro agujerea la pantalla y el
+   añil descansa— y vale para las secciones de lectura.
+
+   Pero esta sección no es una hoja de texto: es un LIENZO, un marco
+   con emblemas dentro, y sobre él el añil se lee como morado. Un lienzo
+   de noche es negro. Así que aquí, y solo aquí, el papel baja a
+   #1C1D1D: carbón neutro, sin una pizca de morado, con la letra encima
+   a 17.9:1 medido. No es #000 a propósito — el negro puro agujerea la
+   pantalla; esto es negro con una gota de la tinta dentro, que es lo
+   que lo mantiene siendo pigmento. (Sale de 88 % de #000 más 12 % de
+   rgb(232 238 242), pero va escrito como literal: ver abajo por qué.)
+
+   La tarjeta sube a rgb(60 62 63) para que se lea como algo que
+   sobresale del lienzo — un escalón de valor, igual que `--papel-alto`
+   hace sobre `--papel` en el resto del sitio.
+
+   Se hace con `color-mix` contra `--letra` y no con un hex suelto para
+   que el negro comparta familia con la tinta de la hora en vez de ser
+   un color forastero pegado encima.
+
+   ── `clara` ES LA NOCHE, Y NO ES UN DESCUIDO ───────────────────────
+   `data-tinta` nombra LA TINTA, no el papel: `clara` es tinta clara
+   sobre papel oscuro, o sea de noche. Escribir `oscura` aquí —que es lo
+   que parece— pinta el lienzo negro a mediodía y deja la noche morada,
+   que es exactamente el fallo que este bloque viene a arreglar. La
+   regla nocturna de las láminas, en nuevas-secciones.css, usa este
+   mismo valor. */
+/* ── LLEVA `--viva` EN EL SELECTOR, Y NO ES DECORACIÓN ─────────────
+   MEDIDO: sin él, este selector empata en especificidad (0,3,0) con la
+   regla de «sin JavaScript» de más abajo —que hace `background: none`—
+   y esa va después en la hoja, así que ganaba el empate y el lienzo se
+   quedaba TRANSPARENTE en modo noche. El fondo negro no se pintaba.
+
+   Añadir `--viva` sube a (0,4,0) y deshace el empate, pero además dice
+   la verdad: el lienzo negro solo existe cuando hay mapa que pintar.
+   Sin JavaScript no hay marco, así que tampoco hay nada que teñir. */
+:root[data-tinta="clara"] .mapa-herramientas--viva .mapa-herramientas__marco {
+  border-color: rgb(var(--letra-rgb) / 20%);
+  background-image:
+    radial-gradient(circle at 24% 28%, rgb(65 112 127 / 10%), transparent 26%),
+    radial-gradient(circle at 76% 68%, rgb(47 107 79 / 9%), transparent 28%);
+  background-color: #1C1D1D;
+}
+
+/* La ruta punteada se queda: es lo que dice «esto es un mapa» cuando ya
+   no hay paneles flotando. Pasa a decorar el fondo de la rejilla en vez
+   de rodear tres posiciones absolutas. */
 .mapa-herramientas__ruta {
   position: absolute;
-  inset: 14% 12%;
-  border: 2px dashed rgb(var(--letra-rgb) / 18%);
+  inset: 8% 6%;
+  border: 2px dashed rgb(var(--letra-rgb) / 16%);
   border-radius: 48% 52% 44% 56%;
   rotate: -8deg;
-}
-
-.mapa-herramientas__escena {
-  --escala: 0.3;
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: min(60rem, calc(100% - 2rem));
-  transform: translate(-50%, -50%) scale(var(--escala));
-  transform-origin: center;
-  transition: left 650ms cubic-bezier(.2, .72, .2, 1),
-              top 650ms cubic-bezier(.2, .72, .2, 1),
-              transform 650ms cubic-bezier(.2, .72, .2, 1),
-              opacity 300ms ease;
-}
-
-.mapa-herramientas__escena--ayuda {
-  --x: 28%;
-  --y: 30%;
-  --escala: 0.4;
-}
-
-.mapa-herramientas__escena--recordar {
-  --x: 70%;
-  --y: 34%;
-  --escala: 0.31;
-}
-
-.mapa-herramientas__escena--mapa {
-  --x: 48%;
-  --y: 73%;
-  --escala: 0.24;
-}
-
-.mapa-herramientas__escena > .bloque { margin: 0; }
-.mapa-herramientas__escena > .bloque--glosario { max-width: 60rem; }
-
-.mapa-herramientas__abrir {
-  position: absolute;
-  z-index: 20;
-  inset: -5rem -2rem -2rem;
-  border: 0;
-  background: transparent;
-  color: var(--letra);
-  cursor: zoom-in;
-}
-
-.mapa-herramientas__abrir span {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  min-width: max-content;
-  translate: -50% 0;
-  padding: 0.75rem 1.25rem;
-  border: 1px solid rgb(var(--letra-rgb) / 18%);
-  border-radius: 999px;
-  background: var(--papel-alto);
-  font-family: var(--tipo-titulo);
-  font-size: 3.6rem;
-  line-height: 1;
-  box-shadow: 0 0.8rem 2.2rem rgb(var(--letra-rgb) / 10%);
-}
-
-.mapa-herramientas__abrir:focus-visible span {
-  outline: 0.5rem solid var(--letra);
-  outline-offset: 0.35rem;
-}
-
-.mapa-herramientas--activa .mapa-herramientas__marco {
-  height: clamp(42rem, 82vh, 64rem);
-  overflow: auto;
-  background-color: var(--papel);
-}
-
-.mapa-herramientas--activa .mapa-herramientas__ruta { opacity: 0; }
-
-.mapa-herramientas--activa .mapa-herramientas__escena {
-  opacity: 0;
   pointer-events: none;
 }
 
-.mapa-herramientas--activa .mapa-herramientas__escena--activa {
-  left: 50%;
-  top: var(--e-5);
-  z-index: 30;
-  padding-bottom: var(--e-7);
-  opacity: 1;
-  pointer-events: auto;
-  transform: translate(-50%, 0) scale(1);
-}
-
-.mapa-herramientas__escena--activa .mapa-herramientas__abrir { display: none; }
-
-@media (max-width: 700px) {
-  .mapa-herramientas__marco { height: 38rem; }
-  .mapa-herramientas__escena { width: calc(100% - 1.5rem); }
-  .mapa-herramientas__escena--ayuda { --x: 28%; --y: 28%; --escala: 0.27; }
-  .mapa-herramientas__escena--recordar { --x: 70%; --y: 35%; --escala: 0.21; }
-  .mapa-herramientas__escena--mapa { --x: 48%; --y: 72%; --escala: 0.17; }
-  .mapa-herramientas--activa .mapa-herramientas__marco { height: 82vh; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mapa-herramientas__marco,
-  .mapa-herramientas__escena { transition: none; }
-}
-
-.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__marco {
+/* ── LA REJILLA ────────────────────────────────────────────────────
+   `auto-fit` con un mínimo de 15rem: tres columnas en escritorio, dos
+   en tablet y una en teléfono, sin una sola media query y sin puntos de
+   ruptura que adivinar. El mínimo NO es un número redondo elegido a
+   ojo: es el ancho al que «Guardar lo que recuerdo» deja de partirse en
+   tres renglones. */
+.mapa-herramientas__lienzo {
+  position: relative;
+  z-index: 1;
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.mapa-herramientas__escena { position: relative; }
+.mapa-herramientas__escena > .bloque { margin: 0; }
+.mapa-herramientas__escena > .bloque--glosario { max-width: 60rem; }
+
+/* En la vista general el panel real NO se encoge: se esconde. Encogerlo
+   era el bug — una captura ilegible de un formulario haciendo de icono.
+   Sigue en el DOM (y `inert` por JavaScript) para que abrirlo no tenga
+   que construir nada. */
+.mapa-herramientas--viva .mapa-herramientas__escena > .bloque { display: none; }
+
+/* ── EL EMBLEMA ────────────────────────────────────────────────────
+   Una tarjeta de verdad: dibujo, nombre y una línea de qué hay dentro.
+   `height: 100%` con la rejilla en `1fr` hace que las tres midan igual
+   aunque sus pies tengan distinto largo — tres tarjetas desiguales en
+   una fila se leen como un error antes que como un mapa. */
+.emblema {
+  display: flex;
+  /* `width: 100%` NO SOBRA, aunque un bloque normal no lo necesite.
+     MEDIDO: sin él las tres tarjetas salían de 235, 236 y 192 px dentro
+     de columnas idénticas. Un <button> con `width: auto` se dimensiona
+     por su contenido aunque se le ponga `display: flex`, así que la
+     rejilla repartía columnas iguales y dentro cada botón se encogía a
+     lo que decía su texto. Tres tarjetas de anchos distintos en una
+     fila se leen como un fallo, no como un mapa. */
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(1.5rem, 3.5vw, 2.25rem) clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px solid rgb(var(--letra-rgb) / 16%);
+  border-radius: clamp(0.5rem, 1.5vw, 0.875rem);
+  background: color-mix(in srgb, var(--papel-alto) 82%, transparent);
+  color: var(--letra);
+  font: inherit;
+  text-align: center;
+  cursor: zoom-in;
+  transition: border-color 200ms ease, background-color 200ms ease,
+              translate 200ms ease;
+}
+
+/* De noche la tarjeta también sale del añil: un paso por encima del
+   lienzo negro, para que siga leyéndose como algo que sobresale. */
+:root[data-tinta="clara"] .emblema {
+  border-color: rgb(var(--letra-rgb) / 22%);
+  background: color-mix(in srgb, #000 74%, var(--letra));
+}
+
+.emblema:hover {
+  border-color: rgb(var(--letra-rgb) / 42%);
+  translate: 0 -2px;
+}
+
+.emblema:focus-visible {
+  outline: 3px solid var(--letra);
+  outline-offset: 3px;
+}
+
+/* El dibujo hereda la tinta por `currentColor` y su grosor de trazo no
+   escala con la caja (`non-scaling-stroke` no aplica sin viewBox fijo,
+   así que el trazo se declara en unidades del viewBox y el tamaño se
+   controla desde fuera). */
+.emblema__icono {
+  display: grid;
+  width: clamp(3rem, 8vw, 4rem);
+  place-items: center;
+  color: rgb(var(--letra-rgb) / 88%);
+}
+
+.emblema__icono svg {
+  width: 100%;
   height: auto;
-  gap: var(--e-7);
-  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Dos trazos llevan el oro de la marca —la ola del bocadillo y la aguja
+   norte de la rosa— por lo mismo que la aguja del mapa real lo lleva:
+   marcan dónde mirar dentro del dibujo. */
+.emblema__ola,
+.emblema__norte { stroke: #b98e4f; }
+.emblema__norte { fill: #b98e4f; }
+
+.emblema__nombre {
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-lg);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.emblema__pie {
+  color: rgb(var(--letra-rgb) / 68%);
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+/* ── ABIERTA ───────────────────────────────────────────────────────
+   Sin posiciones absolutas ni `scale`: la escena activa ocupa la
+   rejilla entera y las otras dos se van. Es la misma transición
+   conceptual de antes contada en flujo normal, que es lo que la hace
+   sobrevivir a cualquier ancho. */
+.mapa-herramientas--activa .mapa-herramientas__lienzo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mapa-herramientas--activa .mapa-herramientas__escena { display: none; }
+.mapa-herramientas--activa .mapa-herramientas__ruta { opacity: 0; }
+
+.mapa-herramientas--activa .mapa-herramientas__escena--activa { display: block; }
+.mapa-herramientas--activa .mapa-herramientas__escena--activa > .bloque { display: block; }
+.mapa-herramientas__escena--activa .emblema { display: none; }
+
+.mapa-herramientas--activa .mapa-herramientas__marco {
+  background-color: var(--papel);
+}
+:root[data-tinta="clara"] .mapa-herramientas--activa .mapa-herramientas__marco {
+  background-color: #1C1D1D;
+}
+
+/* La regla 7 dice que `prefers-reduced-motion` APAGA, no reduce. Aquí
+   ya no queda casi nada que apagar —los desplazamientos y los `scale`
+   se fueron con las posiciones absolutas— pero el hover de la tarjeta
+   sí se mueve dos píxeles, y eso también cuenta. */
+@media (prefers-reduced-motion: reduce) {
+  .emblema { transition: none; }
+  .emblema:hover { translate: none; }
+}
+
+/* ── SIN JAVASCRIPT ────────────────────────────────────────────────
+   `--viva` la pone js/mapa-herramientas.js. Sin ella no hay mapa que
+   valga: se cae el marco, se caen los emblemas y los tres paneles
+   quedan uno debajo de otro, abiertos y usables. La regla 5 dice que la
+   ayuda no depende de que un script llegue, y «Pedir ayuda sin hablar»
+   es uno de estos tres paneles. */
+/* Ya NO lleva `background: none`. Lo llevaba, y era la causa del lienzo
+   transparente: empataba en especificidad con las reglas de color y, al
+   ir después en la hoja, ganaba el empate incluso cuando no debía. Ahora
+   sobra — el fondo se declara solo bajo `--viva`, así que sin
+   JavaScript no hay ningún fondo que quitar. */
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__marco {
+  padding: 0;
   border: 0;
-  background: none;
+}
+
+.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__lienzo {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-7);
 }
 
 .mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__ruta,
 .mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__abrir,
 .mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__volver {
   display: none;
-}
-
-.mapa-herramientas:not(.mapa-herramientas--viva) .mapa-herramientas__escena {
-  position: relative;
-  left: auto;
-  top: auto;
-  width: 100%;
-  transform: none;
 }
 
 .boton {
