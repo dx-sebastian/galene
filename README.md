@@ -14,6 +14,12 @@ hasta cuándo.
 
 ---
 
+> Este README dice **qué hay**. Para **por qué está hecho así** —las
+> leyes, las reglas, el método de medición, el estado real y las
+> deudas— está la [**Guía de Galene**](GUIA.md). Y la urgencia que
+> salió del sitio se especifica en
+> [la propuesta de la app](propuestas/app-rescate.md).
+
 ## Qué es
 
 Una experiencia en acuarela que además es un conjunto de herramientas
