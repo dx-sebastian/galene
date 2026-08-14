@@ -1,0 +1,1794 @@
+<title>Galene</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — página de presentación.
+
+   La ley del proyecto manda sobre esta hoja igual que sobre el sitio:
+
+     «La imperfección vive en el mundo. El instrumento es exacto.»
+
+   De ahí los dos registros que se alternan en toda la página:
+     .m-*  MUNDO       — acuarela real del repositorio, tipografía
+                         didona, bordes disueltos, aire.
+     .i-*  INSTRUMENTO — Atkinson Hyperlegible, filetes de un píxel,
+                         cifras tabulares, cero acuarela.
+
+   Todos los colores salen de src/estilos/estilos.css. Los dos del
+   gráfico (--agua) son un escalón propio: el #4E8A94 del sitio queda
+   por debajo del suelo de croma y en una barra se lee como gris.
+   ═══════════════════════════════════════════════════════════════════ */
+
+@font-face{
+  font-family:"Atkinson Hyperlegible";
+  src:url(data:font/woff2;base64,__FUENTE_REG__) format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:"Atkinson Hyperlegible";
+  src:url(data:font/woff2;base64,__FUENTE_BOLD__) format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+}
+
+/* ── TOKENS ─────────────────────────────────────────────────────────
+   El bloque :root pelado lleva la paleta clara COMPLETA. Los dos
+   bloques de abajo solo REDEFINEN tokens, nunca componentes: un color
+   que solo exista dentro de un @media no se aplica en el estado sin
+   sellar, que es el que ve la mayoría. */
+:root{
+  color-scheme:light dark;
+
+  --papel:#F8F5F0;
+  --papel-alto:#FFFDFA;
+  --papel-hondo:#F1ECE4;
+  --papel-tarjeta:#FFFDFA;
+
+  --tinta:#1C2A30;
+  --tinta-2:#4C5B63;
+  --tinta-3:#7A8890;
+
+  --linea:#DFD8CC;
+  --linea-fuerte:#C6BDAF;
+
+  --acento:#C4703F;
+  --acento-tinta:#8E4C25;
+  --acento-velo:#F6E9E0;
+
+  --agua:#00899E;
+  --agua-tinta:#00697A;
+  --agua-velo:#E1EFF1;
+
+  --bruma:#CDDCDE;
+  --aviso:#F6E9E5;
+  --aviso-linea:#D9B7AC;
+
+  --sombra:0 1px 1px rgb(28 42 48 / .03), 0 10px 30px -18px rgb(28 42 48 / .28);
+  --grano-op:.42;
+  --grano-mezcla:multiply;
+  --lamina-filtro:none;
+  --lamina-mezcla:multiply;
+
+  --t-xs:.75rem;
+  --t-sm:.8125rem;
+  --t-ip:.9375rem;
+  --t-base:clamp(1rem,.25vw + .95rem,1.0625rem);
+  --t-md:clamp(1.0625rem,.4vw + .98rem,1.1875rem);
+  --t-lg:clamp(1.2rem,.9vw + 1rem,1.45rem);
+  --t-xl:clamp(1.45rem,1.9vw + 1rem,2.1rem);
+  --t-2xl:clamp(1.85rem,3.4vw + 1rem,3rem);
+  --t-marca:clamp(3.2rem,12vw,7.5rem);
+
+  --col:64ch;
+  --ancho:1080px;
+  --aire:clamp(20px,5vw,56px);
+
+  --serif:"Cormorant Garamond","Didot","Bodoni MT","Playfair Display",
+          Georgia,"Times New Roman",serif;
+  --sans:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --papel:#1A1832;
+    --papel-alto:#242040;
+    --papel-hondo:#141428;
+    --papel-tarjeta:#221E3C;
+
+    --tinta:#E8EEF2;
+    --tinta-2:#AFB7CD;
+    --tinta-3:#8189A6;
+
+    --linea:#332F52;
+    --linea-fuerte:#4A4574;
+
+    --acento:#CE7B48;
+    --acento-tinta:#E9A176;
+    --acento-velo:#33223A;
+
+    --agua:#279AAC;
+    --agua-tinta:#5DC0CE;
+    --agua-velo:#152B38;
+
+    --bruma:#3A3658;
+    --aviso:#33212F;
+    --aviso-linea:#6A4451;
+
+    --sombra:0 1px 1px rgb(0 0 0 / .3), 0 14px 34px -20px rgb(0 0 0 / .8);
+    --grano-op:.14;
+    --grano-mezcla:soft-light;
+    --lamina-filtro:invert(1) hue-rotate(180deg) saturate(.72) brightness(1.06);
+    --lamina-mezcla:screen;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#1A1832;
+  --papel-alto:#242040;
+  --papel-hondo:#141428;
+  --papel-tarjeta:#221E3C;
+
+  --tinta:#E8EEF2;
+  --tinta-2:#AFB7CD;
+  --tinta-3:#8189A6;
+
+  --linea:#332F52;
+  --linea-fuerte:#4A4574;
+
+  --acento:#CE7B48;
+  --acento-tinta:#E9A176;
+  --acento-velo:#33223A;
+
+  --agua:#279AAC;
+  --agua-tinta:#5DC0CE;
+  --agua-velo:#152B38;
+
+  --bruma:#3A3658;
+  --aviso:#33212F;
+  --aviso-linea:#6A4451;
+
+  --sombra:0 1px 1px rgb(0 0 0 / .3), 0 14px 34px -20px rgb(0 0 0 / .8);
+  --grano-op:.14;
+  --grano-mezcla:soft-light;
+  --lamina-filtro:invert(1) hue-rotate(180deg) saturate(.72) brightness(1.06);
+  --lamina-mezcla:screen;
+}
+
+/* ── BASE ───────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--papel);
+  color:var(--tinta);
+  font-family:var(--sans);
+  font-size:var(--t-base);
+  line-height:1.65;
+  -webkit-text-size-adjust:100%;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+
+/* El papel de algodón, fijo a la pantalla y DETRÁS del contenido.
+   En el sitio se multiplica encima de todo; aquí va debajo para no
+   arriesgar ni un punto de contraste sobre el texto.
+   Nada de background-attachment:fixed — en iOS Safari da tirones. */
+.grano{
+  position:fixed; inset:0; z-index:0;
+  pointer-events:none;
+  background-image:url("data:image/webp;base64,__PAPEL__");
+  background-size:520px auto;
+  opacity:var(--grano-op);
+  mix-blend-mode:var(--grano-mezcla);
+}
+.hoja{position:relative; z-index:1}
+
+img{max-width:100%; height:auto; display:block}
+
+h1,h2,h3,h4{margin:0; line-height:1.15; text-wrap:balance}
+p{margin:0}
+ul,ol{margin:0; padding:0; list-style:none}
+
+a{color:inherit}
+a:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--acento);
+  outline-offset:3px;
+  border-radius:2px;
+}
+
+::selection{background:var(--acento); color:var(--papel-alto)}
+
+/* ── ENVOLTURAS ─────────────────────────────────────────────────── */
+.env{
+  width:100%;
+  margin-inline:auto;
+  padding-inline:max(var(--aire),env(safe-area-inset-left));
+  padding-inline-end:max(var(--aire),env(safe-area-inset-right));
+}
+.env--ancho{max-width:var(--ancho)}
+.env--col{max-width:calc(var(--col) + var(--aire) * 2)}
+
+.pila{display:flex; flex-direction:column}
+.pila--xs{gap:8px}  .pila--sm{gap:14px}  .pila--md{gap:22px}
+.pila--lg{gap:34px} .pila--xl{gap:56px}
+
+section{padding-block:clamp(56px,9vw,110px)}
+
+/* ── TIPOGRAFÍA ─────────────────────────────────────────────────── */
+.serif{font-family:var(--serif); font-weight:400; letter-spacing:.005em}
+
+.rotulo{
+  font-size:var(--t-xs);
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  font-weight:700;
+  color:var(--tinta-3);
+}
+.rotulo--acento{color:var(--acento-tinta)}
+
+.titulo{font-family:var(--serif); font-size:var(--t-2xl); font-weight:400}
+.subtitulo{font-size:var(--t-xl); font-weight:700; letter-spacing:-.01em}
+.h3{font-size:var(--t-lg); font-weight:700; letter-spacing:-.005em}
+
+.entradilla{font-size:var(--t-md); color:var(--tinta-2); line-height:1.6}
+.apunte{font-size:var(--t-sm); color:var(--tinta-3); line-height:1.55}
+
+.lede{
+  font-family:var(--serif);
+  font-size:clamp(1.35rem,2.3vw + .9rem,2.05rem);
+  line-height:1.32;
+  font-weight:400;
+}
+
+strong{font-weight:700}
+em{font-style:italic}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ══ HERO ═══════════════════════════════════════════════════════ */
+.hero{
+  position:relative;
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding-block:clamp(90px,14vh,150px) clamp(40px,8vh,80px);
+  overflow:hidden;
+}
+/* Las raíces del manglar. La lámina es tinta con alfa, así que no
+   enseña ningún canto recto — la regla del proyecto que prohíbe que
+   una lámina muestre su borde se cumple sola. */
+.hero__raices{
+  position:absolute;
+  left:min(-8vw,-60px);
+  bottom:-2%;
+  width:min(78vw,760px);
+  opacity:.3;
+  filter:var(--lamina-filtro);
+  mix-blend-mode:var(--lamina-mezcla);
+  pointer-events:none;
+  z-index:0;
+}
+.hero__contenido{position:relative; z-index:1}
+
+.marca{
+  font-family:var(--serif);
+  font-size:var(--t-marca);
+  font-weight:400;
+  line-height:.86;
+  letter-spacing:-.025em;
+  margin-bottom:.12em;
+}
+.marca__griego{
+  display:block;
+  font-size:.3em;
+  letter-spacing:.28em;
+  color:var(--acento-tinta);
+  margin-bottom:.5em;
+  text-transform:none;
+}
+.hero__tesis{
+  max-width:34ch;
+  font-size:var(--t-md);
+  color:var(--tinta-2);
+}
+.hero__meta{
+  display:flex; flex-wrap:wrap; gap:10px 26px;
+  padding-top:6px;
+}
+.hero__meta span{
+  font-size:var(--t-xs);
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--tinta-3);
+}
+
+.aviso-borrador{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px;
+  background:var(--aviso);
+  border:1px solid var(--aviso-linea);
+  border-radius:3px;
+  padding:14px 18px;
+  max-width:60ch;
+}
+.aviso-borrador b{font-size:var(--t-sm); letter-spacing:.02em}
+.aviso-borrador span{font-size:var(--t-sm); color:var(--tinta-2); line-height:1.5}
+
+/* ══ NAVEGACIÓN ═════════════════════════════════════════════════ */
+.nav{
+  position:sticky; top:0; z-index:20;
+  background:color-mix(in srgb, var(--papel) 88%, transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(1.3);
+  backdrop-filter:blur(14px) saturate(1.3);
+  border-bottom:1px solid var(--linea);
+}
+@supports not (background:color-mix(in srgb,red 50%,blue)){
+  .nav{background:var(--papel)}
+}
+.nav__fila{
+  display:flex; align-items:center; gap:8px;
+  height:52px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.nav__fila::-webkit-scrollbar{display:none}
+.nav__marca{
+  font-family:var(--serif);
+  font-size:1.15rem;
+  padding-right:16px;
+  margin-right:4px;
+  border-right:1px solid var(--linea);
+  flex:none;
+}
+.nav a{
+  flex:none;
+  font-size:var(--t-sm);
+  text-decoration:none;
+  color:var(--tinta-2);
+  padding:6px 10px;
+  border-radius:3px;
+  white-space:nowrap;
+  transition:color .18s, background .18s;
+}
+.nav a:hover{color:var(--tinta); background:var(--papel-hondo)}
+.nav a[aria-current="true"]{color:var(--acento-tinta); font-weight:700}
+
+/* ══ FILETE DE PINCEL — separador ═══════════════════════════════ */
+.filete{
+  height:26px;
+  background-image:url("data:image/webp;base64,__FILETE__");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  opacity:.75;
+  filter:var(--lamina-filtro);
+  mix-blend-mode:var(--lamina-mezcla);
+}
+
+/* ══ BANDA DE MAR ═══════════════════════════════════════════════ */
+.mar{
+  height:clamp(70px,11vw,130px);
+  background-image:url("data:image/webp;base64,__MAR__");
+  background-repeat:repeat-x;
+  background-position:center;
+  background-size:auto 100%;
+  opacity:.85;
+  filter:var(--lamina-filtro);
+  mix-blend-mode:var(--lamina-mezcla);
+  /* Sin canto: la banda se disuelve por los cuatro lados. */
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 34%,#000 66%,transparent),
+                     linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);
+  mask-image:linear-gradient(to bottom,transparent,#000 34%,#000 66%,transparent),
+             linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);
+  -webkit-mask-composite:source-in;
+  mask-composite:intersect;
+}
+
+/* ══ MUNDO ══════════════════════════════════════════════════════ */
+.m-ley{
+  font-family:var(--serif);
+  font-size:clamp(1.5rem,3.2vw + .8rem,2.6rem);
+  line-height:1.22;
+  max-width:20ch;
+}
+.m-ley em{color:var(--acento-tinta); font-style:italic}
+
+.m-garza{
+  width:clamp(90px,13vw,150px);
+  opacity:.85;
+  filter:var(--lamina-filtro);
+  mix-blend-mode:var(--lamina-mezcla);
+}
+
+.m-cita{
+  border-left:2px solid var(--acento);
+  padding-left:clamp(16px,3vw,28px);
+  font-family:var(--serif);
+  font-size:clamp(1.25rem,1.8vw + .85rem,1.75rem);
+  line-height:1.36;
+}
+
+/* ══ INSTRUMENTO — la caja base ═════════════════════════════════ */
+.i-panel{
+  background:var(--papel-tarjeta);
+  border:1px solid var(--linea);
+  border-radius:4px;
+  padding:clamp(18px,3vw,30px);
+  box-shadow:var(--sombra);
+  position:relative;
+}
+/* La marca de esquina: dice «esto es instrumento, no pintura». */
+.i-panel::before{
+  content:"";
+  position:absolute; top:9px; left:9px;
+  width:9px; height:9px;
+  border-top:1.5px solid var(--linea-fuerte);
+  border-left:1.5px solid var(--linea-fuerte);
+}
+.i-panel--liso{box-shadow:none; background:var(--papel-hondo)}
+.i-panel--liso::before{display:none}
+
+.i-cabecera{
+  display:flex; flex-wrap:wrap; align-items:baseline;
+  justify-content:space-between; gap:8px 16px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--linea);
+  margin-bottom:18px;
+}
+
+/* ── Rejilla de reglas ──────────────────────────────────────────── */
+.i-reglas{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(248px,1fr));
+  gap:1px;
+  background:var(--linea);
+  border:1px solid var(--linea);
+  border-radius:4px;
+  overflow:hidden;
+}
+.i-regla{
+  background:var(--papel-tarjeta);
+  padding:18px 20px 20px;
+  display:flex; flex-direction:column; gap:7px;
+}
+.i-regla__n{
+  font-size:var(--t-xs);
+  font-weight:700;
+  letter-spacing:.1em;
+  color:var(--tinta-3);
+  font-variant-numeric:tabular-nums;
+}
+.i-regla__t{font-size:var(--t-ip); font-weight:700; line-height:1.35}
+.i-regla__p{font-size:var(--t-sm); color:var(--tinta-2); line-height:1.5}
+.i-regla--rota{background:var(--aviso)}
+.i-regla--rota .i-regla__n{color:var(--acento-tinta)}
+.i-regla__sello{
+  align-self:flex-start;
+  font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.12em;
+  color:var(--acento-tinta);
+  border:1px solid var(--aviso-linea);
+  border-radius:2px;
+  padding:2px 7px;
+  margin-top:2px;
+}
+
+/* ══ EL RELOJ — gráfico de ventanas ═════════════════════════════ */
+.g{margin-top:4px}
+.g__leyenda{
+  display:flex; flex-wrap:wrap; gap:8px 20px;
+  margin-bottom:20px;
+}
+.g__clave{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:var(--t-sm); color:var(--tinta-2);
+}
+.g__punto{width:12px; height:12px; border-radius:2px; flex:none}
+.g__punto--cierra{background:var(--acento)}
+.g__punto--abierta{
+  background:var(--agua);
+  /* Codificación secundaria: la textura distingue las dos series sin
+     depender del color. */
+  background-image:repeating-linear-gradient(135deg,
+    rgb(255 255 255 / .5) 0 2px, transparent 2px 5px);
+}
+
+.g__lienzo{position:relative}
+
+/* La cuadrícula, recesiva: no compite con las barras. */
+.g__rejilla{
+  position:absolute; inset:0 0 26px 0;
+  pointer-events:none;
+  z-index:0;
+}
+.g__linea{
+  position:absolute; top:0; bottom:0;
+  width:1px;
+  background:var(--linea);
+}
+.g__linea--hito{background:var(--linea-fuerte)}
+
+.g__fila{
+  position:relative;
+  z-index:1;
+  padding:9px 0;
+}
+.g__etiqueta{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px;
+  margin-bottom:5px;
+}
+.g__nombre{font-size:var(--t-ip); font-weight:700}
+.g__valor{
+  font-size:var(--t-sm);
+  font-variant-numeric:tabular-nums;
+  color:var(--tinta-2);
+  letter-spacing:.01em;
+}
+.g__pista{height:15px; position:relative}
+.g__barra{
+  position:absolute; inset-block:0; left:0;
+  border-radius:0 3px 3px 0;
+  background:var(--acento);
+  width:0;
+  transition:width .9s cubic-bezier(.22,.7,.28,1);
+}
+.g__barra--abierta{
+  background:var(--agua);
+  background-image:repeating-linear-gradient(135deg,
+    rgb(255 255 255 / .42) 0 3px, transparent 3px 7px);
+  border-radius:0 2px 2px 0;
+  /* Sin final: se desvanece por la derecha porque no se cierra. */
+  -webkit-mask-image:linear-gradient(to right,#000 72%,transparent);
+  mask-image:linear-gradient(to right,#000 72%,transparent);
+}
+.visto .g__barra{width:var(--w)}
+.g__marca{
+  position:absolute; top:-4px; bottom:-4px;
+  width:2px;
+  background:var(--acento-tinta);
+  border-radius:1px;
+}
+.g__marca::after{
+  content:attr(data-nota);
+  position:absolute; top:-17px; left:50%;
+  transform:translateX(-50%);
+  font-size:10px; font-weight:700;
+  letter-spacing:.06em;
+  color:var(--acento-tinta);
+  white-space:nowrap;
+}
+
+.g__eje{
+  position:relative;
+  height:26px;
+  border-top:1px solid var(--linea-fuerte);
+  margin-top:2px;
+}
+.g__tick{
+  position:absolute; top:5px;
+  transform:translateX(-50%);
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+  color:var(--tinta-3);
+  white-space:nowrap;
+}
+.g__tick--fin{transform:translateX(-100%)}
+
+/* ── Tabla de instrumento ───────────────────────────────────────── */
+.i-tabla-caja{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table.i-tabla{
+  width:100%;
+  min-width:520px;
+  border-collapse:collapse;
+  font-size:var(--t-sm);
+}
+.i-tabla th{
+  text-align:left;
+  font-size:var(--t-xs);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--tinta-3);
+  font-weight:700;
+  padding:0 14px 9px 0;
+  border-bottom:1px solid var(--linea-fuerte);
+  white-space:nowrap;
+}
+.i-tabla td{
+  padding:11px 14px 11px 0;
+  border-bottom:1px solid var(--linea);
+  vertical-align:top;
+  line-height:1.5;
+  color:var(--tinta-2);
+}
+.i-tabla td:first-child{color:var(--tinta); font-weight:700}
+.i-tabla tr:last-child td{border-bottom:none}
+.i-tabla .num{font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* ── Fichas / listas de instrumento ─────────────────────────────── */
+.i-lista{display:flex; flex-direction:column; gap:13px}
+.i-item{display:flex; gap:12px; align-items:flex-start}
+.i-item__bolo{
+  flex:none;
+  width:19px; height:19px;
+  margin-top:2px;
+  border-radius:50%;
+  border:1.5px solid var(--linea-fuerte);
+  display:grid; place-items:center;
+  font-size:10px; font-weight:700;
+  color:var(--tinta-3);
+  font-variant-numeric:tabular-nums;
+}
+.i-item__bolo--no{
+  border-color:var(--acento);
+  color:var(--acento-tinta);
+}
+.i-item__bolo--si{
+  border-color:var(--agua);
+  color:var(--agua-tinta);
+}
+.i-item p{font-size:var(--t-ip); line-height:1.55}
+.i-item p b{display:block}
+.i-item p span{color:var(--tinta-2); font-size:var(--t-sm)}
+
+/* ── Cifras destacadas ──────────────────────────────────────────── */
+.i-cifras{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:1px;
+  background:var(--linea);
+  border:1px solid var(--linea);
+  border-radius:4px;
+  overflow:hidden;
+}
+.i-cifra{
+  background:var(--papel-tarjeta);
+  padding:20px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.i-cifra__n{
+  font-family:var(--serif);
+  font-size:clamp(2.2rem,4vw,3rem);
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--acento-tinta);
+}
+.i-cifra__t{font-size:var(--t-sm); line-height:1.5; color:var(--tinta-2)}
+.i-cifra__f{font-size:11px; color:var(--tinta-3); letter-spacing:.02em}
+
+/* ── Maqueta de teléfono ────────────────────────────────────────── */
+.tel{
+  max-width:330px;
+  width:100%;
+  border:1px solid var(--linea-fuerte);
+  border-radius:22px;
+  padding:10px;
+  background:var(--papel-hondo);
+  box-shadow:var(--sombra);
+}
+.tel__pantalla{
+  border-radius:14px;
+  padding:22px 18px 26px;
+  background:var(--papel-alto);
+  min-height:300px;
+  display:flex; flex-direction:column; gap:16px;
+}
+/* La pantalla-cartel: el instrumento en su forma más pura. Plana,
+   exacta, sin una sola acuarela, y sin rojo de alarma (regla 2). */
+.cartel .tel__pantalla{
+  background:#12242B;
+  color:#FFFFFF;
+  justify-content:flex-start;
+  gap:18px;
+}
+.cartel__t{
+  font-size:1.32rem;
+  font-weight:700;
+  line-height:1.18;
+  letter-spacing:-.01em;
+}
+.cartel__p{font-size:.875rem; line-height:1.5; color:#C8D6DC}
+.cartel__rot{
+  font-size:10px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase;
+  color:#E9A176;
+  padding-top:4px;
+  border-top:1px solid rgb(255 255 255 / .18);
+}
+.cartel__l{display:flex; flex-direction:column; gap:8px}
+.cartel__l li{
+  font-size:.9375rem; font-weight:700; line-height:1.35;
+  padding-left:16px; position:relative;
+}
+.cartel__l li::before{
+  content:""; position:absolute; left:0; top:.55em;
+  width:7px; height:2px; background:#E9A176;
+}
+.cartel__pie{
+  margin-top:auto;
+  font-size:.75rem;
+  color:#8FA4AD;
+}
+
+/* El mensaje que reciben los contactos. */
+.sms{
+  font-family:var(--mono);
+  font-size:.8125rem;
+  line-height:1.62;
+  white-space:pre-wrap;
+  word-break:break-word;
+  background:var(--papel-hondo);
+  border:1px solid var(--linea);
+  border-left:3px solid var(--agua);
+  border-radius:3px;
+  padding:16px 18px;
+  overflow-x:auto;
+  color:var(--tinta-2);
+}
+.sms b{color:var(--tinta)}
+
+/* ── Especímenes de identidad ───────────────────────────────────── */
+.paleta{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
+  gap:12px;
+}
+.tinte{display:flex; flex-direction:column; gap:8px}
+.tinte__muestra{
+  height:64px;
+  border-radius:3px;
+  border:1px solid var(--linea);
+}
+.tinte__n{font-size:var(--t-sm); font-weight:700}
+.tinte__h{
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--tinta-3);
+  text-transform:uppercase;
+}
+.tinte__u{font-size:11px; color:var(--tinta-3); line-height:1.45}
+
+.tipo{display:grid; gap:20px; grid-template-columns:1fr}
+@media (min-width:720px){.tipo{grid-template-columns:1fr 1fr}}
+.tipo__m{border-top:1px solid var(--linea-fuerte); padding-top:14px}
+.tipo__muestra{font-size:clamp(2.2rem,5vw,3.2rem); line-height:1.1; margin-bottom:6px}
+.tipo__muestra--serif{font-family:var(--serif)}
+.tipo__muestra--sans{font-family:var(--sans); font-weight:700; letter-spacing:-.02em}
+
+/* ── Rejilla de dos columnas genérica ───────────────────────────── */
+.dos{display:grid; gap:clamp(22px,4vw,44px); grid-template-columns:1fr}
+@media (min-width:860px){
+  .dos{grid-template-columns:1fr 1fr; align-items:start}
+  .dos--ancha{grid-template-columns:1.25fr .75fr}
+  .dos--estrecha{grid-template-columns:.8fr 1.2fr}
+}
+
+.tarjetas{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(232px,1fr));
+  gap:16px;
+}
+
+/* ── Momentos ───────────────────────────────────────────────────── */
+.momento{display:flex; flex-direction:column; gap:9px}
+.momento__c{
+  font-family:var(--serif);
+  font-size:1.7rem;
+  color:var(--acento-tinta);
+  line-height:1;
+}
+
+/* ── Cierre ─────────────────────────────────────────────────────── */
+.pie{
+  border-top:1px solid var(--linea);
+  padding-block:clamp(40px,6vw,64px) clamp(50px,8vw,80px);
+  padding-bottom:max(clamp(50px,8vw,80px),env(safe-area-inset-bottom));
+}
+.fuentes li{
+  font-size:var(--t-sm);
+  line-height:1.55;
+  padding:9px 0;
+  border-bottom:1px solid var(--linea);
+  color:var(--tinta-2);
+}
+.fuentes li:last-child{border-bottom:none}
+.fuentes a{color:var(--agua-tinta); text-decoration:none; border-bottom:1px solid var(--agua)}
+.fuentes a:hover{color:var(--tinta)}
+
+.ruta{
+  font-family:var(--mono);
+  font-size:var(--t-xs);
+  color:var(--tinta-3);
+  background:var(--papel-hondo);
+  border:1px solid var(--linea);
+  border-radius:3px;
+  padding:2px 6px;
+  white-space:nowrap;
+}
+
+/* ── Entrada: la pintura secándose. Una sola vez, al cargar. ────── */
+.aparece{opacity:0; transform:translateY(14px)}
+.aparece.visto{
+  opacity:1; transform:none;
+  transition:opacity .8s ease, transform .8s cubic-bezier(.22,.7,.28,1);
+}
+
+/* Regla 7 del proyecto: APAGA. No reduce. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation:none !important;
+    transition:none !important;
+  }
+  .aparece{opacity:1; transform:none}
+  .g__barra{width:var(--w)}
+}
+</style>
+
+<div class="grano" aria-hidden="true"></div>
+
+<div class="hoja">
+
+<!-- ══ HERO ═══════════════════════════════════════════════════ -->
+<header class="hero">
+  <img class="hero__raices" src="data:image/webp;base64,__MANGLAR__" alt="" aria-hidden="true">
+  <div class="env env--ancho hero__contenido">
+    <div class="pila pila--lg">
+      <h1 class="marca">
+        <span class="marca__griego serif">γαλήνη</span>
+        Galene
+      </h1>
+      <p class="hero__tesis">
+        Sitio colombiano sobre <strong>sumisión química</strong>: qué se
+        puede hacer después, y hasta cuándo. Una experiencia en acuarela
+        que además es un instrumento de emergencia.
+      </p>
+      <div class="aviso-borrador">
+        <b>Borrador. No lo compartas todavía.</b>
+        <span>
+          Las ventanas de tiempo médicas y las líneas de atención no están
+          verificadas contra fuente primaria. Hasta que lo estén, el sitio
+          lleva <code>noindex</code>.
+        </span>
+      </div>
+      <div class="hero__meta">
+        <span>Colombia</span>
+        <span>Astro · WebGL · SQLite</span>
+        <span>Agosto 2026</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══ NAV ════════════════════════════════════════════════════ -->
+<nav class="nav" aria-label="Secciones">
+  <div class="env env--ancho nav__fila">
+    <span class="nav__marca">Galene</span>
+    <a href="#identidad">Identidad</a>
+    <a href="#problema">El problema</a>
+    <a href="#reglas">Las reglas</a>
+    <a href="#reloj">72 horas</a>
+    <a href="#app">La app</a>
+    <a href="#estado">Estado</a>
+  </div>
+</nav>
+
+<!-- ══ IDENTIDAD ══════════════════════════════════════════════ -->
+<section id="identidad">
+  <div class="env env--ancho pila pila--xl">
+
+    <div class="dos dos--ancha">
+      <div class="pila pila--md aparece">
+        <p class="rotulo rotulo--acento">La identidad</p>
+        <h2 class="m-ley serif">
+          La imperfección vive en el mundo.<br>
+          <em>El instrumento es exacto.</em>
+        </h2>
+        <p class="entradilla">
+          Es la ley que resuelve casi toda decisión de diseño del proyecto,
+          y la que organiza esta misma página. El mar puede tener grafito
+          sin borrar, charcos y bordes desiguales. El reloj, el teléfono y
+          el botón de salir van con tipografía plana y alineación exacta.
+        </p>
+        <p class="apunte">
+          Cuando no sepas de qué lado cae un elemento, pregunta: ¿alguien lo
+          va a usar con las manos temblando? Si sí, es instrumento.
+        </p>
+      </div>
+      <div class="pila pila--md aparece">
+        <div class="i-panel">
+          <p class="rotulo" style="margin-bottom:10px">La ley del arte</p>
+          <p class="serif" style="font-size:var(--t-lg); line-height:1.35">
+            No queremos una ilustración en acuarela. Queremos una obra
+            digital que <em>se comporta</em> como acuarela.
+          </p>
+        </div>
+        <p class="apunte">
+          No se simula agua: se deforma una acuarela de agua. Nueve láminas
+          pintadas se muestrean desplazadas por un mapa de flujo, se
+          remapean en duotono contra la paleta de la hora local de quien
+          entra, y se les multiplica encima un escaneo real de papel de
+          algodón. Las láminas de esta página son las del proyecto.
+        </p>
+      </div>
+    </div>
+
+    <div class="mar" role="img" aria-label="Banda de mar en acuarela, lámina del proyecto"></div>
+
+    <!-- Paleta -->
+    <div class="pila pila--md aparece">
+      <div class="i-cabecera">
+        <h3 class="subtitulo">Los pigmentos</h3>
+        <p class="apunte">De <span class="ruta">src/estilos/estilos.css</span></p>
+      </div>
+      <div class="paleta">
+        <div class="tinte">
+          <div class="tinte__muestra" style="background:#F8F5F0"></div>
+          <div><p class="tinte__n">Papel</p><p class="tinte__h">#F8F5F0</p></div>
+          <p class="tinte__u">El fondo. Algodón, no blanco: en acuarela no existe la pintura blanca.</p>
+        </div>
+        <div class="tinte">
+          <div class="tinte__muestra" style="background:#1C2A30"></div>
+          <div><p class="tinte__n">Tinta</p><p class="tinte__h">#1C2A30</p></div>
+          <p class="tinte__u">El texto. Un negro frío, con verde dentro.</p>
+        </div>
+        <div class="tinte">
+          <div class="tinte__muestra" style="background:#4E8A94"></div>
+          <div><p class="tinte__n">Agua</p><p class="tinte__h">#4E8A94</p></div>
+          <p class="tinte__u">El mar. Siempre más oscuro que la bruma del cielo, o el horizonte desaparece.</p>
+        </div>
+        <div class="tinte">
+          <div class="tinte__muestra" style="background:#C4703F"></div>
+          <div><p class="tinte__n">Acento</p><p class="tinte__h">#C4703F</p></div>
+          <p class="tinte__u">Tierra quemada. Nunca rojo de alarma: la regla 2 prohíbe el terror.</p>
+        </div>
+        <div class="tinte">
+          <div class="tinte__muestra" style="background:#CDDCDE"></div>
+          <div><p class="tinte__n">Bruma</p><p class="tinte__h">#CDDCDE</p></div>
+          <p class="tinte__u">El cielo bajo. De aquí salen los filetes y las separaciones.</p>
+        </div>
+        <div class="tinte">
+          <div class="tinte__muestra" style="background:#1A1832"></div>
+          <div><p class="tinte__n">Noche</p><p class="tinte__h">#1A1832</p></div>
+          <p class="tinte__u">El fondo oscuro. Índigo, no gris: a las 4 a.m. el mundo no está más vacío.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tipografía -->
+    <div class="pila pila--md aparece">
+      <div class="i-cabecera">
+        <h3 class="subtitulo">Las dos voces</h3>
+        <p class="apunte">Una para el mundo, otra para el instrumento</p>
+      </div>
+      <div class="tipo">
+        <div class="tipo__m">
+          <p class="tipo__muestra tipo__muestra--serif">Galene γαλήνη</p>
+          <p class="rotulo" style="margin-bottom:6px">Didona — la marca</p>
+          <p class="apunte">
+            Alto contraste, remates finos. Es la voz de la Nereida y del mar
+            en calma: aparece en el nombre, en las leyes y en las cifras
+            grandes, y en ningún sitio más. En Safari resuelve a Didot.
+          </p>
+        </div>
+        <div class="tipo__m">
+          <p class="tipo__muestra tipo__muestra--sans">Atkinson 96 h</p>
+          <p class="rotulo" style="margin-bottom:6px">Atkinson Hyperlegible — el instrumento</p>
+          <p class="apunte">
+            Diseñada para baja visión: cada letra se distingue de la que se
+            le parece. Es literalmente «el instrumento es exacto» hecho
+            tipografía, y lleva las cifras tabulares de toda la página.
+            Va incrustada en el archivo, no pedida a un servidor.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="env env--ancho"><div class="filete" aria-hidden="true"></div></div>
+
+<!-- ══ PROBLEMA ═══════════════════════════════════════════════ -->
+<section id="problema">
+  <div class="env env--ancho pila pila--xl">
+
+    <div class="dos dos--estrecha">
+      <div class="pila pila--sm aparece">
+        <p class="rotulo rotulo--acento">El problema</p>
+        <img class="m-garza" src="data:image/webp;base64,__GARZA__" alt="" aria-hidden="true">
+      </div>
+      <div class="pila pila--md aparece">
+        <p class="m-cita serif">
+          El daño incluye borrar el recuerdo del daño.
+        </p>
+        <p class="entradilla">
+          La sumisión química es el uso de una sustancia para anular la
+          capacidad de decidir de alguien. Lo que la separa de casi todo lo
+          demás es su mecanismo, y de él salen las tres consecuencias que
+          gobiernan el proyecto entero.
+        </p>
+      </div>
+    </div>
+
+    <div class="tarjetas aparece">
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo">Consecuencia 1</p>
+        <p class="h3">Quien más lo necesita es quien menos puede usarlo</p>
+        <p class="apunte">
+          No sabe qué hora era, ni qué pasó, ni si pasó. Cualquier interfaz
+          que exija saber excluye exactamente a su destinataria. Por eso
+          «no sé» es la respuesta principal del reloj, y devuelve
+          <strong>más</strong> opciones, nunca menos.
+        </p>
+      </div>
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo">Consecuencia 2</p>
+        <p class="h3">El tiempo corre y casi nadie lo sabe</p>
+        <p class="apunte">
+          Hay ventanas médicas que se cierran en horas y en días. La propia
+          duda —«¿y si me lo estoy imaginando?»— es lo que consume las
+          horas que quedan.
+        </p>
+      </div>
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo">Consecuencia 3</p>
+        <p class="h3">Llegar tarde no anula nada</p>
+        <p class="apunte">
+          Casi todo sigue abierto después. Un sitio que solo hable de las
+          primeras horas le dice a la mayoría que ya es tarde, y eso es
+          falso.
+        </p>
+      </div>
+    </div>
+
+    <div class="pila pila--md aparece">
+      <div class="i-cifras">
+        <div class="i-cifra">
+          <p class="i-cifra__n">3 de 4</p>
+          <p class="i-cifra__t">
+            víctimas tardan <strong>más de 12 horas</strong> en buscar ayuda.
+            La ventana de sangre son 6.
+          </p>
+          <p class="i-cifra__f">GBV Learning Network, Western University</p>
+        </div>
+        <div class="i-cifra">
+          <p class="i-cifra__n">La mayoría</p>
+          <p class="i-cifra__t">
+            refiere <strong>amnesia total o parcial</strong> del episodio.
+            El teléfono es el único testigo que no olvida.
+          </p>
+          <p class="i-cifra__f">GBV Learning Network, Western University</p>
+        </div>
+        <div class="i-cifra">
+          <p class="i-cifra__n">24–72 h</p>
+          <p class="i-cifra__t">
+            es la ventana de detección de la escopolamina en orina, según la
+            literatura forense española.
+          </p>
+          <p class="i-cifra__f">Revista Española de Medicina Legal</p>
+        </div>
+      </div>
+      <p class="apunte">
+        La regla de redacción que sale de aquí, y que gobierna cada frase
+        del sitio: <strong>nunca convencer a nadie de que ya no vale la
+        pena</strong>.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ REGLAS ═════════════════════════════════════════════════ -->
+<section id="reglas">
+  <div class="env env--ancho pila pila--lg">
+    <div class="pila pila--sm aparece">
+      <p class="rotulo rotulo--acento">Las reglas</p>
+      <h2 class="titulo">Nueve que no se negocian</h2>
+      <p class="entradilla" style="max-width:62ch">
+        Se citan por número dentro del propio código —«la regla 3», «la
+        regla 9»—, así que el número no es decoración: es su identificador.
+        Dos están incumplidas ahora mismo, y eso también va escrito.
+      </p>
+    </div>
+
+    <div class="i-reglas aparece">
+      <div class="i-regla">
+        <p class="i-regla__n">01</p>
+        <p class="i-regla__t">No re-escenificar el hecho</p>
+        <p class="i-regla__p">Ni la copa, ni el bar, ni la gota cayendo. Una onda que se expande desde un punto <em>es</em> una gota: por eso los anillos del mar van de fuera hacia dentro.</p>
+      </div>
+      <div class="i-regla">
+        <p class="i-regla__n">02</p>
+        <p class="i-regla__t">No terror</p>
+        <p class="i-regla__p">Ni glitch, ni caos visual, ni sonido inquietante. Un mapa lleno de banderas rojas es terror: los tres mapas usan verde de tinta, añil y rojo apagado.</p>
+      </div>
+      <div class="i-regla">
+        <p class="i-regla__n">03</p>
+        <p class="i-regla__t">No fabricar personas ni cifras</p>
+        <p class="i-regla__p">En una versión anterior se publicó un panel de expertos inventado. Todo el aparato de fuentes existe para que no vuelva a pasar.</p>
+      </div>
+      <div class="i-regla">
+        <p class="i-regla__n">04</p>
+        <p class="i-regla__t">No revictimizar</p>
+        <p class="i-regla__p">No se pregunta qué pasó. Nunca, en ninguna pantalla.</p>
+      </div>
+      <div class="i-regla i-regla--rota">
+        <p class="i-regla__n">05</p>
+        <p class="i-regla__t">La ayuda está a cero clics</p>
+        <p class="i-regla__p">El teléfono y el botón de salir existen desde el primer milisegundo, en HTML, sin depender de JavaScript.</p>
+        <span class="i-regla__sello">Hoy no se cumple</span>
+      </div>
+      <div class="i-regla i-regla--rota">
+        <p class="i-regla__n">06</p>
+        <p class="i-regla__t">Salida rápida real</p>
+        <p class="i-regla__p">Con <code>location.replace</code>, para no dejar rastro en el historial.</p>
+        <span class="i-regla__sello">Hoy no se cumple</span>
+      </div>
+      <div class="i-regla">
+        <p class="i-regla__n">07</p>
+        <p class="i-regla__t">Movimiento reducido apaga</p>
+        <p class="i-regla__p"><code>prefers-reduced-motion</code> apaga. No reduce. Esta página también.</p>
+      </div>
+      <div class="i-regla">
+        <p class="i-regla__n">08</p>
+        <p class="i-regla__t">Nadie es castigado por su contexto</p>
+        <p class="i-regla__p">A las 4 de la mañana el mundo no está más vacío que a las 3 de la tarde. La luz cambia de color, nunca la cantidad de ayuda.</p>
+      </div>
+      <div class="i-regla">
+        <p class="i-regla__n">09</p>
+        <p class="i-regla__t">El sitio nunca cuenta víctimas</p>
+        <p class="i-regla__p">Contar visitas a un sitio sobre sumisión química <em>es</em> construir un registro de víctimas, aunque sea anónimo y aunque no se quiera.</p>
+      </div>
+    </div>
+
+    <div class="dos aparece">
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo">Ley del dato 1</p>
+        <p class="h3">«No sé» es la respuesta principal</p>
+        <p class="apunte">No una opción de cortesía. El mecanismo del daño es la amnesia: una herramienta que exija saber la hora excluye a la persona para la que existe.</p>
+      </div>
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo">Ley del dato 2</p>
+        <p class="h3">Ningún dato sin fuente</p>
+        <p class="apunte"><strong>Tener fuente</strong> = el número sale de un documento; lo puede hacer quien escribe el código. <strong>Estar verificado</strong> = alguien con criterio clínico comprobó que sigue vigente; eso no.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="env env--ancho"><div class="filete" aria-hidden="true"></div></div>
+
+<!-- ══ RELOJ ══════════════════════════════════════════════════ -->
+<section id="reloj">
+  <div class="env env--ancho pila pila--lg">
+
+    <div class="pila pila--sm aparece">
+      <p class="rotulo rotulo--acento">El reloj de rescate</p>
+      <h2 class="titulo">Las ventanas de las 72 horas</h2>
+      <p class="entradilla" style="max-width:62ch">
+        El corazón útil del sitio. Seis ventanas, cada una con su documento
+        y su cita literal. Dos de ellas no caducan nunca, y eso es la mitad
+        del mensaje.
+      </p>
+    </div>
+
+    <div class="i-panel aparece">
+      <div class="g">
+        <div class="g__leyenda">
+          <span class="g__clave"><span class="g__punto g__punto--cierra"></span>Se cierra</span>
+          <span class="g__clave"><span class="g__punto g__punto--abierta"></span>No caduca</span>
+        </div>
+
+        <div class="g__lienzo" id="grafico">
+          <div class="g__rejilla" aria-hidden="true">
+            <div class="g__linea" style="left:5%"></div>
+            <div class="g__linea" style="left:20%"></div>
+            <div class="g__linea" style="left:40%"></div>
+            <div class="g__linea g__linea--hito" style="left:60%"></div>
+            <div class="g__linea" style="left:80%"></div>
+            <div class="g__linea" style="left:100%"></div>
+          </div>
+
+          <div class="g__fila">
+            <div class="g__etiqueta">
+              <span class="g__nombre">Muestra toxicológica</span>
+              <span class="g__valor tab">orina 96 h · sangre 6 h</span>
+            </div>
+            <div class="g__pista">
+              <div class="g__barra" style="--w:80%"></div>
+              <div class="g__marca" style="left:5%" data-nota="6 h"></div>
+            </div>
+          </div>
+
+          <div class="g__fila">
+            <div class="g__etiqueta">
+              <span class="g__nombre">Examen médico-legal</span>
+              <span class="g__valor tab">72 h como urgencia</span>
+            </div>
+            <div class="g__pista"><div class="g__barra" style="--w:60%"></div></div>
+          </div>
+
+          <div class="g__fila">
+            <div class="g__etiqueta">
+              <span class="g__nombre">Profilaxis del VIH (PEP)</span>
+              <span class="g__valor tab">72 h</span>
+            </div>
+            <div class="g__pista"><div class="g__barra" style="--w:60%"></div></div>
+          </div>
+
+          <div class="g__fila">
+            <div class="g__etiqueta">
+              <span class="g__nombre">Anticoncepción de emergencia</span>
+              <span class="g__valor tab">120 h</span>
+            </div>
+            <div class="g__pista"><div class="g__barra" style="--w:100%"></div></div>
+          </div>
+
+          <div class="g__fila">
+            <div class="g__etiqueta">
+              <span class="g__nombre">Que te atiendan</span>
+              <span class="g__valor tab">No caduca</span>
+            </div>
+            <div class="g__pista"><div class="g__barra g__barra--abierta" style="--w:100%"></div></div>
+          </div>
+
+          <div class="g__fila">
+            <div class="g__etiqueta">
+              <span class="g__nombre">Denunciar, si quieres</span>
+              <span class="g__valor tab">No caduca</span>
+            </div>
+            <div class="g__pista"><div class="g__barra g__barra--abierta" style="--w:100%"></div></div>
+          </div>
+
+          <div class="g__eje" aria-hidden="true">
+            <span class="g__tick" style="left:0">0 h</span>
+            <span class="g__tick" style="left:20%">24</span>
+            <span class="g__tick" style="left:40%">48</span>
+            <span class="g__tick" style="left:60%">72</span>
+            <span class="g__tick" style="left:80%">96</span>
+            <span class="g__tick g__tick--fin" style="left:100%">120 h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="i-tabla-caja aparece">
+      <table class="i-tabla">
+        <caption class="apunte" style="text-align:left; padding-bottom:12px">
+          Las seis ventanas con su documento. Ninguna está verificada
+          todavía por una persona con criterio clínico.
+        </caption>
+        <thead>
+          <tr><th scope="col">Ventana</th><th scope="col">Cierra</th><th scope="col">Fuente</th><th scope="col">Estado</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Muestra toxicológica</td><td class="num">96 h orina · 6 h sangre</td><td>MinSalud, Tabla 10</td><td>Sin verificar</td></tr>
+          <tr><td>Examen médico-legal</td><td class="num">72 h</td><td>INMLCF, R.T. INML-CF-01</td><td>Sin verificar</td></tr>
+          <tr><td>Profilaxis del VIH (PEP)</td><td class="num">72 h</td><td>MinSalud</td><td>Sin verificar</td></tr>
+          <tr><td>Anticoncepción de emergencia</td><td class="num">120 h</td><td>MinSalud</td><td>Sin verificar</td></tr>
+          <tr><td>Que te atiendan</td><td class="num">No caduca</td><td>MinSalud</td><td>Sin verificar</td></tr>
+          <tr><td>Denunciar, si quieres</td><td class="num">No caduca</td><td>MinSalud</td><td>Sin verificar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dos dos--ancha aparece">
+      <div class="i-panel pila pila--sm" style="border-color:var(--aviso-linea); background:var(--aviso)">
+        <p class="rotulo rotulo--acento">La corrección que justifica todo el aparato de fuentes</p>
+        <p class="h3">Esta ventana estuvo en 12 horas. Son 96.</p>
+        <p class="apunte">
+          El protocolo separa dos muestras que estaban confundidas en una
+          sola: sangre a las 6 horas, orina a las <strong>96</strong>. O sea
+          que el sitio le decía a alguien que su ventana había pasado cuando
+          le quedaban <strong>tres días</strong>.
+        </p>
+        <p class="apunte" style="color:var(--tinta)">
+          No informaba de menos. Convencía a alguien de que ya no valía la
+          pena ir. Es el peor error que esta página puede cometer, y por eso
+          ningún número entra sin su cita.
+        </p>
+      </div>
+      <div class="pila pila--md">
+        <div class="pila pila--xs">
+          <p class="rotulo">Los tramos</p>
+          <p class="apunte">
+            <em>Hace unas horas · anoche · ayer · hace unos días · no sé.</em>
+            Gruesos a propósito: no se pregunta una hora exacta porque nadie
+            la tiene, y pedirla es un interrogatorio.
+          </p>
+        </div>
+        <div class="pila pila--xs">
+          <p class="rotulo">Y si ya lo hiciste</p>
+          <p class="apunte">
+            Cada consejo de las primeras horas lleva su «y si ya lo
+            hiciste». No es amabilidad: es lo único que separa una lista de
+            consejos de una lista de reproches. Quien lee esto ya se duchó,
+            casi siempre.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="mar" role="img" aria-label="Banda de mar en acuarela"></div>
+
+<!-- ══ LA APP ═════════════════════════════════════════════════ -->
+<section id="app">
+  <div class="env env--ancho pila pila--xl">
+
+    <div class="pila pila--md aparece" style="max-width:70ch">
+      <p class="rotulo rotulo--acento">La propuesta</p>
+      <h2 class="titulo">La app de rescate</h2>
+      <p class="entradilla">
+        La barra de urgencia salió del sitio para convertirse en una app
+        móvil. Esta es su especificación: qué hace, qué sensores usa, qué se
+        niega a hacer y por qué no puede ser una página web.
+      </p>
+    </div>
+
+    <div class="pila pila--md aparece">
+      <p class="lede" style="max-width:24ch; color:var(--acento-tinta)">
+        Los sensores no deciden. Los sensores recuerdan.
+      </p>
+      <div class="dos">
+        <p class="apunte">
+          Un sensor que <strong>decide</strong> tiene que afirmar algo —«esta
+          persona está drogada»— y esa afirmación no tiene fuente. Lo mejor
+          publicado clasificó intoxicación <em>por alcohol</em> con ~90 % de
+          acierto, pero con el teléfono atado a la zona lumbar, muestreando
+          a 100 Hz y caminando diez pasos en línea recta. No describe un
+          teléfono en un bolso, y no hay estudio equivalente para
+          escopolamina ni benzodiacepinas.
+        </p>
+        <p class="apunte">
+          Un sensor que <strong>recuerda</strong> no afirma nada. Registra
+          que a la 1:52 dejó de caminar y que a la 1:58 iba en un vehículo.
+          Eso es un hecho, y su valor es enorme porque el mecanismo del daño
+          es precisamente la amnesia. La app no acorta la agresión:
+          <strong>acorta el silencio y guarda el rastro</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div class="i-tabla-caja aparece">
+      <table class="i-tabla">
+        <caption class="apunte" style="text-align:left; padding-bottom:12px">Las cuatro decisiones tomadas, y lo que descartan</caption>
+        <thead>
+          <tr><th scope="col">Decisión</th><th scope="col">Qué se eligió</th><th scope="col">Por qué no lo otro</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Disparador</td>
+            <td>Un botón. Lo pulsa ella.</td>
+            <td>Un umbral automático afirmaría algo médico que ningún estudio sostiene, y una falsa alarma en un taxi puede ponerla en peligro.</td>
+          </tr>
+          <tr>
+            <td>A quién avisa</td>
+            <td>Solo a sus contactos, más una pantalla para quien esté al lado.</td>
+            <td>Un servicio central de monitoreo sería exactamente el registro de víctimas que la regla 9 prohíbe construir.</td>
+          </tr>
+          <tr>
+            <td>Qué graba</td>
+            <td>Caja negra de sensores. Ni audio ni imagen.</td>
+            <td>Un archivo de audio es prueba, pero también algo que un juez, una pareja o un ladrón pueden pedir o encontrar.</td>
+          </tr>
+          <tr>
+            <td>Dónde vive</td>
+            <td>En el aparato, cifrado, 30 días.</td>
+            <td>Sin servidor no hay base que allanar ni que pedir por orden judicial. La defensa no es cifrado: es no tener los datos.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tres momentos -->
+    <div class="pila pila--md aparece">
+      <div class="i-cabecera">
+        <h3 class="subtitulo">Tres momentos, tres cosas distintas</h3>
+        <p class="apunte">La app no tiene pantalla principal</p>
+      </div>
+      <div class="tarjetas">
+        <div class="i-panel momento">
+          <span class="momento__c serif">Antes</span>
+          <p class="h3">Preparar, una vez, en calma</p>
+          <p class="apunte">Elegir contactos. Escribir el mensaje. Aprender dónde está el botón <strong>con el dedo</strong>, no con los ojos. Cinco minutos, un domingo.</p>
+        </div>
+        <div class="i-panel momento">
+          <span class="momento__c serif">Durante</span>
+          <p class="h3">El botón</p>
+          <p class="apunte">Una sola cosa en pantalla. Su cliente real no es quien ya se fue: es quien <strong>sospecha</strong> —«esta copa sabía raro»—. Ahí hay minutos, y hoy nadie los usa.</p>
+        </div>
+        <div class="i-panel momento">
+          <span class="momento__c serif">Después</span>
+          <p class="h3">El día siguiente, o el tercero</p>
+          <p class="apunte">La caja negra se convierte en el documento que el sitio ya sabe guardar, y el reloj de las 72 horas dice qué sigue abierto.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensaje + cartel -->
+    <div class="dos dos--ancha aparece">
+      <div class="pila pila--md">
+        <div class="pila pila--xs">
+          <p class="rotulo">Durante · lo que reciben los contactos</p>
+          <p class="apunte">
+            Lo va a leer alguien recién despertado a las 3 de la mañana.
+            Tiene que ser legible en cuatro segundos. Y lleva el
+            <strong>cómo llegó</strong>, no solo el dónde está: una
+            coordenada sola no distingue la casa de una amiga de un sitio
+            donde nunca ha estado.
+          </p>
+        </div>
+        <pre class="sms"><b>Ana pulsó el botón de ayuda a las 2:14.</b>
+
+DÓNDE ESTÁ  → maps…/?q=4.6512,-74.0559
+              (precisión 12 m, hace 30 s)
+
+CÓMO LLEGÓ  → 23:40  estuvo aquí: maps…/?q=4.6601,-74.0522
+              01:52  salió caminando
+              01:58  va en un vehículo
+              02:11  se detuvo
+
+Batería 22 %.
+
+<b>SI NO CONTESTA: llama al 123 y di dónde está.
+No esperes a que "se le pase".</b></pre>
+        <p class="apunte">
+          Después del primero, un mensaje cada 2 minutos y solo con lo que
+          cambió. Sin servidor no hay «seguimiento en vivo»: hay mensajes
+          repetidos, y hay que llamarlo por su nombre.
+        </p>
+      </div>
+
+      <div class="pila pila--md">
+        <div class="pila pila--xs">
+          <p class="rotulo">Durante · el teléfono se vuelve un cartel</p>
+          <p class="apunte">
+            Para el desconocido que esté al lado. Brillo al máximo, pantalla
+            que no se apaga, y ni una acuarela: es la aplicación más literal
+            de la ley del proyecto.
+          </p>
+        </div>
+        <div class="tel cartel">
+          <div class="tel__pantalla">
+            <p class="cartel__t">Esta persona pidió ayuda</p>
+            <p class="cartel__p">
+              Puede estar bajo el efecto de una sustancia. Puede parecer
+              borracha sin estarlo.
+            </p>
+            <p class="cartel__rot">Qué hacer</p>
+            <ul class="cartel__l">
+              <li>Quédate con ella.</li>
+              <li>No dejes que nadie se la lleve.</li>
+              <li>Llama al 123.</li>
+            </ul>
+            <p class="cartel__pie">Ya se avisó a sus contactos.</p>
+          </div>
+        </div>
+        <p class="apunte">
+          Sin sangre, sin calaveras, sin rojo parpadeando. Un cartel que
+          asusta hace que la gente se aparte, y lo que se necesita es que
+          alguien se quede.
+        </p>
+      </div>
+    </div>
+
+    <!-- Caja negra -->
+    <div class="pila pila--md aparece">
+      <div class="i-cabecera">
+        <h3 class="subtitulo">La caja negra</h3>
+        <p class="apunte">Corre siempre, en silencio, y nunca dispara nada</p>
+      </div>
+      <div class="i-tabla-caja">
+        <table class="i-tabla">
+          <thead>
+            <tr><th scope="col">Señal</th><th scope="col">De dónde</th><th scope="col">Para qué</th><th scope="col">Coste</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Actividad</td><td>Activity Recognition · CMMotionActivity</td><td>Quieta, caminando o en vehículo</td><td>Casi cero</td></tr>
+            <tr><td>Pasos y cadencia</td><td>Contador hardware · CMPedometer</td><td>Cuándo dejó de caminar</td><td>Casi cero</td></tr>
+            <tr><td>Ubicación gruesa</td><td>Cambio significativo · geocercas</td><td>Dónde estuvo, por tramos</td><td>Bajo</td></tr>
+            <tr><td>Ubicación fina</td><td>GPS, <strong>solo con la alarma activa</strong></td><td>Dónde está ahora</td><td>Alto</td></tr>
+            <tr><td>Altitud</td><td>Barómetro</td><td>Cambió de piso, bajó a un sótano</td><td>Casi cero</td></tr>
+            <tr><td>Última interacción</td><td>Desbloqueo / pantalla</td><td>Cuándo usó el teléfono por última vez</td><td>Cero</td></tr>
+            <tr><td>Batería y red</td><td>Sistema</td><td>«Le quedaba 4 % y se apagó» es información</td><td>Cero</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="dos">
+        <div class="i-panel i-panel--liso pila pila--xs">
+          <p class="rotulo">Nunca, y no es negociable</p>
+          <p class="apunte">
+            Micrófono, cámara, contactos, agenda, historial de navegación,
+            identificadores de publicidad, red social alguna.
+          </p>
+        </div>
+        <div class="i-panel i-panel--liso pila pila--xs">
+          <p class="rotulo">Muestreo por eventos, no por reloj</p>
+          <p class="apunte">
+            En reposo no hay muestreo periódico: se escribe una entrada solo
+            cuando <em>cambia</em> algo. Un día normal son decenas de
+            entradas, no millones. Objetivo de diseño —no medición—:
+            <strong class="tab">&lt; 2 %</strong> de batería al día.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- El día después -->
+    <div class="dos aparece">
+      <div class="pila pila--md">
+        <p class="rotulo rotulo--acento">Después</p>
+        <h3 class="subtitulo">El teléfono llena la mitad que la amnesia se llevó</h3>
+        <p class="apunte">
+          Y no puede llenar la otra. Decirlo así, en la propia pantalla, es
+          lo que impide que el documento parezca más completo de lo que es.
+        </p>
+        <div class="i-tabla-caja">
+          <table class="i-tabla" style="min-width:0">
+            <thead>
+              <tr><th scope="col">El sitio le pide</th><th scope="col">Quién responde</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="font-weight:400; color:var(--tinta-2)">«Anota el sitio y la hora»</td><td><strong>El teléfono</strong></td></tr>
+              <tr><td style="font-weight:400; color:var(--tinta-2)">«No borres nada del teléfono»</td><td><strong>El teléfono</strong></td></tr>
+              <tr><td style="font-weight:400; color:var(--tinta-2)">«Escribe lo que recuerdes»</td><td>Ella</td></tr>
+              <tr><td style="font-weight:400; color:var(--tinta-2)">«Apunta quién estaba»</td><td>Solo ella</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tel">
+        <div class="tel__pantalla">
+          <p class="rotulo">Anoche</p>
+          <div class="i-lista">
+            <div class="i-item"><span class="i-item__bolo">·</span><p><b>23:40</b><span>Llegaste a un sitio y te quedaste 2 h 12 min.</span></p></div>
+            <div class="i-item"><span class="i-item__bolo">·</span><p><b>01:52</b><span>Empezaste a caminar.</span></p></div>
+            <div class="i-item"><span class="i-item__bolo">·</span><p><b>01:58</b><span>Ibas en un vehículo.</span></p></div>
+            <div class="i-item"><span class="i-item__bolo">·</span><p><b>02:11</b><span>Te detuviste aquí.</span></p></div>
+            <div class="i-item"><span class="i-item__bolo i-item__bolo--no">!</span><p><b>02:14</b><span>Pulsaste el botón.</span></p></div>
+            <div class="i-item"><span class="i-item__bolo">·</span><p><b>09:30</b><span>Desbloqueaste el teléfono por primera vez desde las 2:11.</span></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stalkerware + no hace -->
+    <div class="dos aparece">
+      <div class="pila pila--md">
+        <div class="pila pila--xs">
+          <p class="rotulo rotulo--acento">Que no se convierta en stalkerware</p>
+          <p class="apunte">
+            La mayor parte del software de vigilancia de pareja no se
+            programó para eso: son apps de doble uso reutilizadas para
+            espiar. Una app que sabe dónde estás y avisa a terceros es
+            candidata perfecta. Ocho requisitos, no buenas intenciones.
+          </p>
+        </div>
+        <div class="i-lista">
+          <div class="i-item"><span class="i-item__bolo">1</span><p><b>Nunca se oculta</b><span>Icono siempre visible y notificación permanente. No hay modo invisible.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">2</span><p><b>Añadir un contacto tarda 12 horas; quitarlo es inmediato</b><span>Quien te quita el teléfono cinco minutos no puede añadirse.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">3</span><p><b>Todo contacto nuevo se anuncia a pantalla completa</b><span>Igual que el AirTag que pita.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">4</span><p><b>No hay panel web, ni cuenta, ni configuración remota</b><span>Nada se cambia sin el aparato desbloqueado en la mano.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">5</span><p><b>Los contactos reciben solo cuando ella pulsa</b><span>No existe «ver dónde está» a demanda. Ni una vez.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">6</span><p><b>La caja negra se lee solo en el aparato</b><span>Y solo desbloqueado. Excluida de la copia en la nube.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">7</span><p><b>Se desinstala sin código, siempre</b><span>Una app de seguridad que no se deja quitar es una app de control.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo">8</span><p><b>Toda alarma es visible para ella</b><span>Avisar a alguien sin que la dueña lo sepa no es seguridad: es un rastreador.</span></p></div>
+        </div>
+      </div>
+
+      <div class="pila pila--md">
+        <div class="pila pila--xs">
+          <p class="rotulo rotulo--acento">Lo que la app no hace</p>
+          <p class="apunte">Esta lista es tan parte del diseño como las demás.</p>
+        </div>
+        <div class="i-lista">
+          <div class="i-item"><span class="i-item__bolo i-item__bolo--no">×</span><p><b>No dice que te drogaron</b><span>No lo sabe y no lo puede saber.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo i-item__bolo--no">×</span><p><b>No llama a nadie sola</b><span>Una llamada muda desde un número desconocido se cuelga.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo i-item__bolo--no">×</span><p><b>No manda nada a ningún servidor</b><span>No hay servidor.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo i-item__bolo--no">×</span><p><b>No graba audio ni imagen</b></p></div>
+          <div class="i-item"><span class="i-item__bolo i-item__bolo--no">×</span><p><b>No cuenta cuánta gente la usa</b><span>Sin analítica, sin telemetría, sin contador de instalaciones. Regla 9.</span></p></div>
+          <div class="i-item"><span class="i-item__bolo i-item__bolo--no">×</span><p><b>No promete protegerte</b><span>Una app no impide una agresión. Se dice en la primera pantalla, una vez: la falsa sensación de seguridad es el fallo mejor documentado de esta categoría.</span></p></div>
+        </div>
+        <div class="i-panel i-panel--liso pila pila--xs">
+          <p class="rotulo">Por qué no puede ser una web</p>
+          <p class="apunte">
+            Sin ejecución en segundo plano, sin SMS sin confirmación, sin
+            botón físico ni widget de bloqueo, sin sensor de actividad de
+            bajo consumo, sin almacenamiento cifrado atado al desbloqueo.
+            Nativo, o el lector del día después y nada más.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fases -->
+    <div class="pila pila--md aparece">
+      <div class="i-cabecera">
+        <h3 class="subtitulo">Las fases</h3>
+        <p class="apunte">La 1 ya sirve sola. Si el proyecto se para ahí, ha valido la pena.</p>
+      </div>
+      <div class="i-tabla-caja">
+        <table class="i-tabla">
+          <thead>
+            <tr><th scope="col">Fase</th><th scope="col">Qué entra</th><th scope="col">Por qué en ese orden</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="num">0 · Verificar</td><td>Las seis ventanas, las líneas telefónicas, revisión de una organización, revisión legal</td><td>Antes de una línea de código. Dato de salud y de vida sexual es dato sensible bajo la Ley 1581.</td></tr>
+            <tr><td class="num">1 · El botón</td><td>Contactos, cuenta atrás, mensaje, pantalla-cartel, cancelación. Sin sensores.</td><td>Es la parte que ya salva la distancia entre no tener nada y tener algo.</td></tr>
+            <tr><td class="num">2 · La caja negra</td><td>Actividad, pasos, ubicación gruesa, batería, desbloqueos</td><td>El «cómo llegó» entra en el mensaje y lo vuelve accionable.</td></tr>
+            <tr><td class="num">3 · El día después</td><td>La línea de tiempo, la exportación, el reloj de las 72 h en la app</td><td>Cubre a quien nunca llegó a pulsar el botón.</td></tr>
+            <tr><td class="num">4 · Lo aplazado</td><td>Noche marcada, reloj de pulsera, satélite, aviso automático por silencio</td><td>El aviso automático está descartado a propósito, no olvidado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="i-panel aparece pila pila--sm" style="border-color:var(--aviso-linea); background:var(--aviso)">
+      <p class="rotulo rotulo--acento">El límite, y no tiene solución bonita</p>
+      <p class="apunte" style="max-width:70ch">
+        Un código de cancelación es exactamente lo que una persona afectada
+        no puede recordar. El diseño que impide que un agresor apague la
+        alarma es el mismo que puede dejarla a ella atrapada con una sirena
+        que no sabe apagar. La salida es aceptar el intercambio: además del
+        código hay un «esto fue una falsa alarma» que no pide nada, apaga la
+        sirena y manda un último mensaje diciendo que se canceló sin código.
+        Peor para la seguridad, mucho mejor para la dignidad — y en este
+        proyecto ese empate se resuelve siempre igual.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<div class="env env--ancho"><div class="filete" aria-hidden="true"></div></div>
+
+<!-- ══ ESTADO ═════════════════════════════════════════════════ -->
+<section id="estado">
+  <div class="env env--ancho pila pila--lg">
+    <div class="pila pila--sm aparece">
+      <p class="rotulo rotulo--acento">Estado real</p>
+      <h2 class="titulo">Tres cosas que hay que mirar de frente</h2>
+      <p class="entradilla" style="max-width:62ch">
+        Salieron de leer el código, no de la documentación. Un proyecto que
+        se exige fuentes a sí mismo tiene que exigirse también decir en qué
+        no se está cumpliendo.
+      </p>
+    </div>
+
+    <div class="tarjetas aparece">
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo rotulo--acento">01</p>
+        <p class="h3">Las reglas 5 y 6 no se cumplen</p>
+        <p class="apunte">
+          La barra de urgencia salió del sitio para irse a la app y no ha
+          vuelto. El 123 quedó dentro del mapa, a varios scrolls, y la salida
+          rápida no existe. El comentario de
+          <span class="ruta">estilos.css:4918</span> sigue afirmando que sí.
+        </p>
+      </div>
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo rotulo--acento">02</p>
+        <p class="h3"><code>#salir</code> es un enlace muerto</p>
+        <p class="apunte">
+          «Que alguien venga por mí» apunta ahí tres veces desde
+          <span class="ruta">RelojRescate.astro</span> y no hay ningún
+          elemento con ese <code>id</code>. Es la acción más urgente de la
+          herramienta más urgente.
+        </p>
+      </div>
+      <div class="i-panel pila pila--xs">
+        <p class="rotulo rotulo--acento">03</p>
+        <p class="h3">El README miente sobre el servidor</p>
+        <p class="apunte">
+          Dice «no hay servidor» y <span class="ruta">servidor/</span>
+          existe. Mentir sobre privacidad en una página sobre violencia
+          sexual es la peor forma posible de mentir. La frase de reemplazo ya
+          está redactada.
+        </p>
+      </div>
+    </div>
+
+    <div class="i-panel aparece">
+      <div class="i-cabecera">
+        <h3 class="subtitulo">Antes de publicar</h3>
+        <p class="apunte">Quitar el <code>noindex</code> es el último punto, no el primero</p>
+      </div>
+      <div class="i-lista">
+        <div class="i-item"><span class="i-item__bolo">1</span><p><b>Verificar cada ventana contra el protocolo vigente</b><span>Pendiente: bajo qué número quedó publicada la actualización que deroga la Resolución 459 de 2012.</span></p></div>
+        <div class="i-item"><span class="i-item__bolo">2</span><p><b>Verificar cada línea telefónica llamando</b><span>Número, horario, cobertura y qué atiende realmente.</span></p></div>
+        <div class="i-item"><span class="i-item__bolo">3</span><p><b>Recuperar la salida rápida y el teléfono a cero clics</b></p></div>
+        <div class="i-item"><span class="i-item__bolo">4</span><p><b>Arreglar <code>#salir</code></b></p></div>
+        <div class="i-item"><span class="i-item__bolo">5</span><p><b>Reescribir la frase de privacidad del README</b></p></div>
+        <div class="i-item"><span class="i-item__bolo">6</span><p><b>Sustituir el amanecer fijo por cálculo real por latitud</b></p></div>
+        <div class="i-item"><span class="i-item__bolo">7</span><p><b>Cero organizaciones nombradas como aliadas sin acuerdo por escrito</b></p></div>
+        <div class="i-item"><span class="i-item__bolo">8</span><p><b>Revisión por una organización que atienda violencia sexual</b></p></div>
+        <div class="i-item"><span class="i-item__bolo i-item__bolo--si">9</span><p><b>Quitar el <code>noindex</code> y el aviso de borrador</b><span>Solo cuando todo lo anterior esté hecho.</span></p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CIERRE ═════════════════════════════════════════════════ -->
+<footer class="pie">
+  <div class="env env--ancho pila pila--lg">
+    <div class="dos dos--ancha">
+      <div class="pila pila--md">
+        <p class="lede" style="max-width:22ch">
+          Galene es el mar en calma, y una Nereida — de las que aparecen en
+          la tormenta para que los barcos pasen.
+        </p>
+        <p class="apunte" style="max-width:52ch">
+          Los documentos completos viven en el repositorio:
+          <span class="ruta">GUIA.md</span> y
+          <span class="ruta">propuestas/app-rescate.md</span>. Esta página
+          los presenta; ellos guardan el detalle.
+        </p>
+      </div>
+      <div class="pila pila--sm">
+        <p class="rotulo">Fuentes</p>
+        <ul class="fuentes">
+          <li><a href="https://www.gbvlearningnetwork.ca/our-work/briefs/brief-20.html">Drug Facilitated Sexual Assault</a> — GBV Learning Network, Western University</li>
+          <li><a href="https://www.elsevier.es/es-revista-revista-espanola-medicina-legal-285-articulo-sumision-quimica-por-burundanga-o-S0377473222000050">Sumisión química por «burundanga» o escopolamina</a> — Revista Española de Medicina Legal</li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7437548/">Smartphone Accelerometers to Sense Gait Impairments Due to Alcohol Intoxication</a> — JSAD, 2020</li>
+          <li><a href="https://citizenlab.ca/research/the-predator-in-your-pocket-a-multidisciplinary-assessment-of-the-stalkerware-application-industry/">The Predator in Your Pocket</a> — Citizen Lab</li>
+          <li><a href="https://nixdell.com/papers/spyware.pdf">The Spyware Used in Intimate Partner Violence</a> — Chatterjee et al., IEEE S&amp;P 2018</li>
+          <li><a href="https://www.policia.gov.co/sites/default/files/2025-08/linea-155-orientacion-a-personas-victimas-de-violencias-basadas-en-genero.pdf">Línea 155</a> — Policía Nacional de Colombia</li>
+        </ul>
+        <p class="apunte">
+          Tener fuente no es estar verificado. Nada de esto lo ha revisado
+          todavía una persona con criterio clínico.
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</div><!-- /.hoja -->
+
+<script>
+(function(){
+  "use strict";
+  var quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* Las apariciones y el crecimiento de las barras. IntersectionObserver
+     y no animación por scroll: Safari no tiene scroll-timeline, y una
+     página que solo se ve bien en Chrome no sirve aquí. */
+  var objetivos = document.querySelectorAll(".aparece, #grafico");
+
+  if (quieto || !("IntersectionObserver" in window)) {
+    objetivos.forEach(function(n){ n.classList.add("visto"); });
+    return;
+  }
+
+  var ojo = new IntersectionObserver(function(entradas){
+    entradas.forEach(function(e){
+      if (!e.isIntersecting) return;
+      e.target.classList.add("visto");
+      ojo.unobserve(e.target);
+    });
+  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
+
+  objetivos.forEach(function(n){ ojo.observe(n); });
+
+  /* Marcar en la barra la sección que se está leyendo. */
+  var enlaces = Array.prototype.slice.call(document.querySelectorAll(".nav a"));
+  var secciones = enlaces.map(function(a){
+    return document.querySelector(a.getAttribute("href"));
+  });
+
+  var vigia = new IntersectionObserver(function(entradas){
+    entradas.forEach(function(e){
+      if (!e.isIntersecting) return;
+      var i = secciones.indexOf(e.target);
+      if (i < 0) return;
+      enlaces.forEach(function(a){ a.removeAttribute("aria-current"); });
+      enlaces[i].setAttribute("aria-current", "true");
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+
+  secciones.forEach(function(s){ if (s) vigia.observe(s); });
+})();
+</script>

@@ -20,3 +20,8 @@ tmp/
 test-results/
 playwright-report/
 blob-report/
+
+# La página de presentación se compila desde presentacion/plantilla.html
+# con las láminas incrustadas. No viaja en el repo: pesa medio mega
+# en base64 y se regenera con `node presentacion/construir.mjs`.
+presentacion/galene.html
