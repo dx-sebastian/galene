@@ -38,8 +38,13 @@ const ESPEJOS = [
   'https://overpass.private.coffee/api/interpreter',
 ];
 
-const SEGUNDOS = 40;
-const TOPE = 1000;
+/* 40 → 25. El presupuesto largo era para la consulta con TODAS las
+   capas; ahora que la consulta pide solo lo que está encendido, 25 s
+   cubre la peor ciudad con margen, y quien espera delante de la
+   pantalla espera quince segundos menos antes de enterarse de que no
+   hay red. */
+const SEGUNDOS = 25;
+const TOPE = 600;
 
 /* Radio de búsqueda alrededor del centro. Sale del zoom con el que se
    encuadra cada ciudad, que ya lleva codificado su tamaño: Bogotá se
@@ -59,9 +64,17 @@ const radioDe = (ciudad) =>
 /* Las etiquetas que se piden, agrupadas por clave para que la consulta
    sea corta. Se derivan de CAPAS: si mañana alguien añade una capa en
    lugares.js con su etiqueta OSM, la consulta la incluye sola. */
-function consulta(ciudad) {
+/* ── LA CONSULTA PIDE LO QUE SE VE, NO EL CENSO ────────────────────
+   Pedía las cuatro capas siempre, y la de centros de salud es la
+   gorda: en una capital, consultorios y clínicas son varios miles de
+   elementos, y esa consulta era la que moría por tiempo. La ayuda que
+   no llega porque venía acompañada de todo lo demás no es ayuda.
+   Ahora la consulta se arma solo con las capas ENCENDIDAS; encender
+   una que falta dispara otra consulta, que llega sola porque pide
+   poco. */
+function consulta(ciudad, capas = CAPAS) {
   const porClave = new Map();
-  for (const capa of CAPAS) {
+  for (const capa of capas) {
     for (const par of capa.osm) {
       const [k, v] = par.split('=');
       if (!porClave.has(k)) porClave.set(k, new Set());
@@ -162,20 +175,23 @@ function normalizar(elementos, ciudad) {
    LA BÚSQUEDA ALREDEDOR DE ELLA NO SE GUARDA. La clave llevaría sus
    coordenadas y eso es escribir su ubicación en el disco, aunque sea
    por diez minutos y aunque sea suyo. Se vuelve a preguntar y ya. */
-const clave = (ciudad) => `galene:ayuda:${ciudad.id}`;
+/* La clave lleva las capas pedidas: la respuesta de «urgencias y
+   policía» no es la de «todo», y servirla como si lo fuera dejaría
+   los centros de salud invisibles para siempre en esa ciudad. */
+const clave = (ciudad, firma) => `galene:ayuda:${ciudad.id}:${firma}`;
 
-const guardado = (ciudad) => {
+const guardado = (ciudad, firma) => {
   if (ciudad.propia) return null;
   try {
-    const c = JSON.parse(sessionStorage.getItem(clave(ciudad)) || 'null');
+    const c = JSON.parse(sessionStorage.getItem(clave(ciudad, firma)) || 'null');
     return Array.isArray(c?.lugares) ? c.lugares : null;
   } catch { return null; }
 };
 
-const guardar = (ciudad, lugares) => {
+const guardar = (ciudad, firma, lugares) => {
   if (ciudad.propia) return;
   try {
-    sessionStorage.setItem(clave(ciudad), JSON.stringify({ lugares }));
+    sessionStorage.setItem(clave(ciudad, firma), JSON.stringify({ lugares }));
   } catch { /* sin sessionStorage se pregunta otra vez y ya está */ }
 };
 
@@ -184,11 +200,13 @@ const guardar = (ciudad, lugares) => {
  * @returns {Promise<{lugares: array, deCache: boolean}>}
  * @throws  {Error} si ningún espejo responde. Quien llama lo cuenta.
  */
-export async function buscarAyuda(ciudad, { signal } = {}) {
-  const cache = guardado(ciudad);
+export async function buscarAyuda(ciudad, { signal, capas } = {}) {
+  const pedidas = (capas?.length ? CAPAS.filter((c) => capas.includes(c.id)) : CAPAS);
+  const firma = pedidas.map((c) => c.id).sort().join('+');
+  const cache = guardado(ciudad, firma);
   if (cache) return { lugares: cache, deCache: true };
 
-  const cuerpo = 'data=' + encodeURIComponent(consulta(ciudad));
+  const cuerpo = 'data=' + encodeURIComponent(consulta(ciudad, pedidas));
   const cortes = [];
 
   const pedir = (espejo) => {
@@ -237,7 +255,7 @@ export async function buscarAyuda(ciudad, { signal } = {}) {
   }
 
   const lugares = normalizar(datos.elements || [], ciudad);
-  guardar(ciudad, lugares);
+  guardar(ciudad, firma, lugares);
   /* `truncado` = Overpass devolvió justo el tope, así que casi seguro
      hay más de los que caben. Se dice en pantalla. */
   return { lugares, deCache: false, truncado: (datos.elements || []).length >= TOPE };

@@ -53,10 +53,10 @@
 
 import {
   MODOS, modoPor, CIUDADES, ciudadPor, ciudadDeAqui, buscarCiudades,
-  CAPAS, capaPor, tiposDe, tipoPor, porCiudad,
+  TODAS_CIUDADES, CAPAS, capaPor, tiposDe, tipoPor, porCiudad,
 } from './lugares.js';
 import * as marcas from './marcas.js';
-import { buscarAyuda } from './ayuda.js';
+import { buscarAyuda, distancia } from './ayuda.js';
 
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const LEAFLET_JS  = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
@@ -138,7 +138,15 @@ export function montarMapa(host) {
   const est = {
     modo: host.dataset.modo || MODOS[0].id,
     ciudad: ciudadPor(host.dataset.ciudad) || CIUDADES[0],
-    capas: new Set(CAPAS.map((c) => c.id)),
+    /* «Centros de salud» APAGADA de entrada, y es una decisión de
+       urgencia, no de diseño: es la capa gorda —consultorios y
+       clínicas, miles de elementos en una capital— y era la que
+       mataba la consulta por tiempo. Lo que se necesita YA es
+       urgencias, acompañamiento y denuncia; los consultorios, que
+       casi nunca abren de noche, se encienden con su casilla y
+       llegan solos porque su consulta viaja ligera. */
+    capas: new Set(CAPAS.map((c) => c.id).filter((id) => id !== 'salud')),
+    capasTraidas: '',                  // qué firma de capas trajo Overpass
     osm: [],                           // lo último que trajo Overpass
     truncado: false,                   // ¿se llenó el tope de la consulta?
     fallo: null,
@@ -427,8 +435,11 @@ export function montarMapa(host) {
     decir(`Buscando sitios de atención en ${donde()}…`);
     pintarListado();
     try {
-      const { lugares, truncado } = await buscarAyuda(est.ciudad, { signal: peticion.signal });
+      const pedidas = [...est.capas];
+      const { lugares, truncado } = await buscarAyuda(est.ciudad,
+        { signal: peticion.signal, capas: pedidas });
       est.osm = lugares;
+      est.capasTraidas = pedidas.sort().join('+');
       est.truncado = truncado;
       est.cargando = false;
       decir('');
@@ -492,7 +503,19 @@ export function montarMapa(host) {
     if (!buscar) return;
     est.ciudad = ciudadDeAqui(ll);
     host.dataset.ciudad = 'aqui';
-    for (const b of host.querySelectorAll('.ficha[data-id]')) b.setAttribute('aria-pressed', 'false');
+    /* ── Y SU CIUDAD QUEDA SEÑALADA ─────────────────────────────────
+       El centro de búsqueda es ELLA (seis kilómetros a la redonda),
+       pero la ficha de su ciudad se marca igual: es la respuesta a
+       «¿dónde estoy mirando?» sin tener que reconocer el plano, y es
+       el botón al que volver si arrastra el mapa lejos. A más de 60 km
+       de toda ciudad conocida no se marca ninguna — señalar la capital
+       de al lado sería mentirle. */
+    const cercana = TODAS_CIUDADES
+      .map((c) => ({ c, d: distancia(ll, c.ll) }))
+      .sort((a, b) => a.d - b.d)[0];
+    const marcada = cercana && cercana.d < 60000 ? cercana.c.id : null;
+    for (const b of host.querySelectorAll('.ficha[data-id]'))
+      b.setAttribute('aria-pressed', String(b.dataset.id === marcada));
     if (est.modo === 'emergencia') { est.osm = []; pintarPuntos(); traerAyuda(); }
     else pintarListado();
   }
@@ -840,6 +863,12 @@ export function montarMapa(host) {
     const c = e.target.dataset?.capa;
     if (!c) return;
     e.target.checked ? est.capas.add(c) : est.capas.delete(c);
+    /* Encender una capa que Overpass aún no trajo dispara su consulta:
+       la de emergencia pide solo lo encendido (ver ayuda.js), así que
+       lo apagado no existe todavía en est.osm. Apagar nunca pregunta. */
+    const faltan = e.target.checked && est.modo === 'emergencia'
+      && !est.capasTraidas.includes(c);
+    if (faltan) { traerAyuda(); return; }
     pintarPuntos(); pintarListado();
   });
 

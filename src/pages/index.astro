@@ -14,13 +14,11 @@
 import '../estilos/estilos.css';
 import Mundo from '../componentes/Mundo.astro';
 import Boca from '../componentes/Boca.astro';
+import Ayuda from '../componentes/Ayuda.astro';
 import Herramientas from '../componentes/Herramientas.astro';
 import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
 import Expertos from '../componentes/Expertos.astro';
 import Acerca from '../componentes/Acerca.astro';
-/* El panel de «tu garza». Va dentro del hero y nace cerrado: ver su
-   propia cabecera sobre por qué es opt-in y por qué es un <details>. */
-import Garza from '../componentes/Garza.astro';
 import '../estilos/nuevas-secciones.css';
 import '../estilos/garza.css';
 import '../estilos/responsive.css';
@@ -333,7 +331,7 @@ const DATOS = {
         </div>
       </details>
 
-      <a class="pildora" href="#sin-hablar">
+      <a class="pildora" href="#ayuda">
         Buscar ayuda
         <svg class="pildora__icono" viewBox="0 0 14 12"
              aria-hidden="true" focusable="false">
@@ -462,10 +460,12 @@ const DATOS = {
           nota de `refrescarManos`. */}
       <p class="manos" role="status" aria-live="polite" data-visible="0"></p>
 
-      {/* El panel de personalizar, en la esquina de abajo a la derecha.
-          Absoluto dentro del hero, así que no entra en las dos cajas que
-          mide `medidas()` para colocar el horizonte. */}
-      <Garza />
+      {/* La personalización de la garza —pico de color, frase— quedó
+          FUERA DEL MVP y su disparador «Tu garza» se retiró de aquí.
+          El componente (Garza.astro), su panel (js/garza.js) y sus
+          estilos siguen en el repositorio, listos para volver: es una
+          decisión de alcance, no una demolición. Las garzas de
+          presencia no dependen de él y se quedan. */}
 
       {/* EL INDICADOR DE SCROLL VA OCULTO A LA ASISTENCIA TÉCNICA, y es
           deliberado: «Desliza» no es información, es un dibujo que dice
@@ -490,6 +490,8 @@ const DATOS = {
         obligaba a tres apaños —fondo transparente, aguadas desplazadas
         y un ancla con margen negativo— que se cayeron solos al sacarla.
         No lleva ni una palabra: ver Boca.astro. */}
+    <Ayuda />
+
     <Boca />
 
     <Herramientas />

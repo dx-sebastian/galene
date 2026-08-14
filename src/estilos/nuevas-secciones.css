@@ -111,13 +111,115 @@
   color: var(--letra);
 }
 
+/* ═══ AYUDA AHORA — el destino de «Buscar ayuda» ═══════════════════
+   Dos canales grandes y nada más: quien llega aquí llegó por el botón
+   de la barra, y ese botón se pulsa en la primera hora. Las tarjetas
+   son enlaces enteros —el número marca, la puerta abre— con el tamaño
+   de algo que se toca con el pulgar temblando. */
+.ayuda {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(4rem, 8vw, 7rem);
+  padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+  background: var(--papel);
+  color: var(--letra);
+}
+.ayuda h2 {
+  margin: 0 0 var(--e-5);
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-3xl);
+  font-weight: 400;
+  line-height: 1.1;
+}
+.ayuda__canales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: var(--e-4);
+  max-width: 56rem;
+}
+.ayuda__canal {
+  display: grid;
+  gap: 0.35rem;
+  padding: var(--e-5);
+  border: 1px solid rgb(var(--letra-rgb) / 22%);
+  border-radius: 6px;
+  background: var(--papel-alto);
+  color: var(--letra);
+  text-decoration: none;
+  line-height: 1.5;
+}
+.ayuda__canal:hover { border-color: var(--letra); }
+.ayuda__canal:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+.ayuda__canal > span:last-child { color: rgb(var(--letra-rgb) / 72%); font-size: var(--t-sm); }
+.ayuda__numero {
+  font-family: var(--tipo-titulo);
+  font-size: var(--t-2xl);
+  line-height: 1;
+  color: var(--acento, #C4703F);
+}
+.ayuda__nota {
+  max-width: 56ch;
+  margin: var(--e-5) 0 0;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 78%);
+}
+.ayuda__mas { margin: var(--e-3) 0 0; font-size: var(--t-sm); }
+.ayuda__mas a, .ayuda__nota a { color: inherit; }
+
 .comunidad-panel {
+  position: relative;
+  overflow: hidden;
   padding-block: clamp(4rem, 9vw, 8rem);
   background:
     radial-gradient(circle at 12% 16%, rgb(115 159 163 / 15%), transparent 30%),
     radial-gradient(circle at 88% 82%, rgb(185 142 79 / 12%), transparent 28%),
     var(--papel-arriba);
 }
+
+/* ── EL PANEL LLEVA EL MAR DETRÁS, PERO QUIETO Y BORROSO ───────────
+   Antes de los expertos el ojo lleva tres pantallas de papel; aquí el
+   cuadro vuelve a asomar — y asoma como RECUERDO, no como escena: la
+   misma composición del hero estático (cielo de la hora, línea de
+   agua, el manglar a la derecha), desenfocada y velada por el papel.
+   Nada se anima: un fondo que compite con su propio texto es un fondo
+   mal puesto. Los tokens del cielo los escribe la hora, así que este
+   recuerdo amanece y anochece con el resto del sitio.
+
+   El desenfoque va en el pseudo y el pseudo se estira 24 px por fuera
+   (inset negativo): un blur muestrea más allá de su caja y sin ese
+   margen el canto saldría transparente. */
+.comunidad-panel::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    url("/galene/arte/mobile/manglar-v2.webp") 82% calc(66% - 24px) / auto 62% no-repeat,
+    linear-gradient(to bottom,
+      var(--cielo-alto) 0%,
+      var(--cielo-bajo) 46%,
+      var(--cielo-horizonte) 64%,
+      var(--agua-altas) 66%,
+      var(--agua) 100%);
+  filter: blur(14px) saturate(0.8);
+  opacity: 0.5;
+}
+/* Y el velo de papel encima, para que el texto siga midiendo su
+   contraste contra papel y no contra un paisaje. */
+.comunidad-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+    var(--papel-arriba) 0%,
+    color-mix(in srgb, var(--papel-arriba) 55%, transparent) 40%,
+    color-mix(in srgb, var(--papel-arriba) 55%, transparent) 75%,
+    var(--papel-arriba) 100%);
+}
+.comunidad-panel > * { position: relative; z-index: 1; }
 
 .seccion-rotulo {
   margin-bottom: var(--e-2);
@@ -324,7 +426,12 @@
    signifique algo.
    ═══════════════════════════════════════════════════════════════════ */
 .acerca {
-  padding-block: clamp(5rem, 11vw, 9rem);
+  /* Acortado (11vw→8vw) junto con los respiros internos: con e-8 entre
+     los cuatro bloques la sección medía pantalla y media y la cabecera
+     quedaba sola en el encuadre — misión y visión parecían de OTRA
+     sección y el conjunto se leía cortado. El aire sigue, pero ya no
+     separa lo que tiene que leerse junto. */
+  padding-block: clamp(4rem, 8vw, 6.5rem);
   background: var(--papel);
 }
 
@@ -374,7 +481,7 @@
    el eje, no centrado: es el cuerpo del texto que sigue al título. */
 .acerca__concepto {
   max-width: 62ch;
-  margin: var(--e-8) 0 0;
+  margin: var(--e-6) 0 0;
   color: rgb(var(--letra-rgb) / 72%);
   font-size: var(--t-md);
   line-height: 1.7;
@@ -404,7 +511,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   column-gap: var(--e-7);
-  margin-top: var(--e-8);
+  margin-top: var(--e-7);
   border-block: 1px solid rgb(var(--letra-rgb) / 14%);
 }
 
@@ -433,7 +540,7 @@
    una parrilla alineada a la izquierda sin pertenecer a ella. */
 .acerca__cierre {
   max-width: 34ch;
-  margin-top: var(--e-8);
+  margin-top: var(--e-7);
   font-family: var(--tipo-titulo);
   font-size: var(--t-xl);
   line-height: 1.35;

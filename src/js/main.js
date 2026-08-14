@@ -16,7 +16,11 @@ import { viewportHeight, viewportWidth } from './viewport.js';
 import * as presencia from './presencia.js';
 /* La garza de quien mira: su pico y su frase. El panel lo monta
    garza.js sobre el marcado de Garza.astro. */
-import { perfil as miPerfil, montarPanel, alCambiar as alCambiarGarza } from './garza.js';
+/* Solo `perfil`: el panel de personalizar (montarPanel) quedó fuera
+   del MVP junto con su disparador en index.astro. Sin panel, `perfil()`
+   devuelve siempre el ave sin elegir y `sena` queda vacía — el circuito
+   sigue entero para cuando vuelva. */
+import { perfil as miPerfil, alCambiar as alCambiarGarza } from './garza.js';
 import { colorDePico, fraseDe } from '../datos/garza.js';
 import * as pico from './pico.js';
 
@@ -199,13 +203,20 @@ function arrancar(mar) {
     mar.redimensionar(w, h, escala);
     estado.horizonte = horizonte;
 
-    /* EL MANGLAR SE CENTRA EN VERTICAL. En móvil no hay sitio para una
-       composición descentrada: el árbol mide un 60 % del ancho y a 0.775
-       se salía por la derecha. En pantallas anchas vuelve a su sitio,
-       que deja el flanco izquierdo libre para el texto. */
-    const xManglar = aspecto < 0.85 ? 0.50
+    /* EL MANGLAR NO SE CENTRA NI EN VERTICAL. Estuvo en 0.50 con el
+       argumento de que en un teléfono no hay sitio para descentrar, y
+       el resultado lo desmentía: un sujeto clavado en el eje parte la
+       pantalla en dos mitades iguales y el cuadro pierde dirección —el
+       mismo argumento del horizonte, que tampoco va al medio—. La
+       composición de la referencia ancla el árbol a la DERECHA y deja
+       el aire a la izquierda, que es además donde vive el texto.
+
+       0.62 y no más: el árbol mide ~0.8 del ancho, así que a 0.62 su
+       canto derecho queda en 1.02 — roza el borde sin perder copa. En
+       pantallas anchas sigue en 0.775, y la rampa une los dos. */
+    const xManglar = aspecto < 0.85 ? 0.62
                    : aspecto > 1.50 ? 0.775
-                   : 0.50 + ((aspecto - 0.85) / 0.65) * 0.275;
+                   : 0.62 + ((aspecto - 0.85) / 0.65) * 0.155;
 
     /* Y NO PUEDE OCUPAR TODA LA PANTALLA. El manglar se mide en unidades
        de ALTO, así que en un móvil vertical su ancho —alto x aspecto de
@@ -3079,7 +3090,6 @@ function repintarSena() {
 
 if (contenedor) {
   pico.montarGlobo();
-  montarPanel();
   alCambiarGarza(repintarSena);
   repintarSena();
   presencia.alCambiar(sincronizarPresencia);

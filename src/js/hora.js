@@ -509,12 +509,24 @@ export function aplicar(L, escribirLavado = true) {
      suelo, a mediodía queda igual (1.02 antes, 1.05 ahora) y de noche
      baja a 0.64 — todavía se ven, que es lo que pide la presencia,
      pero ya son cuerpos EN el árbol y no encima de él. */
-  r.style.setProperty('--vuelo-brillo', (0.42 + 0.63 * L.int).toFixed(3));
+  /* Y SE EMPINÓ OTRA VEZ, con el mismo criterio y más lejos: a 0.64 el
+     ave nocturna seguía leyéndose como lámina propia. 0.32 de suelo la
+     deja en 0.54 de madrugada —un bulto en el árbol, apenas más claro
+     que la hoja— y a mediodía en 1.05, igual que estaba. */
+  r.style.setProperty('--vuelo-brillo', (0.32 + 0.73 * L.int).toFixed(3));
   /* Cuanta más luz, más aire entre el ave y quien mira: de día se lava
-     más que de noche, igual que el agua lejana. */
+     más que de noche, igual que el agua lejana. El suelo del velo sube
+     a 0.26: la bruma nocturna es añil y velar con añil también hunde
+     al ave en la noche, no solo en el aire. */
   r.style.setProperty('--vuelo-sat', (0.34 - 0.12 * L.int).toFixed(3));
   r.style.setProperty('--vuelo-contraste', (0.80 - 0.16 * L.int).toFixed(3));
-  r.style.setProperty('--vuelo-velo', (0.20 + 0.16 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-velo', (0.26 + 0.10 * L.int).toFixed(3));
+  /* La visitante está a un palmo: se apaga con la noche como todo lo
+     demás —era la única sin acople a la hora, y por eso cantaba— pero
+     nunca se lava: techo 1.0 y suelo más alto que el de las lejanas,
+     porque lo cercano recibe la primera luz. */
+  r.style.setProperty('--vuelo-brillo-cerca',
+                      Math.min(1.0, 0.50 + 0.62 * L.int).toFixed(3));
   r.dataset.tinta = L.tinta;
 }
 
