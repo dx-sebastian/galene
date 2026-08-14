@@ -524,9 +524,18 @@ export function aplicar(L, escribirLavado = true) {
   /* La visitante está a un palmo: se apaga con la noche como todo lo
      demás —era la única sin acople a la hora, y por eso cantaba— pero
      nunca se lava: techo 1.0 y suelo más alto que el de las lejanas,
-     porque lo cercano recibe la primera luz. */
+     porque lo cercano recibe la primera luz.
+
+     Y NO ES SOLO BRILLO. La noche también desatura y aplana: un cuerpo
+     a media luz pierde color y contraste antes que silueta. Sin estas
+     dos, el ave nocturna quedaba oscura pero con el gris pardo y el
+     modelado de pleno día — una lámina atenuada, no un ave a oscuras.
+     De día ambas caen donde estaban los respaldos del CSS: esto no
+     toca el mediodía, enciende la noche. */
   r.style.setProperty('--vuelo-brillo-cerca',
                       Math.min(1.0, 0.50 + 0.62 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-sat-cerca', (0.70 + 0.26 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-contraste-cerca', (0.90 + 0.08 * L.int).toFixed(3));
   r.dataset.tinta = L.tinta;
 }
 
