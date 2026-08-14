@@ -203,10 +203,18 @@
       var(--agua-altas) 66%,
       var(--agua) 100%);
   filter: blur(14px) saturate(0.8);
-  opacity: 0.5;
+  /* 0.5 → 0.35, medido contra la costura: al medio veló el recuerdo se
+     leía; en el canto de abajo, donde el velo tiene que volver a papel
+     opaco, la rampa sobre el agua azul dejaba una BANDA horizontal
+     justo encima de #expertos — una línea gruesa que no separaba nada.
+     Con menos pintura debajo, la misma rampa no llega a verse. */
+  opacity: 0.35;
 }
 /* Y el velo de papel encima, para que el texto siga midiendo su
-   contraste contra papel y no contra un paisaje. */
+   contraste contra papel y no contra un paisaje. El tramo abierto se
+   queda ARRIBA (donde el recuerdo asoma entre el título y el enlace) y
+   el cierre hacia el papel empieza antes y dura más: una rampa larga
+   no hace banda. */
 .comunidad-panel::after {
   content: "";
   position: absolute;
@@ -215,9 +223,9 @@
   pointer-events: none;
   background: linear-gradient(to bottom,
     var(--papel-arriba) 0%,
-    color-mix(in srgb, var(--papel-arriba) 55%, transparent) 40%,
-    color-mix(in srgb, var(--papel-arriba) 55%, transparent) 75%,
-    var(--papel-arriba) 100%);
+    color-mix(in srgb, var(--papel-arriba) 62%, transparent) 30%,
+    color-mix(in srgb, var(--papel-arriba) 62%, transparent) 55%,
+    var(--papel-arriba) 96%);
 }
 .comunidad-panel > * { position: relative; z-index: 1; }
 
@@ -236,8 +244,11 @@
   align-items: end;
   max-width: 72rem;
   margin-inline: auto;
-  padding-bottom: var(--e-8);
-  border-bottom: 1px solid rgb(var(--letra-rgb) / 14%);
+  /* SIN FILETE Y SIN COLCHÓN DE ABAJO. El `border-bottom` con e-8 de
+     padding dibujaba una raya flotando a cien píxeles del final de la
+     sección, y justo debajo empezaba `#expertos`: dos líneas de
+     separación una encima de la otra donde el cambio de sección ya
+     separa solo. Una raya que subraya nada es ruido con regla. */
 }
 
 .comunidad-panel__entrada .seccion-rotulo,
@@ -830,19 +841,9 @@
    `border-bottom: 1px solid` es una regla tirada con tiralineas. Un
    pincel deja mas pigmento donde se apoya y donde se levanta, y menos
    por donde va de paso: eso es este degradado, y es el mismo recurso
-   que ya usa el canto de las fichas del glosario. */
-:root[data-tinta="clara"] .comunidad-panel__entrada {
-  border-bottom-color: transparent;
-  background-image: linear-gradient(90deg,
-    transparent 0%,
-    rgb(var(--letra-rgb) / 22%) 6%,
-    rgb(var(--letra-rgb) / 8%) 38%,
-    rgb(var(--letra-rgb) / 16%) 72%,
-    transparent 100%);
-  background-size: 100% 1px;
-  background-position: 0 100%;
-  background-repeat: no-repeat;
-}
+   que ya usa el canto de las fichas del glosario.
+   (El de la entrada del panel de comunidad se fue CON su raya de dia:
+   subrayaba nada a cien pixeles del canto de la seccion.) */
 :root[data-tinta="clara"] .acerca__principios article + article {
   border-left-color: transparent;
   background-image: linear-gradient(180deg,

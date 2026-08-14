@@ -75,6 +75,9 @@ const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
     </a>
 
     <nav class="barra__nav" aria-label="Principal">
+      {/* Solo el menú, a cualquier ancho — mismo trato que la portada
+          (ver allí la razón). La ayuda va dentro, en píldora, y apunta
+          a la sección #ayuda de la portada. */}
       <details class="menu" name="barra-menu">
         <summary class="menu__boton" aria-label="Abrir menu de navegacion">
           <span class="menu__rayas" aria-hidden="true"></span>
@@ -85,19 +88,18 @@ const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
           <a class="barra__enlace" href={base + '#sin-hablar'}>Recursos</a>
           <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
           <a class="barra__enlace" href={base + 'expertos'} aria-current="page">Panel de expertos</a>
-        </div>
-      </details>
-
-      <a class="pildora" href={base + '#sin-hablar'}>
-        Buscar ayuda
-        <svg class="pildora__icono" viewBox="0 0 14 12"
+          <a class="pildora pildora--menu" href={base + '#ayuda'}>
+            Buscar ayuda
+            <svg class="pildora__icono" viewBox="0 0 14 12"
              aria-hidden="true" focusable="false">
           <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
                 fill="none" stroke="currentColor" stroke-width="1.3"
                 stroke-linecap="round" stroke-linejoin="round"
                 vector-effect="non-scaling-stroke" />
         </svg>
-      </a>
+          </a>
+        </div>
+      </details>
     </nav>
   </header>
 
@@ -114,5 +116,6 @@ const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
 
   <script>import '../js/viewport.js';</script>
   <script>import '../js/luz.js';</script>
+  <script>import '../js/menu.js';</script>
 </body>
 </html>

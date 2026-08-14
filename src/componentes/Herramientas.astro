@@ -1,4 +1,5 @@
 ---
+import RelojRescate from './RelojRescate.astro';
 /* Las herramientas: DOM plano, cero canvas. La imperfección vive en
    el mar; el instrumento es exacto. */
 import Mapa from './Mapa.astro';
@@ -188,6 +189,24 @@ import { TERMINOS } from '../datos/glosario.js';
       consentido</strong>, y no tener pruebas no significa que no ocurriera.
     </p>
     </div>
+
+    {/* ── EL RELOJ DE LAS 72 HORAS ──────────────────────────────────
+        VUELVE A SU SITIO. Se descolgó en una refactorización de la
+        sección y estuvo fuera del árbol: el componente, sus plazos con
+        fuente (js/reloj.js) y sus estilos seguían enteros en el
+        repositorio, pero no los montaba nadie — la herramienta más
+        importante de la página existía sin estar puesta.
+
+        VA SEGUNDO, justo debajo de la definición y por encima del
+        glosario, que es donde estaba y por la razón de siempre: quien
+        acaba de leer QUÉ es una sumisión química pregunta a
+        continuación «¿y yo dónde estoy?». Nombrar lo que pasó y
+        situarse en el tiempo son el mismo gesto partido en dos.
+
+        Y no es una cuenta atrás: el anillo se recorre, no se vacía, y
+        termina en una línea punteada que se sale del círculo. Ver su
+        propia cabecera. */}
+    <RelojRescate />
 
     {/* ── EL GLOSARIO ───────────────────────────────────────────────
         Va pegado a la definición. Estuvo detrás de `¿Pudiste decidir?`
