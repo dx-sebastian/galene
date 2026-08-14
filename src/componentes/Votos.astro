@@ -1,0 +1,71 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Votos — FLECHA ARRIBA, MARCADOR, FLECHA ABAJO.
+
+   La mecánica de Reddit tal cual: un solo marcador (la suma, no dos
+   cuentas), voto exclusivo —si estaba arriba y se pulsa abajo, salta de
+   +1 a −1— y se puede quitar pulsando otra vez la misma flecha. Toda esa
+   aritmética vive en js/comunidad.js; aquí solo va el estado de partida.
+
+   `data-base` es el marcador del dato y NO se toca nunca. `data-voto`
+   guarda lo que ha puesto quien mira (−1, 0, +1), y el marcador que se
+   pinta es la suma de los dos. Separarlos es lo que permite deshacer un
+   voto sin tener que recordar de dónde se venía, y lo que impide que dos
+   clics seguidos dejen la cuenta a la deriva.
+
+   LAS FLECHAS VAN EN TRAZO, dibujadas como el resto del sitio: viewBox
+   propio, `currentColor` y `non-scaling-stroke`. No se usa un triángulo
+   relleno —el de Reddit— porque una punta de flecha maciza es la única
+   forma de esta página que no la ha dibujado una mano.
+
+   Y NO HAY NADA MÁS EN ESTA FILA: ni compartir, ni guardar, ni premios,
+   ni reacciones. Lo pedido es esto y solo esto.
+
+   ── LOS COLORES NO VIENEN DE AQUÍ, Y ESO SE APRENDIÓ MIDIENDO ───────
+   Estuvieron un rato en un `style=` en línea, traídos desde los datos
+   («los pigmentos se declaran una vez y en un sitio»). La idea era buena
+   y estaba mal: un estilo en línea no lo puede pisar NINGUNA regla de la
+   hoja, así que la noche —que necesita los dos pigmentos un paso más
+   claros para separarse del papel oscuro— no llegaba nunca. Medido: la
+   flecha votada quedaba en 1.88:1 contra el vidrio nocturno, cuando el
+   mínimo del proyecto es 4.5. Se veía «bien» de día, que es cuando uno
+   mira.
+
+   Ahora los dos colores viven en `.votos` (estilos/comunidad.css), con
+   su variante de noche. Son el verde de «ventana abierta» y el azul de
+   «quizás» del reloj de la portada; el rojo del sitio no se toca —está
+   reservado al daño y no puede ser el color de una flecha de votar.
+   ═══════════════════════════════════════════════════════════════════ */
+const { votos = 0, compacto = false } = Astro.props;
+---
+
+<div class:list={['votos', compacto && 'votos--compactos']}
+     data-base={votos} data-voto="0">
+
+  <button class="voto voto--sube" type="button" data-dir="1"
+          aria-pressed="false" aria-label="Votar a favor" title="A favor">
+    <svg class="voto__flecha" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+      <path d="M7 12.2 C 6.8 9, 7.2 5.6, 7 2.8 M2.9 7.2 C 4.3 5.6, 5.7 4.1, 7 2.5
+               C 8.3 4.1, 9.7 5.6, 11.1 7.2"
+            fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"
+            vector-effect="non-scaling-stroke" />
+    </svg>
+  </button>
+
+  {/* `aria-live` NO va aquí, y es deliberado: el marcador cambia por un
+      clic de quien lo lee, así que anunciarlo sería repetirle lo que
+      acaba de hacer. El estado de la flecha ya lo dice `aria-pressed`. */}
+  <span class="votos__marcador" data-marcador>{votos}</span>
+
+  <button class="voto voto--baja" type="button" data-dir="-1"
+          aria-pressed="false" aria-label="Votar en contra" title="En contra">
+    <svg class="voto__flecha" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+      <path d="M7 1.8 C 7.2 5, 6.8 8.4, 7 11.2 M2.9 6.8 C 4.3 8.4, 5.7 9.9, 7 11.5
+               C 8.3 9.9, 9.7 8.4, 11.1 6.8"
+            fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"
+            vector-effect="non-scaling-stroke" />
+    </svg>
+  </button>
+</div>

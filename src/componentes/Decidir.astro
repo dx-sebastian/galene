@@ -1,0 +1,121 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   ¿PUDISTE DECIDIR? — la sección que desmonta la culpa.
+
+   QUÉ HACE, Y POR QUÉ ES LA MÁS IMPORTANTE DE LA PÁGINA.
+   Casi todo el mundo que llega aquí llega culpándose: «bebí de más»,
+   «me lo busqué», «yo dije que sí». Esta sección va exactamente contra
+   eso, y lo hace en tres tiempos porque una refutación dicha de golpe
+   se lee como consuelo y no se cree:
+
+     1 · se pregunta,
+     2 · aparece el SÍ que ella misma se contesta,
+     3 · y ese sí SE ROMPE, porque no podía sostenerse.
+
+   Lo que queda escrito debajo no es una opinión ni un ánimo: es el
+   criterio. Sin capacidad de decidir no hay decisión que valga, y eso
+   no depende de lo que ella recuerde ni de lo que dijera.
+
+   ── CÓMO ESTÁ CONSTRUIDA, que es lo que la hace segura ──────────────
+
+   TODO EL TEXTO ESTÁ AQUÍ, EN ORDEN Y COMPLETO. La animación no
+   escribe, no revela y no oculta contenido: solo cambia CUÁNTO SE VE de
+   algo que ya está en el documento. Consecuencias, y las tres importan:
+
+   — Un lector de pantalla lo recorre entero y en el orden que tiene
+     sentido: pregunta, respuesta, refutación, salida.
+   — Un buscador lo indexa entero. Es el bloque con la frase que la
+     gente busca de verdad («no me acuerdo si dije que sí»), así que
+     esconderlo tras JavaScript sería regalarlo.
+   — Sin JavaScript, o con `prefers-reduced-motion`, se ve TODO a la
+     vez, quieto y legible. No es un modo degradado: es la misma
+     sección sin el tiempo.
+
+   La secuencia la marca `js/decidir.js` escribiendo un número de 0 a 1
+   en `--avance`. Si ese script no llega, el CSS deja todo visible.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* El SÍ se parte en letras para poder romperlo. Van en `span` con su
+   índice, y el texto sigue siendo la palabra: nadie lee «S», «Í». */
+const SI = ['S', 'Í'];
+
+/* ── LOS JIRONES ────────────────────────────────────────────────────
+   Antes esto eran TAJADAS: cinco franjas recortadas con `clip-path` y
+   bordes rectos. Se veía lo que era —una palabra troceada con cuchillo—
+   y eso es lo contrario de lo que tiene que pasar aquí. Un corte recto
+   implica una hoja, o sea un objeto: pero lo que atraviesa el SÍ no
+   tiene filo, ni tiene forma, ni se ve.
+
+   Ahora son JIRONES: cada copia de la letra se enmascara con un par de
+   manchas redondas de borde blando, así que lo que queda no es un trozo
+   sino un pedazo deshilachado. Y al salir se DESENFOCAN, que es la otra
+   mitad del asunto — el ojo lee «esto se está deshaciendo» cuando algo
+   pierde el foco al alejarse, y lee «esto se rompió» cuando conserva el
+   canto nítido. Sin el desenfoque, jirones o tajadas dan igual.
+
+   Las máscaras se solapan a propósito: entre las cinco cubren la letra
+   entera, pero con los cantos mordidos, así que ninguna frontera cae
+   dos veces en el mismo sitio y no se ve la costura.
+
+   VAN `aria-hidden`: son la misma letra repetida y un lector de
+   pantalla que las leyera diría «S S S S S Í Í Í Í Í». La palabra real
+   es la de debajo; esto es su deshacerse, que es información visual. */
+const JIRONES = [
+  'radial-gradient(64% 52% at 24% 16%, #000 0%, #000 46%, transparent 84%)',
+  'radial-gradient(58% 48% at 76% 30%, #000 0%, #000 44%, transparent 82%)',
+  'radial-gradient(70% 44% at 40% 52%, #000 0%, #000 48%, transparent 86%)',
+  'radial-gradient(54% 50% at 80% 72%, #000 0%, #000 42%, transparent 80%)',
+  'radial-gradient(66% 46% at 28% 86%, #000 0%, #000 46%, transparent 84%)',
+];
+---
+
+<section class="decidir" id="pudiste-decidir" aria-labelledby="decidir-titulo">
+  {/* La escena se queda pegada mientras la sección pasa por detrás. El
+      alto lo pone la sección; lo que se ve, esta caja. */}
+  <div class="decidir__escena">
+
+    <h2 class="decidir__pregunta" id="decidir-titulo">¿Pudiste decidir?</h2>
+
+    {/* EL SÍ. Es la respuesta que se da mucha gente antes de leer lo de
+        abajo, y por eso está escrita: nombrarla es lo que permite
+        contestarla. Se rompe en el tercer tiempo — no se borra, se
+        rompe, porque lo que le pasa a esa respuesta es que no se
+        sostiene, no que sea mentira. */}
+    {/* (Llevaba `data-humo-si`: el ente se posaba sobre esta palabra
+        antes de que se rompiera. El ente se retiró y el atributo con
+        él. La rotura NO era suya —sale de `--avance`, que escribe
+        js/decidir.js— así que aquí no cambia un solo fotograma.) */}
+    <p class="decidir__si">
+      {SI.map((letra, i) => (
+        <span class="decidir__pieza" style={`--i:${i}`}>
+          {/* La letra de verdad: la que se lee y la que se oye. */}
+          <span class="decidir__letra">{letra}</span>
+          {/* Y sus cinco jirones encima, calcados y enmascarados. Solo
+              existen para deshacerse. */}
+          {JIRONES.map((mancha, j) => (
+            <span class="decidir__jiron" aria-hidden="true"
+                  style={`--j:${j}; --mancha:${mancha}`}>{letra}</span>
+          ))}
+        </span>
+      ))}
+    </p>
+
+    {/* LA REFUTACIÓN. En cuerpo de título y en una sola línea de idea:
+        es la frase que sostiene la sección y tiene que poder leerse de
+        un vistazo, porque quien está mal no lee párrafos.
+
+        «Bajo esta condición» y no «en este estado»: condición es lo que
+        te hicieron, estado es lo que eres. La diferencia no es de
+        estilo. */}
+    <p class="decidir__respuesta">
+      Nadie <b>bajo esta condición</b> puede decidir.
+    </p>
+
+    {/* La salida. Baja y pequeña a propósito: después de una frase así
+        hay que dejar aire antes de pedir nada. */}
+    <p class="decidir__pie">
+      Si la respuesta es no, o no lo sabes, esto es lo que se puede
+      hacer. <strong>No hace falta contarlo ni estar segura de nada.</strong>
+    </p>
+  </div>
+</section>

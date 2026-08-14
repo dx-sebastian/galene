@@ -1,0 +1,471 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   ESTÁS AQUÍ — el reloj de rescate, y el cierre de la página.
+
+   QUÉ ES Y QUÉ NO ES. El bloque #reloj es el instrumento: se gira una
+   aguja y se mira qué sigue encendido. Este es el MAPA de ese
+   instrumento — dónde estás dentro de las 72 horas y cuál es la única
+   cosa que importa ahora.
+
+   DÓNDE VA. Estuvo al final de la sección, cerrándola, y ahora va
+   SEGUNDO: justo debajo de la definición y por encima de las cuatro
+   puertas. La razón es la pregunta que se hace de verdad quien acaba
+   de leer qué es una sumisión química — «vale, ¿y yo dónde estoy?».
+   Nombrar lo que pasó y situarse en el tiempo son el mismo gesto
+   partido en dos, y tenerlos separados por seis bloques obligaba a
+   leerse media página para completarlo.
+
+   Y aquí arriba hace además de índice: sus salidas apuntan a #mapa,
+   #salir, #reloj y #recordar, que son las puertas que vienen justo
+   debajo.
+
+   LA LEY QUE MANDA AQUÍ: esto NO es una cuenta atrás. Un cronómetro que
+   anuncia «te quedan 68:42:11» convierte una ventana terapéutica en una
+   fecha de caducidad de la persona, y ese es el peor error posible de
+   este proyecto. El anillo no se vacía: se recorre. Y no termina en una
+   pared — termina en una línea punteada que se sale del círculo.
+
+   CERO JAVASCRIPT. La elección del momento son cinco `input[type=radio]`
+   y todo lo demás lo mueve el CSS con `:has()`. No es purismo: si el
+   navegador no entiende `:has()`, la ficha que queda visible es la de
+   «no sé», que es la que muestra TODO lo que podría seguir abierto. El
+   fallo cae del lado seguro. Ninguna ayuda de esta página depende de que
+   un script llegue.
+
+   Y los plazos no se escriben aquí: se leen de js/reloj.js, que es
+   donde viven con su `fuente` y su `verificado`. Un dato médico no
+   puede tener dos versiones en el mismo sitio.
+   ═══════════════════════════════════════════════════════════════════ */
+import { VENTANAS, CONSEJOS, CONSEJOS_SIEMPRE } from '../js/reloj.js';
+
+/* ── LA GEOMETRÍA ──────────────────────────────────────────────────
+   Una vuelta = 72 h, y los arcos son PROPORCIONALES al tiempo real:
+   0–6 h son 30°, 6–24 h son 90°, 24–72 h son 240°. El primer tramo
+   sale pequeño y es el más importante — no se falsea la escala para
+   arreglar eso. Lo que se arregla es el objetivo táctil: quien elige no
+   toca el arco, toca una ficha de 3 rem de alto que está debajo.       */
+const VUELTA = 72;
+const CX = 200, CY = 216, R = 126;
+
+const pt = (h, r) => {
+  const a = (h / VUELTA) * Math.PI * 2 - Math.PI / 2;
+  return [CX + Math.cos(a) * r, CY + Math.sin(a) * r];
+};
+const n = (v) => Number(v.toFixed(1));
+const arco = (h0, h1, r) => {
+  const [x0, y0] = pt(h0, r);
+  const [x1, y1] = pt(h1, r);
+  return `M ${n(x0)} ${n(y0)} A ${r} ${r} 0 ${(h1 - h0) / VUELTA > 0.5 ? 1 : 0} 1 ${n(x1)} ${n(y1)}`;
+};
+
+/* Los tres tramos del anillo.
+
+   EL HUECO DE 0,7 h A CADA LADO no falsea la escala: los bordes de los
+   tramos siguen estando en 0, 6 y 24 exactas y ahí es donde caen las
+   marcas, que es lo que se puede medir. Lo que el hueco hace es que
+   tres arcos del mismo color se lean como TRES y no como un aro. Sin
+   él, en la respuesta «no sé» —que enciende los tres a la vez— el
+   reloj perdía sus divisiones justo cuando más falta hacen.
+
+   Y el hueco de arriba, el de las 72 h, no es un hueco: es la puerta
+   por la que sale la cola. `en` es la hora de la que cuelga cada
+   etiqueta, elegida por dónde no le pisa nada.                        */
+const HUECO = 0.7;
+const ARCOS = [
+  { id: 'a', h0: 0,  h1: 6,  etiqueta: '0–6 h',   en: 4 },
+  { id: 'b', h0: 6,  h1: 24, etiqueta: '6–24 h',  en: 15 },
+  { id: 'c', h0: 24, h1: 72, etiqueta: '24–72 h', en: 48 },
+];
+
+/* ── EL TRAMO DE ESCENA DE CADA ARCO ───────────────────────────────
+   La escena traza el anillo mientras el bloque sube. Cada arco ocupa
+   del recorrido exactamente lo que ocupa del tiempo: 0–6 h son el
+   8,3 % de las 72 horas y por tanto el 8,3 % de la escena; 24–72 h son
+   el 66,7 % de las dos cosas. No se reparte a partes iguales para que
+   quede rítmico — falsear el reparto aquí sería falsear la escala del
+   reloj, que es justo lo que este componente existe para no hacer.
+
+   Se calcula y no se escribe a mano: si algún día cambian los tramos,
+   la escena se recoloca sola. El trazado va de 0.12 a 0.86 del avance;
+   lo que sobra por delante es para las marcas y por detrás para la
+   cola, que es el remate.
+
+   Y NO SE ANIMA NADA CON `opacity` — ver la nota larga en estilos.css:
+   la opacidad es el canal con el que la herramienta dice qué ventana
+   aplica, y un dato médico no puede tener dos cosas escribiéndolo. */
+const T0 = 0.12, T1 = 0.86;
+/* Tres decimales, no uno. `n()` —el redondeo del dibujo— corta a una
+   décima, que sobra para una coordenada de 400 px y aquí destrozaría el
+   reparto: 0.182 y 0.367 se irían a 0.2 y 0.4, o sea el tramo de 6–24 h
+   perdería un tercio de su duración. */
+const f = (v) => Number(v.toFixed(3));
+let acumulado = 0;
+const TRAMOS = Object.fromEntries(ARCOS.map((a) => {
+  const desde = acumulado;
+  acumulado += (a.h1 - a.h0) / VUELTA;
+  return [a.id, { desde: f(T0 + (T1 - T0) * desde), hasta: f(T0 + (T1 - T0) * acumulado) }];
+}));
+
+/* LA COLA. Sale por el hueco de las 72 h y sube, recta, fuera del
+   disco. Se pensó primero como una espiral que seguía girando hacia
+   afuera, y era peor: al continuar en el sentido de las agujas se
+   metía justo en el trozo de papel donde vive la etiqueta «0–6 h», y
+   dos cosas que no tienen nada que ver quedaban encimadas. Recta y
+   hacia arriba no hay nada que esquivar, y dice lo mismo: el círculo
+   no termina en una pared. */
+const colaD = `M ${CX} ${CY - R} C ${CX} ${CY - R - 28}, ${CX + 6} ${CY - R - 50}, ${CX + 22} ${CY - R - 68}`;
+const puntaGiro = n((Math.atan2(-18, 16) * 180) / Math.PI);
+
+/* Las marcas de las horas, cada 6. Las de 0, 6 y 24 son los bordes de
+   los tramos y van más largas: el ojo tiene que poder contar el reloj
+   sin leer una sola etiqueta. */
+const MARCAS = Array.from({ length: 12 }, (_, i) => {
+  const h = i * 6;
+  const borde = h === 0 || h === 6 || h === 24;
+  const [xa, ya] = pt(h, R + 7);
+  const [xb, yb] = pt(h, R + (borde ? 17 : 12));
+  return { h, borde, xa: n(xa), ya: n(ya), xb: n(xb), yb: n(yb) };
+});
+
+/* ── LOS CINCO MOMENTOS ────────────────────────────────────────────
+   Las etiquetas son las de js/reloj.js —«anoche», «ayer»— y no horas
+   exactas, porque nadie tiene la hora exacta y pedirla es un
+   interrogatorio. El rango va debajo, en pequeño, para quien sí la
+   tenga.
+
+   UNA SOLA ACCIÓN POR MOMENTO. Debajo de ella, una salida más y nada
+   más. Quien llega aquí no puede elegir entre siete puertas.
+
+   «No sé» va marcado POR DEFECTO. Es la ley 1 de reloj.js llevada al
+   HTML: la respuesta principal no puede ser la última opción de una
+   lista, tiene que ser el estado en el que arranca la herramienta.     */
+/* ── QUÉ HACER AHORA, POR MOMENTO ──────────────────────────────────
+   `desde`/`hasta` son las horas REALES que cubre cada momento, y no son
+   decorativas: de ellas sale, más abajo, si cada ventana está abierta,
+   cerrada o depende de la hora exacta. Antes esa cuenta estaba escrita
+   a mano en la hoja de estilos —`[data-cierra="12"]`, `"72"`, `"120"`—
+   y por eso se desincronizó: cuando la ventana toxicológica se corrigió
+   de 12 a 96 horas, la hoja se quedó con el 12. Resultado medido: a
+   «hace unos días» esa ventana se pintaba ABIERTA cuando pudo cerrarse
+   el cuarto día. Aquí el plazo se lee de `VENTANAS` y el CSS ya no sabe
+   ninguna hora.
+
+   `pasos` son los consejos que le tocan a cada momento, por su id.
+   Salen de las MISMAS listas de js/reloj.js que usa el bloque de abajo:
+   una sola fuente, para que no haya dos versiones del mismo consejo.
+
+   EL REPARTO TIENE UN CRITERIO Y ES ESTE: lo que se lleva el tiempo va
+   primero mientras hay tiempo, y lo que no caduca ocupa su sitio cuando
+   ya no lo hay. Las señales del cuerpo y la ropa se pierden con las
+   horas; la memoria y el teléfono no. Por eso «hace unas horas» ve la
+   ducha y la orina, y «hace unos días» ve escribir y no borrar nada.
+
+   Y «NO SÉ» VE MÁS QUE NINGUNO — cuatro en vez de tres. Es la ley 1 de
+   js/reloj.js aplicada aquí: no saber la hora nunca puede devolver
+   menos opciones que saberla. */
+const MOMENTOS = [
+  {
+    id: 'horas', chip: 'Hace unas horas', rango: '0–6 h', centro: 'Primeras horas',
+    desde: 0, hasta: 6,
+    accion: 'Ve a urgencias ahora.',
+    matiz: 'No tienes que estar segura de lo que pasó, ni contarlo.',
+    pasos: ['ducha', 'orina', 'ropa'],
+    ir: { href: '#mapa', texto: 'Dónde ir' },
+    otra: { href: '#salir', texto: 'Que alguien venga por mí' },
+  },
+  {
+    id: 'anoche', chip: 'Anoche', rango: '6–24 h', centro: 'Anoche',
+    desde: 6, hasta: 24,
+    accion: 'Urgencias, hoy mismo.',
+    matiz: 'Todavía hay cosas que dependen de las horas.',
+    pasos: ['ducha', 'ropa', 'objetos'],
+    ir: { href: '#mapa', texto: 'Dónde ir' },
+    otra: { href: '#salir', texto: 'Que alguien venga por mí' },
+  },
+  {
+    id: 'ayer', chip: 'Ayer', rango: '24–72 h', centro: 'Ayer',
+    desde: 24, hasta: 72,
+    accion: 'Sigues a tiempo de cosas importantes.',
+    matiz: 'Que te atiendan no exige denunciar ni explicar nada.',
+    pasos: ['ropa', 'objetos', 'telefono'],
+    ir: { href: '#mapa', texto: 'Dónde ir' },
+    otra: { href: '#recordar', texto: 'Guardar lo que recuerdo' },
+  },
+  {
+    id: 'dias', chip: 'Hace unos días', rango: 'más de 72 h', centro: 'Hace días',
+    desde: 72, hasta: Infinity,
+    accion: 'La ayuda continúa.',
+    matiz: 'No hay plazo para pedir atención médica, ni para denunciar.',
+    pasos: ['escribir', 'telefono', 'quien'],
+    ir: { href: '#mapa', texto: 'Dónde ir' },
+    otra: { href: '#recordar', texto: 'Guardar lo que recuerdo' },
+  },
+  {
+    id: 'nose', chip: 'No sé', rango: 'no lo recuerdo', centro: 'No sé',
+    desde: null, hasta: null,
+    accion: 'No saber la hora no quita opciones.',
+    matiz: 'Debajo está todo lo que podría seguir abierto.',
+    pasos: ['ducha', 'ropa', 'escribir', 'telefono'],
+    ir: { href: '#mapa', texto: 'Dónde ir' },
+    otra: { href: '#salir', texto: 'Que alguien venga por mí' },
+  },
+];
+
+/* Los consejos, indexados por id. Las dos listas juntas porque aquí no
+   importa de cuál viene cada uno: importa si le sirve a quien está en
+   ese momento. La distinción —con fuente y sin ella— sigue viva donde
+   tiene que estar, que es en js/reloj.js. */
+const PASO = Object.fromEntries(
+  [...CONSEJOS, ...CONSEJOS_SIEMPRE].map((c) => [c.id, c]),
+);
+
+/* ── EL ESTADO DE CADA VENTANA EN CADA MOMENTO ─────────────────────
+   Tres estados y una sola regla, sin ninguna hora escrita a mano:
+
+     el momento entero cabe antes del plazo  → abierta
+     el momento entero empieza después       → cerrada
+     el plazo cae DENTRO del momento         → quizás
+
+   Ese tercer caso es el que hace honesto el bloque. Los momentos son
+   gruesos a propósito —«hace unos días» son de 72 horas en adelante— y
+   hay plazos que caen justo dentro: las 96 y las 120. Ahí la respuesta
+   verdadera no es «sigue abierta» ni «ya pasó», es que depende de una
+   hora que ella no tiene. Decirlo cuesta una línea; callarlo sería
+   afirmar algo que este sitio no sabe.
+
+   Se emite como DOS LISTAS de ids de momento por fila —`data-cerrada` y
+   `data-quizas`— para que el CSS pueda preguntar «¿esta fila está
+   cerrada en el momento que hay marcado?» con un `~=` y sin conocer un
+   solo plazo. */
+const estadoEn = (cierra, m) => {
+  if (m.desde === null || cierra === Infinity) return 'abierta';
+  if (m.hasta <= cierra) return 'abierta';
+  if (m.desde >= cierra) return 'cerrada';
+  return 'quizas';
+};
+
+/* ── LOS HORIZONTES ────────────────────────────────────────────────
+   La corrección al malentendido de las «72 horas»: no todas las
+   ventanas caben en el mismo círculo. Una cierra a las 12, dos a las
+   72, otra a las 120 y dos no cierran nunca. Dibujarlas a la misma
+   escala es lo que impide leer «72 h» como el final de todo.
+
+   El riel se mide contra 132 h y no contra 120: si la barra más larga
+   con plazo llegara justo al borde, se leería igual que las que no
+   caducan, y la diferencia entre «acaba» y «no acaba» es justo lo que
+   este dibujo existe para contar.                                     */
+const TOPE = 132;
+const horizontes = VENTANAS
+  .slice()
+  .sort((a, b) => (a.cierra === Infinity ? 1e9 : a.cierra) - (b.cierra === Infinity ? 1e9 : b.cierra))
+  .map((v) => ({
+    nombre: v.corto ?? v.titulo,
+    eterna: v.cierra === Infinity,
+    plazo: v.cierra === Infinity ? 'sin plazo' : `hasta ${v.cierra} h`,
+    ancho: v.cierra === Infinity ? 100 : Math.round((v.cierra / TOPE) * 100),
+    cierra: v.cierra === Infinity ? 'inf' : String(v.cierra),
+    /* En qué momentos esta ventana ya pasó, y en cuáles depende de la
+       hora exacta. Calculado, nunca escrito. */
+    cerradaEn: MOMENTOS.filter((m) => estadoEn(v.cierra, m) === 'cerrada')
+      .map((m) => m.id).join(' '),
+    quizasEn: MOMENTOS.filter((m) => estadoEn(v.cierra, m) === 'quizas')
+      .map((m) => m.id).join(' '),
+  }));
+---
+
+{/* `data-escena` SIN `data-pegada`, y esa ausencia es la decisión.
+    js/escenas.js lo recorre «al paso»: el anillo se traza mientras el
+    bloque sube y termina antes de que esté centrado. Pegarlo sería
+    clavarlo en pantalla con sus cinco fichas dentro mientras la página
+    sigue bajando — una escena pegada con un control dentro es una
+    trampa, y aquí el control es cómo alguien dice cuándo le pasó. */}
+<section class="bloque bloque--rescate rr" id="estas-aqui" data-escena="reloj">
+  <h3>Estás aquí</h3>
+  <p class="bloque__intro rr__entrada">
+    No es una cuenta atrás. Es dónde estás dentro de las primeras 72
+    horas, y qué es lo más importante ahora.
+  </p>
+
+  {/* LOS CINCO RADIOS van ANTES que todo lo que reacciona a ellos. No
+      es capricho de orden: `:has()` los busca dentro de .rr, y las
+      fichas y el anillo se pintan según cuál esté marcado. */}
+  <fieldset class="rr__eleccion">
+    <legend class="rr__pregunta">¿Hace cuánto crees que pasó?</legend>
+    <div class="rr__chips">
+      {MOMENTOS.map((m) => (
+        <>
+          <input class="rr__radio visualmente-oculto" type="radio"
+                 name="rr-momento" id={`rr-${m.id}`} checked={m.id === 'nose'} />
+          <label class="rr__chip" for={`rr-${m.id}`}>
+            <span class="rr__chip__nombre">{m.chip}</span>
+            <span class="rr__chip__rango">{m.rango}</span>
+          </label>
+        </>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="rr__cuerpo">
+
+    {/* EL ANILLO ES UN DIBUJO, NO UN CONTROL.
+        Va `aria-hidden` a propósito: quien lo escucha en vez de verlo
+        no gana nada oyendo «trazado, trazado, trazado», y todo lo que
+        el anillo dice ya está dicho en las fichas de arriba y en la
+        acción de al lado. Un diagrama que duplica el texto es ruido;
+        uno que lo sustituye es una barrera. Este ni una cosa ni la
+        otra: acompaña. */}
+    <div class="rr__esfera">
+      <svg viewBox="0 0 400 380" aria-hidden="true" focusable="false">
+        <g class="rr__marcas">
+          {MARCAS.map((m) => (
+            <line x1={m.xa} y1={m.ya} x2={m.xb} y2={m.yb}
+                  class={`rr__marca${m.borde ? ' rr__marca--borde' : ''}`} />
+          ))}
+        </g>
+
+        {/* La aguada va DEBAJO del trazo y solo se enciende en el tramo
+            elegido: pigmento acumulado donde el agua tardó en secar.
+            Es lo único de este bloque que se comporta como acuarela —
+            el resto es instrumento, y el instrumento es exacto. */}
+        {/* `pathLength="1"` normaliza cada trazado a longitud 1, que es
+            lo que permite trazarlos con un solo `stroke-dasharray: 1`
+            aunque midan 30°, 90° y 240°. Va aquí y no en el CSS porque
+            es un atributo de geometría del SVG, no un estilo.
+            `--desde`/`--hasta` son el tramo de la escena que le toca a
+            cada arco — ver TRAMOS arriba. */}
+        {ARCOS.map((a) => (
+          <path class={`rr__aguada rr__aguada--${a.id}`} pathLength="1"
+                style={`--desde:${TRAMOS[a.id].desde}; --hasta:${TRAMOS[a.id].hasta}`}
+                d={arco(a.h0 + HUECO, a.h1 - HUECO, R)} />
+        ))}
+        {ARCOS.map((a) => (
+          <path class={`rr__arco rr__arco--${a.id}`} pathLength="1"
+                style={`--desde:${TRAMOS[a.id].desde}; --hasta:${TRAMOS[a.id].hasta}`}
+                d={arco(a.h0 + HUECO, a.h1 - HUECO, R)} />
+        ))}
+
+        {/* LA SALIDA EN UN GRUPO, y no es maquetación: la escena la
+            revela con la opacidad del <g>, que se MULTIPLICA con la de
+            los trazos en vez de competir con ella. Hace falta porque
+            esos dos canales ya están ocupados — la cola lleva su
+            `stroke-dasharray: 0.5 9`, que es la línea punteada y es
+            medio argumento del componente, y su opacidad la gobierna la
+            respuesta elegida. Sin el grupo no había por dónde. */}
+        <g class="rr__salida">
+          <path class="rr__cola" d={colaD} />
+          <path class="rr__punta" d="M -10 -7 L 0 0 L -10 7"
+                transform={`translate(${CX + 22} ${CY - R - 68}) rotate(${puntaGiro})`} />
+        </g>
+
+        {ARCOS.map((a) => {
+          const [x, y] = pt(a.en, R + 32);
+          return <text class={`rr__etiqueta rr__etiqueta--${a.id}`}
+                       style={`--desde:${TRAMOS[a.id].hasta}`}
+                       x={n(x)} y={n(y)}>{a.etiqueta}</text>;
+        })}
+      </svg>
+
+      {/* El centro dice DÓNDE ESTÁS, nunca cuánto queda. */}
+      <p class="rr__centro">
+        {MOMENTOS.map((m) => (
+          <span class={`rr__eco rr__eco--${m.id}`}>{m.centro}</span>
+        ))}
+        <span class="rr__centro__pie">desde lo que recuerdas</span>
+      </p>
+    </div>
+
+    {/* `aria-live` porque el cambio lo hace el CSS y no hay foco que se
+        mueva: quien navega con lector de pantalla marca una opción con
+        las flechas y, sin esto, la acción cambiaría en silencio a un
+        sitio de la página donde no está su cursor. `atomic` para que se
+        lea la ficha entera —acción, matiz y salidas— y no un trozo
+        suelto, que en este contenido sería peor que nada. */}
+    <div class="rr__ahora" aria-live="polite" aria-atomic="true">
+      {MOMENTOS.map((m) => (
+        <div class={`rr__ficha rr__ficha--${m.id}`}>
+          <p class="rr__accion">{m.accion}</p>
+          <p class="rr__matiz">{m.matiz}</p>
+
+          {/* ── LOS PASOS ────────────────────────────────────────────
+              Tres o cuatro cosas concretas, y solo las que le sirven a
+              quien está en ESTE momento. Es lo que le faltaba al
+              bloque: decía a dónde ir y no decía qué hacer mientras
+              tanto, y esa lista existía —once tarjetas— tres pantallas
+              más abajo, donde ya no la lee quien acaba de elegir.
+
+              SIN TARJETAS Y CON UNA SOLA LÍNEA CADA UNO. Aquí no hay
+              caja, ni fondo, ni borde: son tres renglones con un trazo
+              de pincel al canto. Una tarjeta sirve para separar cosas
+              que compiten; estas no compiten, se leen seguidas.
+
+              Y EL «SI YA LO HICISTE» VA UNA VEZ, ABAJO, no en cada
+              uno. En el bloque largo va repetido en los cinco, y el
+              argumento era bueno: allí son once y quien lee salta de
+              punto en punto buscando el suyo, así que el permiso tiene
+              que estar donde caiga la vista. Aquí son tres y se ven de
+              una mirada — repetirlo tres veces sería triplicar el texto
+              para decir lo mismo, que es justo lo que este bloque no
+              puede permitirse. */}
+          <ul class="rr__pasos">
+            {m.pasos.map((id) => (
+              <li class="rr__paso">{PASO[id].titulo}</li>
+            ))}
+          </ul>
+          <p class="rr__permiso">Ninguna es obligatoria. Si ya hiciste
+            alguna, <strong>sigue valiendo la pena ir</strong>.</p>
+
+          <div class="rr__salidas">
+            <a class="acuarela" href={m.ir.href}>{m.ir.texto}</a>
+            <a class="rr__otra" href={m.otra.href}>{m.otra.texto}</a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* ── LOS HORIZONTES ───────────────────────────────────────────── */}
+  <h4 class="rr__subtitulo">No todo cabe en 72 horas</h4>
+  {/* `data-cerrada` y `data-quizas` son LISTAS de momentos, no de
+      horas: «esta ventana ya pasó si has elegido dias». El CSS
+      pregunta con `~=` y no conoce un solo plazo, que es la única
+      forma de que no vuelva a desincronizarse. `data-cierra` se
+      queda porque es el dato, y porque es lo que se puede auditar
+      contra js/reloj.js de un vistazo. */}
+  <ul class="rr__horizontes">
+    {horizontes.map((h) => (
+      <li class={`rr__horizonte${h.eterna ? ' rr__horizonte--eterna' : ''}`}
+          data-cierra={h.cierra}
+          data-cerrada={h.cerradaEn}
+          data-quizas={h.quizasEn}>
+        <span class="rr__horizonte__nombre">{h.nombre}</span>
+        <span class="rr__horizonte__plazo">{h.plazo}</span>
+        <span class="rr__riel">
+          <span class="rr__riel__pigmento" style={`--ancho:${h.ancho}%`}></span>
+        </span>
+        {/* En el HTML desde el principio y ocultos: el CSS los enseña
+            según el momento elegido. Así la fila apagada no depende
+            solo del color para decir lo que dice.
+
+            Y son DOS, no uno. Los momentos son gruesos a propósito
+            —«anoche», «hace unos días»— y hay plazos que caen DENTRO
+            de uno de ellos: las 12 h caen dentro de «anoche», las
+            120 h dentro de «hace unos días». Ahí la respuesta honesta
+            no es «sigue abierta» ni «ya pasó», es que depende de una
+            hora que ella no tiene. Decirlo cuesta una línea; callarlo
+            sería afirmar algo que este sitio no sabe. */}
+        <span class="rr__cerrado">Ya pasó.</span>
+        <span class="rr__quizas">Puede que siga abierta: depende de la hora exacta.</span>
+      </li>
+    ))}
+  </ul>
+  <p class="sinfuente rr__nota">Sin verificar — estos plazos no pueden
+    publicarse hasta contrastarlos con fuente primaria.</p>
+
+  {/* EL CIERRE. Sin aguada roja: el realce de este sitio es el color
+      del daño y está reservado para las tres frases que describen uno.
+      Esta no describe un daño — dice lo contrario. Va en tipografía de
+      lema y en tinta, que es como se afirma algo sin gritarlo. */}
+  <p class="lema rr__cierre">
+    Aunque hayan pasado 72 horas, <b>la ayuda continúa.</b>
+  </p>
+</section>

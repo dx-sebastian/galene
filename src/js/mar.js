@@ -12,6 +12,114 @@
    de contraste las gobierna el motor y no el archivo.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── EL VIENTO, EN UN SOLO SITIO ────────────────────────────────────
+   Devuelve cuánto empuja el aire ahora mismo, de −1 a 1. Lo usan el
+   shader (para doblar la copa del manglar y la rama cercana) y main.js
+   (para mover con ellas a las garzas posadas, que son DOM).
+
+   Dos senos de periodo largo y primos entre sí: uno de unos veinte
+   segundos y otro de treinta y tres. Nunca se repiten a la vez, así que
+   la copa no vuelve nunca a la misma posición y no hay ciclo que
+   detectar — que es lo único que distingue el viento de un péndulo.
+
+   Y NO HAY RÁFAGAS. Un golpe de viento es un sobresalto, y este sitio
+   se abre en el peor momento de la vida de alguien: el aire de aquí
+   empuja despacio y no sorprende nunca. */
+export function viento(t) {
+  /* Periodos de unos 12 y 20 segundos. Estaban en 20 y 33 y era
+     demasiado lento para verse: el ojo no detecta un desplazamiento por
+     debajo de uno o dos píxeles por segundo, y con aquel ciclo la copa
+     se movía a medio píxel. Sigue sin haber ráfagas — el aire empuja
+     despacio y no sorprende — pero ahora se percibe que empuja. */
+  /* ── Y UNA ENVOLVENTE LENTÍSIMA ────────────────────────────────────
+     AQUÍ HAY UNA CONTRADICCIÓN Y CONVIENE DEJARLA ESCRITA. Se pidió
+     que las hojas tuvieran "pequeñas ráfagas cada varios segundos",
+     porque si todo se mueve a ritmo constante el cerebro detecta que
+     es una animación — y eso es cierto y es el mejor argumento del
+     encargo entero. Pero una ráfaga tiene un ATAQUE, y un ataque es un
+     sobresalto, y este sitio se abre en el peor momento de la vida de
+     alguien. La regla de arriba —no hay ráfagas— no se toca.
+
+     Lo que sí se puede tener es la irregularidad SIN el ataque: no
+     cambia la velocidad del aire, cambia CUÁNTO aire hay, y cambia tan
+     despacio que no tiene principio. Dos senos de dos y tres minutos,
+     primos entre sí: hay tramos de casi quietud y tramos de más
+     movimiento, nunca a la misma distancia y nunca con un borde.
+
+     El resultado es lo que se pedía —ritmo desigual, así que no hay
+     ciclo que detectar— por el camino que este sitio sí permite. Y va
+     dentro de viento(), o sea que la copa, la rama del primer término
+     y las garzas posadas respiran a la vez: si esto viviera solo en el
+     shader, las aves se quedarían agitándose sobre un árbol calmado. */
+  const aire = 0.58 + 0.42 * (0.5 + 0.5 * Math.sin(t * 0.0431))
+                    * (0.5 + 0.5 * Math.sin(t * 0.0267 + 2.1)) * 2.0;
+  return (Math.sin(t * 0.50) * 0.55 + Math.sin(t * 0.31 + 1.3) * 0.45)
+         * Math.min(1.0, aire);
+}
+
+/* CUÁNTO SE DOBLA CADA COSA, en fracciones de su propia lámina.
+
+   Viven aquí y se INTERPOLAN en el GLSL de abajo en vez de escribirse a
+   mano allí, porque los mismos dos números los necesita main.js para
+   mover las garzas con la rama en la que están posadas. Ya estuvieron
+   escritos en los dos archivos y duró exactamente hasta la primera vez
+   que hubo que subir la amplitud: el árbol se movió y las aves se
+   quedaron clavadas en el aire. Una sola definición.
+
+   La copa se dobla menos que la rama del primer término, y las dos
+   cosas son ciertas: un tronco es rígido y una rama en voladizo no, y
+   además la rama está a un palmo del ojo, donde el mismo movimiento
+   real se ve al triple. */
+/* SUBIDAS DOS VECES, y las dos por lo mismo: no se veían.
+
+   Empezaron en 0.011 —tres píxeles y medio de recorrido en veinte
+   segundos, o sea un sexto de píxel por segundo— y pasaron a 0.034, que
+   seguía siendo medio píxel por segundo. Se comprobó midiendo el propio
+   lienzo que el viento SÍ llegaba al shader y deformaba la lámina; lo
+   que fallaba era la escala, no el mecanismo.
+
+   Y AQUI HUBO UNA CIFRA FALSA QUE CONVIENE NO REPETIR. Se escribio que
+   a 0.085 la copa recorria 49.7 px, sacado de una cuenta analitica con
+   las unidades cruzadas. Medido de verdad sobre el lienzo —buscando el
+   canto de la copa pixel a pixel— eran 17 px de bufer, o sea unos 11
+   de pantalla: cuatro veces menos. La cuenta estaba mal; la medida es
+   la que vale.
+
+   Lo que de verdad hizo visible el arbol no fue esta amplitud sino el
+   bamboleo por trozos del follaje, mas abajo: el movimiento
+   DIFERENCIAL se ve, el uniforme no.
+
+   0.085 -> 0.068 (un 20 % menos) -> 0.034 (la mitad otra vez). Las dos
+   bajadas por lo mismo: se movia demasiado. Y el bamboleo del follaje
+   bajo en la misma proporcion las dos veces, porque el movimiento sale
+   de los dos sitios y tocar solo uno deja las hojas agitadas sobre un
+   arbol quieto.
+
+   Si hay que volver a tocarlo, ESTE es el numero: las garzas posadas lo
+   leen de aqui y se mueven con el arbol solas.
+
+   El techo de esto no es el buen gusto sino la lámina: es un cizallado,
+   y pasado cierto punto las hojas se estiran en vez de moverse. */
+export const VIENTO_COPA = 0.034;
+export const VIENTO_RAMA = 0.070;
+
+/* CUÁNTO SE ENCOGE EL FRAGMENTO CERCANO según la forma de la ventana.
+   En móvil se comía la composición —0.92 del alto con la pantalla
+   estrecha tapaba al protagonista— así que se achica: el primer término
+   enmarca, no tapa.
+
+   Vive aquí, en JS, y viaja al shader como uniforme en vez de
+   calcularse allí. La razón es un fallo que estuvo escondido todo este
+   tiempo: el shader encogía la lámina y `posaderoCercano()` no se
+   enteraba, así que en cualquier pantalla más estrecha que 1.35 de
+   aspecto la garza cercana se posaba sobre una rama que ya no estaba
+   donde ella creía. En escritorio ancho el factor vale 1 y por eso no
+   se veía nunca. Con una sola definición no puede volver a pasar. */
+export function encogeCerca(aspecto) {
+  const t = Math.min(1, Math.max(0, (aspecto - 0.62) / (1.35 - 0.62)));
+  return 0.60 + 0.40 * (t * t * (3 - 2 * t));
+}
+
 const VS = `#version 300 es
 void main(){
   vec2 p = vec2((gl_VertexID == 1) ? 3.0 : -1.0,
@@ -35,11 +143,29 @@ uniform float u_calma;      // 0.35 … 0.85
                va caminando fuera de cuadro y no vuelve nunca. */
 uniform float u_deriva, u_paralaje;
 uniform float u_comp;
+/* EL VIENTO. Un solo escalar en [-1,1] que llega ya calculado desde JS
+   —ver viento() arriba del todo, fuera del shader— porque el mismo
+   numero lo necesitan tres sitios: la copa del manglar, la rama del
+   primer termino y las garzas posadas, que viven en el DOM y no aqui.
+   Si cada uno se lo calculara por su cuenta, bastaria con que alguien
+   tocara una constante para que las aves se despegaran del arbol.
+   (Y sin comillas invertidas en este comentario: esto vive dentro de un
+   template literal y ya ha cortado el archivo tres veces.) */
+uniform float u_viento;
+uniform float u_encoge;         // ver encogeCerca() al final del archivo
+/* EN QUE PUNTO DEL CICLO DE CIELOS estamos, de 0 a 4. Ver cicloCielo()
+   en hora.js. Es continuo, asi que su parte entera dice que lamina
+   toca y su fraccion cuanto se ha avanzado hacia la siguiente. */
+uniform float u_cielo;
 uniform float u_int;
 uniform vec2  u_fuente;
 uniform float u_papel;
 uniform float u_laminas;    // 0 = procedural, 1 = pintura cargada
 uniform vec3  u_cieloAlto, u_cieloBajo, u_agua, u_altas, u_reguero, u_bruma;
+/* LA TERCERA PARADA DEL CIELO: la franja luminosa del horizonte. El
+   cielo era una rampa entre dos colores y ocupa medio cuadro, asi que
+   medio cuadro no tenia donde mirar. Ver hora.js. */
+uniform vec3  u_cieloHorizonte;
 
 uniform sampler2D u_lejano, u_medio, u_medioCalmo, u_cercano, u_cercanoCalmo, u_manglar;
 uniform vec2 u_vLejano, u_vMedio, u_vCercano;   // ventana v: (cerca, lejos)
@@ -117,6 +243,47 @@ vec3 papelBlanco(){
      la comia. */
   return mix(vec3(0.984, 0.978, 0.966), u_altas, 0.05);
 }
+
+/* ═══ LA LUZ TIENE UN LADO ══════════════════════════════════════════
+   Hasta aqui todo recibia la misma cantidad de luz viniera de donde
+   viniera la fuente. Por eso la escena se leia plana: sin direccion no
+   hay volumen, solo recorte, y el cuadro entero parecia iluminado por
+   un dia nublado aunque hubiera un sol pintado arriba.
+
+   No hay normales que iluminar —esto son laminas—, asi que la
+   direccion se aproxima con lo unico que si se sabe: en que lado del
+   objeto cae la fuente. ladoDeLuz vale 1 en el canto que la mira y 0
+   en el opuesto, y va al cuadrado para que la caricia se quede en el
+   borde en vez de banar la lamina entera.
+
+   Es exactamente lo que hace un acuarelista: no pinta el volumen,
+   pinta el canto iluminado y deja que el ojo complete el resto. */
+float ladoDeLuz(float mx, float centroObj, float aspecto){
+  float haciaDerecha = step(centroObj, u_fuente.x * aspecto);
+  float b = mix(1.0 - mx, mx, haciaDerecha);
+  return b * b;
+}
+
+/* EL COLOR DE LA LUZ, en un solo sitio. Sale de u_reguero —que ya es
+   el color de la fuente de esta hora— empujado hacia el papel: calida
+   casi blanca de dia y plateada de noche, y las dos salen solas de
+   aqui sin escribir un color por franja horaria.
+
+   Nunca es blanco puro: en acuarela no existe la pintura blanca. */
+vec3 luzCalida(){ return mix(u_reguero, vec3(0.985, 0.972, 0.945), 0.32); }
+
+/* CUANTA luz direccional hay ahora. De noche NO es cero —la luna
+   tambien tiene un lado, y ademas es fria porque u_reguero lo es a esa
+   hora— pero es un quinto. Que la noche conserve direccion es lo que
+   la separa de "el dia con el brillo bajado", que es como se leia. */
+/* El suelo estaba en 0.22 y MEDIDO no llegaba: a las 2:00 la
+   diferencia de claridad entre el lado del arbol que mira a la luna y
+   el opuesto era de 0.07 en L*, o sea cero —el umbral de que se note
+   una diferencia de claridad ronda 1—. A las 21:00, con u_int en 0.50,
+   salia 2.31 y se ve. La madrugada es la hora que manda en este
+   proyecto y se estaba quedando sin direccion de luz.
+   A 0.34 sigue siendo un tercio del dia, que es lo que es la luna. */
+float fuerzaLuz(){ return mix(0.34, 1.0, smoothstep(0.30, 0.85, u_int)); }
 
 /* APLANAR. Una aguada seca PLANA: se posa, se seca y deja un campo de un
    solo tono. Lo que había era degradado continuo, que es la firma del
@@ -197,6 +364,22 @@ void main(){
   float cn = clamp((u_calma - 0.35) / 0.5, 0.0, 1.0);
   vec3 col;
 
+  /* La fuente, en las mismas unidades que q (alto de pantalla). Se
+     calcula UNA vez: la usan el cielo, las estrellas, el reguero y
+     ahora tambien la luz direccional, el halo y los destellos del
+     agua. Cada uno la reconstruia por su cuenta. */
+  vec2 fuenteQ = vec2(u_fuente.x * aspecto, u_fuente.y);
+
+  /* CUANTO DE CANTO ENTRA LA LUZ. 1 con el astro posado en el horizonte,
+     0 con el sol en lo alto. Es la variable que de verdad decide como se
+     ve un cielo, y estaba calculada solo dentro del bloque de nubes: la
+     franja del horizonte la necesitaba igual y no la tenia, asi que
+     entraba con la misma fuerza a mediodia que en el ocaso — y a
+     mediodia el horizonte no tiene un resplandor dorado, tiene bruma
+     palida. De ahi que la franja se leyera como una cinta pegada. */
+  float solBajo = 1.0 - smoothstep(0.0, 0.32,
+                    (u_fuente.y - u_hor) / max(1.0 - u_hor, 0.001));
+
   /* LA RESERVA se acumula aqui y se aplica al FINAL de cada capa. La
      primera version la aplicaba en medio del agua y la bruma del
      horizonte se la comia entera, que es justo donde mas falta hacia.
@@ -214,16 +397,122 @@ void main(){
      Un horizonte pintado a mano tiene el pulso dentro. Se le suma un
      termino de periodo largo, que es el que hace que no se lea como
      una regla temblorosa sino como una linea trazada de un gesto. */
+  /* TRIPLICADA. Estaba en +-0.007 del alto: siete pixeles en una ventana
+     de 664, o sea un 1 %. Eso no es el pulso de una mano, es una regla a
+     la que le tiembla el pulso — y se sigue leyendo como recta.
+
+     Y hay algo mas importante que la amplitud: un horizonte de acuarela
+     no ONDULA, se PIERDE. La linea existe donde el charco se paro y
+     desaparece donde la bruma se la comio, y esa alternancia es la firma
+     del medio. La amplitud sube aqui; la perdida, mas abajo, donde vive
+     el termino que pierde el canto, mas abajo. */
   float horX = u_hor
-    + (fbm(vec2(q.x * 0.75 + 19.0, 2.6)) - 0.5) * 0.0135
-    + (fbm(vec2(q.x * 1.7, 4.2)) - 0.5) * 0.0055
-    + (ruido(vec2(q.x * 9.0, 1.1)) - 0.5) * 0.0016;
+    + (fbm(vec2(q.x * 0.62 + 19.0, 2.6)) - 0.5) * 0.0340
+    + (fbm(vec2(q.x * 1.7, 4.2)) - 0.5) * 0.0130
+    + (ruido(vec2(q.x * 9.0, 1.1)) - 0.5) * 0.0038;
 
   /* ═══ CIELO ═══════════════════════════════════════════════════ */
   if (uv.y >= horX) {
     float gy = (uv.y - horX) / max(1.0 - horX, 0.001);
     gy = mix(0.5, gy, u_comp);              // compresión del crepúsculo
-    col = mix(u_cieloBajo, u_cieloAlto, pow(gy, 0.85));
+    /* ── EL AZUL TIENE QUE BAJAR MAS ─────────────────────────────
+       Con exponente 0.85 el degradado llega a la mitad del cielo con
+       solo un 55 % del color alto dentro, asi que dos tercios del cielo
+       eran una mezcla lavada del azul de arriba con el tono palido de
+       abajo. MEDIDO a las 12:00 sobre todo el cielo: mediana 82 de L* y
+       0.137 de saturacion — o sea claro y sin color, que es
+       exactamente lo que se ve y lo que no se quiere.
+
+       Un cielo de mediodia no se aclara despacio desde el cenit: es
+       azul hasta bastante abajo y se lava DE GOLPE cerca del horizonte,
+       porque lo que lo lava es el espesor de aire, y ese crece muy
+       rapido en el ultimo tramo. Bajar el exponente a 0.60 con el sol
+       alto reparte el azul asi.
+
+       Solo de dia: en los crepusculos el degradado ancho ES el motivo
+       —el rosa de la banda media es la mitad de esa hora— y ahi el 0.85
+       se queda. Y ademas la franja del horizonte, que ya existe, se
+       encarga de la parte palida de abajo mejor que este exponente. */
+    float azulHondo = smoothstep(0.55, 0.92, u_int);
+    /* EL EXPONENTE SALE DE LA FOTO, y va al reves de lo que supuse.
+       Ajustando t = gy^k contra las seis franjas medidas de la
+       referencia sale k ~ 2.0: el cielo se mantiene palido hasta bien
+       arriba y solo se oscurece en el cuarto superior. Yo lo habia
+       BAJADO a 0.60 para "bajar el azul", que es exactamente lo
+       contrario — asi el azul invadia el medio y el cuadro perdia el
+       aire palido que tiene la foto. */
+    col = mix(u_cieloBajo, u_cieloAlto, pow(gy, mix(0.85, 2.00, azulHondo)));
+
+    /* ═══ LA FRANJA LUMINOSA DEL HORIZONTE ═══════════════════════
+       El cielo ocupa mas de la mitad del cuadro y era una rampa entre
+       dos colores parecidos: medio cuadro sin un solo sitio donde
+       mirar. Eso es lo que hacia que la escena se leyera gris aunque
+       sus colores no lo fueran, y es lo que separa "melancolico" de
+       "sereno" — un amanecer no es un cielo mas claro, es un cielo con
+       LUZ EN UN SITIO.
+
+       Tres cosas la hacen aguada y no degradado:
+
+       - Se concentra abajo al cuadrado, asi que a media altura ya no
+         existe: es una franja, no un lavado general.
+       - SIGUE A LA FUENTE. Sube donde esta el sol o la luna y baja al
+         otro lado. Una franja pareja de lado a lado es otra recta, y
+         ademas seria luz de ninguna parte: el mismo error que el
+         reguero lleva corregido desde el principio.
+       - El borde serpentea con un ruido de periodo largo. A q.x*1.6
+         caben unos tres lobulos en una pantalla apaisada — mirar
+         siempre la frecuencia contra el ancho, que ya se pago tres
+         veces con ruidos de periodo mayor que la pantalla.
+
+       Y se atenua con u_comp: en el crepuscino el cielo se aplana
+       entero para que la tinta no pierda contra ningun extremo, y esta
+       franja tiene que aplanarse con el resto. */
+    /* ── Y AQUI ESTABA EL ERROR: ERA UNA CINTA, NO UNA CUPULA ─────
+       Con la caida horizontal a 1.05 en unidades de alto, en una
+       pantalla apaisada los dos cantos seguian recibiendo el 49 % de la
+       franja: o sea que la banda cruzaba de lado a lado con casi la
+       misma altura, y una horizontal continua de punta a punta se lee
+       como una tira de papel pegada — el mismo fallo que ya se corrigio
+       con el pasto marino y con el horizonte.
+       A 0.68 y con el suelo en 0.20, la luz se queda ALREDEDOR de su
+       fuente y los cantos del cuadro casi no se enteran. */
+    /* ── Y SE MIDE EN ANCHOS DE PANTALLA, NO EN ALTOS ─────────────
+       Estaba en q, que son unidades de ALTO. En escritorio apaisado eso
+       daba un lóbulo de 0.68 altos ≈ 0.38 anchos, que es lo que se
+       quería. En un móvil vertical el ancho ENTERO mide 0.46 altos, así
+       que 0.68 lo cubría de sobra: la cúpula volvía a ser una cinta y
+       trepaba hasta meterse detrás del texto. Medido a 381×825, el
+       calibrador pedía un lavado de 0.475 — medio velo negro sobre la
+       pintura, con la forma de la caja del rótulo.
+
+       El resplandor de un horizonte ocupa una fracción del ANCHO del
+       cuadro, no de su alto. En uv.x eso es cierto en las dos
+       orientaciones y no hay ninguna cifra que ajustar por pantalla. */
+    float haciaFuenteC = exp(-pow((uv.x - u_fuente.x) / 0.38, 2.0));
+    /* Y LA FRANJA TREPA DONDE ESTA LA LUZ. Con un alto fijo salia una
+       tira pareja pegada al horizonte, o sea otra recta tumbada. En la
+       referencia el resplandor SUBE por el cielo justo encima del sol y
+       se aplasta al alejarse: eso es lo que lo hace una fuente y no una
+       banda. Es una cupula, no un renglon. */
+    float alcance = mix(0.11, 0.46, haciaFuenteC);
+    float bandaH = 1.0 - smoothstep(0.0, alcance, gy);
+    bandaH *= bandaH;
+    bandaH *= mix(0.20, 1.0, haciaFuenteC);
+    /* Y BAJA CON EL SOL ALTO. A mediodia el horizonte no tiene un
+       resplandor dorado: tiene bruma palida. La franja existe a todas
+       horas —siempre hay mas aire hacia el horizonte— pero es el
+       acontecimiento del cielo solo cuando la luz entra de canto.
+       No se apaga del todo nunca: de noche el malva bajo es la ultima
+       luz, y es lo que hace que la noche sea serena y no un apagon. */
+    bandaH *= mix(0.52, 1.0, solBajo);
+    /* EL CANTO, EN DOS OCTAVAS. Con un solo ruido de tres lobulos el
+       borde de arriba ondulaba pero seguia siendo UNA linea ondulada.
+       Un charco de acuarela tiene lobulos grandes y, dentro de ellos,
+       mordiscos pequenos. */
+    bandaH *= 0.62 + 0.52 * fbm(vec2(q.x * 1.6 + 31.0, gy * 3.4))
+                   + 0.20 * (fbm(vec2(q.x * 5.1 - 8.0, gy * 9.0)) - 0.5);
+    bandaH *= mix(0.55, 1.0, u_comp);
+    col = mix(col, u_cieloHorizonte, clamp(bandaH, 0.0, 1.0) * 0.72);
 
     /* De degradado a AGUADA. Cuatro escalones con la transición medio
        perdida: quedan campos planos de verdad, que es lo que hace una
@@ -272,8 +561,157 @@ void main(){
        croma y se abre donde es neutro. */
     float cromaCielo = length(col - vec3(valor(col)));
     float neutro = 1.0 - smoothstep(0.020, 0.085, cromaCielo);
-    reservaPapel = max(reservaPapel, (1.0 - smoothstep(0.02, 0.50, gy))
+    /* Y DE DIA LLEGA MAS ARRIBA. La reserva se cortaba a media altura
+       del cielo a todas horas. MEDIDO sobre el cuadro entero: a las 9:00
+       solo el 0.78 % de los pixeles pasaba de 0.80 de luminancia, y a
+       las 13:00 el 2.51 %. Un dia luminoso no es un dia mas expuesto —
+       la mediana ya estaba bien, en 0.455— es un dia con MAS PAPEL SIN
+       PINTAR. Es el mismo diagnostico de la primera vez que se midio
+       esto y la misma cura. */
+    float diaCielo = smoothstep(0.45, 0.90, u_int);
+    reservaPapel = max(reservaPapel,
+                       (1.0 - smoothstep(0.02, mix(0.50, 0.80, diaCielo), gy))
                            * bocaCielo * neutro * mix(0.20, 1.0, u_int) * 0.99);
+
+    /* ═══ LAS ESTRELLAS ═══════════════════════════════════════════
+       La noche de este sitio no puede ser un apagón. Estaba resuelta
+       como AUSENCIA de día —el mismo cielo con el brillo bajado— y una
+       ausencia no consuela a nadie: se leía triste, que es exactamente
+       lo que este sitio no puede permitirse a las cuatro de la mañana.
+
+       Una noche de verdad no es oscura, es OTRA COSA iluminada. Y lo
+       que la ilumina son las estrellas, que además son el argumento
+       entero del cuadro dicho sin palabras: el cielo sigue ahí, y de
+       noche tiene más cosas que de día, no menos.
+
+       CÓMO SE PINTAN, que es lo que decide si esto vale o es un
+       protector de pantalla:
+
+       - No son puntos. Un punto de un píxel es una estrella de render;
+         en acuarela lo más pequeño que existe es el toque de la punta
+         del pincel, y tiene borde blando. Cada una es una manchita con
+         caída suave, y las hay de tres tamaños.
+       - No están repartidas parejas. Se sortea una por celda de una
+         rejilla y se la mueve dentro de su celda, así que hay grupos y
+         hay vacíos — que es como está el cielo de verdad.
+       - Se apagan hacia el horizonte. Ahí la luz atraviesa mucho más
+         aire y las estrellas bajas se pierden: es cierto, y además deja
+         limpia la banda donde vive la bruma.
+       - Tienen COLOR. Unas tiran a azul y otras a ámbar, que es verdad
+         de las estrellas y es lo que impide que el campo se lea como
+         sal esparcida.
+       - Respiran, no parpadean. El periodo es de varios segundos y la
+         amplitud pequeña: un centelleo rápido sería el «glitch» que la
+         regla 2 prohíbe. Cada una en su fase, o titilarían a coro. */
+    float noche = 1.0 - smoothstep(0.20, 0.62, u_int);
+    if (noche > 0.004) {
+      /* Rejilla en unidades de ALTO (q), no de uv: si fuera en uv, las
+         estrellas se estirarían con la ventana y en apaisado saldrían
+         elipses. */
+      /* LA REJILLA MANDA EL TAMAÑO, y la primera vez la puse en 26: con
+         eso cada celda medía 22 px y las estrellas salían de hasta 18
+         de radio. No eran estrellas, eran globos — el cielo entero se
+         leía como un desenfoque de fondo de foto. El tamaño de una
+         estrella pintada es el del toque de la punta del pincel: uno o
+         dos píxeles de núcleo y el borde blando. A 105 la celda mide
+         unos 5 px y la talla cae donde tiene que caer. */
+      /* ── LA VIA LACTEA ────────────────────────────────────────────
+         Esta en la referencia de noche, y no es un adorno anadido por
+         gusto: es mas de lo que ya defiende este bloque —una noche no
+         es oscura, es OTRA COSA iluminada, y de noche el cielo tiene
+         mas cosas que de dia, no menos—.
+
+         Se pinta como una AGUADA, no como un cumulo de puntos: una
+         banda ancha con el borde comido por un ruido de periodo largo,
+         empujada hacia el papel de la hora con un pelo de azul. Y de
+         paso sube el brillo de las estrellas que caen dentro, que es
+         la otra mitad de lo que la hace leer como via lactea en vez de
+         como una mancha.
+
+         La diagonal va en uv y no en q A PROPOSITO: en q el angulo se
+         mantiene pero la banda se sale de cuadro en una pantalla
+         estrecha —a aspecto 0.5 desaparecia entera—. En uv el angulo
+         cambia con la ventana y la banda siempre cruza. Para una
+         franja de atmosfera es el cambio bueno.
+
+         Y muy tenue: si se ve, esta mal. */
+      /* ── Y PASABA POR DETRAS DEL TITULO ──────────────────────────
+         La primera diagonal entraba por el canto izquierdo alto, que es
+         exactamente donde vive el rotulo. El efecto era el peor
+         posible: no se leia como via lactea sino como una CAJA CLARA
+         detras del texto — un fondo de titulo, que es lo que un sitio
+         hecho a mano no puede tener. Y encima se comia el contraste
+         justo donde hay que leer.
+
+         En la referencia de noche la banda no cruza por ahi: entra por
+         arriba hacia el centro y baja hacia el arbol, por la derecha.
+         Reanclada a esos dos puntos —(0.40, 0.98) y (0.72, 0.52) en uv—
+         queda cero sobre el bloque de texto: medido en el peor punto del
+         rotulo da 0.003, o sea nada. El cielo gana su banda y el texto
+         recupera su sitio.
+
+         Y mas estrecha (0.17), porque ahora que esta concentrada no
+         necesita tanto ancho para leerse. */
+      float diag = uv.y + 1.44 * uv.x - 1.555;
+      float via  = exp(-pow(diag / 0.17, 2.0));
+      via *= 0.40 + 0.74 * fbm(vec2(uv.x * 3.4 + 41.0, uv.y * 2.4));
+      via *= smoothstep(0.06, 0.52, gy);
+      via  = clamp(via, 0.0, 1.0);
+      col = mix(col, mix(col, papelBlanco() * vec3(0.90, 0.93, 1.0), 0.55),
+                via * noche * 0.13);
+
+      vec2 rej = vec2(q.x, uv.y) * 145.0;
+      vec2 celda = floor(rej);
+      float luzEstrellas = 0.0;
+      vec3 tinteEstrellas = vec3(0.0);
+      /* Nueve celdas: la propia y sus vecinas, porque una estrella
+         cerca del borde de su celda derrama sobre la de al lado y sin
+         esto se le vería el corte. */
+      for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+          vec2 c = celda + vec2(float(i), float(j));
+          float h1 = hash(c);
+          float h2 = hash(c + 31.7);
+          float h3 = hash(c + 74.3);
+          /* Una de cada diez celdas, no una de cada tres: con la
+             rejilla fina, un tercio serían miles de estrellas y el
+             cielo se lee como sal esparcida. Así salen unas cuatrocientas,
+             que es un cielo. */
+          if (h1 > 0.94) {
+            vec2 pos = c + vec2(h2, h3);
+            float d = length(rej - pos);
+            /* Tres tallas. Las grandes son pocas —el cubo hunde la
+               distribución hacia lo pequeño— igual que en el cielo. */
+            float talla = 0.12 + 0.22 * pow(hash(c + 12.1), 3.0);
+            /* Dentro de la banda hay mas luz y las estrellas pesan
+               mas: es lo que la separa de una mancha clara. */
+            float brillo = (0.35 + 0.65 * hash(c + 5.5)) * (1.0 + via * 0.85);
+            /* Respiración lenta, cada una en su fase. */
+            brillo *= 0.78 + 0.22 * sin(u_t * (0.19 + 0.16 * h2) + h3 * TAU);
+            float m = exp(-pow(d / talla, 1.7)) * brillo;
+            luzEstrellas += m;
+            /* Azules y ámbares, con más azules. */
+            tinteEstrellas += m * mix(vec3(0.70, 0.80, 1.00),
+                                      vec3(1.00, 0.86, 0.68),
+                                      smoothstep(0.55, 0.95, hash(c + 61.2)));
+          }
+        }
+      }
+      if (luzEstrellas > 0.001) {
+        vec3 tinte = tinteEstrellas / luzEstrellas;
+        /* Se apagan hacia el horizonte y donde ya hay luz de la luna:
+           una estrella no se ve al lado de la luna, y fingir que sí es
+           la clase de mentira que delata el cuadro entero. */
+        float altura = smoothstep(0.04, 0.46, gy);
+        float lejosDeLaLuna = smoothstep(0.10, 0.42, length(q - fuenteQ));
+        float f = clamp(luzEstrellas, 0.0, 1.0) * noche * altura
+                * mix(0.45, 1.0, lejosDeLaLuna);
+        /* Sobre el cielo, no sustituyéndolo: una estrella es papel que
+           quedó sin pintar con un toque de color encima, así que se
+           mezcla hacia el papel de la hora y no hacia el blanco. */
+        col = mix(col, papelBlanco() * tinte, f * 0.86);
+      }
+    }
 
     if (u_hayNubes > 0.5) {
       /* Nubes pintadas, en la mitad alta del cielo y derivando muy
@@ -281,8 +719,68 @@ void main(){
          Se entintan con el cielo alto: una nube no tiene color propio,
          tiene el de la luz que la atraviesa. */
       float nv = (uv.y - horX) / max(1.0 - horX, 0.001);
-      vec2 nu = vec2(q.x * 0.42 + u_deriva * 0.018, 1.0 - nv * 0.92);
-      vec4 nb = texture(u_nubes, nu);
+      /* La lámina se compone desde el centro, no desde el borde
+         izquierdo. Con q.x puro un móvil solo veía el primer cuarto de
+         la celda —justo el aire vacío de la masa diagonal— y perdía la
+         nube completa. En escritorio se conserva la escala espacial;
+         en retrato se toma una ventana central del mismo cielo. */
+      float anchoN = aspecto * 0.42;
+      float margenN = max(0.0, (1.0 - anchoN) * 0.5);
+      vec2 nu = vec2(q.x * 0.42 + margenN + u_deriva * 0.018,
+                     1.0 - nv * 0.92);
+
+      /* ── CUATRO CIELOS EN UNA SOLA TEXTURA ───────────────────────
+         Antes habia UNA lamina de nubes y la hora solo la recoloreaba,
+         asi que ninguna hora era del todo suya: unos cirros que
+         funcionan al alba estan mal a mediodia, porque cada hora tiene
+         su TIPO de nube y eso es fisica, no gusto.
+
+         Ahora hay cuatro —alba, dia, ocaso, noche— empaquetadas en un
+         atlas de dos por dos. Van en una sola textura porque el motor
+         ya tiene ocupadas las dieciseis unidades que WebGL2 garantiza:
+         cuatro laminas sueltas serian cuatro unidades mas y el shader
+         dejaria de enlazar, que es exactamente lo que paso al intentar
+         meter las estrellas.
+
+         Y NO SE CONMUTA, SE FUNDE. Se muestrean las DOS laminas que
+         tocan y se mezclan con la fraccion de la hora. cicloCielo()
+         sostiene la celda de dia entre 7 y 17; las fundidas quedan
+         confinadas al alba y al ocaso.
+
+         El fract() de la u no es adorno: la deriva hace crecer la
+         coordenada sin limite y sin envolverla se saldria de su celda
+         y entraria en la de al lado. El margen del 0.998 evita que el
+         filtro bilineal chupe un pixel de la celda vecina en el canto. */
+      int ca = int(mod(floor(u_cielo), 4.0));
+      int cb = int(mod(floor(u_cielo) + 1.0, 4.0));
+      /* ── CUIDADO AL AUDITAR ESTE ATLAS ───────────────────────────
+         Las texturas se suben con UNPACK_FLIP_Y, asi que la fila 0 de la
+         IMAGEN es v=1 en UV: una celda cuya esquina es cy=0.5 vive en la
+         mitad SUPERIOR del archivo, no en la inferior. Leyendolo al
+         reves salen las cuatro celdas cambiadas de sitio, y de ahi salio
+         una version entera basada en que la celda de DIA estaba vacia
+         cuando la vacia es la de NOCHE. Medido bien, contando alfa:
+
+           alba  (arriba-izq) 0.286 de alfa medio · 31.4 % de cobertura
+           dia   (arriba-der) 0.347 ................. 36.0 %
+           ocaso (abajo-izq)  0.286 ................. 31.4 %
+           noche (abajo-der)  0.000 .................  0.0 %
+
+         La celda de dia es la masa diagonal de la referencia: una nube
+         continua, con azul limpio alrededor, no cumulos repartidos. Alba
+         y ocaso comparten la nube larga de luz rasante; la noche queda
+         vacia porque su estructura ya la ponen las estrellas y la Via
+         Lactea. Asi no hay un velo gris duplicado encima del anil.
+
+         Para convertir una celda a pixeles del archivo:
+             x = cx * W        y = (1 - (cy + 0.5)) * H
+         La celda mide 768x512 y el atlas 1536x1024. */
+      vec2 CELDA[4] = vec2[4](vec2(0.0, 0.5), vec2(0.5, 0.5),
+                              vec2(0.0, 0.0), vec2(0.5, 0.0));
+      vec2 nuw = vec2(fract(nu.x), clamp(nu.y, 0.0, 1.0)) * 0.5 * 0.998 + 0.001;
+      vec4 nb = mix(texture(u_nubes, CELDA[ca] + nuw),
+                    texture(u_nubes, CELDA[cb] + nuw),
+                    fract(u_cielo));
       /* DUOTONO, como el manglar. Antes la nube se pintaba a 0.55 hacia
          el color del propio cielo: o sea, casi del color del fondo, y
          por eso no se veía nada. Una nube no tiene color propio —eso era
@@ -300,11 +798,107 @@ void main(){
          separa una nube del cielo son dos pasos de valor, no diez.
          El rango se cierra hacia el propio cielo y la lámina entra a
          0.46 en vez de 0.78. Se ve menos y se lee más. */
+      /* ── CUANTO DE CANTO LE ENTRA LA LUZ ─────────────────────────
+         Vale 1 con el astro posado en el horizonte y 0 con el sol
+         alto. Es la unica variable que de verdad decide como se ve una
+         nube, y hasta ahora no existia: la lamina entraba con el mismo
+         peso a las siete de la manana que a mediodia. */
+      /* solBajo se calcula UNA vez arriba de main(), porque la franja del
+         horizonte lo necesita igual. Aqui solo se le pone la puerta del
+         dia: de noche una nube no se enciende por debajo, y con la luna
+         baja saldrian nubes de atardecer a las tres de la madrugada. */
+      float nubeBaja = solBajo * smoothstep(0.25, 0.72, u_int);
+      /* ── Y EL CUMULO DE MEDIODIA ─────────────────────────────────
+         MEDIDO a las 11:00 sobre el propio lienzo: la desviacion tipica
+         del cielo alto era 2.01 en L*. Eso no es un cielo con nubes, es
+         un campo plano — habia un degradado y nada mas, y por eso medio
+         cuadro no tenia donde mirar.
+
+         La referencia de dia tiene cumulos grandes y blandos, con la
+         cara blanca y la panza azulada. El aviso que cerro este rango
+         —"con la cara y la sombra bien separadas parecia una fotografia
+         retocada"— sigue en pie y sigue siendo cierto; lo que estaba mal
+         es que se aplicaba a las veinticuatro horas por igual. Aqui se
+         abre SOLO con el sol alto.
+
+         La cara clara se va al PAPEL, que es de donde sale toda la luz
+         de una acuarela — no a un blanco de pintura, que no existe. */
+      float diaN = smoothstep(0.62, 0.95, u_int);
+
       vec3 sombraN = mix(u_cieloAlto, u_agua, 0.17) * 0.955;
+      /* ── Y CON EL SOL DE CANTO, LA PANZA SE HUNDE ────────────────
+         El rango se habia cerrado a proposito —"lo que separa una nube
+         del cielo son dos pasos de valor, no diez"— y eso es cierto a
+         MEDIODIA: un cielo de mediodia es liso y la nube casi no
+         modela. Pero se aplicaba a todas las horas por igual, y al
+         ocaso es falso: con la luz entrando por debajo una nube tiene
+         una cara encendida y una panza oscura, y esa diferencia no es
+         un adorno, ES la nube. En la referencia de atardecer las nubes
+         son media composicion y aqui no se veian.
+         El rango se abre solo cuando la luz es rasante, asi que el
+         mediodia se queda exactamente como estaba. */
+      sombraN = mix(sombraN, sombraN * 0.76, nubeBaja);
       vec3 luzN    = mix(u_cieloAlto, mix(u_altas, u_reguero, 0.34), 0.62);
+      /* Y LA CARA ILUMINADA SE VA AL COLOR DEL HORIZONTE cuanto mas
+         baja esta la nube y mas rasante la luz. Una nube al amanecer no
+         la ilumina el cenit: la ilumina el horizonte, por debajo. De
+         ahi salen los corales de la referencia sin pintar un coral en
+         ningun sitio. */
+      luzN = mix(luzN, u_cieloHorizonte,
+                 nubeBaja * (1.0 - smoothstep(0.05, 0.88, nv)) * 0.80);
+      /* Y CON MAS RECORRIDO. La cara al sol de un cumulo de mediodia es
+         PAPEL —lo mas claro del cuadro— y su panza es azul de sombra, no
+         un azul un poco mas oscuro. Medido, el cielo entero cubria 24.6
+         de L* de recorrido; un cielo con cumulos de verdad cubre 40 o
+         mas, y esa diferencia es justo lo que se lee como plano. */
+      /* La cara al sol se va al papel —eso se queda— pero la panza NO
+         se hunde tanto: en la referencia la base de un cumulo es apenas
+         dos pasos mas oscura que el cielo, no una sombra. Empujarla a
+         0.70 hacia un azul al 62 % daba nubes de tormenta. */
+      luzN    = mix(luzN,    mix(luzN, papelBlanco(), 0.86), diaN);
+      sombraN = mix(sombraN, mix(sombraN, u_cieloAlto * 0.86, 0.40), diaN);
       vec3 pn = duotono(nb.rgb, sombraN, luzN);
       pn += (nb.rgb - vec3(valor(nb.rgb))) * u_croma * 0.18;
-      col = mix(col, pn, nb.a * 0.46 * smoothstep(0.02, 0.30, nv));
+      /* ── Y PESAN MAS CON EL SOL BAJO ─────────────────────────────
+         A 0.46 fijo la nube se veia lo justo a mediodia —que esta
+         bien: un cielo de mediodia es liso— y lo mismo de justo al
+         amanecer, que esta mal. Con el sol rasante la nube se enciende
+         por debajo y pasa a SER el acontecimiento del cielo; en la
+         referencia de atardecer las nubes son media composicion.
+         No es subir la opacidad por gusto: es que la misma nube tiene
+         mucho mas contraste cuando la luz le entra de canto. */
+      /* ── Y SE ABREN HACIA EL CENIT ────────────────────────────────
+         MEDIDO por franjas a mediodia: el cenit salia a 78.3 de L* y la
+         banda media a 81.1 — o sea el cielo mas claro ARRIBA que en
+         medio, que es al reves de cualquier cielo. La causa es que la
+         nube cubria el cenit tanto como el resto, y una nube es clara.
+
+         Un cielo real se abre hacia arriba: mirando al cenit se ve el
+         hueco entre nubes, y mirando al horizonte se ven de canto y
+         apiladas, sin hueco. Es perspectiva pura. Aqui la lamina pesa la
+         mitad en lo alto, y el azul hondo vuelve a verse. */
+      /* 0.52 -> 0.24. Adelgazar la nube hacia el cenit hizo lo que se
+         pedia —dejar ver el azul hondo— pero se paso: el tercio alto se
+         quedaba sin un solo acontecimiento y medio cielo volvia a ser un
+         degradado. Un cielo se abre hacia arriba, no se vacia. */
+      float abreArriba = 1.0 - smoothstep(0.42, 1.0, nv) * 0.46;
+      /* ── Y PESAN MUCHO MENOS DE DIA, medido contra la foto ────────
+         Comparando franja a franja contra la referencia, el tercio alto
+         de nuestro cielo salia 9 a 12 puntos de L* demasiado CLARO y con
+         0.291 de saturacion contra 0.451. El degradado por si solo daba
+         70.8 en esa franja y la foto pide 69.4 — o sea que el degradado
+         estaba bien y lo que sobraba era NUBE: cubria el cenit de blanco
+         y se llevaba por delante el azul.
+         La nube de dia baja de 0.74 a 0.40 y se adelgaza casi la mitad
+         hacia arriba. Lo que estructura el cielo es el degradado, no la
+         cantidad de nube; la nube es el acontecimiento, no el fondo. */
+      col = mix(col, pn, nb.a * mix(0.40, 0.74, nubeBaja)
+                       * smoothstep(0.01, 0.17, nv) * abreArriba);
+
+      /* Aquí estuvo un cúmulo procedural para suplir la lámina. Se
+         quitó porque el umbral del ruido heredaba su retícula y pintaba
+         rectángulos. La celda nueva ya aporta la estructura real: valor
+         y borde de pincel; el shader solo pone hora, luz y movimiento. */
     } else {
       float m = fbm((q + vec2(u_deriva * 0.02, 0.0)) * 2.2);
       col = mix(col, u_cieloAlto, (m - 0.5) * 0.16);
@@ -318,11 +912,28 @@ void main(){
     if (u_hayLuces > 0.5) {
       float noche = 1.0 - smoothstep(0.15, 0.55, u_int);
       if (noche > 0.01) {
-        vec2 lu = vec2(q.x * 0.55 + u_deriva * 0.04,
+        /* LA LAMINA TRAE TRES PUEBLOS IDENTICOS a intervalos iguales.
+           No es un fallo de repeticion de textura —cabe menos de una
+           vuelta en pantalla— sino que el motivo ya viene repetido
+           dentro de la propia hoja, y en una pantalla ancha se ven los
+           tres a la vez: el mismo racimo de luces calcado tres veces a
+           la misma distancia. Eso delata la lamina de golpe.
+
+           Se rompe por dos sitios. Primero se ONDULA el muestreo con un
+           ruido de periodo largo: los racimos dejan de estar a
+           distancias iguales y cada uno entra con otro ancho. Y despues
+           se APAGA A TRAMOS con otro ruido todavia mas lento, porque
+           una costa de verdad no tiene un pueblo cada tantos
+           kilometros: tiene un pueblo, luego nada durante un buen rato,
+           y luego dos luces sueltas. Lo que hace que se lea como costa
+           es justamente lo que falta. */
+        float ondula = fbm(vec2(q.x * 0.85 + 3.1, 1.7)) - 0.5;
+        vec2 lu = vec2(q.x * 0.55 + u_deriva * 0.04 + ondula * 0.22,
                        1.0 - (uv.y - horX) / max(1.0 - horX, 0.001) * 2.6);
         vec4 tl = texture(u_luces, lu);
+        float costa = smoothstep(0.36, 0.66, fbm(vec2(q.x * 1.25 + 21.0, 5.3)));
         float titila = 0.86 + 0.14 * sin(u_t * 0.9 + q.x * 31.0);
-        col = mix(col, mix(col, tl.rgb, 0.9), tl.a * noche * titila * 0.85);
+        col = mix(col, mix(col, tl.rgb, 0.9), tl.a * noche * titila * costa * 0.85);
       }
     }
 
@@ -335,7 +946,82 @@ void main(){
        Es un atlas de dos celdas, luna y sol, con el disco centrado y del
        mismo tamano en las dos, asi que elegir hora es elegir celda. Y el
        color lo sigue poniendo u_reguero: la lamina solo aporta forma. */
-    vec2 f = vec2(u_fuente.x * aspecto, u_fuente.y);
+    vec2 f = fuenteQ;
+
+    /* ═══ EL HALO, ANTES QUE EL DISCO ════════════════════════════
+       El astro se leia "desconectado", como una calcomania pegada
+       encima del cielo, y el diagnostico es correcto: la lamina trae
+       el disco y su aguada inmediata, pero le faltaba lo unico que de
+       verdad integra una luz en una atmosfera, que es EL AIRE
+       ILUMINADO alrededor.
+
+       No es una exponencial. Una exponencial es un degradado de
+       aerografo y se delata siempre en medio de un cuadro pintado a
+       mano; un halo de acuarela es una aguada ANCHA con el borde
+       irregular, hecha mojando el papel alrededor de la reserva.
+
+       Va antes del disco a proposito: el disco tiene que quedar
+       encima, no lavado por su propio halo. Y es lo mismo que ilumina
+       la franja del horizonte de arriba, asi que la luz del cuadro
+       viene toda del mismo sitio — que es el argumento entero. */
+    {
+      float dF = length(q - f);
+      float halo = 1.0 - smoothstep(0.0, 0.66, dF);
+      halo *= halo;
+      halo *= 0.68 + 0.54 * fbm(vec2(q.x * 2.1 + 5.0, uv.y * 2.6 + 17.0));
+      /* La fuerza se razona CONTRA EL FONDO, no en abstracto: de noche
+         el cielo esta a 0.022 de luminancia y cualquier mezcla se
+         multiplica por varias veces. 0.12 de tope nocturno deja el
+         resplandor de la luna en algo que se ve y no en una mancha. */
+      /* BAJADO A LA MITAD. Este halo se escribio cuando la lamina del
+         astro era un disco plano sin aguada —medido, 2.9 de rango en
+         L*—. La repintada trae su propio bloom pintado a mano, con
+         backruns y canto de coliflor, que es mucho mejor que cualquier
+         cosa que se pueda calcular aqui. Este se queda solo como el
+         aire de mas alla del bloom. */
+      /* Y DE DIA CASI DESAPARECE. Este halo tiene radio 0.66 en q, o
+         sea que cubre un tercio del ancho: a mediodia, con el sol alto,
+         eso es medio cielo mezclado hacia el color de la fuente. Medido
+         contra la foto, era buena parte de los 5 puntos de L* que le
+         sobraban al tercio alto — y ademas se comia la saturacion del
+         azul. La lamina del astro ya trae su bloom pintado; esto solo
+         tiene que ser el aire de mas alla, y de noche, que es cuando el
+         resplandor de la luna hace falta. */
+      col = mix(col, mix(col, u_reguero, 0.55),
+                clamp(halo, 0.0, 1.0) * mix(0.13, 0.045, u_int));
+    }
+
+    /* ── Y LA LUZ SE RESERVA, NO SE PINTA ────────────────────────
+       Alrededor del sol el cielo no es un color claro: es PAPEL. Un
+       acuarelista no pinta un sol brillante, deja el hueco y moja
+       alrededor — y es de ese hueco de donde sale toda la luz del
+       cuadro. Aqui no habia hueco: habia un halo mezclado hacia el
+       color de la fuente, o sea pintura clara, y por eso el mediodia
+       tenia el 2.5 % del cuadro por encima de 0.80 en vez del 8-12 %
+       que tiene una acuarela de dia.
+
+       Va con el borde comido por un ruido de periodo medio, porque una
+       reserva se hace con el pincel y no con un compas. Y solo de dia:
+       de noche la luna no reserva nada, ilumina poco. */
+    {
+      /* MUY BAJADA CON LA LAMINA NUEVA, y por una razon de orden: la
+         reserva se aplica al FINAL de la capa del cielo —papel
+         reservado es papel que nunca se pinto, nada posterior puede
+         taparlo— o sea DESPUES del disco. Con 0.88 de fuerza se comia
+         el astro entero: quedaba un claro difuso donde tenia que haber
+         un sol.
+         Cuando la lamina era un disco plano sin aguada, esa reserva ERA
+         la luz del sol y hacia falta. La repintada trae su propio bloom
+         pintado, y el disco ya es papel dentro de la lamina. Aqui se
+         queda solo el aire de alrededor, y con el radio corto para no
+         invadir el bloom. */
+      float cerca = 1.0 - smoothstep(0.16, 0.46, length(q - fuenteQ));
+      cerca *= cerca;
+      cerca *= 0.58 + 0.56 * fbm(vec2(q.x * 2.6 + 61.0, uv.y * 3.1));
+      reservaPapel = max(reservaPapel, clamp(cerca, 0.0, 1.0)
+                          * smoothstep(0.45, 0.92, u_int) * 0.16);
+    }
+
     if (u_hayAstro > 0.5) {
       float esSol = smoothstep(0.42, 0.78, u_int);
       /* 0.30 -> 0.17. A 0.30 la mancha media casi un tercio del alto y
@@ -346,12 +1032,45 @@ void main(){
          alto es media pantalla de ancho y el sol salia como un manchon
          flotando en mitad del cielo. Se escala con el aspecto para que
          en pantallas estrechas mida por ancho, no por alto. */
-      float lado = 0.17 * clamp(aspecto * 0.72, 0.52, 1.0);
+      /* 0.17 -> 0.2306. La lamina repintada trae un bloom de acuarela
+         de verdad —dos veces y media el disco— asi que su disco ocupa
+         menos celda que el de la lamina anterior: 0.1706 del ancho
+         contra 0.2314. La caja de muestreo crece en esa misma razon
+         (0.2314/0.1706 = 1.356) para que EL DISCO EN PANTALLA MIDA
+         EXACTAMENTE LO MISMO que antes; lo que crece es el aire
+         iluminado alrededor, que es justo lo que faltaba.
+         Si la caja no creciera, el bloom se cortaria contra su borde y
+         saldria un rectangulo alrededor del sol. */
+      /* La comparacion en pantalla mostraba un disco/bloom de casi el
+         doble del diametro de la referencia. La caja baja, sin tocar
+         el valor ni el halo ambiental, para que el astro vuelva a ser
+         una fuente pequena dentro de un cielo grande. */
+      float lado = 0.1700 * clamp(aspecto * 0.72, 0.52, 1.0);
       vec2 au = (q - f) / lado + 0.5;
       if (au.x > 0.0 && au.x < 1.0 && au.y > 0.0 && au.y < 1.0) {
         vec2 uu = vec2((au.x + floor(esSol + 0.5)) * 0.5, au.y);
         vec4 ta = texture(u_astro, uu);
-        col = mix(col, u_reguero, ta.a * clamp(0.30 + 0.62 * u_int, 0.0, 0.94));
+        /* Y BAJA DE INTENSIDAD. Con el halo puesto, el disco a 0.94 se
+           quedaba como un recorte brillante en el centro de su propia
+           atmosfera. Lo que integra una luna no es que brille mas: es
+           que lo de alrededor brille un poco. */
+        /* ── EN DUOTONO, COMO TODO LO DEMAS ────────────────────
+           Esto mezclaba hacia u_reguero con el peso del alfa y NADA
+           MAS, o sea que pintaba disco y aguada del MISMO color. Con la
+           lamina anterior colaba porque era un disco plano sin aguada
+           —2.9 de rango en L*—: no habia estructura que perder. La
+           repintada trae
+           el disco casi en papel y el bloom en gris calido, y aplastarlo
+           todo a un solo color convertia el sol en un manchon amarillo.
+
+           Ahora la lamina aporta DONDE y CUANTO (su alfa) y tambien QUE
+           TAN CLARO (su valor): lo mas claro se va al papel —el disco es
+           reserva, de ahi sale la luz— y la aguada de alrededor al color
+           de la fuente. Es exactamente el trato que reciben el manglar,
+           las nubes, el pasto y las garzas. */
+        vec3 colAstro = mix(u_reguero, papelBlanco(),
+                            smoothstep(0.52, 0.94, valor(ta.rgb)));
+        col = mix(col, colAstro, ta.a * clamp(0.26 + 0.54 * u_int, 0.0, 0.86));
       }
     } else {
       float d = length(q - f);
@@ -408,7 +1127,12 @@ void main(){
        figura esta prohibida en este sitio y sigue estandolo. */
     float dRoce = distance(q, u_roce.xy);
     float roce = u_roce.z * exp(-(dRoce * dRoce) / 0.045) * 0.85;
-    float amp  = (1.0 - cn) * mix(0.0038, 0.059, pp)   // -20 %
+    /* SUBIDA UN CUARTO, a peticion: 0.0038/0.059 -> 0.0047/0.074. El
+       techo de esto no es el gusto sino la lamina — la onda desplaza el
+       muestreo, y pasado cierto punto la pintura se estira en vez de
+       moverse. A 0.074 en el termino cercano sigue por debajo de ese
+       limite; medido, la banda cercana se deforma un 7.4 % de su alto. */
+    float amp  = (1.0 - cn) * mix(0.0047, 0.074, pp)
                * (1.0 - aplanado * 0.94) * (1.0 + roce);
     float frec = mix(120.0, 9.0, pp);
     float vel  = mix(0.77, 0.34, pp);      // +30 % y luego -20 %
@@ -462,7 +1186,28 @@ void main(){
        El extremo claro se lleva hacia la bruma del cielo, que es el color
        que los une; si no, el agua se va a un turquesa que el cielo nunca
        tuvo y el cuadro se parte en dos láminas. */
-    vec3 oscuro = mix(u_agua * 0.42, u_bruma * 0.30, 0.18);
+    /* Cuanto de dia es. Se declara AQUI, antes del primer sitio que lo
+       usa: en GLSL una variable existe a partir de su linea, igual que
+       un const de modulo en JS. */
+    float diaAgua = smoothstep(0.25, 0.85, u_int);
+    /* ── EL EXTREMO OSCURO SUBE DE DIA ───────────────────────────
+       MEDIDO contra la referencia de dia: su mar vive entre L* 63 y 79
+       con saturacion 0.21 a 0.47; el nuestro entre 50 y 62 con 0.24 a
+       0.29. Y el matiz no era el problema —medido en pantalla, mediana
+       191 grados con solo un 7 % de pixeles por debajo de 180—: lo que
+       hace que un cian se lea VERDOSO en vez de turquesa es que sea
+       oscuro y apagado. Un turquesa es un cian CLARO.
+
+       El culpable es este extremo: u_agua a 0.42 es un azul casi negro,
+       y arrastra hacia abajo toda la mitad oscura del mar. De noche esta
+       bien —un mar nocturno es casi negro y ademas solo refleja— asi que
+       sube con el dia y no siempre. */
+    /* Con su PROPIA puerta, no con diaAgua: diaAgua ya vale 0.36 a las
+       nueve de la noche, y subir ahi el extremo oscuro aclara un mar
+       nocturno que esta bien como esta. Esta cruza mas tarde y mas
+       rapido, asi que solo se abre con el sol de verdad alto. */
+    float mediodiaAgua = smoothstep(0.55, 0.95, u_int);
+    vec3 oscuro = mix(u_agua * mix(0.42, 0.98, mediodiaAgua), u_bruma * 0.30, 0.18);
 
     /* EL AGUA ES UN ESPEJO ANTES QUE UN CUERPO. Su extremo claro venia
        de una paleta propia (altas + bruma) que no miraba al cielo, y de
@@ -473,12 +1218,23 @@ void main(){
        Asi que el claro se topa contra el cielo del horizonte y se queda
        por debajo. El tope solo puede OSCURECER (max 1.0), asi que las
        horas de dia, que ya estaban bien, no se tocan. */
-    vec3 claroBase = mix(u_altas, u_bruma, 0.42);
+    /* ── Y EL EXTREMO CLARO DEJA DE SER BRUMA A MEDIODIA ───────────
+       Aqui estaba la razon de que el mar de dia saliera gris, y no era
+       el color del agua: era su extremo CLARO. Se armaba con un 42 % de
+       bruma a todas horas, y la bruma de dia es un gris casi neutro, asi
+       que la mitad clara del mar —que es la mitad que se ve— se lavaba
+       hacia el gris por mucho turquesa que tuviera el color base.
+       Medido: 0.155 de saturacion en el agua, la misma exacta que la
+       copa del arbol.
+       De noche la bruma SI tiene que mandar —el agua nocturna solo
+       refleja, y el cielo esta a un palmo de ella—, asi que la mezcla
+       baja con el dia en vez de bajar siempre. */
+    vec3 claroBase = mix(u_altas, u_bruma, mix(0.42, 0.14, diaAgua));
     /* El tope muerde de noche, que es donde estaba el problema, y de dia
        casi no: un mar de mediodia SI puede acercarse al cielo porque el
        cuerpo del agua dispersa luz propia; uno nocturno no, porque solo
-       refleja. Medido despues: 0.85 de dia, 1.1 de noche. */
-    float diaAgua = smoothstep(0.25, 0.85, u_int);
+       refleja. Medido despues: 0.85 de dia, 1.1 de noche.
+       (diaAgua se calcula unas lineas mas arriba, con claroBase.) */
     float techo = valor(u_cieloBajo) * mix(0.60, 1.02, diaAgua);
     vec3 claro  = claroBase * clamp(techo / max(valor(claroBase), 0.001), 0.22, 1.0);
 
@@ -537,8 +1293,14 @@ void main(){
        Ahora hace falta que coincidan TRES cosas —lamina muy clara,
        cresta alta y poca profundidad— y ademas el borde es mas
        estrecho: donde antes salia una mancha, ahora salen destellos. */
+    /* El umbral se afloja un poco de dia. Sigue muy alto —el aviso de
+       arriba vale: a 0.55 esto blanqueaba medio mar— pero 0.93 dejaba el
+       agua diurna sin un solo destello, y las facetas de luz son la
+       mitad de lo que hace que un mar de acuarela se vea soleado. */
+    float diaFaceta = smoothstep(0.50, 0.92, u_int);
     float cresta = smoothstep(0.42, 0.88, onda * 0.5 + 0.5);
-    float faceta = smoothstep(0.93, 0.985, valor(pintura)) * cresta;
+    float faceta = smoothstep(mix(0.93, 0.865, diaFaceta),
+                              mix(0.985, 0.950, diaFaceta), valor(pintura)) * cresta;
     /* Y DE NOCHE, CERO. Con mix(0.03, 1.0, dia) a las 21:00 quedaba al
        15 %, que parece poco — pero sobre agua casi negra (luminancia
        0.05) mezclar un 15 % hacia papel (0.87) multiplica el brillo por
@@ -549,6 +1311,7 @@ void main(){
     float dia = smoothstep(0.46, 0.86, u_int);
     reservaPapel = max(reservaPapel, faceta * (1.0 - smoothstep(0.34, 0.95, prof))
                            * dia * dia * 0.95);
+
 
     /* Y el agua también se aplana. Menos escalones que el cielo y con el
        canto más seco, porque el agua lejana en una acuarela son dos o
@@ -601,6 +1364,15 @@ void main(){
     col = mix(col, mix(col, u_altas, 0.55), lomo * 0.30);
     col = mix(col, col * 0.86, valle * 0.30);
 
+    /* (AQUI ESTUVO LA ESPUMA DE LA CRESTA, y se DESCARTA — no se
+       reintenta. Se pinto como papel reservado sobre la cresta que
+       viaja, que en teoria es como se pinta la espuma en acuarela, y en
+       pantalla se veia mal: la reserva es una mancha de canto duro y
+       sobre un agua en movimiento lee como suciedad, no como espuma.
+       Una ola rompiendo tiene volumen y arrastre; no sale de aclarar la
+       cima de una senoidal. Si algun dia hace falta espuma, sale de una
+       lamina pintada, no de aqui.) */
+
     float cara = clamp(onda * 0.55 + 0.5, 0.0, 1.0);
     vec3 frio   = mix(col, mix(u_cieloAlto, u_altas, 0.35), 0.185);
     vec3 calido = mix(col, mix(u_reguero, u_bruma, 0.30),   0.155);
@@ -618,7 +1390,15 @@ void main(){
        pide el proyecto es esto: no decoracion, el contrapunto sin el
        cual el azul no canta. */
     vec3 tibio = mix(u_reguero, vec3(0.86, 0.66, 0.62), 0.42);
-    col = mix(col, mix(col, tibio, 0.34), smoothstep(0.42, 0.14, aparta) * 0.58);
+    /* ── Y EL LOBULO CALIDO CEDE A MEDIODIA ──────────────────────
+       Este rosa polvoriento es el contrapunto sin el cual el azul no
+       canta, y a primera y ultima hora eso es cierto. Pero a mediodia
+       cae sobre un mar CIAN, y rosa sobre cian da gris: medido, se
+       comia saturacion justo en la hora en la que el mar tiene que ser
+       turquesa. Se queda —no se quita, que es la mitad del pigmento de
+       la escena— pero pesa la mitad con el sol alto. */
+    col = mix(col, mix(col, tibio, 0.34),
+              smoothstep(0.42, 0.14, aparta) * mix(0.58, 0.26, mediodiaAgua));
 
     /* Perspectiva aérea: el agua lejana se lava hacia la bruma, pero
        SIEMPRE por debajo de ella. Con la bruma pareja el salto del
@@ -642,16 +1422,59 @@ void main(){
        A 2.3 caben dos o tres tramos perdidos, y el smoothstep va
        estrecho para que de verdad llegue a los dos extremos: donde se
        pierde, se pierde del todo; donde no, canto seco. */
-    float perdido = smoothstep(0.44, 0.58, fbm(vec2(q.x * 2.3 - 5.0, 8.3)));
+    /* Y SE PIERDE DE VERDAD. El tramo perdido llegaba a 0.155 de la
+       profundidad del agua y el duro se quedaba en 0.020: la diferencia
+       entre los dos existia, pero el canto duro seguia siendo casi todo
+       el ancho. Ahora el ruido va mas lento —dos tramos anchos en vez de
+       tres estrechos— y donde se pierde, se pierde el triple. */
+    float perdido = smoothstep(0.40, 0.62, fbm(vec2(q.x * 1.45 - 5.0, 8.3)));
     /* 0.46 era medio mar. Para perder el canto del horizonte ensanche
        la bruma hasta casi la mitad de la profundidad del agua, y eso
        dejo una franja de NIEBLA BLANCA alrededor de las raices a todas
        horas: el mar se veia lavado y el arbol flotando en vapor.
        El canto se pierde con un tramo estrecho; lo demas era exceso. */
-    float anchoBruma = mix(0.020, 0.155, perdido);
+    float anchoBruma = mix(0.012, 0.320, perdido);
     col = mix(u_bruma * 0.82, col,
               smoothstep(0.0, anchoBruma, prof) * 0.58 + 0.42);
     col = mix(col, col * 0.90, smoothstep(0.60, 1.0, prof));
+
+    /* ═══ LOS DESTELLOS DE LA LINEA DEL AGUA ═════════════════════
+       El agua ya se movia, pero lo que se movia era el MUESTREO de la
+       lamina: pigmento desplazandose. Faltaba lo que de verdad hace
+       que un mar se vea vivo, que es la luz cambiando sobre el —unas
+       lineas brillantes cerca del horizonte que aparecen, duran un
+       momento y se apagan.
+
+       Y son LINEAS, no puntos. Cada destello es la cara de una ola
+       vista casi de canto, o sea un trazo horizontal: fino en
+       vertical (periodo de unos cuatro pixeles) y largo en horizontal
+       (unos seis lobulos en una pantalla apaisada). Un campo de
+       puntos brillantes seria purpurina, que es la version barata de
+       esto y esta prohibida en el mismo parrafo que las facetas.
+
+       Tres cosas los gobiernan y las tres tienen que coincidir:
+       cerca del horizonte, hacia la fuente, y en el momento en que
+       pasa la cresta —o sea que nacen y mueren con la ola, no con un
+       reloj propio—. Por eso cambian con el movimiento en vez de
+       titilar por su cuenta.
+
+       Y la fuerza se razona CONTRA EL FONDO. Sobre agua nocturna
+       (luminancia 0.05) una mezcla del 15 % hacia el papel multiplica
+       el brillo por 3.4; por eso las facetas grandes se apagan de
+       noche. Estos NO se apagan —un mar nocturno si tiene destellos
+       plateados, es lo que lo hace hermoso— pero entran a un tercio y
+       solo como hilos: el area total es minuscula. */
+    {
+      float cercaHor  = 1.0 - smoothstep(0.02, 0.32, prof);
+      float haciaLuz  = exp(-pow((q.x - fuenteQ.x) / 0.95, 2.0));
+      float trazo     = smoothstep(0.60, 0.93,
+                          ruido(vec2(q.x * 3.2 + u_deriva * 0.55, uv.y * 190.0)));
+      float chispa = trazo * cercaHor * mix(0.30, 1.0, haciaLuz)
+                   * smoothstep(0.10, 0.72, paso * 0.5 + 0.5)
+                   * (1.0 - cn * 0.40);
+      vec3 destello = mix(col, mix(luzCalida(), u_altas, 0.30), 0.62);
+      col = mix(col, destello, chispa * mix(0.13, 0.40, u_int));
+    }
 
     /* EL REGUERO: angosto y continuo con calma, disperso con oleaje.
        Apunta a la fuente — antídoto contra la luz de ninguna parte. */
@@ -672,8 +1495,15 @@ void main(){
                      1.0 - prof + duv.y * 2.0);
       if (ru.x > 0.0 && ru.x < 1.0 && ru.y > 0.0 && ru.y < 1.0) {
         vec4 tr = texture(u_camino, ru);
+        /* SUBIDO, Y LLEGA MAS LEJOS. Estaba en 0.30 con la calma en su
+           suelo —o sea el valor con el que entra todo el mundo— y se
+           apagaba al 45 % antes de llegar al pie del cuadro. En la
+           referencia el camino de luz es UNA COLUMNA ENTERA que va del
+           disco hasta el borde de abajo, y es media composicion: sin
+           ella el sol es un adorno pegado al fondo en vez de la fuente
+           que ilumina la escena. */
         col = mix(col, u_reguero,
-                  tr.a * u_int * mix(0.30, 0.72, cn) * mix(1.0, 0.45, prof));
+                  tr.a * u_int * mix(0.44, 0.78, cn) * mix(1.0, 0.58, prof));
       }
     } else {
       float ancho = mix(0.42, 0.055, cn) * mix(0.35, 1.0, pp);
@@ -734,8 +1564,28 @@ void main(){
            casi opaco y casi a todo color: por eso llamaba más la
            atención que el árbol. Está a metros de distancia y bajo el
            agua; lo que llega de eso es un tinte, no una pintura. */
-        vec3 pc = mix(col, tc.rgb, 0.54);
-        pc += (tc.rgb - vec3(valor(tc.rgb))) * u_croma * 0.42;
+        /* ── DUOTONO, COMO TODO LO DEMÁS ────────────────────────────
+           Era lo ÚNICO del cuadro que entraba con su RGB crudo, y el
+           RGB crudo de esta lámina es arena: ocre cálido. De día
+           colaba porque el agua también es clara. De noche no: el mar
+           se va a azul de tinta y el pasto se quedaba en su ocre, así
+           que aparecían unas vetas amarillas cruzando el fondo del
+           agua a la una de la madrugada. No era que estuviera oscuro
+           — era que era del color de otra hora.
+
+           Se le toma el VALOR y se remapea entre dos colores sacados
+           del AGUA DE LA HORA, que es el agua que lo tapa: un fondo
+           marino no se ve con su color, se ve con el color del agua
+           que hay encima. El extremo oscuro se va a un verde de fondo
+           y el claro apenas se levanta hacia las altas del agua.
+
+           Y conserva un resto de pigmento propio —un 0.18 de croma
+           contra el 0.42 de antes—, porque un pasto marino sí tiene
+           algo de verde y en duotono puro se quedaría gris. */
+        vec3 oscuroP = mix(u_agua, vec3(0.086, 0.121, 0.098), 0.46);
+        vec3 claroP  = mix(u_agua, mix(u_altas, u_bruma, 0.30), 0.44);
+        vec3 pc = duotono(tc.rgb, oscuroP, claroP);
+        pc += croma(tc.rgb, u_croma * 0.10, u_croma * 0.18);
         /* Nunca una cinta continua: se desvanece por arriba —el corte
            recto se veía— y se abre en claros con una onda lenta, para
            que haya agua limpia entre las matas. La paz es el vacío. */
@@ -766,8 +1616,16 @@ void main(){
      salto hoy en 0.20 hay margen de sobra para ablandarla y que deje de
      leerse como el borde de un rectángulo. */
   float dHor = abs(uv.y - horX);
-  float brumaArriba = exp(-dHor / mix(0.022, 0.011, cn)) * step(horX, uv.y) * 0.55;
-  float brumaAbajo  = exp(-dHor / mix(0.005, 0.002, cn)) * step(uv.y, horX) * 0.24;
+  /* La referencia nocturna conserva una linea de horizonte legible, no
+     una franja gris. La bruma alcanza toda su fuerza con el sol alto y
+     se recoge cuando baja la intensidad; el alba conserva vapor, la
+     noche deja que el azul profundo llegue hasta el agua. */
+  float aireDiurno = smoothstep(0.42, 0.90, u_int);
+  float fuerzaBruma = mix(0.42, 1.0, aireDiurno);
+  float brumaArriba = exp(-dHor / mix(0.022, 0.011, cn)) * step(horX, uv.y)
+                    * 0.55 * fuerzaBruma;
+  float brumaAbajo  = exp(-dHor / mix(0.005, 0.002, cn)) * step(uv.y, horX)
+                    * 0.24 * fuerzaBruma;
   col = mix(col, u_bruma, brumaArriba + brumaAbajo);
 
   /* ═══ EL MANGLAR ═══════════════════════════════  ← LÁMINA 06 ═══
@@ -783,13 +1641,138 @@ void main(){
     /* El manglar recupera su tierra: sombra tostada en el extremo
        oscuro y un claro cálido. Estaba mezclado hacia el agua y salía
        gris como todo lo demás. */
-    vec3 oscuroM = mix(vec3(0.155, 0.118, 0.086), u_agua * 0.35, 0.30);
-    vec3 claroM  = mix(mix(u_bruma, u_altas, 0.30), vec3(0.72, 0.66, 0.54), 0.30) * 0.86;
+    /* El color propio del manglar aparece con el sol alto. En alba y
+       noche los extremos recogen el azul del ambiente: asi la misma
+       lamina pasa de sujeto verde a silueta sin parecer un filtro
+       marron pegado sobre un cielo violeta. */
+    float diaArbol = smoothstep(0.78, 0.98, u_int);
+    vec3 oscuroNoche = mix(u_cieloAlto * 0.42, u_agua * 0.34, 0.58);
+    vec3 claroNoche  = mix(u_cieloBajo, mix(u_altas, u_bruma, 0.25), 0.34) * 0.50;
+    vec3 oscuroDia   = mix(vec3(0.155, 0.118, 0.086), u_agua * 0.35, 0.30);
+    vec3 claroDia    = mix(mix(u_bruma, u_altas, 0.30), vec3(0.72, 0.66, 0.54), 0.30) * 0.86;
+    vec3 oscuroM = mix(oscuroNoche, oscuroDia, diaArbol);
+    vec3 claroM  = mix(claroNoche, claroDia, diaArbol);
+    /* ── Y DE DIA LA COPA SE ENCIENDE ─────────────────────────────
+       El extremo claro del arbol era un gris calido, y con el sol alto
+       eso es falso: una hoja de mangle a mediodia devuelve un verde
+       LIMON, casi amarillo, y es ese verde el que hace que el arbol se
+       vea vivo en vez de solo correcto. MEDIDO a las 11:00: la copa
+       tenia 0.156 de saturacion, la MISMA exacta que el agua — o sea
+       que el sujeto del cuadro no destacaba por color de nada.
+       Solo de dia. Al amanecer y de noche la copa es una silueta y ese
+       limon seria mentira. */
+    claroM = mix(claroM, mix(claroM, vec3(0.83, 0.87, 0.47), 0.54), diaArbol);
+
+    /* ── EL ÁRBOL RESPIRA ─────────────────────────────────────────
+       Un manglar clavado es una calcomanía, por bien pintada que esté:
+       lo que delata que el paisaje es una lámina no es su dibujo, es
+       que no se mueve nada dentro de él mientras el agua sí.
+
+       No hace falta partirlo en dos láminas —copa y tronco— como se
+       había apuntado. Basta con CIZALLAR el muestreo: se desplaza la
+       coordenada horizontal en proporción al cuadrado de la altura, y
+       eso es exactamente el perfil de una viga en voladizo. Las raíces
+       no se mueven ni un píxel porque abajo el factor vale cero; la
+       copa se dobla porque arriba vale uno. El árbol se dobla, no se
+       desliza — que es la diferencia entre un árbol con viento y un
+       cartel al que le empujan.
+
+       AMPLITUD. Estaba en 1.1 % y NO SE VEIA: con la copa a 300 px son
+       tres pixeles y medio de recorrido repartidos en veinte segundos,
+       o sea un sexto de pixel por segundo. Eso no es un arbol calmado,
+       es un arbol quieto con una cuenta detras.
+
+       A 3.4 % son unos diez pixeles en la punta de la copa, que sigue
+       siendo un aire muy suave —una rama no se agita, se inclina— pero
+       ya se percibe. El limite de esto no es el buen gusto: es que la
+       lamina se cizalla, y pasado cierto punto las hojas empiezan a
+       estirarse en vez de moverse. */
+    float dobla = u_viento * ${VIENTO_COPA};
 
     // Planta
     vec2 m = vec2((q.x - (cx - Sx * 0.5)) / Sx, (uv.y - base) / S);
+    m.x -= dobla * m.y * m.y;
+
+    /* ── Y LAS HOJAS, QUE ES LO QUE DE VERDAD SE VE ─────────────────
+       El cizallado de arriba dobla el árbol ENTERO, y eso —medido
+       sobre el lienzo— movía el canto de la copa once píxeles en seis
+       segundos. Se subió la amplitud dos veces y seguía sin notarse, y
+       el motivo no era la escala: es que un desplazamiento UNIFORME es
+       lo peor que se puede pedirle al ojo. Sin nada quieto al lado
+       contra lo que compararlo, mover toda la copa a la vez se lee
+       igual que no moverla.
+
+       Lo que se ve es el movimiento DIFERENCIAL: unas hojas yendo
+       contra otras. Aquí un ruido de periodo largo recorre la lámina y
+       desplaza cada trozo de follaje por su cuenta, así que la copa
+       deja de ser una pieza rígida y pasa a tener partes. Con una
+       décima parte del recorrido se nota diez veces más — porque ahora
+       hay contra qué medirlo.
+
+       DOS EJES, y el vertical con menos amplitud: una hoja al viento
+       cabecea más de lo que sube.
+
+       Y SOLO EN LA COPA. mascaraHoja apaga esto por debajo del
+       arranque de las ramas: un tronco no ondea, y unas raíces zancudas
+       ondeando serían gelatina. Es lo mismo que hace el cizallado con
+       el cuadrado de la altura, dicho con un umbral. */
+    float mascaraHoja = smoothstep(0.30, 0.72, m.y);
+    if (mascaraHoja > 0.001) {
+      float sopla  = fbm(vec2(m.x * 3.4 + u_t * 0.115, m.y * 4.1 - u_t * 0.07)) - 0.5;
+      float sopla2 = fbm(vec2(m.y * 5.2 - u_t * 0.095, m.x * 3.8 + 4.0)) - 0.5;
+      /* Subido un 30 %. Lo que hace que un arbol se lea VIVO no es que
+         se mueva mucho, es que se muevan unas hojas contra otras: este
+         es el termino diferencial, y es el que se nota. El uniforme de
+         mas arriba (VIENTO_COPA) sigue igual — subirlo cizalla la
+         lamina y las hojas se estiran en vez de moverse. */
+      m.x += sopla  * 0.0270 * mascaraHoja;
+      m.y += sopla2 * 0.0135 * mascaraHoja;
+    }
     if (m.x > 0.0 && m.x < 1.0 && m.y > 0.0 && m.y < 1.0) {
       vec4 t = texture(u_manglar, m);
+
+      /* ── CONTRASTE LOCAL EN LA COPA ────────────────────────────────
+         La masa de hojas se compacta: cientos de matas dibujadas una a
+         una que, a tamano de pantalla, se funden en un solo bloque
+         verde. El arreglo NO es subir el contraste global —eso oscurece
+         el arbol entero y vuelve a separarlo del cuadro, que es el
+         error que ya se corrigio dos veces con el fragmento cercano—
+         sino subir el LOCAL: separar cada mata de sus vecinas dejando
+         la masa donde esta.
+
+         Cuatro tomas alrededor dan la media local, y la diferencia
+         contra ella es el detalle. Es una mascara de enfoque de toda la
+         vida, con el radio al 1.4 % de la lamina —unos ocho pixeles en
+         pantalla— que es el tamano de una mata de hoja. Cuatro texture()
+         de mas, y solo dentro de la caja del arbol.
+
+         Solo en la copa: en el tronco y en las raices esto no separa
+         nada y solo le pondria grano a una superficie lisa. */
+      if (mascaraHoja > 0.001) {
+        float e = 0.014;
+        vec3 vecina = (texture(u_manglar, m + vec2( e, 0.0)).rgb
+                     + texture(u_manglar, m + vec2(-e, 0.0)).rgb
+                     + texture(u_manglar, m + vec2(0.0,  e)).rgb
+                     + texture(u_manglar, m + vec2(0.0, -e)).rgb) * 0.25;
+        /* La nueva lamina ya trae masas separadas por pigmento. Solo se
+           recupera el detalle que pierde el reescalado; el enfoque
+           anterior recreaba el contorno de cada hoja y endurecia la
+           acuarela. */
+        t.rgb = clamp(t.rgb + (t.rgb - vecina) * 0.16 * mascaraHoja, 0.0, 1.0);
+
+        /* Y LAS HOJAS SE REPARTEN EL MATIZ. Una copa no tiene un verde:
+           la hoja que da al cielo devuelve luz calida y tira a oliva, y
+           la que esta metida dentro de la masa recibe el azul del
+           ambiente y tira a verde-azulado. Repartirlo POR VALOR sale
+           gratis y es lo que de verdad pasa, asi que los huecos de luz
+           entre el follaje aparecen solos donde ya habia claros — sin
+           inventarse ni una hoja. */
+        float vh = valor(t.rgb);
+        vec3 tinteHoja = mix(vec3(0.88, 0.97, 1.08), vec3(1.07, 1.02, 0.87),
+                             smoothstep(0.20, 0.60, vh));
+        t.rgb = clamp(t.rgb * mix(vec3(1.0), tinteHoja, mascaraHoja * 0.60),
+                      0.0, 1.0);
+      }
       /* APLANADO. Esta lamina es la que peor mide del juego: 0.465 de
          saturacion —dos veces y media cualquier otra— y cientos de matas
          de hoja dibujadas una a una, que es de donde sale el 28 % de
@@ -809,7 +1792,18 @@ void main(){
       float calidoT = smoothstep(0.10, 0.30,
                         (t.r - t.b) + (valor(t.rgb) - 0.45) * 0.5);
       float tramo = smoothstep(0.38, 0.62, fbm(m * vec2(4.2, 3.1) + 7.0));
-      vec3 tApagado = mix(t.rgb, vec3(valor(t.rgb)), calidoT * (1.0 - tramo) * 0.8);
+      /* BAJADO DE 0.8 A 0.30 CON LA LAMINA NUEVA. Esto se escribio
+         contra la lamina anterior, que traia horneados un reborde calido
+         continuo y unos destellos de estrella por toda la copa: luz de
+         render que habia que apagar a tramos. La lamina repintada no
+         tiene reborde ni destellos — tiene SOL, ancho y por un lado— y
+         este detector no distingue una cosa de la otra: caza los pixeles
+         calidos y claros, que ahora son exactamente las hojas al sol que
+         hacen falta. Medido en la lamina: p95 de 56.6 a 90.9 de L*, o
+         sea que por fin hay hojas iluminadas, y esto se las comia.
+         No se quita del todo: si algun dia vuelve una lamina con
+         reborde, el mecanismo sigue aqui. */
+      vec3 tApagado = mix(t.rgb, vec3(valor(t.rgb)), calidoT * (1.0 - tramo) * 0.30);
       vec3 pm = duotono(tApagado, oscuroM, claroM);
       /* El manglar conserva su propio pigmento, como el agua: en duotono
          puro la copa salía gris contra un cielo cálido y leía recorte. */
@@ -824,7 +1818,45 @@ void main(){
          sigue siendo la mas alta del juego —el resto va de 0.11 a 0.21—
          asi que el arbol seguia siendo el unico objeto con color fuerte.
          La curva le baja el suelo y el techo. */
-      pm += croma(tApagado, u_croma * 0.22, u_croma * 0.78);
+      pm += croma(tApagado, u_croma * 0.22, u_croma * mix(0.78, 1.20, diaArbol));
+      /* ── LOS HUECOS DE LUZ ENTRE EL FOLLAJE ────────────────────────
+         Lo que hace que una copa se vea al sol no es que este mas clara:
+         son los pocos sitios donde la luz ATRAVIESA y el papel se queda
+         sin pintar. Aqui coinciden tres cosas —la lamina ya muy clara,
+         el lado que mira a la fuente, y el dia— y donde coinciden no hay
+         pintura, hay hoja. Son cuatro o cinco por copa, no un brillo
+         repartido: eso seria barniz. */
+      float huecoLuz = smoothstep(0.74, 0.94, valor(t.rgb))
+                     * ladoDeLuz(m.x, cx, aspecto) * diaArbol;
+      pm = mix(pm, papelBlanco(), clamp(huecoLuz, 0.0, 1.0) * 0.42);
+
+      /* ── Y LE DA LA LUZ POR UN LADO ─────────────────────────────
+         El arbol recibia la misma luz por los cuatro costados. Con el
+         sol pintado a un lado del cuadro eso no es neutralidad, es un
+         error de dibujo, y es la mitad de por que la escena se leia
+         plana.
+
+         Tres condiciones a la vez, y hacen falta las tres:
+
+         - ladoDeLuz: solo el costado que mira a la fuente.
+         - La lamina ya clara ahi: la luz cae sobre lo que sobresale,
+           no sobre el fondo de la masa. Sin esto se ilumina el hueco
+           entre dos hojas igual que la hoja.
+         - POR TRAMOS. Un canto iluminado continuo de punta a punta es
+           luz de render — la misma razon por la que unas lineas mas
+           arriba se apaga a trozos el contraluz que la lamina trae
+           horneado. Ruido propio y desfasado del de aquel, o los dos
+           encenderian los mismos trechos y volveria el reborde. */
+      float tramoLuz = smoothstep(0.34, 0.66, fbm(m * vec2(3.6, 2.7) + 19.0));
+      float pilla    = smoothstep(0.28, 0.70, valor(t.rgb));
+      float caricia  = ladoDeLuz(m.x, cx, aspecto) * pilla * tramoLuz * fuerzaLuz();
+      /* Y LA LUZ DEL MOTOR CEDE ANTE LA DE LA LAMINA. La caricia
+         direccional se escribio cuando el arbol no tenia luz ninguna
+         dentro. La lamina nueva ya viene iluminada por un lado, asi que
+         a mediodia —con el sol al otro lado del cuadro— el motor
+         encendia el flanco contrario y salian dos luces. Se queda como
+         un refuerzo, no como la fuente. */
+      pm = mix(pm, mix(pm, luzCalida(), 0.62), caricia * 0.18);
       /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
@@ -837,20 +1869,79 @@ void main(){
          niebla, sin tocar ni las raices ni la copa. */
       float niebla = smoothstep(0.70, 0.90, valor(t.rgb))
                    * (1.0 - smoothstep(0.02, 0.42, m.y));
-      float bajoAgua = smoothstep(0.0, 0.06, m.y);
-      col = mix(col, pm, t.a * 0.92 * bajoAgua * (1.0 - niebla * 0.88));
+      /* El canto inferior de la lamina se pierde en solo 3.5 % de su
+         alto. A 6 % la raiz entera empezaba blanda y la base parecia
+         desenfocada incluso antes de entrar al agua. */
+      float bajoAgua = smoothstep(0.0, 0.035, m.y);
+      /* ── Y LAS RAICES SE DISUELVEN EN EL AGUA ─────────────────────
+         Hundir el arbol no bastaba: la lamina se pinta DESPUES del mar,
+         asi que las raices seguian dibujandose enteras y nitidas por
+         encima del agua, como un arbol puesto delante del mar en vez de
+         dentro de el. Aqui el alfa se apaga por debajo de la linea de
+         agua, asi que el enrejado entra en el agua y se pierde en ella.
+
+         Es ademas lo que pasa de verdad: el agua de un manglar lleva
+         taninos y sedimento, y a un palmo de la superficie ya no se ve
+         nada. Y es lo que hace un acuarelista con un canto que no
+         quiere contar: lo pierde.
+
+         El tramo es corto —0.13 del alto— porque perder el canto es una
+         cosa y borrar el arbol es otra. */
+      /* Primero hay una franja nitida: la superficie corta las raices,
+         no las emborrona. La perdida empieza tres puntos por debajo y
+         termina pronto, cuando de verdad ya hay agua entre ellas y el
+         ojo. */
+      float entraAgua = 1.0 - smoothstep(0.030, 0.085, u_hor - uv.y);
+      col = mix(col, pm, t.a * 0.92 * bajoAgua * entraAgua
+                       * (1.0 - niebla * 0.88));
     }
 
     /* El reflejo. A calma baja está partido en tajos; a calma alta el
        arco y su reflejo casi cierran un anillo, nunca del todo. Es la
        mecánica de Muñoz hecha geometría, y es una línea de shader. */
+    float profundidadR = u_hor - uv.y;
+    /* En la superficie el reflejo toca exactamente cada raiz. La
+       rotura horizontal nace en cero y crece bajo el agua; antes ya
+       llegaba desplazada a la linea de contacto y producia un hueco
+       borroso aunque la textura fuera la misma. */
+    float rompeDesdeAgua = smoothstep(0.0, 0.050, profundidadR);
     float tajo = (ruido(vec2(uv.y * mix(70.0, 16.0, cn), u_t * 0.25)) - 0.5)
-               * (1.0 - cn) * 0.07;
-    vec2 r2 = vec2((q.x + tajo - (cx - Sx * 0.5)) / Sx, (base - uv.y) / S);
-    if (r2.x > 0.0 && r2.x < 1.0 && r2.y > 0.0 && r2.y < 1.0 && uv.y < base) {
+               * (1.0 - cn) * 0.025 * rompeDesdeAgua;
+    /* El espejo nace en la LINEA DE AGUA. Antes nacia en base, que es
+       el fondo enterrado de la lamina: quedaba un hueco borroso entre
+       las raices visibles y su reflejo. corteAgua es la coordenada de
+       textura que cruza exactamente la superficie; desde ahi la misma
+       pintura se recorre al reves, a escala uno a uno. */
+    float corteAgua = clamp((u_hor - base) / S, 0.0, 1.0);
+    float escalaReflejo = 0.62;
+    vec2 r2 = vec2((q.x + tajo - (cx - Sx * 0.5)) / Sx,
+                   corteAgua + profundidadR / (S * escalaReflejo));
+    /* El reflejo se dobla con el árbol. El agua ya lo rompe en tajos,
+       pero si el original se mueve y su reflejo no, lo que queda es un
+       árbol bailando sobre una estampa quieta. */
+    r2.x -= dobla * r2.y * r2.y;
+    /* La copa reflejada lleva el MISMO movimiento diferencial que la
+       copa real. Sin esto el tronco coincidia pero las hojas nadaban en
+       otra figura, y el ojo lo leia como una mancha aproximada. */
+    float mascaraRef = smoothstep(0.30, 0.72, r2.y);
+    if (mascaraRef > 0.001) {
+      float soplaR  = fbm(vec2(r2.x * 3.4 + u_t * 0.115,
+                              r2.y * 4.1 - u_t * 0.07)) - 0.5;
+      float soplaR2 = fbm(vec2(r2.y * 5.2 - u_t * 0.095,
+                              r2.x * 3.8 + 4.0)) - 0.5;
+      r2.x += soplaR  * 0.0270 * mascaraRef;
+      r2.y += soplaR2 * 0.0135 * mascaraRef;
+    }
+    if (r2.x > 0.0 && r2.x < 1.0 && r2.y > 0.0 && r2.y < 1.0 && uv.y < u_hor) {
       vec4 t = texture(u_manglar, r2);
-      float roto = step(0.34, ruido(vec2(uv.y * mix(95.0, 22.0, cn), 7.3)) + cn * 0.55);
-      float desvanece = 1.0 - smoothstep(0.0, S * 1.25, base - uv.y);
+      float rotura = step(0.34,
+        ruido(vec2(uv.y * mix(95.0, 22.0, cn), 7.3)) + cn * 0.55);
+      /* Siempre queda el 72 % de la estructura. Las roturas del agua
+         modulan el reflejo; ya no lo agujerean hasta volverlo borron. */
+      float roto = mix(0.72 + rotura * 0.28, 1.0, cn);
+      float altoReflejo = max(0.001, S * (1.0 - corteAgua) * escalaReflejo);
+      float desvanece = 1.0 - smoothstep(altoReflejo * 0.72,
+                                        altoReflejo, profundidadR);
       /* UN REFLEJO OSCURECE EL AGUA, NO LA ILUMINA. Estaba pintando el
          duotono del arbol tal cual, asi que su claridad la mandaba la
          lamina: con la vieja, oscura, colaba; con la repintada, mucho
@@ -862,9 +1953,34 @@ void main(){
          Ahora la lamina solo aporta DONDE hay reflejo (su alfa); el
          color sale de oscurecer el agua que ya hay y teñirla hacia el
          extremo oscuro del arbol. Es lo que hace un reflejo de verdad. */
-      vec3 refl = mix(col * 0.66, oscuroM, 0.30);
+      /* ── EL REFLEJO LLEVA LA ESTRUCTURA, NO SOLO LA SILUETA ────
+         Esto usaba la lamina SOLO por su alfa: el color salia de
+         oscurecer el agua, igual en la copa que en el tronco. El
+         resultado es una mancha oscura con forma de arbol —una sombra,
+         no un reflejo—, y de ahi que se leyera impreciso.
+
+         Un reflejo repite el VALOR de lo que refleja: el tronco claro
+         se ve claro y el hueco entre las hojas se ve oscuro. Aqui la
+         lamina vuelve a entrar en duotono, con los mismos extremos que
+         el arbol de arriba, y despues se hunde hacia el agua. Sigue
+         siendo mas oscuro que el original —un reflejo oscurece el agua,
+         no la ilumina, y esa correccion se mantiene— pero ahora tiene
+         dentro lo que el arbol tiene dentro.
+
+         Y SE COMPRIME. Un reflejo en agua se acorta con el angulo de
+         vision: r2.y se estira para que el arbol reflejado mida menos
+         que el real, que es lo que lo hace leer como agua y no como
+         espejo. */
+      vec3 espejo = duotono(t.rgb, oscuroM, claroM);
+      vec3 refl = mix(col * 0.66, mix(espejo * 0.58, oscuroM, 0.24), 0.68);
+      /* Ni el papel claro de la lamina ni el reguero que ya vive en el
+         agua pueden convertir la copa reflejada en una mancha blanca:
+         el manglar siempre sustrae luz. Se conserva la estructura por
+         debajo de este techo, pero cada canal queda mas oscuro que el
+         agua que tenia debajo. */
+      refl = min(refl, col * 0.88);
       col = mix(col, refl,
-                t.a * roto * desvanece * mix(0.30, 0.58, cn));
+                t.a * roto * desvanece * mix(0.42, 0.68, cn));
     }
   }
 
@@ -879,7 +1995,13 @@ void main(){
      gesto de pincel junto al manglar.
      El sitio nunca afirma quiénes son, y ninguna está en apuros. */
   if (u_hayGarzas > 0.5) {
-    vec3 oscuroG = mix(vec3(0.11, 0.10, 0.10), u_agua * 0.40, 0.45);
+    /* SOMBRA AZUL, CANTO CALIDO. Una garza no es blanca: es papel con
+       una sombra fria dentro y un filo tibio donde le da la luz. Sin
+       eso son recortes, que es exactamente como se leian. El extremo
+       oscuro se va a un azul de verdad y no a un gris con algo de agua
+       mezclada; el filo se lo pone la luz direccional aqui abajo.
+       Y no ganan un solo detalle mas: su fuerza es que son gestos. */
+    vec3 oscuroG = mix(vec3(0.10, 0.11, 0.15), u_agua * 0.42, 0.50);
     vec3 claroG  = mix(u_bruma, u_altas, 0.45) * 0.92;
 
     // Lejanas: gestos junto al manglar, poco paralaje.
@@ -901,7 +2023,13 @@ void main(){
       vec2 m = vec2((q.x - (cxg - Sx * 0.5)) / Sx, (uv.y - (u_hor - k.z)) / k.y);
       if (m.x > 0.0 && m.x < 1.0 && m.y > 0.0 && m.y < 1.0) {
         vec4 t = texture(u_garzaCerca, m);
-        col = mix(col, duotono(t.rgb, oscuroG, claroG), t.a * 0.94);
+        vec3 pg = duotono(t.rgb, oscuroG, claroG);
+        /* Solo en la cercana. La lejana mide unos veinticinco pixeles
+           y ahi un canto iluminado no es luz, es ruido. */
+        float filoG = ladoDeLuz(m.x, cxg, aspecto)
+                    * smoothstep(0.34, 0.80, valor(t.rgb)) * fuerzaLuz();
+        pg = mix(pg, mix(pg, luzCalida(), 0.58), filoG * 0.30);
+        col = mix(col, pg, t.a * 0.94);
       }
     }
   }
@@ -914,13 +2042,37 @@ void main(){
     /* En movil el fragmento cercano se comia la composicion: 0.92 del
        alto con la pantalla estrecha tapaba al protagonista. Se encoge
        con el aspecto — el primer termino enmarca, no tapa. */
-    float encoge = mix(0.60, 1.0, smoothstep(0.62, 1.35, aspecto));
-    float kAlto = u_cercaCaja.y * encoge, kAncho = kAlto * u_cercaCaja.w;
+    /* Llega calculado desde JS —encogeCerca()— para que el sitio donde
+       se posa la garza cercana y el sitio donde se pinta la rama salgan
+       del mismo numero. */
+    float kAlto = u_cercaCaja.y * u_encoge, kAncho = kAlto * u_cercaCaja.w;
     /* Anclado por su BORDE IZQUIERDO: es un fragmento que entra por la
        esquina, no un objeto centrado. Con el centro se salía de cuadro
        en cuanto cambiaba la proporción de la ventana. */
     float kx = u_cercaCaja.x * aspecto - u_paralaje * 1.35;
     vec2 mc = vec2((q.x - kx) / kAncho, (uv.y - u_cercaCaja.z) / kAlto);
+    /* Y LA RAMA DEL PRIMER TÉRMINO TAMBIÉN. Va al revés y con más
+       recorrido que la copa, y las dos cosas son ciertas: es una rama
+       en voladizo —así que su punta se mueve mucho más que un tronco—
+       y está a un palmo del ojo, donde el mismo desplazamiento real se
+       ve al triple. Signo contrario porque cuelga desde el otro lado
+       del cuadro; si se doblara igual, las dos leerían como una sola
+       pieza rígida moviéndose en bloque.
+
+       El perfil va por mc.x y no por mc.y: esta lámina es un fragmento
+       que entra por la izquierda y se aleja hacia la derecha, así que
+       su voladizo crece a lo ANCHO, no a lo alto. */
+    mc.y += u_viento * ${VIENTO_RAMA} * mc.x * mc.x;
+    /* Y su follaje también se remueve por trozos, por lo mismo que la
+       copa del lejano: lo que se ve no es que se mueva todo, es que se
+       muevan unas partes contra otras. Aquí con más amplitud, porque
+       esta rama está a un palmo del ojo. */
+    {
+      float sopla = fbm(vec2(mc.x * 3.0 - u_t * 0.10, mc.y * 4.4 + u_t * 0.08)) - 0.5;
+      float hojaC = smoothstep(0.10, 0.55, mc.x);
+      mc.x += sopla * 0.034 * hojaC;
+      mc.y += sopla * 0.028 * hojaC;
+    }
     if (mc.x > 0.0 && mc.x < 1.0 && mc.y > 0.0 && mc.y < 1.0) {
       vec4 tk = texture(u_manglarCerca, mc);
       /* La derecha se desvanece sola: la lámina trae ese final PINTADO.
@@ -928,6 +2080,20 @@ void main(){
          veía la línea recta. Solo ese lado se ablanda, y ancho, para que
          no parezca niebla sino que se pierda por arriba de cuadro. */
       tk.a *= 1.0 - smoothstep(0.74, 1.0, mc.y);
+      /* ── Y LA DERECHA TAMPOCO SE DESVANECE SOLA ───────────────────
+         Aqui arriba estaba escrito que la derecha de esta lamina trae
+         su final PINTADO y no hacia falta tocarla. Medido, no es cierto:
+         a 0.55 del ancho todavia hay pintura en el 13.2 % de la columna,
+         a 0.75 en el 12.7 %, y lo que hay son PUNTAS DE RAIZ finas que
+         acaban en canto plano en mitad del aire. Una raiz que se corta
+         en seco no se lee como raiz, se lee como un trozo de palo
+         pegado — que es exactamente como se veia.
+
+         Se ablanda el mismo lado, con el mismo gesto que ya se usa para
+         el borde de arriba: el fragmento se pierde al alejarse del ojo
+         en vez de terminar. Empieza tarde (0.58) para no comerse los
+         arcos gruesos, que son los que sostienen a la garza. */
+      tk.a *= 1.0 - smoothstep(0.58, 0.92, mc.x);
       /* Subido de valor. A 0.085 era una silueta casi negra pegada al
          borde, con un salto de valor que no tenía nada que ver con el
          resto del cuadro: parecía recortada de otra pintura. Un primer
@@ -937,10 +2103,72 @@ void main(){
          cuadro— lo subi a 0.165 y quedo una masa gris palida que lee como
          niebla. Un primer termino tiene que PESAR: es lo mas cercano al
          ojo y por tanto lo mas contrastado del cuadro. */
-      vec3 oscuroC = mix(vec3(0.112, 0.106, 0.124), u_agua * 0.38, 0.35);
-      vec3 claroC  = mix(u_bruma, u_altas, 0.30) * 0.88;
+      /* ── LA MISMA MADERA QUE EL ARBOL DEL FONDO ────────────────
+         Estos dos extremos eran FRIOS —un gris azulado hacia la bruma—
+         mientras el manglar lejano va por un duotono calido de tierra.
+         O sea que el mismo arbol, a dos distancias, salia de dos
+         colores distintos, y se notaba: medido sobre las laminas, el
+         RGB medio de la madera cercana es (71, 76, 87) —azul gris— y el
+         de la lejana (107, 116, 66) —oliva—, y encima el motor los
+         separaba mas en vez de acercarlos.
+
+         Y ADEMAS ESTABA AL REVES. La perspectiva aerea enfria y lava lo
+         LEJANO, no lo cercano: el primer termino es lo mas calido, lo
+         mas saturado y lo mas contrastado del cuadro, porque entre el y
+         el ojo no hay aire. Aqui se le da la misma familia de madera
+         que al arbol del fondo, un punto mas calida y mas oscura — que
+         es lo que lo mantiene delante. */
+      /* MEDIDO EN PANTALLA a las 12:00: la madera del arbol lejano
+         salia con matiz 131 grados y la del primer termino con 172 — 41
+         grados de separacion, o sea verde contra cian. El mismo arbol a
+         dos distancias, de dos colores. Se acerca por los tres sitios
+         que lo separaban: menos tiron del agua en el extremo oscuro,
+         mas madera en el claro, y sobre todo el croma de mas abajo. */
+      vec3 oscuroC = mix(vec3(0.132, 0.098, 0.070), u_agua * 0.36, 0.16);
+      vec3 claroC  = mix(mix(u_bruma, u_altas, 0.30),
+                         vec3(0.70, 0.60, 0.43), 0.62) * 0.84;
       vec3 pk = duotono(tk.rgb, oscuroC, claroC);
-      pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 1.15;
+      /* ── Y AQUI ESTABA EL GRUESO DEL PROBLEMA ─────────────────────
+         1.15 era el multiplicador de croma mas alto de todo el shader —
+         el arbol lejano usa 0.22 a 1.20 y el agua 0.85— y se aplica
+         sobre una lamina cuyo pigmento propio es AZUL GRIS: medido, RGB
+         medio (71, 76, 87). O sea que el motor cogia el azul de la
+         lamina y lo multiplicaba por encima del duotono, deshaciendo
+         justo lo que el duotono acababa de hacer.
+
+         Tenia sentido cuando este fragmento era una silueta oscura y su
+         unico color era el que traia dentro. Ahora que comparte familia
+         de madera con el arbol del fondo, el pigmento propio pasa a ser
+         un matiz, no el color. */
+      pk += (tk.rgb - vec3(valor(tk.rgb))) * u_croma * 0.34;
+
+      /* ── LA LUZ QUE DEVUELVE EL AGUA ──────────────────────────────
+         Las raices del primer termino se leian como una silueta puesta
+         ENCIMA del oceano en vez de estar dentro de el, y el motivo no
+         era el color ni el valor: es que les faltaba el rebote. El agua
+         de debajo devuelve luz hacia arriba y enciende los bajos de
+         todo lo que flota sobre ella. Sin eso, no hay nada que ate una
+         cosa a la otra.
+
+         Es un rebote, asi que es FRIO —trae el color del agua, no el
+         del sol— y viene de abajo, mas fuerte cuanto mas cerca del
+         borde inferior del cuadro. Roto con un ruido de periodo medio
+         para que encienda unas raices y otras no: un rebote parejo
+         volveria a ser aerografo. */
+      float rebote = 1.0 - smoothstep(0.0, 0.46, uv.y);
+      rebote *= rebote;
+      rebote *= smoothstep(0.28, 0.70, fbm(mc * vec2(5.5, 4.0) + 3.0));
+      vec3 luzAgua = mix(u_altas, u_bruma, 0.45);
+      pk = mix(pk, mix(pk, luzAgua, 0.50), rebote * mix(0.18, 0.34, u_int));
+
+      /* Y EL FILO QUE MIRA A LA FUENTE. El primer termino esta casi a
+         contraluz —el astro vive al otro lado del cuadro—, asi que lo
+         suyo no es una cara iluminada sino un canto. Entra mas flojo
+         que en el arbol y solo donde la lamina ya viene clara. */
+      float filo = ladoDeLuz(mc.x, kx + kAncho * 0.5, aspecto)
+                 * smoothstep(0.30, 0.72, valor(tk.rgb)) * fuerzaLuz();
+      pk = mix(pk, mix(pk, luzCalida(), 0.55), filo * 0.24);
+
       col = mix(col, pk, tk.a * 0.96);
     }
   }
@@ -1050,6 +2278,32 @@ export function crear(lienzo) {
   });
   if (!gl) return null;
 
+  /* Un WebGL emulado por CPU convierte la pintura en una tarea de varios
+     segundos. En ese entorno el respaldo CSS es visualmente completo y
+     mucho más fluido; no se intenta compilar el shader. */
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const renderer = info
+    ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL)
+    : gl.getParameter(gl.RENDERER);
+  if (/swiftshader|llvmpipe|software/i.test(String(renderer))) {
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return null;
+  }
+
+  /* ── CUÁNTAS TEXTURAS CABEN DE VERDAD ──────────────────────────────
+     WebGL2 solo GARANTIZA dieciséis unidades de textura en el fragment
+     shader, o sea de la 0 a la 15, y este motor ya las tenía todas
+     ocupadas. La lámina de estrellas pedía la diecisiete.
+
+     En el portátil donde escribo esto hay treinta y dos y no habría
+     pasado nada; en un teléfono de gama baja con el mínimo, pedir la
+     unidad 16 es un error de enlazado y se cae el mar entero — o sea,
+     se cae la pintura por añadir una capa de adorno. Eso contradice la
+     regla del proyecto: el mar es un enhancement, y lo que sobra se
+     apaga solo. Se pregunta antes de repartir, y si no cabe, las
+     estrellas se quedan siendo las procedurales, que ya son bonitas. */
+  const UNIDADES_MAX = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+
   const vs = compilar(gl, gl.VERTEX_SHADER, VS);
   const fs = compilar(gl, gl.FRAGMENT_SHADER, FS);
   if (!vs || !fs) return null;
@@ -1065,6 +2319,7 @@ export function crear(lienzo) {
   const u = {};
   for (const n of ['u_res','u_t','u_hor','u_calma','u_deriva','u_comp','u_int',
                    'u_fuente','u_papel','u_laminas','u_cieloAlto','u_cieloBajo',
+                   'u_cieloHorizonte',
                    'u_agua','u_altas','u_reguero','u_bruma',
                    'u_lejano','u_medio','u_medioCalmo','u_cercano','u_cercanoCalmo',
                    'u_manglar',
@@ -1076,7 +2331,8 @@ export function crear(lienzo) {
                    'u_hayAstro','u_hayCamino','u_roce','u_cercaCaja','u_coralesCaja',
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
-                   'u_garzaCercaCaja','u_garzaLejosCaja','u_toques']) {
+                   'u_garzaCercaCaja','u_garzaLejosCaja','u_toques','u_viento',
+                   'u_encoge','u_cielo']) {
     u[n] = gl.getUniformLocation(p, n);
   }
 
@@ -1161,7 +2417,24 @@ export function crear(lienzo) {
      más hundimiento las raíces entran en agua más cercana, que es lo que
      lo acerca de verdad — un objeto próximo se mete por debajo del
      horizonte, no se queda posado encima de la línea. */
-  const manglarCaja = [0.705, 0.62, 0.230, 1.0];
+  /* El hundimiento sube de 0.230 a 0.330. La lamina repintada trae un
+     enrejado de raices zancudas mucho mas denso y mas alto que la
+     anterior, y visto entero se lee como una reja: hay quien lo
+     encuentra desagradable de mirar, y este sitio no puede permitirse
+     una imagen incomoda. Hundirlo mete la mitad baja del enrejado por
+     debajo de la linea de agua —donde ademas se disuelve, ver
+     entraAgua en el shader— y deja arriba lo que de verdad se quiere
+     ver: cuatro o cinco arcos, no cuarenta.
+     De regalo baja la copa y le da mas aire al rotulo.
+
+     Y DESPUES SUBE OTRA VEZ, de 0.330 a 0.252. A 0.330 se paso de
+     frenada: sin raiz zancuda a la vista un mangle rojo deja de leerse
+     como mangle y pasa a ser un arbol cualquiera metido en el agua —
+     las zancas SON la especie. 0.078 del alto de pantalla arriba (un
+     10 % del alto del arbol) devuelve los arcos altos, que es lo que se
+     reconoce, y deja abajo el enrejado denso disolviendose en el agua,
+     que es lo que incomodaba. */
+  const manglarCaja = [0.775, 0.62, 0.252, 1.0];
   gl.uniform4fv(u.u_manglarCaja, manglarCaja);
 
   /* Repeticiones de cada lámina a lo ancho. MENOS repeticiones = marcas
@@ -1184,7 +2457,15 @@ export function crear(lienzo) {
   const cargadas = new Set();
 
   async function cargar(mapa, anchoMax = 2048) {
-    const nombres = Object.keys(mapa);
+    /* Lo que no cabe no se descarga siquiera: en un aparato con las
+       dieciséis unidades justas, bajarse una lámina que nunca se va a
+       poder enlazar es gastar datos de alguien a las cuatro de la
+       mañana con mala señal. */
+    const nombres = Object.keys(mapa)
+      .filter((n) => unidades[n] === undefined || unidades[n] < UNIDADES_MAX);
+    if (nombres.length < Object.keys(mapa).length)
+      console.info('[mar] unidades de textura:', UNIDADES_MAX,
+                   '— se omiten láminas que no caben');
     await Promise.all(nombres.map(async (n) => {
       const img = new Image();
       img.decoding = 'async';
@@ -1217,7 +2498,7 @@ export function crear(lienzo) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       } else if (n === 'manglarCerca' || n === 'corales' || n === 'luces') {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
-          n === 'corales' ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+          n === 'corales' ? gl.MIRRORED_REPEAT : gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         const anchoF = fuente.width || fuente.naturalWidth;
         const altoF = fuente.height || fuente.naturalHeight;
@@ -1374,12 +2655,16 @@ export function crear(lienzo) {
       gl.uniform1f(u.u_deriva, e.deriva);
       gl.uniform1f(u.u_paralaje, e.paralaje || 0);
       gl.uniform1f(u.u_comp, e.luz.compresion);
+      gl.uniform1f(u.u_viento, viento(e.t));
+      gl.uniform1f(u.u_encoge, encogeCerca(ancho / Math.max(1, alto)));
+      gl.uniform1f(u.u_cielo, e.luz.cielo || 0);
       gl.uniform1f(u.u_int, e.luz.int);
       gl.uniform2f(u.u_fuente, e.luz.fuenteX,
         e.horizonte + (e.luz.elev / 90) * (1 - e.horizonte) * 0.95);
       gl.uniform1f(u.u_papel, e.papel);
       gl.uniform3fv(u.u_cieloAlto, e.luz.cieloAlto);
       gl.uniform3fv(u.u_cieloBajo, e.luz.cieloBajo);
+      gl.uniform3fv(u.u_cieloHorizonte, e.luz.cieloHorizonte);
       gl.uniform3fv(u.u_agua,      e.luz.agua);
       gl.uniform3fv(u.u_altas,     e.luz.altas);
       gl.uniform3fv(u.u_reguero,   e.luz.reguero);
@@ -1399,6 +2684,31 @@ export function crear(lienzo) {
       const px = new Uint8Array(w * h * 4);
       gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
       const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      /* ── Y TAMBIEN PERCENTILES, NO SOLO EL EXTREMO ─────────────────
+         Esto devolvia el pixel mas claro y el mas oscuro, y el
+         calibrador del lavado se protegia del PEOR de los dos. Es lo
+         correcto cuando lo que hay detras del texto es una aguada —el
+         disco de la luna cruzando por ahi es una mancha grande y ahi el
+         extremo ES el fondo—, y es un desastre cuando lo que hay son
+         puntos sueltos.
+
+         MEDIDO en un movil de 375x812 a las 21:00, sobre la caja del
+         rotulo: luminancia media 0.0582 —o sea texto blanco a 13.4:1,
+         de sobra—, pero el pixel mas claro valia 0.412 y bajaba el
+         contraste nominal a 2.12:1. El calibrador respondia velando el
+         bloque entero al 48 %: medio panel negro sobre la pintura.
+
+         Ese pixel era una ESTRELLA. Solo el 0.372 % de la zona pasaba
+         de 0.10 de luminancia. Se estaba tapando el cuadro por tres de
+         cada mil pixeles, y ademas sin ganar nada: el trazo de una
+         letra mide varios pixeles de ancho y una estrella de uno o dos
+         no lo borra — el ojo integra a lo largo del trazo.
+
+         Con el percentil 99.5 el disco de la luna sigue contando
+         entero (es una mancha, no un punto) y el campo de estrellas
+         deja de mandar. El histograma es de 1024 cubetas para no tener
+         que ordenar sesenta mil flotantes dos veces por segundo. */
+      const cubetas = new Uint32Array(1024);
       let max = 0, min = 1, suma = 0, n = 0;
       for (let i = 0; i < px.length; i += 4) {
         const l = 0.2126 * linz(px[i] / 255)
@@ -1407,8 +2717,19 @@ export function crear(lienzo) {
         if (l > max) max = l;
         if (l < min) min = l;
         suma += l; n++;
+        cubetas[Math.min(1023, Math.round(l * 1023))]++;
       }
-      return { max, min, prom: suma / n };
+      const percentil = (p) => {
+        const objetivo = p * n;
+        let acum = 0;
+        for (let i = 0; i < 1024; i++) {
+          acum += cubetas[i];
+          if (acum >= objetivo) return i / 1023;
+        }
+        return 1;
+      };
+      return { max, min, prom: suma / n,
+               p995: percentil(0.995), p005: percentil(0.005) };
     },
 
     /* Muestreo completo del cuadro, para auditar la pintura sobre los

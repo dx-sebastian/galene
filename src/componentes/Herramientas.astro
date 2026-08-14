@@ -1,6 +1,10 @@
 ---
 /* Las herramientas: DOM plano, cero canvas. La imperfección vive en
    el mar; el instrumento es exacto. */
+import RelojRescate from './RelojRescate.astro';
+import Decidir from './Decidir.astro';
+import Mapa from './Mapa.astro';
+import { CONSEJOS, CONSEJOS_SIEMPRE, FUENTES } from '../js/reloj.js';
 ---
 
 <section class="herramientas" id="herramientas">
@@ -8,13 +12,23 @@
     {/* EL FONDO — papel y tres aguadas con paralaje. Decorativo entero:
         aria-hidden, sin texto y sin datos. data-hondo es el factor de
         profundidad que lee js/paralaje.js: 1 = clavado al viewport,
-        0 = se va con la página. Las nubes casi no se mueven porque
-        están lejos; el manglar sí, porque está cerca. */}
+        0 = se va con la página.
+
+        SE LLAMABAN nubes, mar y manglar, y eran eso: el paisaje del
+        hero repetido aquí abajo en gris verdoso. No funcionaba. Los
+        charcos se leían como manchas grises sin sujeto y el manglar
+        —que sí traía lámina— dejaba un árbol fantasma asomando por la
+        esquina, o sea el mismo dibujo dos veces en la misma página.
+
+        Ahora no representan nada: son AGUADAS, en los dos pigmentos
+        del ente —azul y rojo—, y lo único que hacen es dar profundidad
+        al papel. Por eso los nombres son de posición y no de cosa: si
+        no dibujan un manglar, no pueden llamarse manglar. */}
     <div class="herramientas__fondo" aria-hidden="true">
       <div class="fondo__papel"></div>
-      <div class="fondo__capa fondo__capa--nubes"   data-hondo="0.94"></div>
-      <div class="fondo__capa fondo__capa--mar"     data-hondo="0.86"></div>
-      <div class="fondo__capa fondo__capa--manglar" data-hondo="0.66"></div>
+      <div class="fondo__capa fondo__capa--alta"    data-hondo="0.94"></div>
+      <div class="fondo__capa fondo__capa--media"   data-hondo="0.86"></div>
+      <div class="fondo__capa fondo__capa--cercana" data-hondo="0.66"></div>
     </div>
 
     {/* Aquí iba el aviso de borrador —«N datos no tienen fuente
@@ -34,11 +48,13 @@
         Definición deliberadamente NO clínica: sin sustancias, sin dosis
         y sin plazos. Todo eso vive en el reloj, con su fuente. Aquí solo
         se describe la experiencia, que es lo que ella puede reconocer. */}
-    {/* La cabecera se maqueta a DOS COLUMNAS en pantalla ancha (ver
-        .cabecera en estilos.css). El orden del DOM es el orden de
-        lectura —definición, lema, matiz, pregunta— y no cambia: la
-        rejilla solo decide dónde cae cada pieza. Quien lo oiga con
-        lector de pantalla lo oye en el orden que tiene sentido. */}
+    {/* La cabecera va en UNA COLUMNA CENTRADA, la misma a todos los
+        anchos (ver .cabecera en estilos.css). Estuvo a dos columnas y
+        el problema no era la maqueta: eran los DOS SITIOS por donde
+        empezar a leer. En una página que se abre asustada, elegir por
+        dónde entrar ya es trabajo. Ahora el orden del DOM y el orden
+        de lectura son el mismo y no hay nada que decidir: definición,
+        lema, matiz, pregunta. */}
     <div class="cabecera">
     <h2 class="herramientas__titulo">Sumisión química</h2>
     <p class="herramientas__intro">
@@ -53,10 +69,22 @@
         porque no es un dato más: es el criterio con el que se lee todo
         lo demás. Si alguien lee una sola línea de esta página, que sea
         esta. Y el realce cae sobre «no hay consentimiento», que es la
-        mitad que la gente no se cree de sí misma. */}
+        mitad que la gente no se cree de sí misma.
+
+        EL REALCE NO SE PINTA AQUÍ, Y AHORA MISMO NO SE PINTA EN NINGÚN
+        SITIO. Fue una aguada de CSS —cinco manchas encimadas, quieta y
+        siempre idéntica—, luego el ente de humo la pintó viva, y con el
+        ente retirado la frase se queda con su tratamiento tipográfico
+        solo: versalitas, negrita y prosa espaciada.
+
+        Eso era el respaldo declarado de esta línea y sigue bastando —
+        ninguna palabra de esta página depende de que un script cargue—,
+        pero conviene saber lo que cuesta: la sección se queda sin nada
+        que se mueva, y esta frase era lo que se miraba. Ver el
+        razonamiento entero en `.realce-vivo`, en estilos.css. */}
     <p class="lema">
       Sin capacidad de decidir,
-      <b class="realce realce--calma">no hay consentimiento.</b>
+      <b class="realce-vivo">no hay consentimiento.</b>
     </p>
 
     <p class="herramientas__intro">
@@ -65,25 +93,48 @@
       consentido</strong>, y no tener pruebas no significa que no ocurriera.
     </p>
 
-    {/* La pregunta que abre las cuatro puertas. Es mejor que «¿qué
-        necesitas?»: no le pide a nadie que diagnostique lo que le pasó
-        —eso es justo lo que no puede hacer— sino que conteste algo que
-        sí sabe. Y «no sé» ya es una respuesta que abre puerta.
+    {/* La pregunta se fue a su propia sección, `Decidir.astro`, justo
+        debajo de esta cabecera. Estaba aquí como un párrafo más y era
+        la frase que desmonta la culpa — la que de verdad hace trabajo
+        en esta página. Un subtítulo no puede cargar con eso. */}
+    </div>
 
-        SIN AGUADA, a propósito. Llevaba una y sobraba: el rojo es el
-        color del daño, y una pregunta no es un daño. Además, con tres
-        realces seguidos ninguno pesaba más que otro y la sección se
-        quedaba sin jerarquía. Aquí el nivel lo da el cuerpo y la
-        familia tipográfica, que es como se separa un rango del de
-        abajo sin gritar. */}
-    <div class="herramientas__pregunta">
-      <p class="pregunta__titulo">¿Pudiste decidir?</p>
-      <p class="herramientas__intro">
-        Si la respuesta es no, o no lo sabes, esto es lo que se puede
-        hacer. No hace falta contarlo ni estar segura de nada.
-      </p>
-    </div>
-    </div>
+    <Decidir />
+
+    {/* ── HOJA 2 · de «qué me pasó» a «dónde estoy» ─────────────────
+        Los cuatro cantos de papel de esta sección no son adorno ni
+        ritmo por ritmo: marcan los cuatro sitios donde cambia la
+        PREGUNTA que se está contestando. Aquí acaba la que nombra lo
+        ocurrido y empieza la que sitúa a quien lee en el tiempo.
+
+        Decorativos enteros —`aria-hidden`, sin texto—: quien navega
+        con lector de pantalla ya tiene los capítulos marcados por los
+        encabezados, y un separador anunciado sería un tabulador de más
+        en un recorrido que ya es largo. Ver `.hoja` en estilos.css. */}
+    <div class="hoja" aria-hidden="true"></div>
+
+    <!-- ═══ ESTÁS AQUÍ ══════════════════════════════════════════════
+         SEGUNDO, justo debajo de la definición. Estuvo al final de la
+         página, y el razonamiento de entonces era que cerraba: quien
+         bajaba leyendo llegaba aquí con las cuatro puertas y el reloj
+         ya vistos.
+
+         El orden nuevo responde a otra pregunta, y es la que de verdad
+         se hace quien acaba de leer la definición: «vale, ¿y yo dónde
+         estoy?». Nombrar lo que pasó y situarse en el tiempo son el
+         mismo gesto partido en dos, y separarlos por seis bloques
+         obligaba a leerse media página para completarlo.
+
+         Puesto aquí también hace de ÍNDICE: sus salidas apuntan a
+         #mapa, #salir, #reloj y #recordar, o sea a las puertas que
+         vienen justo debajo. Se elige un momento y la página ya sabe a
+         cuál de ellas mandarte.
+
+         Lo que se pierde: la frase «aunque hayan pasado 72 horas, la
+         ayuda continúa» ya no es lo último que se lee de la página.
+         Sigue estando, y sigue siendo verdad, pero ahora la cierra el
+         bloque de acompañar. -->
+    <RelojRescate />
 
     <!-- ═══ EL DESVÍO ═══════════════════════════════════════════════
          Cuatro puertas, no una lista. La primera es la más grande a
@@ -108,6 +159,11 @@
         <span class="puerta__pie">Se queda en tu teléfono. No se sube a ningún sitio.</span>
       </a>
     </div>
+
+    {/* ── HOJA 3 · de «dónde estoy» a «qué puedo hacer» ─────────────
+        Las cuatro puertas son el índice; lo que viene debajo son las
+        cuatro cosas. El canto separa elegir de hacer. */}
+    <div class="hoja" aria-hidden="true"></div>
 
     <!-- ═══ QUE ALGUIEN VENGA ═══════════════════════════════════════ -->
     <section class="bloque" id="salir">
@@ -146,6 +202,99 @@
       <noscript><p class="bloque__intro">Sin JavaScript no se puede girar
         el reloj. Lo que nunca depende de JavaScript es el teléfono y el
         botón de salir, abajo.</p></noscript>
+
+      {/* ── LO QUE AYUDA ─────────────────────────────────────────────
+          Se pinta AQUÍ, en el HTML, y no con JavaScript como el reloj:
+          esto es ayuda práctica y no puede depender de que un script
+          llegue. Con la página en bruto se lee entero.
+
+          Y va DESPUÉS del reloj a propósito. Primero se sabe qué sigue
+          abierto —que es lo que quita el pánico— y solo después qué se
+          puede hacer para que sirva mejor. Al revés, la primera cosa
+          que leería alguien recién llegado sería una lista de cosas que
+          probablemente ya hizo mal. */}
+      <div class="consejos">
+        <h4 class="consejos__titulo">Lo que ayuda, si todavía estás a tiempo</h4>
+        <p class="bloque__intro consejos__aviso">Nada de esto es obligatorio
+          y <strong>nada de esto es una condición para que te atiendan</strong>.
+          Si ya hiciste alguna, sigue valiendo la pena ir: lo anotan y el
+          examen sigue adelante.</p>
+
+        <ul class="consejos__lista">
+          {CONSEJOS.map((c) => (
+            <li class="consejo">
+              <p class="consejo__que">{c.titulo}</p>
+              <p class="consejo__porque">{c.porque}</p>
+              {/* La frase que impide que esto sea una lista de reproches.
+                  Va en cada uno, no una vez arriba: quien lee esto salta
+                  de punto en punto buscando el suyo. */}
+              <p class="consejo__ya">{c.yaLoHice}</p>
+            </li>
+          ))}
+        </ul>
+
+        {/* ── Y LO QUE SIRVE EN CUALQUIER MOMENTO ──────────────────────
+            El bloque de arriba le hablaba a UNA persona: a alguien a
+            quien acaba de pasarle, hace horas, y que va a ir a un
+            examen. Sus cinco puntos son la misma cosa dicha cinco veces
+            —preservar señales— y los cinco en negativo.
+
+            Eso dejaba fuera a casi todo el mundo que llega aquí, y
+            sobre todo a quien contesta «no sé», que es la respuesta
+            PRINCIPAL de esta herramienta: giraba la aguja y se
+            encontraba cinco cosas que ya no le servían y ninguna que
+            sí. La ley 1 de js/reloj.js dice que «no sé» devuelve más
+            opciones, nunca menos; en las ventanas se cumplía y aquí no.
+
+            VAN SEPARADOS Y NO MEZCLADOS EN UNA LISTA DE ONCE, porque
+            son dos respuestas a dos preguntas distintas. Los de arriba
+            tienen prisa; estos no tienen ninguna. Fundidos, los que
+            corren se perderían entre los que no, que es exactamente la
+            forma de que alguien no lea el que le tocaba.
+
+            Y NINGUNO LLEVA FUENTE porque ninguno afirma nada: no dicen
+            qué pasa en un cuerpo ni qué está obligado a hacer nadie,
+            dicen qué puede hacer ella con su teléfono, su memoria y
+            quien tenga cerca. El razonamiento entero —y la regla de qué
+            NO puede entrar aquí— está en la cabecera de
+            CONSEJOS_SIEMPRE en js/reloj.js. */}
+        <h4 class="consejos__titulo consejos__titulo--siempre">
+          Y esto sirve aunque hayan pasado días
+        </h4>
+        <p class="bloque__intro consejos__aviso">Ninguna de estas depende de
+          la hora, ni de un hospital, ni de que decidas nada todavía.
+          <strong>Son cosas que dependen solo de ti</strong>, y siguen
+          valiendo dentro de un mes.</p>
+
+        <ul class="consejos__lista">
+          {CONSEJOS_SIEMPRE.map((c) => (
+            <li class="consejo consejo--siempre">
+              <p class="consejo__que">{c.titulo}</p>
+              <p class="consejo__porque">{c.porque}</p>
+              <p class="consejo__ya">{c.yaLoHice}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* DE DÓNDE SALE CADA NÚMERO. Va dentro del bloque del reloj y no
+          escondido en un pie: un dato médico sin fuente a la vista es un
+          rumor con tipografía bonita. */}
+      <details class="fuentes">
+        <summary>De dónde salen estos plazos</summary>
+        <ul class="fuentes__lista">
+          {FUENTES.map((f) => (
+            <li>
+              <a href={f.url} rel="noopener noreferrer" target="_blank">{f.titulo}</a>
+              <span class="fuentes__quien">{f.entidad}. {f.nota}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="sinfuente">Contrastado contra estos documentos, pero
+          <strong>todavía sin verificar</strong> por una persona con criterio
+          clínico: falta confirmar que siguen vigentes. Por eso el sitio
+          lleva <code>noindex</code>.</p>
+      </details>
     </section>
 
     <!-- ═══ SIN HABLAR ══════════════════════════════════════════════ -->
@@ -189,26 +338,23 @@
     </section>
 
     <!-- ═══ CARTOGRAFÍA ═════════════════════════════════════════════
-         Mapa real: se arrastra, hace zoom y admite puntero. Carga en
-         diferido para no competir nunca con la ayuda. -->
-    <section class="bloque bloque--mapa" id="mapa">
-      <h3>Dónde ir</h3>
-      <p>Elige tu ciudad. El mapa se mueve con el dedo o con el ratón.
-        <strong>No se envía tu ubicación a este sitio</strong>; si pulsas
-        «dónde estoy» se usa solo para centrar el mapa.</p>
+         Tres mapas —emergencia, luz y sombra— sobre el mismo dibujo sin
+         topónimos. Se fue a su propio componente porque ya no es un
+         bloque: es una herramienta con estado, con red y con datos que
+         pone quien lo usa. Carga en diferido para no competir nunca con
+         la ayuda. -->
+    {/* ── HOJA 4 · de «qué puedo hacer» a «dónde» ───────────────────
+        El mapa es la única herramienta con red y con datos de fuera:
+        merece hoja propia. */}
+    <div class="hoja" aria-hidden="true"></div>
 
-      <div class="mapa" id="mapa-host">
-        <div class="mapa__ciudades" role="group" aria-label="Ciudad"></div>
-        <div class="mapa__lienzo" role="application"
-             aria-label="Mapa de lugares de atención"></div>
-        <p class="mapa__aviso" hidden="hidden"></p>
-        <div class="mapa__barra">
-          <div class="mapa__capas"></div>
-          <button type="button" class="boton mapa__aqui">Dónde estoy</button>
-        </div>
-        <div class="mapa__listado"></div>
-      </div>
-    </section>
+    <Mapa />
+
+    {/* ── HOJA 5 · del ahora al después ─────────────────────────────
+        Todo lo de arriba contesta a «está pasando». Lo de abajo, a «ya
+        pasó» y a «le pasó a otra persona». Es el cambio de sujeto más
+        grande de la página y era el único que no se veía venir. */}
+    <div class="hoja" aria-hidden="true"></div>
 
     <!-- ═══ YA ME PASÓ ══════════════════════════════════════════════ -->
     <section class="bloque" id="ya-paso">
@@ -246,4 +392,5 @@
           interpretar, sin corregirle la memoria.</li>
       </ul>
     </section>
+
   </section>

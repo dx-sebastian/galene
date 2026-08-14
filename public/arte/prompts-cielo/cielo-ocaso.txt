@@ -1,0 +1,96 @@
+You are painting ONE plate for a hand-painted watercolour scene. Read
+every rule before you start. The rules are not style suggestions: the
+plate is composited by a shader and a plate that breaks them is thrown
+away.
+
+=== 1 - WHAT TO PAINT ===
+SUBJECT >>> ALTOCUMULUS IN RANKS, a mackerel sky. Many small cloudlets gathered
+into two or three loose horizontal shoals across the MIDDLE BAND of
+the sheet, getting smaller and closer together toward the bottom, the
+way they do when they recede toward the horizon. Each cloudlet is ONE
+touch of the brush and nothing more. The shoals clump in places and
+thin out to bare paper in others - never evenly spaced, never the same
+size. Vary the value from cloudlet to cloudlet: some almost solid,
+some barely a stain, because at sunset each one catches the light
+separately. This is the busiest of the four skies and still 65% of the
+sheet is untouched.
+
+=== 2 - THE FIVE HARD RULES ===
+R1. TRANSPARENT BACKGROUND, true alpha. No white, no cream, no paper
+    tone, no colour of any kind behind the subject. Not "white that
+    looks like transparent" - actually transparent.
+R2. NO HALO. No pale outline, fringe, glow or soft edge of background
+    colour clinging to the subject. No stray coloured pixels anywhere.
+R3. NOTHING BUT THE SUBJECT. No horizon, no ground, no sky, no water,
+    no sun, no moon, no stars, no shadow, no reflection, no frame, no
+    border, no signature, no text, no numbers, no watermark.
+R4. AT LEAST HALF THE SHEET IS BARE. The empty area is not wasted
+    space, it is the picture. If in doubt, paint less.
+R5. ONE PASS ONLY. Painted wet, painted fast, and then abandoned. Never
+    go back over something that has dried.
+
+=== 3 - WHY YOUR WATERCOLOURS COME OUT LOOKING LIKE PHOTOGRAPHS ===
+This is the part that usually fails. A render of a watercolour and a
+watercolour differ in four specific, checkable ways. Obey all four.
+
+W1. EDGES, NOT GRADIENTS. Real watercolour dries into FLAT SHAPES with
+    a HARD EDGE where the puddle stopped. Smooth continuous shading is
+    the single clearest sign of a digital render. Every wash must be
+    either flat, or lost into bare paper, and it must have at least one
+    hard dried edge. NO airbrushed falloff. NO soft glow. NO blur.
+W2. GRANULATION INSTEAD OF DETAIL. The interest comes from the pigment
+    separating and settling into the paper's tooth, so no wash is ever
+    one even tone. It does NOT come from drawing more things. Detail is
+    what makes it look rendered; grain is what makes it look painted.
+W3. FEWER STROKES THAN YOU THINK. Each element gets two or three
+    touches of the brush and no more. A shape that took twenty strokes
+    reads as a render no matter how it is textured. Suggest the mass
+    and stop. Where the brush skipped over the tooth, leave the broken
+    white speckle inside the stroke - do not fill it in.
+W4. NO LIGHTING. There is no sun, no light source, no highlight, no
+    cast shadow, no ambient occlusion, no depth of field. Flat, even,
+    diffuse light everywhere. Form comes from the value of the wash,
+    not from illumination.
+
+Accidents are welcome - backruns that bloomed where a wet stroke met a
+drier one, a hard edge where a puddle dried, a run that went too far -
+but only as CONSEQUENCES of painting fast. Do not place them
+decoratively. A painting that has accidents and a painting that
+suffered them do not look alike.
+
+=== 4 - COLOUR ===
+GREY AND NOTHING ELSE: a cool neutral grey with a trace of raw umber,
+and no other pigment anywhere in the image. This is deliberate and it
+matters - the colour of the hour is added afterwards by the shader, so
+this painting must carry only VALUE: where the cloud is dense and where
+it is barely there. A plate that arrives already pink or golden fights
+the palette and looks dirty at three in the afternoon.
+Never pure black. Never white paint - the white is the paper.
+
+=== 5 - OUTPUT ===
+PNG with a real alpha channel. Landscape 3:2, at least 2400 px wide.
+Edges seamless left and right: the plate is tiled horizontally, so what
+leaves the right edge must arrive at the left.
+
+=== 6 - CHECK BEFORE YOU ANSWER ===
+Go through this list. If any answer is no, paint it again.
+  [ ] Is the background genuinely transparent, with no halo?
+  [ ] Is more than half the sheet bare?
+  [ ] Is the whole image grey - no pink, no gold, no blue?
+  [ ] Does every wash have at least one hard dried edge?
+  [ ] Is there any smooth gradient anywhere? There must not be.
+  [ ] Can I see the grain of the paper through the paint?
+  [ ] Did I add a horizon, a sun, a moon, a star or a shadow? Remove it.
+  [ ] Does the left edge continue into the right edge?
+
+=== NEGATIVE ===
+blue sky, sky gradient, background colour, coloured clouds, pink, gold,
+orange, sunrise colours, sunset postcard, golden hour, white background,
+cream background, halo, fringe, outline, ink line, smooth gradient,
+airbrush, soft focus, blur, bloom, glow, god rays, lens flare,
+highlight, cast shadow, ambient occlusion, depth of field, sun, moon,
+stars, starfield, 3D render, CGI, photorealistic, HDR, oversaturated,
+neon, digital painting, concept art, illustration, storybook, cotton
+wool, decorative, symmetrical, evenly spaced, repeating pattern, tidy,
+finished, polished, overworked, signature, watermark, text, numbers,
+border, frame, fish scales, honeycomb, grid, tessellation.

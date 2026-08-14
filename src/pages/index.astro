@@ -13,13 +13,15 @@
    ═══════════════════════════════════════════════════════════════════ */
 import '../estilos/estilos.css';
 import Mundo from '../componentes/Mundo.astro';
+import Boca from '../componentes/Boca.astro';
 import Herramientas from '../componentes/Herramientas.astro';
+import Cierre from '../componentes/Cierre.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <!doctype html>
-<html lang="es" data-tinta="oscura">
+<html lang="es" data-tinta="oscura" class="cargando">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -30,6 +32,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   <meta property="og:title" content="Galene — Sumisión química: qué hacer, y hasta cuándo" />
   <meta property="og:description" content="Qué se puede hacer después de una sumisión química, y hasta cuándo." />
   <meta name="theme-color" content="#2E4256" />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
   <meta property="og:image" content={base + 'arte/1024/manglar-enterrado-a.webp'} />
 
   {/* BORRADOR: mientras las ventanas médicas no estén verificadas contra
@@ -38,20 +41,174 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+
+  {/* La clase viene en el HTML, no la añade JavaScript después: así no
+      existe un fotograma en que el contenido aparece y vuelve a taparse. */}
+  <noscript><style>.cargando .cargador{display:none}.cargando main,.cargando .mundo{visibility:visible!important;opacity:1!important}</style></noscript>
 </head>
 
 <body>
+  <div class="cargador" id="cargador" role="status" aria-live="polite"
+       aria-label="Preparando la acuarela">
+    <svg class="cargador__marca" viewBox="0 0 180 120" aria-hidden="true" focusable="false">
+      <path class="cargador__agua cargador__agua--fondo"
+            d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
+      <path class="cargador__agua cargador__agua--medio"
+            d="M17 72 C39 49 61 88 86 63 S128 49 163 70" />
+      <path class="cargador__agua cargador__agua--filo"
+            d="M22 67 C43 43 62 83 85 58 S126 45 158 65" />
+    </svg>
+    <span class="cargador__nombre">Galene</span>
+    <span class="cargador__estado">Preparando la acuarela</span>
+  </div>
+
   <Mundo />
 
   <main>
     <section class="hero" id="mar">
+
+      {/* ── LA BARRA ────────────────────────────────────────────────────
+          Va DENTRO del hero y no antes de <main>, y no es un descuido:
+          `.hero` es la rejilla que reparte la altura de la pantalla
+          (auto 1fr auto auto) y el paisaje se agacha o se levanta según
+          dónde acabe el bloque de texto. Una barra flotando por fuera
+          de esa rejilla se solaparía con la fila 2 en cuanto la ventana
+          fuera baja, que es exactamente el caso que este hero ya sabe
+          resolver. El precio es que <header> aquí dentro NO es el
+          landmark `banner` —solo lo es cuando cuelga del <body>—; el
+          <nav> sí conserva el suyo, que es el que se usa para saltar.
+
+          Sin fondo ni caja: la barra se para sobre la pintura, como
+          todo lo demás del hero. Lo que la hace legible al crepúsculo
+          es el mismo lavado que protege el título, no una banda opaca
+          — ver `.barra::before` en estilos.css. */}
+      <header class="barra">
+        {/* EL LOGOTIPO. La palabra y, debajo, un filete de ola del ancho
+            exacto de la palabra. La ola va en SVG EN LÍNEA y con
+            `stroke: currentColor` a propósito: así hereda la tinta de la
+            hora igual que la letra, y a las 20:00 se aclara con ella. Una
+            imagen no podría — sería un trazo oscuro fijo sobre un cielo
+            que ya se volvió noche. */}
+        <a class="marca" href="#mar">
+          <span class="marca__nombre">Galene</span>
+          <svg class="marca__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
+               aria-hidden="true" focusable="false">
+            <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
+                     S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
+                  fill="none" stroke="currentColor" stroke-width="1.15"
+                  stroke-linecap="round" vector-effect="non-scaling-stroke" />
+          </svg>
+        </a>
+
+        <nav class="barra__nav" aria-label="Principal">
+          <a class="barra__enlace" href="#herramientas">Información</a>
+          {/* «Recursos» apunta a #sin-hablar —«Pedir ayuda sin hablar»,
+              la lista de canales—, que es la única ancla del sitio que
+              de verdad contiene recursos. No se inventa ninguna ruta: si
+              ese bloque cambiara de id, este enlace se queda sin destino
+              y hay que traerlo aquí. */}
+          <a class="barra__enlace" href="#sin-hablar">Recursos</a>
+          {/* «Comunidad» es el ÚNICO enlace de la barra que sale de la
+              portada, y por eso lleva ruta compuesta con la base y no
+              un ancla: `#algo` viaja dentro de esta página, `comunidad`
+              es otra. En móvil se va con los otros dos rótulos (ver el
+              bloque de `.barra__enlace` a 700 px en estilos.css): la
+              barra del teléfono guarda el logotipo y la píldora, y
+              nada más. */}
+          <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
+          {/* LA PÍLDORA es la ruta a la ayuda y por eso es lo último de
+              la fila —lo último que se lee es lo que se recuerda— y lo
+              único con contorno. Va a #salir, «Que alguien venga por
+              mí», que es la primera puerta de la misma sección: mandarla
+              al principio de #herramientas la obligaría a leerse la
+              definición antes de poder pedir que alguien vaya. */}
+          <a class="pildora" href="#salir">
+            Buscar ayuda
+            <svg class="pildora__icono" viewBox="0 0 14 12"
+                 aria-hidden="true" focusable="false">
+              <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
+                    fill="none" stroke="currentColor" stroke-width="1.3"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    vector-effect="non-scaling-stroke" />
+            </svg>
+          </a>
+        </nav>
+      </header>
+
       {/* SEO: el H1 lleva la FRASE DE BÚSQUEDA, no la marca. Nadie
           busca "Galene"; buscan "sumisión química qué hacer". La marca
           queda arriba como lema, igual de grande — la jerarquía visual
-          y la semántica no tienen por qué coincidir. */}
+          y la semántica no tienen por qué coincidir.
+
+          Y VA TODO EN UN SOLO `.hero__texto`, no en dos hermanos: esa
+          caja es lo que mide `medidas()` en js/main.js para decidir
+          dónde cae el horizonte, y lo que mide `calibrarLavado()` para
+          saber cuánto lavado hace falta detrás. Partirla en dos dejaría
+          la mitad del texto fuera de las dos medidas.
+
+          Las MAYÚSCULAS de la marca y del subtítulo se ponen desde el
+          CSS. Escritas en el HTML, un lector de pantalla las deletrea
+          letra por letra. */}
       <div class="hero__texto">
         <p class="titulo">Galene</p>
-        <h1 class="lockup">Sumisión química: qué hacer, y hasta cuándo.</h1>
+        <h1 class="lockup">Sumisión química en Colombia</h1>
+
+        {/* El filete que separa el rótulo de la declaración. En SVG y no
+            en un `border-top` por lo mismo que la ola del logotipo:
+            hereda la tinta, y una raya trazada a mano no es recta. */}
+        <svg class="hero__filete" viewBox="0 0 44 4" aria-hidden="true" focusable="false">
+          <path d="M1 2.5 C 9 1.3, 17 3.1, 25 2 S 38 2.1, 43 2.6"
+                fill="none" stroke="currentColor" stroke-width="1.1"
+                stroke-linecap="round" vector-effect="non-scaling-stroke" />
+        </svg>
+
+        <p class="hero__declaracion">Información clara y apoyo para actuar
+          con seguridad.</p>
+
+        {/* NO hay botón relleno en el hero. La lámina del CTA
+            (`.cta`) sigue existiendo en la hoja y en js/paralaje.js
+            porque se usa en otras secciones; aquí la entrada a la ayuda
+            es un enlace subrayado, que es lo que pide la referencia y lo
+            que deja que el cuadro mande. */}
+        <a class="hero__enlace" href="#herramientas">
+          <span>Conocer más</span>
+          <svg class="hero__flecha" viewBox="0 0 12 16" aria-hidden="true" focusable="false">
+            <path d="M6 1.5 V13.8 M1.8 9.3 L6 14.4 L10.2 9.3"
+                  fill="none" stroke="currentColor" stroke-width="1.4"
+                  stroke-linecap="round" stroke-linejoin="round"
+                  vector-effect="non-scaling-stroke" />
+          </svg>
+        </a>
+
+        {/* ── QUIÉNES SON LAS GARZAS ────────────────────────────────────
+            (No se pinta hoy: la línea se retiró en otra sesión y este
+            encargo no la devuelve. Se conserva el razonamiento porque es
+            el argumento del sitio, no una nota de maquetación.)
+            Sin esta línea, la bandada del árbol es decoración bonita. Con
+            ella, es el argumento entero del sitio dicho sin decirlo: no
+            estás sola.
+
+            SIN NÚMERO, Y NO POR ESTILO. Decir «doce personas han estado
+            aquí» convierte la frase en un recuento de víctimas, que es lo
+            único que la regla 9 de este proyecto prohíbe expresamente. Y
+            además sería mentira: no hay servidor, así que el sitio no
+            puede saber cuántas fueron. Lo que sí es cierto es que hubo
+            otras, y eso es exactamente lo que dice.
+
+            EN DOS FRASES Y EN ESTE ORDEN. Primero las otras, después la
+            suya. Al revés —«esta eres tú, y esas son las demás»— la
+            primera mitad suena a que el sitio la señala a ella. Así, la
+            segunda frase llega cuando ya sabe que hay compañía, y lo que
+            hace es meterla dentro.
+
+            «La de abajo es la tuya» funciona porque es LITERALMENTE
+            cierto: esa garza cae en la rama cercana en los primeros
+            segundos porque es quien acaba de abrir el sitio. No se está
+            inventando nada — se está nombrando algo que ya pasa en
+            pantalla y que hasta ahora nadie podía entender.
+
+            Va en el plano más cercano, con la nota de la hora, y se va
+            con ella al bajar: es un susurro, no un cartel. */}
       </div>
 
       {/* Aquí vivía un <img> con manglar-enterrado-a.webp, encima del
@@ -61,13 +218,77 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
           de color y sin paralaje ni luz de la hora. Se veía como una
           calcomanía pegada sobre la pintura, que es justo lo que era. */}
 
-      <a class="cta" href="#herramientas">Qué puedo hacer ahora</a>
-
+      {/* LA NOTA DE LA HORA. Nace vacía y casi siempre lo está: js/main.js
+          le escribe «El sol sale a las 5:54» solo en las horas previas al
+          amanecer, cuando saber cuánto falta para que amanezca es la
+          única información que el sitio puede dar y que sirve de algo.
+          El id es lo que busca main.js; la clase, lo que anima
+          js/paralaje.js. Los dos hacen falta. */}
       <p class="hero__nota" id="nota-hora"></p>
+
+      {/* EL INDICADOR DE SCROLL VA OCULTO A LA ASISTENCIA TÉCNICA, y es
+          deliberado: «Desliza» no es información, es un dibujo que dice
+          que hay más abajo. Quien navega con teclado o lector ya tiene
+          esa misma puerta dos veces —«Conocer más» arriba e
+          «Información» en la barra—, y un tercer tabulador que hace lo
+          mismo solo alarga el recorrido. */}
+      <p class="desliza" aria-hidden="true">
+        Desliza
+        <svg class="desliza__flecha" viewBox="0 0 14 18" focusable="false">
+          <path d="M7 1 V15 M2.2 10.4 L7 15.8 L11.8 10.4"
+                fill="none" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"
+                vector-effect="non-scaling-stroke" />
+        </svg>
+      </p>
     </section>
 
+    {/* LA BOCA va ENTRE el hero y las herramientas, y en el flujo de
+        <main>: es la costura donde el agua se convierte en hoja. Estuvo
+        metida dentro de `#herramientas` como un relleno superior y
+        obligaba a tres apaños —fondo transparente, aguadas desplazadas
+        y un ancla con margen negativo— que se cayeron solos al sacarla.
+        No lleva ni una palabra: ver Boca.astro. */}
+    <Boca />
+
     <Herramientas />
+
+    {/* Y EL CIERRE, después de todo. La página no terminaba, se
+        cortaba: ahora la hoja se descuelga y vuelve a aparecer el mar,
+        que es por donde se entró. También sin palabras — ver
+        Cierre.astro, donde está el razonamiento de por qué no lleva
+        una frase de despedida ni repite la de las 72 horas. */}
+    <Cierre />
   </main>
+
+  {/* (AQUÍ IBAN LOS DOS LIENZOS DEL ENTE. La idea del humo se retiró.
+
+      Se dejan escritas las dos cosas que se aprendieron montándolo,
+      porque valen igual sin él:
+
+      1 · EL SITIO DE UN LIENZO ENTRE FONDO Y LETRA se consigue con el
+          ORDEN DEL DOCUMENTO, no con un z-index más alto. Las capas de
+          la sección 2 son `z-index: 0` (.herramientas__fondo) y
+          `z-index: 1` (el contenido), y todas viven en el mismo
+          contexto de apilado porque .herramientas es `relative` con
+          `z-index: auto`. Entre dos elementos con el MISMO z-index gana
+          el que va después: un lienzo con z-index 0 puesto detrás de
+          </main> queda cosido exactamente entre el fondo y la letra.
+
+          No era estética. Estuvo un rato por encima del texto, en
+          z-index 2, y al medirlo el peor píxel bajaba de 14.73:1 a
+          5.56:1 — pasa el 4.5:1 exigido, pero por un margen más fino
+          que el que este proyecto se exige a sí mismo en el hero (5.4)
+          y sobre un texto que alguien va a leer de madrugada. Debajo,
+          la garantía deja de ser un número que hay que remedir cada vez
+          que se toca una opacidad: es la estructura.
+
+      2 · LA PROFUNDIDAD NO LA DA EL PARALAJE, LA DA LA OCLUSIÓN. Lo que
+          está siempre detrás de todo no se lee como que está aquí: se
+          lee como fondo. Por eso el ente necesitaba DOS planos, uno por
+          delante de las tarjetas y otro por detrás. Cualquier cosa que
+          en el futuro tenga que parecer cercana en esta página va a
+          necesitar lo mismo.) */}
 
   {/* TRES ISLAS SEPARADAS, NO UNA.
 
@@ -81,8 +302,22 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       enhancement, y si falla el sitio sigue sirviendo. Con un <script>
       por módulo cada uno tiene su propio grafo: el que se rompa se
       rompe solo. La ayuda no depende de que la pintura compile. */}
+  {/* La entrada va PRIMERA para que la clase se ponga antes de que
+      el mar pinte su primer cuadro. Si llegara después, el mundo
+      aparecería montado y luego se desharía para volver a montarse. */}
+  <script>import '../js/entrada.js';</script>
   <script>import '../js/main.js';</script>
   <script>import '../js/paralaje.js';</script>
+  {/* El descenso. Isla aparte por la misma razón que las demás: si el
+      mar o el paralaje se caen, los bloques de ayuda siguen llegando
+      con su tiempo, y si se cae ESTE, la página de abajo se ve entera
+      y quieta — que es su estado por defecto, no un modo degradado. */}
+  <script>import '../js/desplazamiento.js';</script>
+  {/* Las escenas: la boca, el reloj y el cierre. Isla propia — si esto
+      no llega, las tres se ven en su estado final, quietas y enteras.
+      No es un modo degradado: es la misma página sin el tiempo. */}
+  <script>import '../js/escenas.js';</script>
   <script>import '../js/herramientas.js';</script>
+  <script>import '../js/decidir.js';</script>
 </body>
 </html>

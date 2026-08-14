@@ -12,3 +12,4 @@ Thumbs.db
 **/arte/fuente/
 dist/
 .astro/
+tmp/

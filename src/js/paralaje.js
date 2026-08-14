@@ -6,7 +6,14 @@
    main.js hunde el lienzo un 18 % al bajar. Este módulo es el OTRO
    lado de la ventana: el plano del texto.
 
-   Tres gestos, y solo tres:
+   Cuatro gestos, y solo cuatro:
+
+   0. LA SECCIÓN 2 LLEGA DESDE ABAJO. Es el único que no es del hero:
+      `#herramientas` sube unos píxeles y se revela mientras entra,
+      atado al scroll y no a un reloj. Va aquí y no en un observador
+      con clases CSS porque tiene que poder DESHACERSE al subir: quien
+      vuelve arriba tiene que encontrar el sitio como lo dejó, no una
+      animación que ya se gastó.
 
    1. AL BAJAR, EL TEXTO NO SE VA CON LA PÁGINA — se queda con el
       cielo. Se desplaza a menos de la mitad de la velocidad del
@@ -41,13 +48,45 @@ const texto = document.querySelector('.hero__texto');
 const cta   = document.querySelector('.cta');
 const nota  = document.querySelector('.hero__nota');
 
+/* EL «DESLIZA» ES UNA INSTRUCCIÓN, y una instrucción que ya se cumplió
+   sobra. Se va con el primer palmo de scroll —antes que nada, porque es
+   lo primero que deja de ser cierto— y se busca por sus dos nombres
+   posibles: la maqueta del hero se está reescribiendo en paralelo y hoy
+   la clase es `.desliza`. Si mañana no existe ninguna de las dos,
+   `poner()` ignora el nulo y aquí no pasa nada. */
+const desliza = document.querySelector('.desliza, .hero__deslizar');
+
 /* La sección 2 y sus aguadas. Van aparte del hero: si un día el hero
-   cambia o desaparece, el fondo de las herramientas sigue vivo. */
-const seccion = document.getElementById('herramientas');
+   cambia o desaparece, el fondo de las herramientas sigue vivo.
+
+   Y SE BUSCA POR DOS NOMBRES. `#herramientas` es la sección de lectura
+   de la portada; `[data-seccion-hoja]` es el ancla genérica que usan las
+   páginas que no llevan hero —la comunidad, por ejemplo—, que
+   reutilizan las mismas capas de fondo y quieren el mismo descuelgue.
+   El id va primero para que en la portada nada cambie de sitio.
+
+   UN SOLO ATRIBUTO PARA LOS DOS MÓDULOS DE LA HOJA. `desplazamiento.js`
+   busca su sección exactamente igual, y con el mismo nombre: son dos
+   gestos distintos sobre la misma cosa —la hoja de papel que se
+   desliza—, y darle un atributo a cada uno significaría que un día una
+   página lleva uno y no el otro sin que nadie se dé cuenta. */
+const seccion = document.getElementById('herramientas') ||
+                document.querySelector('[data-seccion-hoja]');
 const capas = [...document.querySelectorAll('.fondo__capa')]
   .map((el) => ({ el, hondo: parseFloat(el.dataset.hondo) || 0.8 }));
 
-if (hero && texto) arrancar();
+/* EL GATE NO PUEDE PEDIR `texto`. Pedía `hero && texto`, y el día que
+   el hero se quedó sin una sola palabra `.hero__texto` desapareció del
+   DOM y con él se apagaba TODO el paralaje: el CTA, la nota de la hora
+   y las aguadas de la sección 2, que no tienen nada que ver con el
+   texto. `poner()` y `apagar()` ya ignoran los nulos, así que con el
+   hero basta.
+
+   Y TAMPOCO PUEDE PEDIR SOLO EL HERO, por lo mismo una vuelta más
+   arriba: hay páginas que llevan las aguadas y no llevan mar. Con
+   cualquiera de los dos hay algo que animar; sin ninguno, este módulo
+   no tiene trabajo y se calla. */
+if (hero || seccion) arrancar();
 
 function arrancar() {
   /* ── Estado. Todo lo animado tiene valor actual y objetivo: nada
@@ -61,6 +100,9 @@ function arrancar() {
 
   // Scroll, ya leído (el listener solo marca; se lee en el cuadro).
   let s = 0, ultimoScrollY = -1;
+  // Lo que la entrada de la sección 2 le tiene puesto ahora mismo, para
+  // poder descontarlo al medirla: si no, se mide a sí misma.
+  let alzaSeccion = 0;
 
   /* ── Entradas ──────────────────────────────────────────────────────
      TODA entrada del usuario despierta el bucle. Esto es lo que hace
@@ -100,7 +142,12 @@ function arrancar() {
   /* DOS zonas vigiladas, no una. El bucle tiene que seguir corriendo
      cuando el hero ya salió por arriba pero la sección 2 está en
      pantalla — que es justo cuando sus aguadas hacen su trabajo. */
-  let heroDentro = true, seccionDentro = false;
+  /* `heroDentro` arranca en `!!hero` y no en `true`: en una página sin
+     hero, un `true` de partida haría que `cuadro()` devolviera siempre
+     «sigue» y el rAF no se dormiría nunca — un bucle a 60 Hz sobre una
+     página quieta, que es justo lo que este módulo se cuida de no
+     hacer. */
+  let heroDentro = !!hero, seccionDentro = false;
   const ojo = new IntersectionObserver((entradas) => {
     for (const e of entradas) {
       if (e.target === hero) heroDentro = e.isIntersecting;
@@ -109,7 +156,7 @@ function arrancar() {
     visible = heroDentro || seccionDentro;
     if (visible && !quieto.matches) bucle();
   }, { threshold: 0 });
-  ojo.observe(hero);
+  if (hero) ojo.observe(hero);
   if (seccion) ojo.observe(seccion);
 
   /* ── Escritura perezosa: al DOM solo si cambió. ───────────────────
@@ -189,8 +236,15 @@ function arrancar() {
     poner(nota, 'translate', `0px ${(s * innerHeight * 0.22).toFixed(1)}px`);
     poner(nota, 'opacity', (1 - Math.min(1, s * 2.4)).toFixed(3));
 
-    /* ── 3 · LAS AGUADAS DE LA SECCIÓN 2 ─────────────────────────────
-       El modelo es el mismo que el del mundo del hero: `hondo` es
+    /* Y el «Desliza» se va antes todavía —a un tercio de pantalla ya no
+       está—, porque no es un plano del cuadro sino una instrucción, y
+       en cuanto la persona desliza deja de ser verdad. Baja poco (0.12)
+       a propósito: lo que la borra es que se apaga, no que se mueva. */
+    poner(desliza, 'translate', `0px ${(s * innerHeight * 0.12).toFixed(1)}px`);
+    poner(desliza, 'opacity', (1 - Math.min(1, s * 3.2)).toFixed(3));
+
+    /* ── LA SECCIÓN 2: SU LLEGADA (0) Y SUS AGUADAS (3) ──────────────
+       El modelo de las aguadas es el mismo que el del mundo del hero: `hondo` es
        cuánto se clava la capa al viewport. 1 = fija a la pantalla
        (infinitamente lejos), 0 = pegada a la página (a ras). Las
        nubes van a 0.94 y el manglar a 0.66, así que al bajar el
@@ -205,9 +259,49 @@ function arrancar() {
        justo en el cuadro en que la sección vuelve a entrar — un salto
        al reaparecer. Se calcula siempre; el que no pinta es el
        navegador, que para eso la sección está fuera de pantalla. */
-    if (seccion && capas.length) {
+    if (seccion) {
+      /* UNA sola medida por cuadro para las dos cosas: la entrada de la
+         sección y el descuelgue de sus aguadas. Eran dos
+         getBoundingClientRect del mismo elemento en el mismo cuadro. */
       const r = seccion.getBoundingClientRect();
-      const dentro = Math.max(0, -r.top);      // px de sección recorridos
+
+      /* ── LA SECCIÓN LLEGA DESDE ABAJO ──────────────────────────────
+         Empieza cuando su canto superior toca el borde inferior de la
+         ventana y termina cuando ha subido un 28 % de pantalla: para
+         cuando se ve un tercio de la sección, ya está entera. Atado al
+         SCROLL y no a un reloj, así que ni salta al soltar ni se queda
+         a medias si alguien se detiene — el valor que corresponde a esa
+         posición es el que está escrito, y al subir se deshace solo.
+
+         Sube 26 px, que es poco a propósito: el gesto que se lee es el
+         de revelarse, y el desplazamiento solo está para que la sección
+         parezca venir de detrás del hero en vez de estar ya ahí,
+         esperando. Más de 40 px y el texto se lee subiendo, que es un
+         efecto de plantilla.
+
+         Y al llegar a 1 se BORRAN las dos propiedades en vez de
+         escribir `1` y `0px`: una opacidad menor que uno sobre una
+         sección de doce mil píxeles obliga al navegador a componerla
+         aparte, y una transformación en el ancestro le cambia el
+         bloque contenedor a lo que lleve dentro (aquí hay un `sticky`
+         más abajo). Ninguna de las dos cosas puede quedarse encendida
+         para siempre por un gesto que dura medio segundo. */
+      /* Y SE MIDE DESCONTANDO LO QUE ESTA MISMA CUENTA YA ESCRIBIÓ. El
+         rectángulo incluye la transformación propia, así que medirlo a
+         secas es medir la sección con los 26 px que le acabo de poner:
+         la entrada se alimentaba de su propia salida. Converge —el lazo
+         vale un 10 % del recorrido— pero es un lazo, y aquí no hace
+         falta ninguno: se resta lo aplicado y se mide el sitio donde la
+         sección de verdad está. */
+      const RECORRIDO = 0.28;                  // en alturas de ventana
+      const arriba = r.top - alzaSeccion;
+      const entra = suave3(Math.min(1, Math.max(0,
+        (innerHeight - arriba) / (innerHeight * RECORRIDO))));
+      alzaSeccion = (1 - entra) * 26;
+      poner(seccion, 'translate', entra >= 1 ? '' : `0px ${alzaSeccion.toFixed(1)}px`);
+      poner(seccion, 'opacity',   entra >= 1 ? '' : entra.toFixed(3));
+
+      const dentro = Math.max(0, -arriba);     // px de sección recorridos
       for (const { el, hondo } of capas) {
         /* Deriva lateral con el puntero, proporcional a la CERCANÍA:
            lo lejano casi no se mueve, lo cercano sí. Es el mismo
@@ -260,7 +354,10 @@ function arrancar() {
   /* Movimiento apagado: el hero vuelve a ser el documento plano y las
      aguadas se quedan donde las dejó el CSS. Sigue siendo un cuadro. */
   function apagar() {
-    for (const el of [texto, cta, nota, ...capas.map((c) => c.el)]) {
+    /* `seccion` entra en la lista: con movimiento apagado la sección 2
+       tiene que estar SIEMPRE entera y opaca, esté donde esté el
+       scroll. Es el gesto que más fácil se quedaría a medias. */
+    for (const el of [texto, cta, nota, desliza, seccion, ...capas.map((c) => c.el)]) {
       if (!el) continue;
       el.style.translate = '';
       el.style.opacity = '';
@@ -269,6 +366,7 @@ function arrancar() {
     /* WeakMap no tiene clear(): se cambia por uno nuevo y el viejo se
        recoge solo. Sin esto, apagar() reventaba con un TypeError. */
     previo = new WeakMap();
+    alzaSeccion = 0;      // lo que se acaba de borrar del DOM
   }
 
   quieto.addEventListener('change', () => {
