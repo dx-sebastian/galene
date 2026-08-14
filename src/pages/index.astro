@@ -41,6 +41,9 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+  <link rel="preload" as="image" type="image/webp" fetchpriority="high"
+        media="(max-width: 700px)"
+        href={base + 'arte/mobile/manglar-v2.webp'} />
 
   {/* La clase viene en el HTML, no la añade JavaScript después: así no
       existe un fotograma en que el contenido aparece y vuelve a taparse. */}
@@ -306,7 +309,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       el mar pinte su primer cuadro. Si llegara después, el mundo
       aparecería montado y luego se desharía para volver a montarse. */}
   <script>import '../js/entrada.js';</script>
-  <script>import '../js/main.js';</script>
+  <script>import '../js/hero.js';</script>
   <script>import '../js/paralaje.js';</script>
   {/* El descenso. Isla aparte por la misma razón que las demás: si el
       mar o el paralaje se caen, los bloques de ayuda siguen llegando
