@@ -1502,13 +1502,26 @@ body {
    UNA SOMBRA CORTA Y HACIA ABAJO. Se posa sobre una raíz, y un cuerpo
    sobre una rama deja debajo una mancha corta, no un contorno. Dos
    píxeles de desplazamiento y tres de radio: lo justo para que el pie
-   toque la madera en vez de flotar sobre ella. */
+   toque la madera en vez de flotar sobre ella.
+
+   AHORA SON DOS SOMBRAS, y la nueva es la del CONTACTO: recta hacia
+   abajo, un radio mínimo y más cargada. `drop-shadow` solo asoma donde
+   la silueta desplazada sobresale del alfa original, o sea justo bajo
+   los dedos y la panza — exactamente la mancha que suelda el pie a la
+   madera. La blanda de siempre queda detrás, haciendo de penumbra.
+
+   Y EL BRILLO DE LA HORA, que es lo que le faltaba: sin él, esta era
+   la única ave del cuadro sin término de brillo, clavada en luz de día
+   sobre la noche. Los tres valores los escribe js/hora.js; los
+   respaldos de aquí son el mediodía, para que sin JavaScript el ave
+   quede como estaba y no a oscuras. */
 .vuelo--visita {
   z-index: 2;
   filter: saturate(var(--vuelo-sat-cerca, 0.94))
           contrast(var(--vuelo-contraste-cerca, 0.98))
           brightness(var(--vuelo-brillo-cerca, 1))
           url(#aguada-cerca)
+          drop-shadow(0 2px 1.5px color-mix(in srgb, var(--sombra-ave) 55%, transparent))
           drop-shadow(1px 3px 3px color-mix(in srgb, var(--sombra-ave) 40%, transparent));
 }
 
