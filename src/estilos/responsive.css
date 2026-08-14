@@ -245,9 +245,42 @@ body {
     display: none;
   }
 
+  /* Y QUE NO SE SALGA NUNCA POR LA DERECHA. La píldora lleva
+     `white-space: nowrap` —tiene que leerse de un golpe— así que si no
+     cabe, no encoge: se va fuera de pantalla. MEDIDO a 320 px: empezaba
+     en 211 y acababa en 352, o sea 32 px de «Buscar ayuda» cortados por
+     el canto. Es el único elemento que la regla 5 obliga a tener
+     siempre a la vista, así que aquí gana él y ceden los demás. */
+  .barra__nav {
+    gap: 0.65rem;
+  }
+
+  .pildora {
+    padding-inline: 0.85rem;
+    letter-spacing: 0.10em;
+  }
+
   /* (Aquí vivían las tres posiciones y escalas de la constelación para
       pantallas estrechas. Murieron con el `scale()`: ninguna regla
       consume ya `--x`, `--y` ni `--escala`.) */
+}
+
+/* En los teléfonos más estrechos —320 px, que siguen existiendo— el
+   rótulo «Menú» cede su sitio a la ayuda. El icono se queda con su
+   `aria-label`, así que para un lector de pantalla el botón sigue
+   diciendo lo mismo; lo que se pierde es una palabra escrita, y lo que
+   se gana es que «Buscar ayuda» quepa entero. */
+@media (max-width: 350px) {
+  .menu__etiqueta {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {

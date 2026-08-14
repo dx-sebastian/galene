@@ -267,6 +267,13 @@ input, select, textarea { margin: 0; }
   --arte-filete-2: none;
   --arte-filete-4: none;
   --arte-barbas: none;
+
+  /* De día la página es tinta oscura sobre papel claro, y eso es lo
+     que tiene que creerse el navegador. Su pareja de noche está en
+     `[data-tinta="clara"]`; las dos van escritas, ninguna heredada,
+     porque `data-tinta` no lo pone el sistema operativo sino la hora
+     local de quien entra. */
+  color-scheme: light;
 }
 
 :root.lectura-cerca {
@@ -301,6 +308,19 @@ input, select, textarea { margin: 0; }
   --tinta-suave:  #E8EEF2c0;
   --lamina:       #E9EFF2f0;
   --lamina-tinta: var(--letra);
+
+  /* ── Y LO QUE NO PINTA ESTA HOJA ────────────────────────────────
+     `color-scheme` es lo único que decide de qué color pinta el
+     NAVEGADOR lo que no es nuestro: el fondo por defecto de un campo,
+     el cursor de escritura, la barra de desplazamiento, el relleno
+     automático, el menú de un <select>. Sin esta línea, todo eso sigue
+     siendo claro aunque la página sea de noche — que es exactamente
+     por qué los campos salían blancos.
+
+     Se declara junto a la paleta y no al lado de los campos, porque no
+     es una propiedad de los campos: es en qué esquema está la página.
+     La declaración de día vive en el `:root` de arriba. */
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -367,12 +387,36 @@ body {
 
 /* Respaldo animado si WebGL no existe. Una visita normal —también en
    móvil— pinta el canvas completo y nunca activa estas reglas. */
+
+/* ── EL HORIZONTE DEL RESPALDO, QUE NO LO PONÍA NADIE ──────────────
+   `--horizonte` vale 56 % en `:root` y lo reescribe `medidas()` en
+   js/main.js con el reparto real de la composición (66 % en apaisado,
+   74 % en vertical). Pero `medidas()` solo corre cuando el mar arranca:
+   si `crear()` devuelve null —sin WebGL, o con WebGL por software— ese
+   código no se ejecuta nunca y el degradado del respaldo se queda con
+   el 56 % de partida, o sea con el horizonte veinte puntos más alto que
+   el de la escena de verdad. Es el mismo cuadro contado con otra
+   geometría, y encima es el cuadro que ve quien tiene el aparato más
+   viejo.
+
+   Se escribe aquí, con los MISMOS DOS NÚMEROS que usa `medidas()`, para
+   que las dos versiones del hero repartan cielo y agua igual. El corte
+   por proporción de ventana es también el mismo: 4/5 es el 0.8 de
+   aspecto con el que allí se decide. */
+.hero-estatico { --horizonte: 66%; }
+@media (max-aspect-ratio: 4 / 5) {
+  .hero-estatico { --horizonte: 74%; }
+}
+
 .hero-estatico .mundo::before {
   content: "";
   position: absolute;
   z-index: 0;
   left: -16%; right: -16%;
-  top: 54%; bottom: -8%;
+  /* Arranca justo por encima de la línea de agua, no en un 54 % fijo:
+     lo que este trazo dibuja son los destellos del agua, y el agua
+     empieza donde diga el horizonte. */
+  top: calc(var(--horizonte) - 4%); bottom: -8%;
   background:
     repeating-radial-gradient(ellipse 72% 18% at 50% -8%,
       transparent 0 17px,
@@ -400,6 +444,34 @@ body {
   transform-origin: 78% 83%;
   will-change: transform, filter;
   animation: mangle-movil 8.8s ease-in-out infinite;
+}
+
+/* ── Y EL RESPALDO TAMBIÉN SE HUNDÍA EN VERTICAL ───────────────────
+   La composición de arriba está calculada para una ventana apaisada:
+   68 % del ALTO con una lámina 2:3 son dos tercios del ancho en un
+   monitor y CASI EL ANCHO ENTERO en un teléfono. Medido a 390×844: el
+   árbol ocupaba de 0 a 96 % del ancho y de 21 % a 89 % del alto, o sea
+   la copa por detrás del rótulo, las raíces saliéndose por abajo y
+   ningún horizonte a la vista. El mismo síntoma que tenía la escena de
+   verdad, por el mismo motivo: una medida en unidades de alto aplicada
+   a una pantalla que es mucho más alta que ancha.
+
+   Los tres números salen de la escena WebGL para que las dos versiones
+   cuenten lo mismo: 40 % de alto (allí el árbol mide 0.38), centrado
+   (allí `xManglar` vale 0.50 en vertical) y apoyado de modo que quede
+   bajo el agua un tercio largo de su propia lámina — el 81 % de
+   posición vertical es lo que deja el pie en 0.884 del alto teniendo la
+   línea de agua en 0.74, que es donde la pone `--horizonte`.
+
+   El corte va por PROPORCIÓN DE VENTANA y no por ancho de pantalla: lo
+   que rompe la composición es la forma, no el tamaño. 4/5 es el mismo
+   0.8 de aspecto con el que main.js decide bajar el horizonte. */
+@media (max-aspect-ratio: 4 / 5) {
+  .hero-estatico .mundo::after {
+    background-position: 50% 81%;
+    background-size: auto 40%;
+    transform-origin: 50% 88%;
+  }
 }
 
 @keyframes agua-movil {
@@ -588,7 +660,26 @@ body {
      la hoja y el cierre queda casi al final, pero es el sitio por donde
      esto se rompería si algún día se le mete color a esas dos zonas. Si
      pasa, lo que toca no es una banda: es el mismo lavado medido que ya
-     tuvo esta barra cuando vivía sobre el cuadro. */
+     tuvo esta barra cuando vivía sobre el cuadro.
+
+     ── Y EL CASO QUE NO ESTABA ESCRITO ERA EL QUE SE ROMPÍA ─────────
+     No era el mapa ni el cierre: era TODO EL TEXTO DE LA PÁGINA. El
+     razonamiento de arriba da por hecho que debajo de la barra hay
+     papel liso, y debajo de la barra hay lo que haya en ese momento del
+     scroll, que casi siempre es una línea de prosa. MEDIDO en captura:
+     «G A L E N E · MENU · BUSCAR AYUDA» encima de «Nadie puso nada:
+     alguien se aprovechó de lo que habías tomado tú», letra sobre
+     letra, las dos del mismo color y del mismo valor. En escritorio,
+     los cuatro rótulos de la barra encima de «Mapa interactivo» y de
+     «Guardar lo que recuerdo».
+
+     El velo NO es una banda, y por eso esto sigue respetando el
+     argumento: es el propio papel de la página subiendo hasta el canto
+     y apagándose antes de llegar abajo. No tiene filo, no tiene borde y
+     no tiene color propio —sale de `--papel-arriba`, así que se voltea
+     con la hora igual que todo lo demás—. Lo único que hace es
+     garantizar que ninguna línea de prosa comparta píxel con un rótulo
+     de la barra. */
   background: transparent;
   /* El estado de partida: fuera de cuadro por arriba. */
   translate: 0 -100%;
@@ -596,6 +687,36 @@ body {
   pointer-events: none;
   transition: translate 300ms cubic-bezier(.2,.7,.2,1),
               opacity   240ms linear;
+}
+
+/* EL VELO, EN UN PSEUDO Y NO EN EL `background` DE LA BARRA. Tiene que
+   quedar POR DEBAJO del contenido de la fila —si no, tapa el logotipo—
+   y además la barra ya usa `background` para nada, así que un pseudo
+   con `z-index: -1` es lo que separa las dos capas sin tocar el orden
+   del DOM.
+
+   El degradado se apaga del todo antes del canto de abajo: así no hay
+   ninguna línea donde el velo termine, que es lo que lo distingue de
+   una banda. Se dibuja la mitad más alto que la barra (`bottom: -50%`)
+   para que la caída entera ocurra POR DEBAJO de la fila: detrás de las
+   letras el velo es opaco, y donde se apaga ya no hay letra ninguna.
+
+   El color es `--papel`, que es donde se queda el degradado de la
+   sección de lectura (ver `.herramientas`) y por tanto la superficie
+   que esta barra tiene debajo el 90 % del recorrido. */
+.barra--flotante::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -50%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--papel) 0%,
+    var(--papel) 62%,
+    color-mix(in srgb, var(--papel) 55%, transparent) 82%,
+    transparent 100%
+  );
 }
 
 /* CUANDO BAJA. Dos condiciones y no una:
@@ -685,7 +806,24 @@ body {
    NO EXISTE EN ESCRITORIO. Ahí los cuatro rótulos están escritos en la
    barra y un botón que los repita detrás de un toque sería una segunda
    forma de llegar al mismo sitio — ruido, y un estado más que mantener.
-   Aparece exactamente donde los rótulos se apagan: 700 px.
+   Aparece exactamente donde los rótulos se apagan: 920 px.
+
+   ── Y ESE NÚMERO ERA 700, QUE ES DONDE SE ROMPÍA ──────────────────
+   MEDIDO en las tres páginas: con los cuatro rótulos puestos, la fila
+   necesita 861 px para caber. Entre 701 y 880 los rótulos seguían
+   escritos y no cabían, así que la píldora de ayuda —el único elemento
+   de la barra que la regla 5 obliga a tener siempre a la vista— se
+   salía por la derecha: a 768 px empezaba en 631 y acababa en 817, o
+   sea 49 px fuera de pantalla. En /comunidad, que no tiene el
+   `overflow-x: hidden` del cuerpo de la portada, eso además abría
+   scroll horizontal de toda la página (scrollWidth 817 sobre 768) —
+   que es lo que se sentía como «hay algo a la derecha que desplaza
+   todo el contenido».
+
+   920 y no 880: el ancho que hace falta depende del cuerpo de letra,
+   y quien lee este sitio puede tener el navegador a 120 %. El margen
+   son los 59 px que faltan para que un aumento de un paso siga
+   cabiendo.
 
    Ocupa el hueco que pediste, a la izquierda de la píldora de ayuda.
    La píldora NO entra dentro: ver el comentario en index.astro. */
@@ -765,7 +903,12 @@ body {
   text-underline-offset: 0.35em;
 }
 
-@media (max-width: 700px) {
+/* LOS DOS LADOS DEL MISMO INTERRUPTOR, ESCRITOS JUNTOS. Los rótulos se
+   apagan y el menú se enciende en el mismo ancho; separarlos en dos
+   media queries lejanas fue justo lo que dejó el hueco de 701–880 px
+   sin navegación que cupiera. */
+@media (max-width: 920px) {
+  .barra__enlace { display: none; }
   .menu { display: block; }
 }
 
@@ -1152,8 +1295,10 @@ body {
    caja de 350 y quedaba a trece píxeles de partirse en dos renglones
    descuadrados bajo el rótulo. A 0.16 em cabe con holgura y sigue
    leyéndose espaciado.                                                */
+/* (El `.barra__enlace { display: none }` que vivía aquí se fue a los
+   920 px, junto al `.menu { display: block }` que lo compensa. Los dos
+   son el mismo interruptor y estaban en dos anchos distintos.) */
 @media (max-width: 700px) {
-  .barra__enlace { display: none; }
   .lockup { letter-spacing: 0.16em; }
   .hero__filete { margin-top: var(--e-4); }
   .hero__enlace { margin-top: var(--e-4); }
@@ -2443,6 +2588,20 @@ body {
   border-bottom: 1px solid rgb(var(--letra-rgb) / 12%);
 }
 
+/* ESTE TÍTULO RECIBE EL FOCO, y por eso necesita decirlo con la letra
+   de la casa. js/mapa-herramientas.js le pone `tabindex="-1"` y lo
+   enfoca al abrir la herramienta —es lo que hace que un lector de
+   pantalla anuncie dónde acaba de entrar— y sin esta regla el anillo lo
+   pintaba el navegador: una caja blanca pegada al texto que no se
+   parece a ningún otro foco del sitio. El mismo contorno de tres
+   píxeles que llevan el resto de los elementos enfocables, con más
+   separación porque aquí lo que se rodea es un renglón de título. */
+.bloque--panel > h3:focus-visible {
+  outline: 3px solid var(--letra);
+  outline-offset: 6px;
+  border-radius: 2px;
+}
+
 #recordar { --panel-accent: #2F6B4F; }
 #mapa { --panel-accent: #A85A47; }
 
@@ -2549,33 +2708,41 @@ body {
   background-color: var(--papel-hondo);
 }
 
-/* ── EL LIENZO NEGRO DE LA NOCHE ───────────────────────────────────
+/* ── EL LIENZO DE LA NOCHE ─────────────────────────────────────────
    El papel nocturno del sitio es añil (#1A1832) y eso NO se toca: está
    razonado donde se declara —un negro puro agujerea la pantalla y el
    añil descansa— y vale para las secciones de lectura.
 
-   Pero esta sección no es una hoja de texto: es un LIENZO, un marco
-   con emblemas dentro, y sobre él el añil se lee como morado. Un lienzo
-   de noche es negro. Así que aquí, y solo aquí, el papel baja a
-   #1C1D1D: carbón neutro, sin una pizca de morado, con la letra encima
-   a 17.9:1 medido. No es #000 a propósito — el negro puro agujerea la
-   pantalla; esto es negro con una gota de la tinta dentro, que es lo
-   que lo mantiene siendo pigmento. (Sale de 88 % de #000 más 12 % de
-   rgb(232 238 242), pero va escrito como literal: ver abajo por qué.)
+   Esta sección tampoco es una hoja de texto: es un LIENZO, y un lienzo
+   tiene que hundirse respecto al papel que lo rodea o deja de leerse
+   como algo puesto encima. Eso se conserva.
 
-   La tarjeta sube a rgb(60 62 63) para que se lea como algo que
-   sobresale del lienzo — un escalón de valor, igual que `--papel-alto`
-   hace sobre `--papel` en el resto del sitio.
+   ── LO QUE SE VA ES EL CARBÓN NEUTRO, Y ESE ERA EL FALLO ──────────
+   Estuvo en #1C1D1D con el argumento de que «un lienzo de noche es
+   negro», y el argumento se olvidaba de dónde está el lienzo: sobre
+   añil. Un gris sin una pizca de morado encima de una página morada no
+   se lee como profundidad, se lee como un rectángulo de OTRO sitio
+   pegado en medio — y sus tarjetas, en gris neutro, remataban el
+   efecto. Se veía en captura: tres tarjetas grises dentro de una losa
+   negra flotando sobre papel añil.
 
-   Se hace con `color-mix` contra `--letra` y no con un hex suelto para
-   que el negro comparta familia con la tinta de la hora en vez de ser
-   un color forastero pegado encima.
+   La profundidad la da el VALOR, no el matiz. Así que el lienzo baja de
+   valor por el mismo camino que el papel: mezclando `--papel-arriba`
+   con negro. Sale un añil casi negro que comparte familia con todo lo
+   que tiene alrededor y con la tinta de la hora, y la letra encima mide
+   19.1:1 — más contraste del que había, no menos.
+
+   Y LA TARJETA YA NO NECESITA REGLA PROPIA: la de día está escrita en
+   tokens (`--papel-alto` sobre el lienzo), así que de noche se resuelve
+   sola en el añil que le toca. Un escalón de valor por encima del
+   lienzo, exactamente igual que de día. Lo único que sigue aquí es el
+   borde, que sí pide un punto más de presencia sobre fondo oscuro.
 
    ── `clara` ES LA NOCHE, Y NO ES UN DESCUIDO ───────────────────────
    `data-tinta` nombra LA TINTA, no el papel: `clara` es tinta clara
    sobre papel oscuro, o sea de noche. Escribir `oscura` aquí —que es lo
-   que parece— pinta el lienzo negro a mediodía y deja la noche morada,
-   que es exactamente el fallo que este bloque viene a arreglar. La
+   que parece— pinta el lienzo hundido a mediodía y deja la noche plana,
+   que es exactamente el fallo que este bloque viene a evitar. La
    regla nocturna de las láminas, en nuevas-secciones.css, usa este
    mismo valor. */
 /* ── LLEVA `--viva` EN EL SELECTOR, Y NO ES DECORACIÓN ─────────────
@@ -2592,7 +2759,7 @@ body {
   background-image:
     radial-gradient(circle at 24% 28%, rgb(65 112 127 / 10%), transparent 26%),
     radial-gradient(circle at 76% 68%, rgb(47 107 79 / 9%), transparent 28%);
-  background-color: #1C1D1D;
+  background-color: color-mix(in srgb, var(--papel-arriba) 72%, #000);
 }
 
 /* La ruta punteada se queda: es lo que dice «esto es un mapa» cuando ya
@@ -2663,11 +2830,16 @@ body {
               translate 200ms ease;
 }
 
-/* De noche la tarjeta también sale del añil: un paso por encima del
-   lienzo negro, para que siga leyéndose como algo que sobresale. */
+/* De noche la tarjeta NO cambia de fórmula: la de arriba está escrita
+   en tokens y `--papel-alto` ya es añil cuando la tinta se aclara, así
+   que sale sola un escalón por encima del lienzo. Lo que llevaba aquí
+   era un gris de la familia del negro neutro, y con él las tres
+   tarjetas se leían como grises dentro de una página morada.
+
+   Lo único que sí necesita la noche es el borde: sobre fondo oscuro el
+   16 % de tinta se pierde. */
 :root[data-tinta="clara"] .emblema {
-  border-color: rgb(var(--letra-rgb) / 22%);
-  background: color-mix(in srgb, #000 74%, var(--letra));
+  border-color: rgb(var(--letra-rgb) / 24%);
 }
 
 .emblema:hover {
@@ -2738,11 +2910,14 @@ body {
 .mapa-herramientas--activa .mapa-herramientas__escena--activa > .bloque { display: block; }
 .mapa-herramientas__escena--activa .emblema { display: none; }
 
+/* CON UNA HERRAMIENTA ABIERTA EL MARCO DEJA DE SER LIENZO: lo que hay
+   dentro es un panel de lectura y de escritura, así que el fondo vuelve
+   al papel del sitio. `--papel` ya es añil de noche, así que aquí no
+   hace falta ninguna regla nocturna — la que había fijaba el carbón
+   neutro y dejaba el formulario sobre una superficie que no era la de
+   ninguna otra parte de la página. */
 .mapa-herramientas--activa .mapa-herramientas__marco {
   background-color: var(--papel);
-}
-:root[data-tinta="clara"] .mapa-herramientas--activa .mapa-herramientas__marco {
-  background-color: #1C1D1D;
 }
 
 /* La regla 7 dice que `prefers-reduced-motion` APAGA, no reduce. Aquí
@@ -2991,18 +3166,42 @@ body {
   margin-top: var(--e-5);
   max-width: none;
 }
-#recuerdo label { display: grid; gap: 0.3rem; }
+#recuerdo label { display: grid; gap: 0.3rem; min-width: 0; }
 #recuerdo span { font-size: var(--t-sm); color: rgb(var(--letra-rgb) / 75%); }
+/* ── LOS CAMPOS PEDÍAN SU PAPEL Y SU TINTA, Y NO LOS PEDÍAN ────────
+   Esta regla declaraba borde, relleno y tipografía, y no declaraba ni
+   `background` ni `color`. De día no se notaba —el blanco del navegador
+   sobre papel marfil pasa por un campo— y de noche era el fallo entero:
+   MEDIDO con `data-tinta="clara"`, siete cajas de #FFFFFF con letra
+   #000000 sobre papel #1A1832. Siete rectángulos de luz en la pantalla
+   de alguien que abre esto de madrugada, y encima el único bloque del
+   sitio donde se escribe lo que se recuerda.
+
+   Van a los mismos tokens que el resto de campos del sitio —
+   `.mapa__buscar input`, `.nueva__nota input`, el textarea de
+   comunidad— que sí los tenían. Aquí no se inventa nada: se termina de
+   escribir lo que faltaba. El `color-scheme` de la paleta se encarga
+   del resto (cursor, relleno automático, barra de desplazamiento). */
 #recuerdo input, #recuerdo textarea {
   width: 100%; box-sizing: border-box;
   padding: 0.7rem 0.8rem; border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
+  background: var(--papel-alto); color: var(--letra);
   font: inherit; font-size: var(--t-md); resize: vertical;
+}
+#recuerdo input::placeholder, #recuerdo textarea::placeholder {
+  color: rgb(var(--letra-rgb) / 55%);
+}
+#recuerdo input:focus-visible, #recuerdo textarea:focus-visible {
+  outline: 3px solid var(--letra); outline-offset: 2px;
 }
 #recuerdo label:nth-of-type(n + 5),
 #recuerdo .salida__acciones { grid-column: 1 / -1; }
 
+/* (`#sin-hablar .enlaces` estaba aquí y ya no hace falta: su rejilla se
+   pliega sola con `auto-fit`. Estar aquí era además lo que no
+   funcionaba — la regla de dos columnas va después en la hoja y le
+   ganaba el empate de especificidad.) */
 @media (max-width: 700px) {
-  #sin-hablar .enlaces,
   #recuerdo { grid-template-columns: 1fr; }
   #recuerdo label,
   #recuerdo .salida__acciones { grid-column: 1; }
@@ -3134,8 +3333,34 @@ body {
 .mapa__otras-nota { margin: var(--e-3) 0 0; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 72%); }
 
 /* ── EL MARCO ────────────────────────────────────────────────────── */
+/* ── EL MARCO ES UNA REJILLA DE UNA CELDA, Y ESO ARREGLA EL PERMISO ──
+   Era `position: relative` con todo dentro en absoluto, así que su alto
+   lo fijaba `.mapa__lienzo` y solo él. El panel del permiso —que es el
+   ÚNICO hijo con texto de verdad— iba también en absoluto, o sea sin
+   voz en ese alto, y con `overflow: hidden` encima.
+
+   MEDIDO a 390×844: el lienzo mide 320 px de alto y la caja del permiso
+   necesita 452. Se cortaba a media frase —«...que no tiene servidor
+   donde ponerla» quedaba fuera— y con ella los DOS BOTONES: «Mostrarme
+   lo que hay cerca» y «Elegir mi ciudad a mano». En un teléfono, la
+   herramienta del mapa no se podía usar y el párrafo que explica qué
+   pasa con la ubicación no se podía leer entero. De las dos cosas, la
+   segunda es la grave: es la promesa de privacidad del sitio.
+
+   Con el marco en rejilla, el lienzo y el permiso comparten UNA celda
+   —siguen superpuestos, que es lo que se quiere— y el alto de la fila
+   es el del más alto de los dos. Cuando el permiso se contesta,
+   `hidden` lo saca de la rejilla y el marco vuelve al alto del lienzo
+   solo. Sin media queries, sin alturas nuevas y sin un scroll dentro de
+   otro scroll, que en un teléfono y con el pulgar es lo peor que se
+   podía hacer aquí.
+
+   El grano, la rosa y la cinta de estado siguen en absoluto y por tanto
+   fuera de la rejilla: nada de lo que decide el apilado cambia. */
 .mapa__marco {
   position: relative; overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
   background: var(--papel-hondo);
   box-shadow: inset 0 1px 3px rgb(var(--letra-rgb) / 8%);
@@ -3143,6 +3368,7 @@ body {
 .mapa__lienzo {
   /* SIN z-index. Ver la nota de arriba: el grano depende de ello. */
   position: relative;
+  grid-area: 1 / 1;
   height: clamp(20rem, 58vw, 34rem);
   background: var(--papel-hondo);
 }
@@ -3223,14 +3449,20 @@ body {
 
    El fondo va translúcido y con desenfoque: se ve que detrás hay un
    mapa esperando. Un panel opaco parecería un muro. */
+/* EN LA CELDA DEL LIENZO, NO EN ABSOLUTO. Ver la nota del marco: en
+   absoluto no contaba para el alto de la caja y se cortaba por la
+   mitad en cualquier teléfono. Aquí sigue tapando el mapa entero
+   —comparten celda y este va después y con z-index— pero además puede
+   pedir el alto que necesite. */
 .mapa__permiso {
-  position: absolute; inset: 0; z-index: 900;
+  position: relative; grid-area: 1 / 1; z-index: 900;
   display: grid; place-items: center; padding: 1rem;
   background: color-mix(in srgb, var(--papel) 78%, transparent);
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
 .permiso__caja {
-  max-width: 26rem; padding: 1.1rem 1.25rem;
+  max-width: 26rem; min-width: 0; padding: 1.1rem 1.25rem;
   background: var(--papel-alto); border-radius: 2px;
   border: 1px solid rgb(var(--letra-rgb) / 15%);
   border-left: 4px solid var(--pigmento-modo);
@@ -3460,7 +3692,26 @@ body {
 .enlaces a { color: var(--letra); font-size: var(--t-md); }
 .enlaces span { display: block; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%); }
 
-#sin-hablar .enlaces { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* DOS COLUMNAS CUANDO CABEN DOS, Y UNA CUANDO NO — sin media query.
+   Estuvo en `repeat(2, minmax(0, 1fr))` fijo, con una regla a 700 px
+   unas dos mil líneas más arriba que lo devolvía a una sola columna. No
+   funcionaba, y el motivo es de orden y no de idea: las dos reglas
+   tienen la MISMA especificidad (`#sin-hablar .enlaces`) y esta va
+   después en la hoja, así que ganaba también dentro de la media query.
+
+   Se veía en un teléfono estrecho: MEDIDO a 320 px, las dos tarjetas
+   quedaban en 130 px de ancho y «SALVIA — reportar un caso por
+   internet» se partía en siete renglones de una palabra. Son dos
+   canales de ayuda; leerlos no puede costar eso.
+
+   `auto-fit` con un mínimo de 15rem lo resuelve sin ninguna consulta de
+   ancho y sin poder volver a perder un pulso de especificidad: caben
+   dos, hay dos; no caben, hay una. El `min(100%, …)` es lo que impide
+   que el mínimo sea mayor que la propia columna en pantallas estrechas
+   —sin él, `auto-fit` desborda en vez de plegarse. */
+#sin-hablar .enlaces {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
 #sin-hablar .enlaces li {
   padding: var(--e-4);
   border-left: 0.25rem solid var(--panel-accent);

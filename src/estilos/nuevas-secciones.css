@@ -484,6 +484,34 @@
   mix-blend-mode: screen;
 }
 
+/* ── Y SE RECORTAN CONTRA SU PROPIA SECCION ────────────────────────
+   Las tres aguadas de abajo se salen a propósito —es lo que hace que
+   entren «por el margen» y no parezcan una elipse centrada— y dos de
+   ellas se salen POR LA DERECHA: `right: −14%` y `right: −18%`.
+
+   Una caja absoluta que asoma por la derecha no se pierde: alarga el
+   documento. MEDIDO a 1440 de ancho y de noche, `scrollWidth` valía
+   1699 —259 px de más, que es exactamente el 18 % de `.acerca::after`—
+   y lo mismo en cualquier ventana: 461 sobre 390 en un teléfono, 906
+   sobre 768 en una tableta. Siempre el mismo 1.18.
+
+   El `overflow-x: hidden` del cuerpo tapaba la barra de desplazamiento
+   y no el problema: el documento seguía siendo más ancho que la
+   ventana, así que cualquier cosa que mueva el viewport en horizontal
+   —enfocar un campo, saltar a un ancla, `scrollIntoView`— corría la
+   página entera de lado. Eso es lo que se siente como «hay algo a la
+   derecha que desplaza todo el contenido», y de día no pasaba porque de
+   día estos dos pseudoelementos no existen.
+
+   Se recorta en la sección, que es donde vive la aguada. `clip` y no
+   `hidden` para no convertir tres secciones de lectura en contenedores
+   de scroll; la línea de `hidden` va delante como respaldo para quien
+   no conozca `clip`. */
+:root[data-tinta="clara"] :is(.comunidad-panel, .expertos, .acerca) {
+  overflow: hidden;
+  overflow: clip;
+}
+
 /* Alternadas de lado, como cae el agua cuando la hoja se inclina: una
    por seccion, en el margen, nunca por debajo del texto.
 
