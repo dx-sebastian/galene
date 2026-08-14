@@ -1,69 +1,65 @@
 /* ═══════════════════════════════════════════════════════════════════
-   entrada.js — la pintura llega.
+   entrada.js — la pintura llega y abre el contenido.
 
-   QUÉ HACE. Durante los primeros segundos el mundo se pinta: el papel
-   primero, la aguada después, el filo al final. No es un cargador ni
-   una cortina — es la misma imagen apareciendo como aparece una
-   acuarela cuando se seca.
+   El HTML nace cubierto por una lámina de carga. Se abre únicamente
+   cuando la fuente y el núcleo visual del hero están listos. Hay un
+   límite de seguridad: una textura ausente o WebGL roto no puede dejar
+   la información encerrada detrás de un cargador eterno.
 
-   ── LO QUE LA SECUENCIA NO TOCA, Y ESO ES TODO EL DISEÑO ────────────
+   No espera a las capas decorativas, a las poses de las aves ni a las
+   imágenes de la sección de lectura. En móvil, el núcleo listo es la
+   composición estática; en escritorio, las cuatro texturas que forman
+   agua y manglar. Con movimiento reducido el loader no anima.
 
-   La secuencia escenifica LA PINTURA. Nunca la ayuda.
-
-   El título, la frase y el botón «qué puedo hacer ahora» están a plena
-   tinta desde el milisegundo cero y no participan de nada de esto. Se
-   puede pulsar el botón mientras el mar todavía está apareciendo, y
-   funciona.
-
-   No es una concesión: es la regla 5 del proyecto —la ayuda está a
-   cero clics— aplicada a un sitio que ahora quiere ser también una
-   obra. Una portada de premio suele pedir cuatro segundos antes de
-   dejarte hacer nada; aquí esos cuatro segundos los pagaría entera la
-   persona que abrió esto a las cuatro de la mañana buscando un
-   teléfono. Así que el espectáculo va en el arte y la ayuda no espera.
-
-   Y SE SALTA SOLA. Al primer toque, tecla o rueda, la secuencia
-   termina de golpe. Quien tiene prisa no tiene que verla: basta con
-   que haga lo que iba a hacer de todos modos.
-
-   Con `prefers-reduced-motion` no se arranca siquiera. La clase no se
-   pone y el CSS deja el mundo tal cual.
-
-   Es un enhancement: si este módulo no carga, no falta nada.
+   Sin JavaScript, el bloque `noscript` del documento abre el contenido.
+   Con JavaScript incompleto, el límite de ocho segundos hace lo mismo.
    ═══════════════════════════════════════════════════════════════════ */
 
 const raiz = document.documentElement;
+const cargador = document.getElementById('cargador');
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+const inicio = performance.now();
+const MINIMO = quieto.matches ? 0 : 520;
+const MAXIMO = 8000;
 
-/* Cuánto dura. Dos segundos justos: por debajo no se percibe como un
-   gesto y por encima empieza a ser una espera. */
-const DURA = 2000;
+let resolverHero;
+const heroListo = new Promise((resolver) => { resolverHero = resolver; });
+addEventListener('galene:hero-listo', resolverHero, { once: true });
 
-if (!quieto.matches && !raiz.classList.contains('entrando')) {
-  raiz.classList.add('entrando');
+const fuentesListas = document.fonts?.ready?.catch?.(() => undefined)
+  || Promise.resolve();
+const limite = new Promise((resolver) => setTimeout(resolver, MAXIMO));
 
-  let cerrado = false;
-  const terminar = () => {
-    if (cerrado) return;
-    cerrado = true;
-    raiz.classList.remove('entrando');
-    /* Se marca que ya pasó: el CSS lo usa para no volver a animar nada
-       si algo fuerza un recálculo. */
-    raiz.classList.add('entrada-hecha');
-    for (const ev of EVENTOS) removeEventListener(ev, terminar);
-  };
+let cerrado = false;
+async function terminar() {
+  if (cerrado) return;
+  cerrado = true;
+  const falta = Math.max(0, MINIMO - (performance.now() - inicio));
+  if (falta) await new Promise((resolver) => setTimeout(resolver, falta));
+  raiz.classList.add('contenido-listo');
+  raiz.classList.remove('cargando');
+  raiz.classList.add('entrada-hecha');
+  cargador?.setAttribute('aria-hidden', 'true');
+  dispatchEvent(new CustomEvent('galene:contenido-listo'));
+  setTimeout(() => cargador?.remove(), quieto.matches ? 0 : 620);
+}
 
-  /* CUALQUIER señal de que hay alguien ahí corta la secuencia. Incluye
-     el scroll y las teclas, no solo el toque: quien navega con teclado
-     también tiene prisa. */
-  const EVENTOS = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'];
-  for (const ev of EVENTOS) addEventListener(ev, terminar, { passive: true, once: true });
+Promise.race([
+  Promise.all([fuentesListas, heroListo]),
+  limite,
+]).then(terminar);
 
-  setTimeout(terminar, DURA);
-
-  /* Si la pestaña arranca en segundo plano, la secuencia se habría
-     "gastado" sin que nadie la viera y al volver el sitio aparecería
-     ya montado. Da igual: lo que no se puede es que se quede a medias,
-     y el temporizador se encarga. */
-  quieto.addEventListener('change', () => { if (quieto.matches) terminar(); });
+/* Las texturas de papel pertenecen a la lectura, no a la portada. Su
+   descarga empieza al primer avance real hacia la boca. */
+const boca = document.querySelector('.boca');
+const activarLectura = () => raiz.classList.add('lectura-cerca');
+if (boca && 'IntersectionObserver' in window) {
+  const observador = new IntersectionObserver((entradas) => {
+    if (!entradas.some((e) => e.isIntersecting)) return;
+    activarLectura();
+    observador.disconnect();
+  }, { rootMargin: '0px 0px -32px 0px' });
+  observador.observe(boca);
+} else {
+  activarLectura();
 }
