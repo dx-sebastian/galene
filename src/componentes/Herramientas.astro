@@ -292,7 +292,6 @@ import { TERMINOS } from '../datos/glosario.js';
           este bloque y dónde empieza el que sí afirma cosas. Teñirla de
           rojo sería gastar la única señal de alarma tipográfica que
           tiene la página en algo que no es una alarma. */}
-      <p class="bloque__intro">Esto explica palabras, no medicina.</p>
     </section>
 
     <Resonancias />
@@ -310,12 +309,43 @@ import { TERMINOS } from '../datos/glosario.js';
       <div class="mapa-herramientas__marco" data-herramientas-marco>
         <div class="mapa-herramientas__ruta" aria-hidden="true"></div>
 
+        {/* LA REJILLA VA EN SU PROPIA CAJA y no en el marco. El marco es
+            el lienzo —borde, fondo, la ruta punteada detrás—; esto es lo
+            que se ordena encima. Separarlos deja que la ruta ocupe el
+            marco entero mientras las tarjetas respetan su padding. */}
+        <div class="mapa-herramientas__lienzo">
+
     <!-- ═══ SIN HABLAR ══════════════════════════════════════════════ -->
         <div class="mapa-herramientas__escena mapa-herramientas__escena--ayuda"
              data-herramienta="sin-hablar">
-          <button class="mapa-herramientas__abrir" type="button"
+          {/* ── EL EMBLEMA, Y NO UNA MINIATURA DEL PANEL ──────────────
+              Aquí había un rótulo flotando sobre el panel REAL encogido
+              con `scale(0.4)`. Se veía como lo que era: una captura de
+              pantalla de un formulario, ilegible y sin significar nada.
+              Un mapa se lee por sus símbolos, no por fotos diminutas del
+              sitio al que llevan.
+
+              El dibujo va en SVG EN LÍNEA con `stroke: currentColor`,
+              igual que la ola del logotipo y por la misma razón: hereda
+              la tinta de la hora, así que a las 20:00 se aclara con la
+              letra. Un PNG sería un trazo fijo sobre un papel que se
+              vuelve noche.
+
+              Es `aria-hidden`: el nombre y el pie de abajo ya dicen a
+              dónde lleva esto, y un dibujo anunciado además sería la
+              misma información dos veces. */}
+          <button class="mapa-herramientas__abrir emblema" type="button"
                   data-herramientas-abrir aria-controls="sin-hablar">
-            <span>Pedir ayuda sin hablar</span>
+            <span class="emblema__icono">
+              {/* Un mensaje, no una voz: bocadillo sin cola, y dentro la
+                  ola de Galene en lugar de renglones de texto. */}
+              <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                <path d="M12 16 H52 A4 4 0 0 1 56 20 V42 A4 4 0 0 1 52 46 H26 L16 54 V46 H12 A4 4 0 0 1 8 42 V20 A4 4 0 0 1 12 16 Z" />
+                <path class="emblema__ola" d="M18 31 C22 27, 27 27, 31 31 S40 35, 45 30" />
+              </svg>
+            </span>
+            <span class="emblema__nombre">Pedir ayuda sin hablar</span>
+            <span class="emblema__pie">Canales que no exigen una llamada</span>
           </button>
     <section class="bloque bloque--panel" id="sin-hablar">
       <h3>Pedir ayuda sin hablar</h3>
@@ -339,9 +369,23 @@ import { TERMINOS } from '../datos/glosario.js';
     <!-- ═══ GUARDAR LO QUE RECUERDO ═════════════════════════════════ -->
         <div class="mapa-herramientas__escena mapa-herramientas__escena--recordar"
              data-herramienta="recordar">
-          <button class="mapa-herramientas__abrir" type="button"
+          <button class="mapa-herramientas__abrir emblema" type="button"
                   data-herramientas-abrir aria-controls="recordar">
-            <span>Guardar lo que recuerdo</span>
+            <span class="emblema__icono">
+              {/* Una hoja con su esquina doblada y un candado cerrado.
+                  El candado es lo que dice la promesa de este bloque —
+                  nada sale del teléfono— y por eso está dibujado y no
+                  solo escrito debajo. */}
+              <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                <path d="M16 8 H38 L48 18 V44 A4 4 0 0 1 44 48 H16 A4 4 0 0 1 12 44 V12 A4 4 0 0 1 16 8 Z" />
+                <path d="M38 8 V18 H48" />
+                <path d="M20 24 H34 M20 31 H30" />
+                <rect x="30" y="40" width="20" height="14" rx="2.5" />
+                <path d="M34 40 V36 A6 6 0 0 1 46 36 V40" />
+              </svg>
+            </span>
+            <span class="emblema__nombre">Guardar lo que recuerdo</span>
+            <span class="emblema__pie">Se queda en tu teléfono</span>
           </button>
     <section class="bloque bloque--panel" id="recordar">
       <h3>Guardar lo que recuerdo</h3>
@@ -375,11 +419,25 @@ import { TERMINOS } from '../datos/glosario.js';
         merece hoja propia. */}
         <div class="mapa-herramientas__escena mapa-herramientas__escena--mapa"
              data-herramienta="mapa">
-          <button class="mapa-herramientas__abrir" type="button"
+          <button class="mapa-herramientas__abrir emblema" type="button"
                   data-herramientas-abrir aria-controls="mapa">
-            <span>Explorar los mapas</span>
+            <span class="emblema__icono">
+              {/* La rosa de los vientos que el propio mapa ya lleva
+                  dentro (`.mapa__rosa`, en Mapa.astro), redibujada a
+                  esta escala. El símbolo de la herramienta es el mismo
+                  que se encuentra al entrar: eso es lo que hace que un
+                  icono signifique algo y no sea decoración. */}
+              <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                <circle cx="32" cy="32" r="20" />
+                <path class="emblema__norte" d="M32 12 L37 32 L32 36 L27 32 Z" />
+                <path d="M32 52 L27 32 L32 28 L37 32 Z" />
+              </svg>
+            </span>
+            <span class="emblema__nombre">Explorar los mapas</span>
+            <span class="emblema__pie">Dónde ir, dónde no ir</span>
           </button>
           <Mapa />
+        </div>
         </div>
       </div>
     </section>

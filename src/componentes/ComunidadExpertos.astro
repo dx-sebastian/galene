@@ -1,29 +1,18 @@
 ---
-const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — la entrada a Comunidad.
 
-const experts = [
-  {
-    name: 'Laurie Fields y equipo',
-    role: 'Investigacion clinica en psicotraumatologia',
-    text: 'La memoria incompleta no impide que aparezcan sintomas intensos. El cuidado no debe exigir reconstruir el episodio para reconocer lo que dejo.',
-    source: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC9090424/',
-    sourceLabel: 'Estudio clinico, 2022',
-  },
-  {
-    name: 'Srikala Subramanian, MD, y Jennifer Green, RN',
-    role: 'Atencion medica y enfermeria forense',
-    text: 'Una respuesta estabilizadora y compasiva devuelve margen de eleccion: explicar cada paso, pedir permiso y permitir detenerlo tambien son parte del cuidado.',
-    source: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC6170132/',
-    sourceLabel: 'Revision clinica',
-  },
-  {
-    name: 'Marc A. LeBeau y M. A. Montgomery',
-    role: 'Toxicologia forense',
-    text: 'La deteccion depende del tiempo, el metabolismo, la muestra y la capacidad del laboratorio. Un resultado toxicologico no puede reconstruir por si solo lo ocurrido.',
-    source: 'https://pubmed.ncbi.nlm.nih.gov/26242451/',
-    sourceLabel: 'Revision forense',
-  },
-];
+   ESTE FICHERO ADELGAZÓ. Llevaba dentro el panel de expertos, que se
+   fue a Expertos.astro con sus datos a src/datos/expertos.js. Lo que
+   queda es lo único que este componente siempre fue de verdad: la
+   puerta a /comunidad.
+
+   Se conserva el nombre del fichero y la clase `.comunidad-panel`
+   porque el CSS y el `id` de ancla cuelgan de ahí. Renombrarlo sería
+   un commit de ruido que toca cuatro ficheros para no cambiar nada de
+   lo que ve nadie.
+   ═══════════════════════════════════════════════════════════════════ */
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <section class="comunidad-panel" id="comunidad-panel" aria-labelledby="comunidad-panel-titulo">
@@ -34,33 +23,5 @@ const experts = [
     <a class="comunidad-panel__enlace" href={base + 'comunidad'}>
       Entrar a Comunidad <span aria-hidden="true">→</span>
     </a>
-  </div>
-
-  <div class="expertos" aria-labelledby="expertos-titulo">
-    <header class="expertos__cabecera">
-      <p class="seccion-rotulo">PANEL DE EXPERTOS</p>
-      <h2 id="expertos-titulo">Lo que la evidencia permite decir</h2>
-      <p>Estas son sintesis editoriales de trabajos publicados. No son citas textuales, testimonios para Galene ni avales de sus autores.</p>
-    </header>
-
-    <div class="expertos__lista">
-      {experts.map((expert) => (
-        <article class="experto">
-          <p class="experto__texto">{expert.text}</p>
-          <footer>
-            <p class="experto__nombre">{expert.name}</p>
-            <p class="experto__rol">{expert.role}</p>
-            <a href={expert.source} target="_blank" rel="noopener noreferrer">{expert.sourceLabel}</a>
-          </footer>
-        </article>
-      ))}
-    </div>
-
-    <p class="expertos__protocolo">
-      Fuente institucional complementaria:
-      <a href="https://www.justice.gov/ovw/media/1367191/dl?inline=" target="_blank" rel="noopener noreferrer">
-        Protocolo nacional de examenes medico-forenses por violencia sexual, Departamento de Justicia de EE. UU., edicion 2024
-      </a>.
-    </p>
   </div>
 </section>
