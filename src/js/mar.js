@@ -127,6 +127,18 @@ void main(){
   gl_Position = vec4(p, 0.0, 1.0);
 }`;
 
+/* Copia el cuadro acumulado al lienzo visible. El shader grande pinta
+   primero en una textura persistente; así puede actualizar solo el agua
+   entre dos cuadros completos sin depender de preserveDrawingBuffer. */
+const FS_COPIA = `#version 300 es
+precision mediump float;
+out vec4 salida;
+uniform sampler2D u_cuadro;
+uniform vec2 u_res;
+void main(){
+  salida = texture(u_cuadro, gl_FragCoord.xy / u_res);
+}`;
+
 const FS = `#version 300 es
 precision highp float;
 out vec4 salida;
@@ -2532,7 +2544,7 @@ function compilar(gl, tipo, fuente) {
 export function crear(lienzo) {
   const gl = lienzo.getContext('webgl2', {
     antialias: false, alpha: false, depth: false, stencil: false,
-    powerPreference: 'low-power', preserveDrawingBuffer: false,
+    powerPreference: 'high-performance', preserveDrawingBuffer: false,
   });
   if (!gl) return null;
 
@@ -2587,6 +2599,26 @@ export function crear(lienzo) {
     return null;
   }
   gl.useProgram(p);
+
+  /* Un framebuffer conserva el último cielo completo. Entre cuadros de
+     cielo el shader complejo solo recorre la franja de agua; después un
+     shader de una sola lectura copia el resultado al lienzo visible. */
+  const fsCopia = compilar(gl, gl.FRAGMENT_SHADER, FS_COPIA);
+  if (!fsCopia) return null;
+  const pCopia = gl.createProgram();
+  gl.attachShader(pCopia, vs); gl.attachShader(pCopia, fsCopia);
+  gl.linkProgram(pCopia);
+  if (!gl.getProgramParameter(pCopia, gl.LINK_STATUS)) {
+    console.error('[mar] link copia:', gl.getProgramInfoLog(pCopia));
+    return null;
+  }
+  const uCopia = {
+    cuadro: gl.getUniformLocation(pCopia, 'u_cuadro'),
+    res: gl.getUniformLocation(pCopia, 'u_res'),
+  };
+  const texturaCuadro = gl.createTexture();
+  const framebuffer = gl.createFramebuffer();
+  let cuadroValido = false;
 
   const u = {};
   for (const n of ['u_res','u_t','u_hor','u_calma','u_deriva','u_comp','u_int',
@@ -2928,44 +2960,40 @@ export function crear(lienzo) {
     roce(r) { gl.useProgram(p); gl.uniform3f(u.u_roce, r.x, r.y, r.z); },
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
-    /* Cronometra un cuadro en la GPU sin bloquear el hilo principal.
-       Si el dispositivo no ofrece la extensión, el perfil móvil inicial
-       ya es conservador y se mantiene tal cual. */
-    medirGpu(e) {
-      const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
-      if (!ext) return Promise.resolve(null);
-      const consulta = gl.createQuery();
-      gl.beginQuery(ext.TIME_ELAPSED_EXT, consulta);
-      this.dibujar(e);
-      gl.endQuery(ext.TIME_ELAPSED_EXT);
-      return new Promise((resolver) => {
-        const vence = performance.now() + 3000;
-        const consultar = () => {
-          const disponible = gl.getQueryParameter(consulta, gl.QUERY_RESULT_AVAILABLE);
-          const invalida = gl.getParameter(ext.GPU_DISJOINT_EXT);
-          if (!disponible) {
-            if (performance.now() >= vence) {
-              gl.deleteQuery(consulta);
-              resolver(null);
-              return;
-            }
-            setTimeout(consultar, 16);
-            return;
-          }
-          const ns = gl.getQueryParameter(consulta, gl.QUERY_RESULT);
-          gl.deleteQuery(consulta);
-          resolver(invalida ? null : ns / 1e6);
-        };
-        setTimeout(consultar, 0);
-      });
-    },
     redimensionar(w, h, escala) {
       ancho = Math.max(1, Math.round(w * escala));
       alto  = Math.max(1, Math.round(h * escala));
       lienzo.width = ancho; lienzo.height = alto;
       gl.viewport(0, 0, ancho, alto);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texturaCuadro);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ancho, alto, 0,
+                    gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                              gl.TEXTURE_2D, texturaCuadro, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindTexture(gl.TEXTURE_2D, tex.lejano);
+      gl.useProgram(p);
+      cuadroValido = false;
     },
-    dibujar(e) {
+    dibujar(e, limite = 1, persistente = false) {
+      /* `limite` está medido desde el canto inferior. Un cuadro parcial
+         conserva el cielo anterior y repinta agua, bruma y raíces. En
+         escritorio se dibuja directo, sin pagar el copiado adicional. */
+      const parcial = persistente && cuadroValido && limite < 0.999;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, persistente ? framebuffer : null);
+      gl.useProgram(p);
+      if (parcial) {
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(0, 0, ancho, Math.min(alto, Math.ceil(alto * limite)));
+      } else {
+        gl.disable(gl.SCISSOR_TEST);
+      }
       gl.uniform2f(u.u_res, ancho, alto);
       gl.uniform1f(u.u_t, e.t);
       gl.uniform1f(u.u_hor, e.horizonte);
@@ -2988,6 +3016,23 @@ export function crear(lienzo) {
       gl.uniform3fv(u.u_reguero,   e.luz.reguero);
       gl.uniform3fv(u.u_bruma,     e.luz.bruma);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.disable(gl.SCISSOR_TEST);
+      if (!persistente) return;
+      cuadroValido = true;
+
+      /* Presentación barata: una muestra de textura por píxel. */
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.useProgram(pCopia);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texturaCuadro);
+      gl.uniform1i(uCopia.cuadro, 0);
+      gl.uniform2f(uCopia.res, ancho, alto);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      /* cargar() y el próximo cuadro esperan de nuevo el programa y la
+         textura cero del mar, no la textura de presentación. */
+      gl.bindTexture(gl.TEXTURE_2D, tex.lejano);
+      gl.useProgram(p);
     },
     /* Lee lo que quedó pintado detrás de una zona (píxeles del lienzo,
        origen abajo-izquierda). Hay que llamarlo en el MISMO cuadro que
