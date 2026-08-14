@@ -115,8 +115,11 @@ function arrancar(mar) {
   /* En móvil, más píxeles de respaldo no son más detalle visible: son
      más fragmentos del shader por cuadro. La escala puede recuperarse
      tras la sonda si el dispositivo demuestra que tiene margen. */
-  let escala = PERFIL_AHORRO ? 0.70
-    : MOVIL ? Math.min(devicePixelRatio || 1, 0.85)
+  /* En móvil esta es la resolución de SIMULACIÓN, no la de salida: el
+     reconstructor HD de mar.js presenta a 1×–1.1×. El área que se ahorra
+     aquí paga el pase nítido sin aumentar el presupuesto por cuadro. */
+  let escala = PERFIL_AHORRO ? 0.68
+    : MOVIL ? Math.min(devicePixelRatio || 1, 0.82)
       : Math.min(devicePixelRatio || 1, 1.35);
   let horizonte = 0.44;
   let deriva = 0, punteroX = 0, punteroObjetivo = 0;
