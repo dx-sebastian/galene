@@ -3,9 +3,18 @@
    página se desliza por encima y el mar se queda donde está.
    Es una isla: todo su JavaScript lo carga index.astro, y si no llega,
    el respaldo CSS del contenedor sigue siendo un mar. */
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <div class="mundo" aria-hidden="true">
   <canvas class="hero__lienzo" id="lienzo"></canvas>
   <div class="garzas" id="garzas"></div>
+  {/* Movimiento móvil de presupuesto mínimo. Una sola lámina de ave se
+      reutiliza dos veces; el agua y el viento son composición CSS. */}
+  <div class="movil-vida">
+    <img class="movil-ave movil-ave--alta" src={base + 'arte/1024/aves/ave06.webp'}
+         alt="" decoding="async" fetchpriority="low" />
+    <img class="movil-ave movil-ave--baja" src={base + 'arte/1024/aves/ave06.webp'}
+         alt="" decoding="async" fetchpriority="low" />
+  </div>
 </div>
