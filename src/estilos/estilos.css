@@ -4492,6 +4492,19 @@ body {
   to   { opacity: 1;    filter: blur(0)    saturate(1);    scale: 1; }
 }
 
+/* El loader ya espera a que la pintura crítica esté lista. En móvil no
+   se vuelve a rasterizar el mundo entero dentro de un filtro blur: esa
+   capa intermedia suavizaba canvas y aves incluso mientras terminaba de
+   desmontarse. La acuarela abre lista y a resolución física. */
+@media (max-width: 700px), (pointer: coarse) {
+  .entrando .mundo {
+    animation: none !important;
+    filter: none !important;
+    scale: 1 !important;
+    opacity: 1 !important;
+  }
+}
+
 /* (Aquí el lockup entraba medio segundo antes que la pintura, con un
    velo y sin desplazamiento. Se fue con el texto del hero: ahora la
    entrada es solo la pintura secándose.) */
