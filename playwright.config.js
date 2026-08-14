@@ -97,7 +97,19 @@ export default defineConfig({
   /* `astro preview` arranca un demonio y su proceso termina enseguida:
      Playwright lo ve morir y aborta la suite con «exited early». Se
      sirve `dist/` con el servidor de pruebas/servidor.mjs, que es un
-     proceso vivo y sirve igual que GitHub Pages. */
+     proceso vivo y sirve igual que GitHub Pages.
+
+     ── CUIDADO CON `reuseExistingServer` ─────────────────────────────
+     Si ya hay algo escuchando en el puerto, Playwright NO ejecuta este
+     `command` — o sea que TAMPOCO COMPILA, y la suite corre contra el
+     `dist/` que hubiera. Costó una prueba en rojo que no tenía nada
+     malo: el asidero que buscaba se había añadido después de la última
+     compilación.
+
+     Se deja así porque en el uso normal —`npm run test:e2e` sin nada
+     levantado— compila siempre, y reaprovechar el servidor entre
+     ejecuciones ahorra minutos mientras se escribe una prueba. Si has
+     dejado un servidor a mano en este puerto: bájalo o compila tú. */
   webServer: {
     command: `npm run build && node pruebas/servidor.mjs ${PUERTO}`,
     url: BASE,
