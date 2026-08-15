@@ -47,6 +47,27 @@
           distancia, todas con el mismo tratamiento. */}
       <filter id="aguada-lejos" x="-18%" y="-18%" width="136%" height="136%"
               color-interpolation-filters="sRGB">
+        {/* EL HALO DEL RECORTE TAMBIÉN AQUÍ, y llevaba tiempo puesto.
+            La limpieza del alfa vivía solo en el filtro de lo cercano,
+            con el argumento de que a 50 px de alto no se nota. Mirado
+            en el sitio publicado con la bandada ampliada: sí se nota —
+            las aves de la copa llevan un reborde claro de un píxel
+            contra la hoja verde, y un píxel de rebode claro alrededor
+            de una silueta es exactamente la firma de una imagen
+            pegada. Es más visible aquí que en la visitante, porque el
+            fondo de la copa es oscuro y el del agua no.
+
+            La curva es la misma: lo casi transparente se hace
+            transparente del todo y lo opaco no se entera. */}
+        <feComponentTransfer in="SourceGraphic" result="limpia">
+          <feFuncA type="gamma" amplitude="1" exponent="1.6" offset="0" />
+        </feComponentTransfer>
+        <feColorMatrix in="limpia" type="matrix" result="limpiaAlfa"
+                       values="0 0 0 0 0
+                               0 0 0 0 0
+                               0 0 0 0 0
+                               0 0 0 1 0" />
+
         {/* EL DIENTE DEL PAPEL. `fractalNoise` y no `turbulence`: el
             segundo hace nubes con lóbulos, y el papel no tiene
             lóbulos, tiene grano parejo. La frecuencia está puesta a
@@ -65,7 +86,7 @@
           <feFuncB type="linear" slope="0.14" intercept="0.86" />
           <feFuncA type="linear" slope="0" intercept="1" />
         </feComponentTransfer>
-        <feComposite in="SourceGraphic" in2="grano" operator="arithmetic"
+        <feComposite in="limpia" in2="grano" operator="arithmetic"
                      k1="1" k2="0" k3="0" k4="0" result="granosa" />
 
         {/* LA VELADURA DE LA HORA. La silueta rellena del color de la
@@ -76,10 +97,88 @@
             declaraciones CSS — en un atributo de presentación no se
             sustituye. */}
         <feFlood id="bruma-lejos" result="niebla" />
-        <feComposite in="niebla" in2="SourceAlpha" operator="in" result="velo" />
+        <feComposite in="niebla" in2="limpiaAlfa" operator="in" result="velo" />
         <feMerge>
           <feMergeNode in="granosa" />
           <feMergeNode in="velo" />
+        </feMerge>
+      </filter>
+
+      {/* ── LO QUE ESTÁ DENTRO DE LA COPA ────────────────────────────
+          La bandada y las garzas de presencia no vuelan: están POSADAS
+          entre las hojas del manglar del fondo. Y hasta hoy llevaban
+          exactamente el mismo tratamiento que un ave en pleno cielo,
+          que es lo que las dejaba como calcomanías sobre el árbol —
+          mirado en el sitio publicado a mediodía: seis siluetas grises
+          planas encima de una copa llena de verdes al sol y de sombra
+          entre hoja y hoja.
+
+          A un cuerpo metido en un follaje le pasan dos cosas que a uno
+          en el cielo no:
+
+          1 · LE CAE DAPPLE. La luz llega a manchas, filtrada por las
+              hojas de delante, y esas manchas llevan el color del
+              follaje. Se pintan con el mismo `fractalNoise` que el
+              grano pero cien veces más grande —manchas, no ruido— y
+              con la curva endurecida, porque la sombra de una hoja
+              tiene borde y la niebla no.
+
+          2 · ESO ES, ADEMÁS, LA OCLUSIÓN QUE FALTABA. Nada de la
+              escena pasaba nunca por delante de un ave, y un objeto
+              que jamás es tapado por nada se lee como pegado en el
+              cristal. Las manchas de dosel son hoja por delante: no
+              tapan la silueta entera, la muerden.
+
+          El verde no es un verde inventado: es el del mangle mezclado
+          con la bruma de la hora, así que la mancha anochece con el
+          resto del cuadro (ver `#sombra-copa` en estilos.css). */}
+      <filter id="aguada-copa" x="-18%" y="-18%" width="136%" height="136%"
+              color-interpolation-filters="sRGB">
+        <feComponentTransfer in="SourceGraphic" result="limpia">
+          <feFuncA type="gamma" amplitude="1" exponent="1.6" offset="0" />
+        </feComponentTransfer>
+        <feColorMatrix in="limpia" type="matrix" result="limpiaAlfa"
+                       values="0 0 0 0 0
+                               0 0 0 0 0
+                               0 0 0 0 0
+                               0 0 0 1 0" />
+
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"
+                      seed="7" result="diente" />
+        <feColorMatrix in="diente" type="saturate" values="0" result="dienteGris" />
+        <feComponentTransfer in="dienteGris" result="grano">
+          <feFuncR type="linear" slope="0.14" intercept="0.86" />
+          <feFuncG type="linear" slope="0.14" intercept="0.86" />
+          <feFuncB type="linear" slope="0.14" intercept="0.86" />
+          <feFuncA type="linear" slope="0" intercept="1" />
+        </feComponentTransfer>
+        <feComposite in="limpia" in2="grano" operator="arithmetic"
+                     k1="1" k2="0" k3="0" k4="0" result="granosa" />
+
+        <feFlood id="bruma-copa" result="niebla" />
+        <feComposite in="niebla" in2="limpiaAlfa" operator="in" result="velo" />
+
+        {/* LAS MANCHAS DEL DOSEL. `luminanceToAlpha` convierte el
+            relieve del ruido en opacidad, y la tabla lo endurece: dos
+            tramos en cero —o sea, la mitad del ave sin mancha— y luego
+            sube deprisa. Sin endurecer sale una gasa verde uniforme,
+            que es teñir, no ensombrecer. */}
+        <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2"
+                      seed="23" result="hojas" />
+        <feColorMatrix in="hojas" type="luminanceToAlpha" result="hojasAlfa" />
+        <feComponentTransfer in="hojasAlfa" result="dosel">
+          <feFuncA type="table" tableValues="0 0 0.35 0.9" />
+        </feComponentTransfer>
+        <feFlood id="sombra-copa" result="verde" />
+        <feComposite in="verde" in2="dosel" operator="in" result="manchas" />
+        {/* Y RECORTADAS AL AVE: la mancha es sombra SOBRE ella, no una
+            hoja flotando en el aire a su lado. */}
+        <feComposite in="manchas" in2="limpiaAlfa" operator="in" result="dapple" />
+
+        <feMerge>
+          <feMergeNode in="granosa" />
+          <feMergeNode in="velo" />
+          <feMergeNode in="dapple" />
         </feMerge>
       </filter>
 
@@ -158,10 +257,34 @@
                      k2="1" k3="-1" result="canto" />
         <feFlood id="canto-cerca" result="pigmento" />
         <feComposite in="pigmento" in2="canto" operator="in" result="filete" />
-        <feMerge>
+
+        {/* ── EL REBOTE DEL AGUA ───────────────────────────────────
+            Está posada a un palmo de un mar iluminado, y un cuerpo
+            encima del agua recibe luz POR DEBAJO: el reflejo del sol
+            en la superficie le sube a la panza, a la cara interior del
+            ala y al borde inferior del pico. Sin eso, el ave está
+            iluminada solo desde arriba —como una figura recortada
+            sobre una foto— por muy bien velada que esté.
+
+            La banda de abajo se saca con el mismo truco que el canto
+            mojado, pero DIRIGIDO: la silueta menos su propia versión
+            desenfocada y subida seis píxeles deja justo el filo
+            inferior. Eso se rellena con el color del agua de la hora y
+            se mezcla en `screen`, porque una luz rebotada solo puede
+            aclarar — si oscureciera sería una sombra, y las sombras de
+            esta ave ya están puestas en CSS. */}
+        <feGaussianBlur in="limpiaAlfa" stdDeviation="3.2" result="difusa" />
+        <feOffset in="difusa" dy="-7" result="subida" />
+        <feComposite in="limpiaAlfa" in2="subida" operator="arithmetic"
+                     k2="1" k3="-1" result="panza" />
+        <feFlood id="rebote-agua" result="luzAgua" />
+        <feComposite in="luzAgua" in2="panza" operator="in" result="rebote" />
+
+        <feMerge result="conCanto">
           <feMergeNode in="pintada" />
           <feMergeNode in="filete" />
         </feMerge>
+        <feBlend in="conCanto" in2="rebote" mode="screen" />
       </filter>
     </defs>
   </svg>

@@ -1522,6 +1522,34 @@ body.pagina-papel { background: var(--papel); }
   flood-color: var(--bruma, #CDDCDE);
   flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-cerca, 0.26));
 }
+/* ── LOS DOS COLORES NUEVOS DE LA COPA Y DEL AGUA ──────────────────
+   `#bruma-copa` es la misma veladura de lo lejano: la bandada está a
+   la misma distancia que antes y su aire no cambia porque ahora tenga
+   dapple.
+
+   `#sombra-copa` es la mancha de hoja. El verde sale del mangle de la
+   lámina —un verde oliva sombrío, no un verde de prado— mezclado con
+   la bruma de la hora, así que a las nueve de la noche la mancha es
+   azul verdosa oscura y a mediodía verde polvoriento. La opacidad es
+   baja a propósito: lo que tiene que quedar es una duda de sombra
+   sobre el ala, no un ave pintada de verde.
+
+   `#rebote-agua` es la luz que sube del mar. Va en `screen` (ver
+   Mundo.astro), o sea que solo aclara: el color es el agua de la hora
+   subida de brillo, que es lo que devuelve una superficie mojada. */
+#bruma-copa {
+  flood-color: var(--bruma, #CDDCDE);
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-lejos, 0.5));
+}
+#sombra-copa {
+  flood-color: color-mix(in srgb, #5F7340 62%, var(--bruma, #CDDCDE));
+  flood-opacity: 0.30;
+}
+#rebote-agua {
+  flood-color: color-mix(in srgb, var(--agua-altas, #7FB4B8) 74%, #FFFFFF);
+  flood-opacity: 0.34;
+}
+
 /* El filete del borde no es negro: es el mismo pigmento del cuadro
    cargado un punto más. Con negro sale un contorno de tebeo. */
 #canto-cerca {
@@ -1598,10 +1626,15 @@ body.pagina-papel { background: var(--papel); }
      filtro la sombra entraría en el `SourceAlpha` de la veladura y se
      velaría ella también: una sombra bruma sobre bruma, o sea ninguna
      sombra. Detrás, la sombra se proyecta desde el ave ya pintada. */
+  /* Y UN PUNTO MÁS OSCURAS QUE UN AVE EN EL CIELO. Dentro de una copa
+     llega menos luz que en campo abierto —la hoja se la queda—, y sin
+     esa diferencia la bandada era lo más claro del árbol: cinco manchas
+     pálidas sobre el verde, que es la definición de calcomanía. Un 7 %
+     basta; más las mete en sombra y entonces no se ven. */
   filter: saturate(var(--vuelo-sat, 0.3))
           contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
-          brightness(var(--vuelo-brillo, 1))
-          url(#aguada-lejos)
+          brightness(calc(var(--vuelo-brillo, 1) * 0.93))
+          url(#aguada-copa)
           drop-shadow(0 1px 1.5px color-mix(in srgb, var(--sombra-ave) 30%, transparent))
           drop-shadow(0 0 5px color-mix(in srgb, var(--sombra-ave) 16%, transparent));
 }
@@ -1677,10 +1710,15 @@ body.pagina-papel { background: var(--papel); }
    garza de otro cuadro— se dice con el pico y con la frase. */
 .vuelo--presencia {
   will-change: auto;
+  /* Y UN PUNTO MÁS OSCURAS QUE UN AVE EN EL CIELO. Dentro de una copa
+     llega menos luz que en campo abierto —la hoja se la queda—, y sin
+     esa diferencia la bandada era lo más claro del árbol: cinco manchas
+     pálidas sobre el verde, que es la definición de calcomanía. Un 7 %
+     basta; más las mete en sombra y entonces no se ven. */
   filter: saturate(var(--vuelo-sat, 0.3))
           contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
-          brightness(var(--vuelo-brillo, 1))
-          url(#aguada-lejos)
+          brightness(calc(var(--vuelo-brillo, 1) * 0.93))
+          url(#aguada-copa)
           drop-shadow(0 1px 1.5px color-mix(in srgb, var(--sombra-ave) 30%, transparent))
           drop-shadow(0 0 5px color-mix(in srgb, var(--sombra-ave) 16%, transparent));
 }

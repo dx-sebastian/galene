@@ -518,7 +518,27 @@ export function aplicar(L, escribirLavado = true) {
      los cuerpos rendían ~0.65 sobre una copa que ya es silueta. 0.24
      las deja en ~0.56 a esa hora: plumas en la noche, no lámparas.
      El mediodía no se mueve (1.04 antes, 1.04 ahora). */
-  r.style.setProperty('--vuelo-brillo', (0.24 + 0.80 * L.int).toFixed(3));
+  /* ── CUARTA VUELTA, Y ESTA CON NÚMEROS ────────────────────────────
+     Las tres anteriores se ajustaron a ojo contra el sitio publicado y
+     se quedaron cortas. Medido ahora, recortando el ave y el mar que
+     tiene al lado y comparando su L*: a las 19.2 la visitante rendía
+     33 sobre un agua de 22.7 —un 45 % más clara que el mar— y a las
+     21.5, 27 sobre 18.7. O sea que de noche el ave era el objeto más
+     claro del cuadro después de la luna, que es exactamente lo que se
+     ve como una figura pegada encima de una foto oscura.
+
+     La causa no era el suelo de la recta: era la RECTA. La pintura
+     anochece antes que `L.int` —a las 19.2 el agua ya está en #12142e
+     mientras la intensidad va por la mitad— así que una interpolación
+     lineal deja al ave con luz de atardecer sobre un mar de noche
+     cerrada. Con el exponente 1.35 la curva baja deprisa en la primera
+     mitad, que es donde el cuadro se apaga, y no toca el mediodía.
+
+     El suelo se queda en 0.14 y no en cero por una razón que ya estaba
+     escrita aquí: la cabeza tiene que seguir siendo legible. Un ave que
+     desaparece de noche no está integrada, está apagada. */
+  const luzAve = Math.pow(L.int, 1.35);
+  r.style.setProperty('--vuelo-brillo', (0.14 + 0.86 * luzAve).toFixed(3));
   /* Cuanta más luz, más aire entre el ave y quien mira: de día se lava
      más que de noche, igual que el agua lejana. El suelo del velo sube
      a 0.26: la bruma nocturna es añil y velar con añil también hunde
@@ -547,8 +567,12 @@ export function aplicar(L, escribirLavado = true) {
      contraste bajan un pelo para que sus negros duros no canten contra
      una escena bañada de aire. La rama en la que se posa sigue siendo
      más oscura que ella: la jerarquía de planos no se toca. */
+  /* La misma curva para la visitante, con su suelo un punto más alto:
+     se ve cuatro veces más grande y es la que sostiene la portada, así
+     que puede permitirse un poco más de luna encima. Medido con la
+     curva puesta, ver la nota de `--vuelo-brillo`. */
   r.style.setProperty('--vuelo-brillo-cerca',
-                      Math.min(1.0, 0.30 + 0.70 * L.int).toFixed(3));
+                      Math.min(1.0, 0.16 + 0.84 * luzAve).toFixed(3));
   r.style.setProperty('--vuelo-sat-cerca', (0.68 + 0.24 * L.int).toFixed(3));
   r.style.setProperty('--vuelo-contraste-cerca', (0.87 + 0.07 * L.int).toFixed(3));
   /* CUÁNTO PESA LA VELADURA de las garzas, en fracciones del velo.
