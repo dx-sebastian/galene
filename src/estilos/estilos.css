@@ -312,17 +312,19 @@ input, select, textarea { margin: 0; }
 }
 
 :root[data-tinta="clara"] {
-  /* La noche de la sección de lectura. Morado, azul y muy poco negro:
-     #141428 no es negro, es añil apagado, y por eso descansa en vez de
-     agujerear la pantalla. Las tarjetas suben un paso de valor para
-     que sigan leyéndose como algo que sobresale del papel. */
-  --papel:        #1A1832;
-  --papel-arriba: #141428;
-  --papel-alto:   #242040;
-  --papel-hondo:  #1E1B38;
+  /* La noche de la sección de lectura. AZUL, y ya no morado: la
+     primera paleta tiraba a violeta (#1A1832 tiene el rojo casi a la
+     par del verde) y el dueño la leyó como morado — con razón. Estos
+     giran el matiz hacia el añil del mar nocturno: mismo valor, mismo
+     descanso, otra agua. Ninguno es negro; las tarjetas suben un paso
+     de valor para seguir leyéndose como algo que sobresale del papel. */
+  --papel:        #14213B;
+  --papel-arriba: #101B30;
+  --papel-alto:   #1C2B47;
+  --papel-hondo:  #172440;
   --letra-rgb:    232 238 242;
   --letra:        rgb(var(--letra-rgb));
-  --contra:       #171428;
+  --contra:       #101B30;
   --aviso-fondo:  #3A2436;
 
   /* EL PAPEL DEL CIELO, MÁS AÑIL DE NOCHE. La fórmula general mezcla
@@ -1439,6 +1441,18 @@ body {
   flood-color: var(--bruma, #CDDCDE);
   flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.26);
 }
+/* DE NOCHE LA VELADURA SUBE. Mirado en el sitio publicado a las 21.5:
+   las aves seguían siendo lo más blanco del cuadro — cuerpos de día
+   sobre una copa que ya es silueta. El brillo las hunde (js/hora.js)
+   pero el brillo solo apaga; lo que las mete EN la noche es que su
+   velo comparta el añil de la hora, y de noche ese velo tiene que
+   pesar más que el aire de mediodía. */
+:root[data-tinta="clara"] #bruma-lejos {
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.68);
+}
+:root[data-tinta="clara"] #bruma-cerca {
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.38);
+}
 /* El filete del borde no es negro: es el mismo pigmento del cuadro
    cargado un punto más. Con negro sale un contorno de tebeo. */
 #canto-cerca {
@@ -1558,6 +1572,33 @@ body {
           url(#aguada-cerca)
           drop-shadow(0 3px 2px color-mix(in srgb, var(--sombra-ave) 78%, transparent))
           drop-shadow(2px 5px 5px color-mix(in srgb, var(--sombra-ave) 45%, transparent));
+  /* EL REFLEJO. Mirando el sitio publicado de día: el manglar entero
+     tiene su reflejo pintado en el agua y la visitante no tenía nada
+     debajo — esa ausencia es lo que la leía como recorte, más que
+     ningún filtro. `box-reflect` copia la lámina que se esté viendo
+     (las poses cambian de opacidad y el reflejo las sigue solo),
+     invertida y muriendo rápido: un asomo de sheen entre las raíces,
+     no un espejo. WebKit/Blink lo pintan; Firefox lo ignora y el ave
+     queda como estaba — un adorno que degrada a nada. */
+  -webkit-box-reflect: below -8px
+    linear-gradient(to bottom, transparent 58%, rgb(0 0 0 / 20%) 97%);
+}
+
+/* EL CHARCO de la visitante: la mancha que un cuerpo posado deja bajo
+   los pies. La pinta main.js (posición y tamaño van con el ave); aquí
+   solo su materia: una elipse del pigmento de sombra de la hora, que
+   muere muy dentro de su caja para no enseñar canto. `multiply`
+   porque una sombra solo puede oscurecer. */
+.vuelo-charco {
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(closest-side ellipse,
+    color-mix(in srgb, var(--sombra-ave) 60%, transparent) 0%,
+    color-mix(in srgb, var(--sombra-ave) 38%, transparent) 46%,
+    transparent 74%);
+  mix-blend-mode: multiply;
 }
 
 /* LAS DE QUIEN MÁS ESTÉ. Se posan en la copa del manglar del fondo, o
@@ -1726,7 +1767,11 @@ body {
 }
 :root[data-tinta="clara"] .fondo__papel {
   mix-blend-mode: screen;
-  opacity: 0.12;
+  /* 0.12 → 0.24: a 0.12 el grano no existía —el dueño lo dijo con la
+     palabra exacta: «panel sin textura»— y una hoja nocturna sin
+     diente es plástico azul. A 0.24 el algodón vuelve a leerse sin
+     robarle valor a la letra. */
+  opacity: 0.24;
 }
 
 /* ════════════════════════════════════════════════════════════════════

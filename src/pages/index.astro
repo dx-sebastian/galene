@@ -13,7 +13,8 @@
    ═══════════════════════════════════════════════════════════════════ */
 import '../estilos/estilos.css';
 import Mundo from '../componentes/Mundo.astro';
-import Boca from '../componentes/Boca.astro';
+/* Boca.astro ya no se monta: la rendija que dejaba entre la ayuda y la
+   hoja se retiró a petición del dueño. El fichero queda. */
 import Ayuda from '../componentes/Ayuda.astro';
 import Herramientas from '../componentes/Herramientas.astro';
 import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
@@ -485,15 +486,17 @@ const DATOS = {
       </p>
     </section>
 
-    {/* LA BOCA va ENTRE el hero y las herramientas, y en el flujo de
-        <main>: es la costura donde el agua se convierte en hoja. Estuvo
-        metida dentro de `#herramientas` como un relleno superior y
-        obligaba a tres apaños —fondo transparente, aguadas desplazadas
-        y un ancla con margen negativo— que se cayeron solos al sacarla.
-        No lleva ni una palabra: ver Boca.astro. */}
+    {/* LA BOCA SE RETIRÓ, por orden del dueño y a la segunda vez de
+        pedirlo. La costura del agua volviéndose hoja era el argumento
+        plástico del sitio, pero en pantalla dejaba una RENDIJA: una
+        franja de pintura fija asomando entre dos paneles opacos, que a
+        según qué scroll era la bruma —una barra clara— y a según cuál,
+        una línea transparente que partía la lectura en dos. Dos rondas
+        de velos y recortes no la curaron del todo. La hoja ahora
+        empieza donde acaba la ayuda: papel con papel, sin rendija. El
+        componente sigue en Boca.astro por si la costura vuelve algún
+        día con otra forma. */}
     <Ayuda />
-
-    <Boca />
 
     <Herramientas />
 

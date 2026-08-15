@@ -513,7 +513,12 @@ export function aplicar(L, escribirLavado = true) {
      ave nocturna seguía leyéndose como lámina propia. 0.32 de suelo la
      deja en 0.54 de madrugada —un bulto en el árbol, apenas más claro
      que la hoja— y a mediodía en 1.05, igual que estaba. */
-  r.style.setProperty('--vuelo-brillo', (0.32 + 0.73 * L.int).toFixed(3));
+  /* Y UNA TERCERA VUELTA, mirando el sitio PUBLICADO a las 21.5: con
+     0.32 de suelo la bandada seguía siendo lo más claro del cuadro —
+     los cuerpos rendían ~0.65 sobre una copa que ya es silueta. 0.24
+     las deja en ~0.56 a esa hora: plumas en la noche, no lámparas.
+     El mediodía no se mueve (1.04 antes, 1.04 ahora). */
+  r.style.setProperty('--vuelo-brillo', (0.24 + 0.80 * L.int).toFixed(3));
   /* Cuanta más luz, más aire entre el ave y quien mira: de día se lava
      más que de noche, igual que el agua lejana. El suelo del velo sube
      a 0.26: la bruma nocturna es añil y velar con añil también hunde
@@ -537,10 +542,15 @@ export function aplicar(L, escribirLavado = true) {
      más clara del cuadro, sobre una rama que ahora es casi silueta.
      Con 0.36 cae a 0.66 a esa hora y 0.58 de madrugada: cuerpo en la
      noche, cabeza todavía legible. El techo 1.0 no se toca. */
+  /* Suelo 0.30 (antes 0.36), misma razón que la bandada y mirada en el
+     publicado; y de día el plato se ASIENTA un punto: saturación y
+     contraste bajan un pelo para que sus negros duros no canten contra
+     una escena bañada de aire. La rama en la que se posa sigue siendo
+     más oscura que ella: la jerarquía de planos no se toca. */
   r.style.setProperty('--vuelo-brillo-cerca',
-                      Math.min(1.0, 0.36 + 0.63 * L.int).toFixed(3));
-  r.style.setProperty('--vuelo-sat-cerca', (0.70 + 0.26 * L.int).toFixed(3));
-  r.style.setProperty('--vuelo-contraste-cerca', (0.90 + 0.08 * L.int).toFixed(3));
+                      Math.min(1.0, 0.30 + 0.70 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-sat-cerca', (0.68 + 0.24 * L.int).toFixed(3));
+  r.style.setProperty('--vuelo-contraste-cerca', (0.87 + 0.07 * L.int).toFixed(3));
   r.dataset.tinta = L.tinta;
 }
 

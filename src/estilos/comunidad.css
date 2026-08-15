@@ -371,9 +371,12 @@
    cómo se llama esto, qué es, y las tres reglas de la casa. Las reglas
    van ARRIBA y no en un pie: son las que deciden si alguien se atreve a
    escribir. */
+/* CABECERA DE FORO: la mitad de aire que la de landing que fue. El
+   título baja un escalón de cuerpo y las normas viven plegadas al
+   lado de la declaración — los hilos llegan dos pantallas antes. */
 .comunidad__cabecera {
   max-width: 46rem;
-  margin-block: var(--e-5) var(--e-6);
+  margin-block: var(--e-4) var(--e-4);
 }
 .comunidad__sobre {
   margin: 0 0 var(--e-2);
@@ -386,7 +389,7 @@
   margin: 0;
   font-family: var(--tipo-titulo);
   font-weight: 400;
-  font-size: var(--t-3xl);
+  font-size: var(--t-2xl);
   line-height: 1.05;
 }
 /* El mismo filete del hero, y por lo mismo: en SVG para que herede la
@@ -401,12 +404,33 @@
   color: rgb(var(--letra-rgb) / 55%);
 }
 .comunidad__declaracion {
-  margin: 0 0 var(--e-4);
-  font-size: var(--t-lg);
-  line-height: 1.4;
-  max-width: 32ch;
+  margin: var(--e-2) 0 var(--e-2);
+  font-size: var(--t-md);
+  line-height: 1.45;
+  max-width: 52ch;
   text-wrap: pretty;
+  color: rgb(var(--letra-rgb) / 84%);
 }
+.comunidad__declaracion strong { color: var(--letra); }
+
+/* Las normas, plegadas. El resumen es un renglón discreto con la
+   flechita del sistema; abierto, la misma lista de siempre. */
+.comunidad__normas { margin: 0 0 var(--e-3); }
+.comunidad__normas > summary {
+  display: inline-block;
+  cursor: pointer;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 66%);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.35em;
+}
+.comunidad__normas > summary:hover { color: var(--letra); }
+.comunidad__normas > summary:focus-visible {
+  outline: 2px solid var(--letra);
+  outline-offset: 3px;
+}
+.comunidad__normas[open] > .comunidad__casa { margin-top: var(--e-3); }
 
 /* LAS TRES REGLAS DE LA CASA, en su propio panel de vidrio. Son la
    norma, no una lista de apoyo: puestas como texto suelto se leían como
