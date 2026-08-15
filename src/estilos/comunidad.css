@@ -1342,6 +1342,26 @@
   color: rgb(var(--letra-rgb) / 66%);
 }
 
+/* ── QUIÉN HABLA: UN MONIGOTE Y NADA MÁS ───────────────────────────
+   El foro se quedó sin retratos y con los nombres a secas, y una
+   columna de nombres sin ninguna marca se lee como un registro, no
+   como gente hablando. El dueño pidió lo justo: «un icono de usuario
+   básico negro y ya». Eso es: silueta rellena en la tinta de la
+   página, del tamaño de la línea del nombre, sin caja, sin color y
+   sin foto. El mismo para todos, porque aquí nadie tiene cara. */
+.quien {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--letra);
+}
+.quien__icono {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: currentColor;
+}
+.quien--chico .quien__icono { width: 1rem; height: 1rem; }
+
 /* (AQUÍ VIVÍA EL SELLO: la garza posada que firmaba cada mensaje, con
    su baldosa de vidrio, su pozo de agua a los pies y su luz propia
    calibrada contra el papel. Se fue entera con la orden de quitar todas

@@ -1103,23 +1103,11 @@
   color: #8E4C25;
   line-height: 1.4;
 }
-/* UNA FRASE Y NADA MÁS. El párrafo largo se fue a la ficha por orden
-   del dueño; recortarlo con puntos suspensivos era la forma más cara
-   de no decir nada. */
-.producto__gancho {
-  font-size: var(--t-sm);
-  line-height: 1.5;
-  color: rgb(var(--letra-rgb) / 74%);
-}
-.producto__ver {
-  margin-top: auto;
-  padding-top: 0.35rem;
-  font-size: var(--t-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgb(var(--letra-rgb) / 62%);
-}
-.producto__enlace:hover .producto__ver { color: var(--letra); }
+/* (El párrafo de la tarjeta y el «ver la ficha» se fueron con los
+   sellos: «quítale los badgets y tanto texto». En el mostrador quedan
+   la foto, el nombre y el lema; la tarjeta entera enlaza a la ficha,
+   así que un rótulo que lo repita solo es texto de más.) */
+.producto__cuerpo { justify-content: center; }
 
 /* La compra cierra la ficha abajo, siempre a la misma altura aunque
    los textos midan distinto. */
@@ -1141,28 +1129,12 @@
 }
 
 /* ═══ EL CATÁLOGO, EN CLAVE DE TIENDA ═══════════════════════════════
-   Segunda vuelta a pedido del dueño: más e-commerce sin dejar el
-   papel. Lo que eso significa aquí: la foto manda, el sello de uso va
-   encima de ella como etiqueta de tienda, la compra cierra la ficha a
-   todo lo ancho, y en el teléfono el catálogo va A DOS COLUMNAS — una
-   ficha por fila es una lista de lectura; dos es un mostrador. */
+   Más e-commerce sin dejar el papel: la foto manda y la compra cierra
+   la ficha a todo lo ancho. Aquí hubo además un sello de uso encima de
+   cada foto —«Reutilizable», «Un solo uso»— y se fue con la orden de
+   quitar los badges: lo que decía se compara mejor en la tabla de
+   especificaciones de la ficha que en una etiqueta de color. */
 .producto { position: relative; }
-.producto__sello {
-  position: absolute;
-  top: 12px; left: 10px;
-  z-index: 2;
-  padding: 0.28em 0.7em;
-  border: 1px solid color-mix(in srgb, #2F6B4F 38%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, #2F6B4F 10%, var(--papel-alto));
-  color: #1F4A36;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-
 /* La compra cierra la ficha a todo lo ancho, como en un mostrador, y
    sin el charco desplazado de la aguada: dentro de una retícula de
    fichas el borrón se leía como una sombra rota, no como pintura. El
@@ -1201,14 +1173,11 @@
   .producto__cuerpo { padding: 0; gap: 0.3rem; }
   .producto__nombre { font-size: var(--t-md); }
   .producto__lema { font-size: var(--t-xs); }
-  .producto__gancho { font-size: var(--t-xs); line-height: 1.45; }
-  .producto__ver { padding-top: 0.25rem; }
   .producto__comprar {
     margin: 0 0.9rem;
     min-height: 2.7rem;
     font-size: var(--t-xs);
   }
-  .producto__sello { top: 6px; left: 6px; font-size: 9px; }
 }
 
 /* ═══ LA FICHA DE UN PRODUCTO ═══════════════════════════════════════

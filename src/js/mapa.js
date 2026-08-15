@@ -58,8 +58,21 @@ import {
 import * as marcas from './marcas.js';
 import { buscarAyuda, distancia } from './ayuda.js';
 
-const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-const LEAFLET_JS  = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+/* ── LEAFLET VIVE AQUÍ DENTRO, NO EN UN CDN ────────────────────────
+   Se cargaba de unpkg.com con su hash de integridad, y el argumento
+   era el de siempre: un CDN va más rápido y lo tiene todo el mundo en
+   caché. En una página de emergencia ese argumento no vale — medido en
+   este mismo proyecto, unpkg tumbado deja la sección sin mapa aunque
+   la red vaya bien, y la única señal es «el mapa necesita conexión».
+
+   Servido desde el propio sitio no hay tercero que pueda caerse: si
+   cargó la página, cargó el mapa. Son 150 kB que ya están en el mismo
+   dominio y con la misma caché. Copia exacta de leaflet 1.9.4, en
+   public/vendor/leaflet (se actualiza con `npm i leaflet@…` y el
+   copiado de dist/). */
+const BASE = (import.meta.env?.BASE_URL || '/').replace(/\/?$/, '/');
+const LEAFLET_CSS = `${BASE}vendor/leaflet/leaflet.css`;
+const LEAFLET_JS  = `${BASE}vendor/leaflet/leaflet.js`;
 
 /* Teselas SIN ETIQUETAS. Dos juegos, uno por tinta: con papel claro va
    el mapa claro y con papel oscuro el oscuro, porque el mapa es papel
@@ -75,12 +88,35 @@ const TESELAS = {
 };
 const CREDITO = '© OpenStreetMap · © CARTO';
 
+/* SI CARTO NO RESPONDE, EL MAPA NO SE QUEDA EN BLANCO. Las teselas de
+   CARTO son las que van con la estética del sitio —sin topónimos, para
+   que el papel mande— pero son de un tercero y un tercero se cae. El
+   respaldo es el mapa estándar de OpenStreetMap: más cargado, menos
+   bonito, y con los nombres de las calles encima. En una emergencia
+   eso último no es un defecto. */
+const RESPALDO = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const CREDITO_RESPALDO = '© OpenStreetMap';
+
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const cerca = (m) => m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+
+/* ── CÓMO LLEGAR ───────────────────────────────────────────────────
+   WAZE PRIMERO, por pedido del dueño y porque en Colombia es lo que
+   lleva el taxi. `navigate=yes` arranca la ruta al abrir en el móvil
+   y en escritorio cae a la web de Waze; si no está instalada la app,
+   el sistema abre la web y no se pierde nadie.
+
+   Google Maps se queda al lado como segunda puerta: es la que entiende
+   cualquiera y la que funciona sin app ninguna.
+
+   Las dos son enlaces que ella pulsa, se abren fuera, van sin referente
+   y lo único que viaja es la coordenada de un hospital. */
+const aWaze = (ll) => `https://www.waze.com/ul?ll=${ll[0]}%2C${ll[1]}&navigate=yes&zoom=17`;
+const aMaps = (ll) => `https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}`;
 
 const enHoras = (t) => {
   const min = Math.round((t - Date.now()) / 60000);
@@ -96,13 +132,12 @@ const cargar = (() => {
   return () => promesa || (promesa = new Promise((ok, mal) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet'; css.href = LEAFLET_CSS;
-    css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-    css.crossOrigin = '';
     document.head.appendChild(css);
     const js = document.createElement('script');
     js.src = LEAFLET_JS;
-    js.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-    js.crossOrigin = '';
+    /* Sin `integrity` ni `crossOrigin`: el fichero es del propio sitio,
+       y un hash a mano sobre un fichero propio solo sirve para romper
+       el mapa el día que se actualice la librería y nadie lo recuerde. */
     js.onload = () => ok(window.L);
     js.onerror = () => mal(new Error('sin red'));
     document.head.appendChild(js);
@@ -114,8 +149,12 @@ export function montarMapa(host) {
 
   const $ = (s) => host.querySelector(s);
   const lienzo    = $('.mapa__lienzo');
+  /* Los dos pueden NO existir: con un solo mapa visible no se pintan
+     las pestañas ni el pie que las explica (ver Mapa.astro). */
   const pestanas  = $('.mapa__modos');
   const pie       = $('.mapa__pie');
+  const vCiudad   = $('[data-ciudad-actual]');
+  const vCapas    = $('[data-capas-cuenta]');
   const urgente   = $('.mapa__urgente');
   const fichas    = $('.mapa__ciudades');
   const otras     = $('.mapa__otras');
@@ -200,6 +239,10 @@ export function montarMapa(host) {
       ${l.direccion ? `<p class="globo__dato">${esc(l.direccion)}</p>` : ''}
       ${l.horario ? `<p class="globo__dato">${esc(l.horario)}</p>` : ''}
       ${l.telefono ? `<p class="globo__dato"><a href="tel:${esc(l.telefono.replace(/\s/g, ''))}">${esc(l.telefono)}</a></p>` : ''}
+      <p class="globo__ir">
+        <a class="lugar__waze" href="${aWaze(l.ll)}" rel="noopener noreferrer" target="_blank">Ir con Waze</a>
+        <a href="${aMaps(l.ll)}" rel="noopener noreferrer" target="_blank">Maps</a>
+      </p>
       <p class="globo__fuente">${l.verificado
         ? `Verificado por Galene el ${esc(l.verificado)}`
         : 'Dato de OpenStreetMap. Nadie de Galene lo ha comprobado.'}</p>
@@ -274,7 +317,13 @@ export function montarMapa(host) {
 
   function listaEmergencia() {
     const propios = porCiudad(est.ciudad.id).filter((l) => est.capas.has(l.capa));
-    const ajenos  = est.osm.filter((l) => est.capas.has(l.capa)).slice(0, 40);
+    /* LA CUENTA SE HACE SOBRE LO ENCENDIDO, no sobre todo lo que trajo
+       Overpass. Decía «los 3 más cercanos, de 4» cuando el cuarto no
+       estaba escondido por lejano sino por tener su capa apagada: dos
+       cosas distintas contadas como una, y la frase mandaba a buscar un
+       sitio que no iba a aparecer moviendo el mapa. */
+    const enCapas = est.osm.filter((l) => est.capas.has(l.capa));
+    const ajenos  = enCapas.slice(0, 40);
 
     /* Antes de que la sección despierte no se ha preguntado nada, así
        que no se puede decir «no hay nada»: se diría de un sitio donde
@@ -291,15 +340,25 @@ export function montarMapa(host) {
         El 123 de arriba funciona ya.</p>`;
     }
     if (est.fallo && !propios.length) {
-      /* OpenStreetMap se consulta contra servidores gratuitos que a
-         veces están a rebosar. Reintentar suele bastar —y a esa hora
-         nadie va a recargar la página entera para averiguarlo—, así que
-         el botón está aquí mismo, debajo de la razón del fallo. */
+      /* CUANDO OVERPASS NO CONTESTA, ESTO NO PUEDE SER UN CALLEJÓN.
+         Antes había un botón de reintentar y nada más, y eso deja a
+         alguien mirando una pantalla que no le dice a dónde ir. Ahora
+         el fallo sale con tres salidas de verdad: el 123, y los dos
+         buscadores de hospitales cercanos —Waze y Maps— que funcionan
+         aunque OpenStreetMap esté caído, porque son otros servidores.
+         El reintento se queda, pero ya no es lo único. */
+      const centro = est.aqui || est.ciudad.ll;
       return `<p class="mapa__vacio mapa__vacio--malo">
         No se pudo traer el listado de ${esc(donde())}: ${esc(est.fallo)}.
         <strong>El 123 funciona igual</strong>, y en cualquier urgencia de un
-        hospital tienen que atenderte sin denuncia y sin cita.<br>
-        <button type="button" class="enlace-boton" data-reintentar="1">Volver a intentarlo</button></p>`;
+        hospital tienen que atenderte sin denuncia y sin cita.</p>
+        <p class="lugar__ir mapa__salidas">
+          <a class="lugar__waze" href="https://www.waze.com/ul?ll=${centro[0]}%2C${centro[1]}&zoom=15&q=hospital"
+             rel="noopener noreferrer" target="_blank">Buscar hospitales en Waze</a>
+          <a href="https://www.google.com/maps/search/hospital+urgencias/@${centro[0]},${centro[1]},14z"
+             rel="noopener noreferrer" target="_blank">Buscarlos en Maps</a>
+          <button type="button" class="enlace-boton" data-reintentar="1">Volver a intentarlo</button>
+        </p>`;
     }
     if (!propios.length && !ajenos.length) {
       return `<p class="mapa__vacio">No aparece nada en ${esc(donde())}
@@ -307,23 +366,20 @@ export function montarMapa(host) {
         <strong>que OpenStreetMap no lo tenga no significa que no exista.</strong></p>`;
     }
 
-    /* «Cómo llegar» sale a Google Maps y es la única concesión de esta
-       sección, hecha a ojos abiertos: es un enlace que ella pulsa, se
-       abre fuera, va sin referente y lo único que viaja es la
-       coordenada de un hospital. A cambio, es el enlace que un taxista
-       entiende a las cuatro de la mañana. Un enrutador libre que nadie
-       sabe usar no ayuda a nadie. */
+    /* Cada sitio con sus dos puertas de navegación: Waze —la que
+       arranca la ruta y la que lleva el taxi— y Maps. Ver `aWaze`. */
     const ficha = (l, verificado) => `
       <li class="lugar${verificado ? ' lugar--firme' : ''}" style="--pigmento:${capaPor(l.capa).pigmento}">
         <p class="lugar__capa">${esc(capaPor(l.capa).nombre)}</p>
         <p class="lugar__nombre">${esc(l.nombre)}</p>
         ${l.direccion ? `<p class="lugar__dato">${esc(l.direccion)}</p>` : ''}
         ${l.horario ? `<p class="lugar__dato">${esc(l.horario)}</p>` : ''}
-        <p class="lugar__dato">
-          ${l.telefono ? `<a href="tel:${esc(l.telefono.replace(/\s/g, ''))}">${esc(l.telefono)}</a> · ` : ''}
-          <a href="https://www.google.com/maps/dir/?api=1&destination=${l.ll[0]},${l.ll[1]}"
-             rel="noopener noreferrer" target="_blank">Cómo llegar</a>
-          ${l.distancia != null ? ` · a ${esc(cerca(l.distancia))} ${desde()}` : ''}
+        ${l.distancia != null ? `<p class="lugar__dato">A ${esc(cerca(l.distancia))} ${desde()}</p>` : ''}
+        <p class="lugar__ir">
+          <a class="lugar__waze" href="${aWaze(l.ll)}"
+             rel="noopener noreferrer" target="_blank">Ir con Waze</a>
+          <a href="${aMaps(l.ll)}" rel="noopener noreferrer" target="_blank">Maps</a>
+          ${l.telefono ? `<a href="tel:${esc(l.telefono.replace(/\s/g, ''))}">Llamar</a>` : ''}
         </p>
         ${/* Para la demo la coletilla «sin verificar» se pliega a la
               atribución sola; la marca completa vuelve antes de
@@ -334,10 +390,9 @@ export function montarMapa(host) {
       </li>`;
 
     return `
-      <p class="mapa__cuenta">${est.osm.length > ajenos.length
-          ? `Los ${ajenos.length} sitios más cercanos ${est.ciudad.propia ? 'a ti' : 'al centro'}, de ${est.osm.length} en ${esc(donde())}`
+      <p class="mapa__cuenta">${enCapas.length > ajenos.length
+          ? `Los ${ajenos.length} sitios más cercanos ${est.ciudad.propia ? 'a ti' : 'al centro'}, de ${enCapas.length} en ${esc(donde())}`
           : `${propios.length + ajenos.length} sitios en ${esc(donde())}`}.
-        En el mapa están los ${Math.min(est.osm.length, TOPE_PUNTOS)} más cercanos.
         <strong>Llama antes de ir si puedes</strong>: los horarios de
         OpenStreetMap los pone gente voluntaria y pueden estar viejos.
         ${est.truncado ? 'Y puede faltar alguno: la zona tiene más de los que caben en una consulta.' : ''}</p>
@@ -383,6 +438,18 @@ export function montarMapa(host) {
      En emergencia son interruptores —encender y apagar tipos de sitio—
      y a la vez la leyenda del color. En luz y sombra no hay nada que
      filtrar, así que la fila explica qué significa cada punto. */
+  /* LOS PLIEGUES DICEN LO QUE ESCONDEN. Ciudad y capas viven plegadas
+     para que el mapa se lleve la pantalla; un pliegue cerrado que no
+     dice qué tiene puesto obliga a abrirlo para saberlo, y eso es
+     scroll disfrazado de orden. */
+  function rotularPliegues() {
+    if (vCiudad) vCiudad.textContent = est.ciudad.propia ? 'Donde estás' : est.ciudad.nombre;
+    if (vCapas) {
+      const n = est.capas.size;
+      vCapas.textContent = n === CAPAS.length ? 'Todo' : `${n} de ${CAPAS.length}`;
+    }
+  }
+
   function pintarCapas() {
     if (est.modo === 'emergencia') {
       capasCaja.innerHTML = CAPAS.map((c) => `
@@ -409,12 +476,12 @@ export function montarMapa(host) {
     host.dataset.modo = id;
     const modo = modoPor(id);
 
-    for (const b of pestanas.querySelectorAll('[data-modo]')) {
+    for (const b of pestanas?.querySelectorAll('[data-modo]') || []) {
       const activa = b.dataset.modo === id;
       b.setAttribute('aria-selected', String(activa));
       b.tabIndex = activa ? 0 : -1;
     }
-    pie.textContent = modo.pie;
+    if (pie) pie.textContent = modo.pie;
     lienzo.setAttribute('aria-label', `Mapa de ${modo.nombre.toLowerCase()}: ${modo.lema}`);
 
     urgente.hidden = id !== 'emergencia';
@@ -424,13 +491,21 @@ export function montarMapa(host) {
     cancelarMarca();
 
     pintarCapas();
+    rotularPliegues();
     pintarPuntos();
     pintarListado();
     if (id === 'emergencia') traerAyuda();
   }
 
-  /* ═══ 5 · EMERGENCIA: TRAER LOS SITIOS ═════════════════════════ */
-  async function traerAyuda() {
+  /* ═══ 5 · EMERGENCIA: TRAER LOS SITIOS ═════════════════════════
+     UN REINTENTO AUTOMÁTICO ANTES DE RENDIRSE, y viene de un fallo
+     real: el día que el dueño lo probó, el espejo de turno devolvía
+     504 y la sección enseñaba «volver a intentarlo» — un botón que
+     pide a alguien con las manos temblando que insista. Overpass es
+     gratis y encola, así que el segundo intento casi siempre acierta
+     porque cae en otro espejo. Se intenta solo, una vez, y solo
+     entonces se cuenta el fallo. El botón se queda para el segundo. */
+  async function traerAyuda({ reintento = false } = {}) {
     if (est.modo !== 'emergencia' || !est.despierto) return;
     peticion?.abort();
     peticion = new AbortController();
@@ -448,6 +523,12 @@ export function montarMapa(host) {
       decir('');
     } catch (e) {
       if (peticion.signal.aborted) return;      // cambió de ciudad, no es un fallo
+      if (!reintento) {
+        decir('El servicio de mapas está lento. Probando otra vez…');
+        await new Promise((r) => setTimeout(r, 900));
+        if (peticion.signal.aborted) return;
+        return traerAyuda({ reintento: true });
+      }
       est.osm = [];
       est.cargando = false;
       est.fallo = e.message === 'sin red' ? 'no hay conexión' : 'el servicio no respondió';
@@ -519,6 +600,7 @@ export function montarMapa(host) {
     const marcada = cercana && cercana.d < 60000 ? cercana.c.id : null;
     for (const b of host.querySelectorAll('.ficha[data-id]'))
       b.setAttribute('aria-pressed', String(b.dataset.id === marcada));
+    rotularPliegues();
     if (est.modo === 'emergencia') { est.osm = []; pintarPuntos(); traerAyuda(); }
     else pintarListado();
   }
@@ -566,6 +648,7 @@ export function montarMapa(host) {
        mismo se esté mirando otro mapa: si no, al volver a emergencia
        aparecían los hospitales de Bogotá encima de Pasto. */
     est.osm = []; est.truncado = false;
+    rotularPliegues();
     pintarPuntos();
     if (est.modo === 'emergencia') traerAyuda();
     else pintarListado();
@@ -720,6 +803,16 @@ export function montarMapa(host) {
       scrollWheelZoom: false,      // la página no se queda atrapada al bajar
       zoomControl: true,
       attributionControl: true,
+      /* EN EL TELÉFONO EL MAPA NO SECUESTRA EL DEDO. Con un dedo se
+         desplaza la PÁGINA —que es lo que hace el pulgar el 90 % del
+         tiempo— y el mapa se arrastra con dos, como en cualquier mapa
+         embebido. Sin esto, bajar por la sección con el dedo encima del
+         mapa dejaba la página clavada y el encuadre a la deriva: el
+         fallo más reportado de un mapa dentro de un artículo. */
+      dragging: !matchMedia('(pointer: coarse)').matches,
+      tap: false,
+      touchZoom: true,
+      bounceAtZoomLimits: false,
       /* Colombia entera cabe entre estos límites con margen. Evita que
          un arrastre despistado acabe en mitad del Pacífico sin saber
          cómo volver. */
@@ -731,6 +824,22 @@ export function montarMapa(host) {
       maxZoom: 19, minZoom: 5, detectRetina: true,
       subdomains: 'abcd', attribution: CREDITO, crossOrigin: true,
     }).addTo(mapa);
+
+    /* EL DIBUJO TAMBIÉN SE CAE. Si CARTO empieza a fallar teselas —red
+       mala, servicio caído, un bloqueo por el medio— el mapa se queda
+       en un cuadro vacío con puntos flotando, que es peor que no tener
+       mapa: parece que no hay nada cerca. Al tercer fallo se cambia al
+       mapa estándar de OpenStreetMap y se dice. Una vez y no más: si
+       el respaldo también falla, no hay red y eso ya se cuenta solo. */
+    let teselasMalas = 0, respaldoPuesto = false;
+    capaTeselas.on('tileerror', () => {
+      if (respaldoPuesto || ++teselasMalas < 3) return;
+      respaldoPuesto = true;
+      capaTeselas.setUrl(RESPALDO);
+      capaTeselas.options.subdomains = 'abc';
+      mapa.attributionControl.addAttribution(CREDITO_RESPALDO);
+      decir('El dibujo del mapa venía fallando: se cambió al mapa base de OpenStreetMap.');
+    });
 
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(mapa);
     grupo = L.layerGroup().addTo(mapa);
@@ -749,6 +858,18 @@ export function montarMapa(host) {
 
     mapa.on('focus', () => mapa.scrollWheelZoom.enable());
     mapa.on('blur',  () => mapa.scrollWheelZoom.disable());
+
+    /* Con el dedo, el arrastre se enciende en cuanto hay dos dedos en
+       el cristal y se apaga al levantarlos: así el mapa se mueve cuando
+       ella quiere moverlo y la página cuando quiere leer. */
+    if (matchMedia('(pointer: coarse)').matches) {
+      lienzo.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) mapa.dragging.enable();
+      }, { passive: true });
+      lienzo.addEventListener('touchend', () => {
+        if (!mapa.dragging._draggable?._moving) mapa.dragging.disable();
+      }, { passive: true });
+    }
     mapa.on('click', (e) => { if (est.marcando) ponerPunto(e.latlng); });
 
     /* El globo trae un botón de borrar dentro; Leaflet lo mete en su
@@ -766,6 +887,9 @@ export function montarMapa(host) {
     /* La tinta cambia sola con la hora local. El mapa es papel: se
        invierte con la página, sin recargar y sin parpadeo. */
     new MutationObserver(() => {
+      /* Con el respaldo puesto no se vuelve a las de CARTO: la tinta no
+         es razón para devolver el mapa al servidor que acaba de fallar. */
+      if (respaldoPuesto) return;
       const url = teselasDe();
       if (capaTeselas && capaTeselas._url !== url) capaTeselas.setUrl(url);
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-tinta'] });
@@ -781,7 +905,7 @@ export function montarMapa(host) {
 
   /* ═══ 10 · ESCUCHAS ════════════════════════════════════════════ */
 
-  pestanas.addEventListener('click', (e) => {
+  pestanas?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-modo]');
     if (b) aplicarModo(b.dataset.modo);
   });
@@ -789,7 +913,7 @@ export function montarMapa(host) {
   /* Pestañas de verdad: flechas para moverse entre ellas, como manda
      el patrón de tablist. Quien navega con teclado no tiene por qué
      tabular cuatro veces para ver el tercer mapa. */
-  pestanas.addEventListener('keydown', (e) => {
+  pestanas?.addEventListener('keydown', (e) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
     const bs = [...pestanas.querySelectorAll('[data-modo]')];
     const i = bs.indexOf(document.activeElement);
@@ -824,7 +948,7 @@ export function montarMapa(host) {
     if (e.target.closest('[data-limpiar]')) {
       marcas.limpiar(est.modo); pintarPuntos(); pintarListado(); return;
     }
-    if (e.target.closest('[data-reintentar]')) { traerAyuda(); return; }
+    if (e.target.closest('[data-reintentar]')) { traerAyuda({ reintento: true }); return; }
     if (e.target.closest('[data-mover]')) { empezarMarca(); return; }
     if (e.target.closest('[data-cancelar]')) { cancelarMarca(); pintarPuntos(); return; }
     if (e.target.closest('[data-importar]')) {
@@ -866,6 +990,7 @@ export function montarMapa(host) {
     const c = e.target.dataset?.capa;
     if (!c) return;
     e.target.checked ? est.capas.add(c) : est.capas.delete(c);
+    rotularPliegues();
     /* Encender una capa que Overpass aún no trajo dispara su consulta:
        la de emergencia pide solo lo encendido (ver ayuda.js), así que
        lo apagado no existe todavía en est.osm. Apagar nunca pregunta. */

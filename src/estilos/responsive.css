@@ -133,6 +133,46 @@ body {
 }
 
 @media (max-width: 700px) {
+  /* ── EL MAPA EN EL TELÉFONO ───────────────────────────────────────
+     El lienzo estaba atado a `58vw`, o sea 226 px en un teléfono de
+     390: un tercio de pantalla, y con las opciones debajo hacían falta
+     tres bajadas para ver dónde queda un hospital. Medio viewport es
+     lo que se lee de un vistazo sin tragarse la página. */
+  .mapa__lienzo {
+    height: 50svh;
+    min-height: 18rem;
+    max-height: 26rem;
+  }
+  /* La entrada baja de cuerpo, pero NO se recorta: la frase que se
+     podría esconder es justo la promesa de que su ubicación no sale de
+     aquí, y esa se lee entera en el aparato donde se va a conceder. */
+  .mapa__entrada { font-size: var(--t-sm); line-height: 1.45; }
+  /* El 123 se aprieta en una línea. Sigue siendo lo primero y sigue
+     siendo lo más grande de la caja —eso no se toca—, pero su
+     explicación no necesita tres renglones para caber encima del
+     mapa. Cada renglón de aquí es un renglón que separa a alguien de
+     ver dónde queda un hospital. */
+  .mapa__urgente {
+    gap: 0.6rem;
+    margin-bottom: var(--e-3);
+    padding: 0.5rem 0.75rem;
+  }
+  .mapa__urgente span { font-size: var(--t-xs); line-height: 1.35; flex: 1 1 8rem; }
+  /* Las ciudades y las capas, en una tira que se desliza a lo ancho:
+     ocho fichas envueltas en tres filas eran tres dedos de scroll. */
+  .mapa__pliegue .mapa__ciudades,
+  .mapa__pliegue .mapa__capas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 0.3rem;
+  }
+  .mapa__pliegue .mapa__ciudades::-webkit-scrollbar,
+  .mapa__pliegue .mapa__capas::-webkit-scrollbar { display: none; }
+  .mapa__pliegue .ficha,
+  .mapa__pliegue .capa { flex: none; }
+  .mapa__acciones .boton { flex: 1; justify-content: center; }
+
   .pagina-papel .barra--papel {
     flex-wrap: wrap;
   }
@@ -277,6 +317,8 @@ body {
     display: none;
   }
 
+  /* Pantalla apaisada y baja: el mapa se queda pequeño a propósito,
+     que aquí lo que falta es alto. */
   .mapa__lienzo {
     height: 17rem;
     min-height: 17rem;

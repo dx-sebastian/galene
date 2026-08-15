@@ -285,10 +285,16 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
               mismo color son dos colores el día que alguien toque una. */}
           <article class="hilo" id={`hilo-${h.id}`} style={`--pigmento: ${et.pigmento}`}>
 
-            {/* SIN GARZA DE PERFIL: la columna del sello se fue con
-                todas las demás fotos, por orden del dueño. */}
+            {/* SIN FOTO DE PERFIL, pero con marca de quién habla: un
+                monigote negro de trazo, el mismo en todos. No es un
+                retrato ni un avatar de colores —eso era lo que sobraba—;
+                es el signo de que esto lo escribió alguien. */}
             <div class="hilo__col">
               <header class="hilo__cabeza">
+                <span class="quien" aria-hidden="true"><svg class="quien__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="8" r="3.6" />
+              <path d="M4.8 20.2 C 5.4 15.9, 8.4 13.9, 12 13.9 C 15.6 13.9, 18.6 15.9, 19.2 20.2 Z" />
+            </svg></span>
                 <span class:list={['hilo__autora', h.autora.anonima && 'hilo__autora--anonima']}>
                   {h.autora.nombre}
                 </span>
@@ -401,6 +407,10 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       <article class="hilo">
         <div class="hilo__col">
           <header class="hilo__cabeza">
+            <span class="quien" aria-hidden="true"><svg class="quien__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="8" r="3.6" />
+              <path d="M4.8 20.2 C 5.4 15.9, 8.4 13.9, 12 13.9 C 15.6 13.9, 18.6 15.9, 19.2 20.2 Z" />
+            </svg></span>
             <span class="hilo__autora"></span>
             <span class="hilo__cuando"></span>
             <span class="etiqueta"></span>

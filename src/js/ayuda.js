@@ -27,15 +27,22 @@
 
 import { CAPAS } from './lugares.js';
 
-/* Tres espejos. Overpass es gratis y ENCOLA: la consulta se ejecuta en
-   milisegundos, pero la respuesta puede tardar medio minuto en llegar
-   si el servidor está lleno —medido, no supuesto—. Tener a quién
-   preguntar cuando el primero está a rebosar es la diferencia entre
-   ocho segundos y treinta. */
+/* Cuatro espejos, y el orden importa. Overpass es gratis y ENCOLA: la
+   consulta se ejecuta en milisegundos, pero la respuesta puede tardar
+   medio minuto si el servidor está lleno —medido, no supuesto—.
+
+   ── POR QUÉ overpass-api.de YA NO VA PRIMERO ──────────────────────
+   Es el espejo oficial y el más conocido, y por eso mismo es el que
+   más cola tiene. Medido el día que el dueño reportó el fallo: 504
+   Gateway Timeout en siete segundos, mientras kumi respondía 200 en
+   ocho. Un mapa de emergencia no puede empezar por la puerta más
+   concurrida: va primero el que responde y el oficial queda de
+   respaldo, que para eso hay cuatro. */
 const ESPEJOS = [
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.osm.jp/api/interpreter',
 ];
 
 /* 40 → 25. El presupuesto largo era para la consulta con TODAS las
@@ -44,6 +51,13 @@ const ESPEJOS = [
    pantalla espera quince segundos menos antes de enterarse de que no
    hay red. */
 const SEGUNDOS = 25;
+/* Cuánto se espera antes de sumar el siguiente espejo. Estaba en 2,5 s
+   y con el primer espejo devolviendo 504 a los siete segundos, la
+   respuesta buena llegaba pasados los once. A 1,2 s los cuatro están
+   preguntando antes del segundo cinco y gana el que esté despejado:
+   son tres peticiones de más en el peor caso, y el peor caso es
+   exactamente cuando alguien está esperando delante de la pantalla. */
+const RELEVO = 1200;
 const TOPE = 600;
 
 /* Radio de búsqueda alrededor del centro. Sale del zoom con el que se
@@ -231,16 +245,16 @@ export async function buscarAyuda(ciudad, { signal, capas } = {}) {
      segundos mirando «buscando…» a las cuatro de la mañana es una
      eternidad.
 
-     Preguntar a los tres a la vez lo arreglaría, pero triplica la carga
-     sobre un servicio que otros pagan por nosotros. Así que se pregunta
-     al primero y solo se suma otro CUANDO EL ANTERIOR SE ESTÁ DEMORANDO:
-     a los 2,5 s el segundo, a los 5 s el tercero. Gana el que llegue
-     antes. Cuando el primero va bien —que es casi siempre— los otros ni
-     se enteran, y cuando va mal no se pagan treinta segundos por ello. */
+     Preguntar a los cuatro a la vez lo arreglaría, pero cuadruplica la
+     carga sobre un servicio que otros pagan por nosotros. Así que se
+     pregunta al primero y solo se suma otro CUANDO EL ANTERIOR SE ESTÁ
+     DEMORANDO, uno cada 1,2 s. Gana el que llegue antes. Cuando el
+     primero va bien —que es casi siempre— los demás ni se enteran, y
+     cuando va mal no se pagan treinta segundos por ello. */
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   const carrera = ESPEJOS.map((espejo, i) => (i === 0
     ? pedir(espejo)
-    : espera(i * 2500).then(() => (signal?.aborted ? Promise.reject() : pedir(espejo)))));
+    : espera(i * RELEVO).then(() => (signal?.aborted ? Promise.reject() : pedir(espejo)))));
 
   let datos;
   try {
