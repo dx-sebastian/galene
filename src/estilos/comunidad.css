@@ -390,56 +390,14 @@
 :root[data-tinta="clara"] .comunidad .fondo__capa--media   { opacity: 0.32; }
 :root[data-tinta="clara"] .comunidad .fondo__capa--cercana { opacity: 0.22; }
 
-/* ── LA CABECERA ────────────────────────────────────────────────────
-   Una columna, y en el orden en que hacen falta las cosas: dónde estás,
-   cómo se llama esto, qué es, y las tres reglas de la casa. Las reglas
-   van ARRIBA y no en un pie: son las que deciden si alguien se atreve a
-   escribir. */
-/* CABECERA DE FORO: la mitad de aire que la de landing que fue. El
-   título baja un escalón de cuerpo y las normas viven plegadas al
-   lado de la declaración — los hilos llegan dos pantallas antes. */
-.comunidad__cabecera {
-  max-width: 46rem;
-  margin-block: var(--e-4) var(--e-4);
-}
-.comunidad__sobre {
-  margin: 0 0 var(--e-2);
-  font-size: var(--t-xs);
-  letter-spacing: 0.20em;
-  text-transform: uppercase;
-  color: rgb(var(--letra-rgb) / var(--gris-suelo));
-}
-.comunidad__titulo {
-  margin: 0;
-  font-family: var(--tipo-titulo);
-  font-weight: 400;
-  font-size: var(--t-2xl);
-  line-height: 1.05;
-}
-/* El mismo filete del hero, y por lo mismo: en SVG para que herede la
-   tinta de la hora, y trazado a mano porque una raya recta no la dibuja
-   nadie. */
-.comunidad__filete {
-  display: block;
-  width: 5.5rem;
-  height: 0.5rem;
-  margin-block: var(--e-3) var(--e-4);
-  overflow: visible;
-  color: rgb(var(--letra-rgb) / 55%);
-}
-.comunidad__declaracion {
-  margin: var(--e-2) 0 var(--e-2);
-  font-size: var(--t-md);
-  line-height: 1.45;
-  max-width: 52ch;
-  text-wrap: pretty;
-  color: rgb(var(--letra-rgb) / 84%);
-}
-.comunidad__declaracion strong { color: var(--letra); }
+/* (AQUÍ VIVÍA LA CABECERA: rótulo, título, filete y declaración —una
+   pantalla entera antes del primer hilo. El dueño la mandó quitar del
+   todo; el H1 se queda en el marcado, invisible, para que la página
+   siga teniendo nombre en un lector de pantalla.) */
 
 /* Las normas, plegadas. El resumen es un renglón discreto con la
    flechita del sistema; abierto, la misma lista de siempre. */
-.comunidad__normas { margin: 0 0 var(--e-3); }
+.comunidad__normas { margin: 0; }
 .comunidad__normas > summary {
   display: inline-block;
   cursor: pointer;
@@ -505,9 +463,64 @@
    al llegar a la página, que es el peor reparto posible.
    ═══════════════════════════════════════════════════════════════════ */
 .mando {
+  margin-block: var(--e-3) var(--e-4);
+}
+/* EL PLIEGUE. En reposo, una sola línea: el icono, la palabra y el
+   orden que está puesto. Todo el mando —tres órdenes, seis etiquetas y
+   las normas de la casa— vive dentro y solo aparece al abrirlo. Es lo
+   que pidió el dueño: «deja filtros en un botón que los despliegue
+   para el enfoque minimalista». */
+.mando__boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: fit-content;
+  min-height: 2.6rem;
+  padding: 0 1rem;
+  border: 1px solid var(--vidrio-canto);
+  border-radius: 999px;
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  color: rgb(var(--letra-rgb) / 86%);
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* Sin la flechita del sistema: el icono de tres rayas ya dice lo que
+     es, y el triángulo por defecto se pinta distinto en cada navegador. */
+  list-style: none;
+}
+.mando__boton::-webkit-details-marker { display: none; }
+.mando__boton:hover { background: var(--vidrio-alto); color: var(--letra); }
+.mando__boton:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
+.mando__icono {
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  color: rgb(var(--letra-rgb) / 70%);
+}
+.mando__icono svg { width: 100%; height: auto; }
+/* Qué filtro está puesto, dicho en la propia línea del botón: un mando
+   cerrado que esconde su estado es un mando que miente. */
+.mando__estado {
+  padding-left: 0.55rem;
+  border-left: 1px solid rgb(var(--letra-rgb) / 18%);
+  color: rgb(var(--letra-rgb) / 58%);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.mando[open] .mando__boton { border-color: rgb(var(--letra-rgb) / 26%); }
+
+.mando__panel {
   display: grid;
   gap: var(--e-3);
-  margin-bottom: var(--e-5);
+  margin-top: var(--e-3);
+  padding: var(--e-3);
+  border: 1px solid var(--vidrio-canto);
+  border-radius: var(--redondo-medio, 18px);
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
 }
 .mando__orden, .mando__etiquetas {
   display: flex;
@@ -893,14 +906,12 @@
 /* ═══════════════════════════════════════════════════════════════════
    LA TARJETA DE UN HILO
 
-   DOS COLUMNAS: el sello en su canal y todo lo demás al lado. Es la
-   maqueta de los hilos de las redes y se usa por lo que resuelve, no por
-   parecerse: con el sello dentro de la cabecera, la garza solo mide lo
-   que mide la fila del nombre y el título vuelve a empezar pegado al
-   borde. Con el sello en su columna, el nombre, el título, el cuerpo,
-   los botones y la hebra comparten una sangría y el canal de la
-   izquierda queda libre para que la raíz de las respuestas baje por
-   debajo del ave.
+   UNA SOLA COLUMNA desde que se fueron las fotos de perfil. Tuvo dos
+   —la garza posada en su canal y el texto al lado—, y la maqueta era la
+   de los hilos de las redes; el dueño mandó quitar todas las fotos y
+   con ellas se fue el canal. Lo que gana la tarjeta es el ancho de un
+   retrato en cada renglón, que en un teléfono son cinco caracteres por
+   línea.
 
    `isolation: isolate` está por una razón concreta: las manchas de las
    reacciones van en `mix-blend-mode`, y sin un contexto de apilado
@@ -913,7 +924,7 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.9rem;
   padding: clamp(1.05rem, 2.4vw, 1.5rem);
   border: 1px solid var(--vidrio-canto);
@@ -1239,11 +1250,10 @@
 /* La tarjeta de un comentario NO es una tarjeta: es texto sobre el mismo
    vidrio del hilo. Dos niveles de panel dentro de un panel es lo que
    convierte un foro en un archivador. Lo que separa un comentario del
-   siguiente es el aire y su sello. */
+   siguiente es el aire y la raíz que cuelga a su izquierda. */
 .nodo__caja {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.7rem;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 .nodo__col { min-width: 0; }
@@ -1332,85 +1342,11 @@
   color: rgb(var(--letra-rgb) / 66%);
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   EL SELLO — la garza de cada quien
-
-   Las seis láminas de garza posada, las mismas que se posan en el
-   manglar del hero. Tres cosas que la hacen sello y no adorno:
-
-   1 · SE VE EL AVE ENTERA, de pie. Recortarle la cabeza para meterla en
-       un círculo la convertiría en un avatar, y un avatar es una cara.
-       Aquí es un pájaro que está ahí de pie, que es otra cosa — y es
-       además el argumento del sitio: la bandada del árbol es de quienes
-       entraron antes.
-   2 · SE APOYA EN UN POZO. Un ave flotando sobre el vidrio no está en
-       ningún sitio; con una sombra de agua debajo, está posada.
-   3 · NO USA LOS TOKENS `--vuelo-*`. Esos están calibrados contra la
-       PINTURA: de noche bajan el brillo a 0.55 porque el ave se ve
-       contra un mar oscuro. Aquí el fondo es papel, y de noche el papel
-       también es oscuro — ese brillo dejaría la garza en una silueta
-       negra sobre azul. La luz de aquí es propia y va en la dirección
-       contraria: de noche SUBE.
-   ═══════════════════════════════════════════════════════════════════ */
-.sello {
-  position: relative;
-  flex: none;
-  display: block;
-  width: 2.4rem;
-  height: 3rem;
-  border-radius: var(--redondo-medio);
-  /* Una baldosa de vidrio muy floja. No lleva borde: veinte cantos
-     marcados bajando por la columna de la izquierda se leen como una
-     tabla, y esto tiene que leerse como una fila de aves en una rama. */
-  background: rgb(255 255 255 / 26%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%);
-}
-:root[data-tinta="clara"] .sello {
-  background: rgb(190 226 238 / 7%);
-  box-shadow: inset 0 1px 0 rgb(190 226 238 / 10%);
-}
-.sello--grande { width: 3rem; height: 3.8rem; }
-
-/* EL POZO. Una elipse muy suave a los pies, en la tinta del papel. No es
-   una sombra proyectada —esta página no declara ninguna fuente de luz
-   dura— es el agua que queda alrededor de algo que se posó. */
-.sello::after {
-  content: "";
-  position: absolute;
-  left: 10%; right: 10%; bottom: 4%;
-  height: 20%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 60%,
-    rgb(var(--letra-rgb) / 18%) 0%, rgb(var(--letra-rgb) / 8%) 52%, transparent 78%);
-  pointer-events: none;
-}
-
-.sello__ave {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: bottom center;
-  /* El espejado pivota sobre el CENTRO y aquí sí vale: la caja del sello
-     es fija, así que voltear dentro de ella no mueve al ave de su sitio.
-     (En el hero pivota sobre los pies porque allí el ave está colocada
-     por ellos — ver `.vuelo--visita`.) */
-  transform: scaleX(var(--mirar, 1)) rotate(var(--giro, 0deg));
-  filter: saturate(0.6) contrast(0.95)
-          drop-shadow(0 1px 1px rgb(var(--sombra-rgb) / 18%));
-}
-:root[data-tinta="clara"] .sello__ave {
-  /* De noche el papel se va a la tinta azul y la garza —gris azulada de
-     valor medio— se hunde en él. Sube de brillo y baja de contraste: lo
-     que hay que conservar es la silueta, no el modelado. */
-  filter: saturate(0.45) brightness(1.5) contrast(0.8)
-          drop-shadow(0 1px 2px rgb(0 0 0 / 35%));
-}
-
-/* El señuelo de escribir lleva sello también, y ese es «quien llega»: la
-   garza que se posa en la rama de abajo al abrir el sitio. */
-.escribir__senuelo .sello { width: 2rem; height: 2.5rem; }
+/* (AQUÍ VIVÍA EL SELLO: la garza posada que firmaba cada mensaje, con
+   su baldosa de vidrio, su pozo de agua a los pies y su luz propia
+   calibrada contra el papel. Se fue entera con la orden de quitar todas
+   las fotos de perfil. Las láminas siguen en public/arte/posada/,
+   pintando el manglar del hero.) */
 
 /* ═══════════════════════════════════════════════════════════════════
    EL PIE — y lo último que se lee no es la comunidad
@@ -1481,54 +1417,15 @@
 @media (max-width: 620px) {
   .pagina-papel { --difuminado: blur(12px) saturate(1.3); --redondo: 22px; }
 
-  /* `--canal` es el ancho de la columna de la garza del hilo más su
-     hueco. Se declara una vez y se usa dos: aquí no vale repetir 3.2rem
-     en dos sitios, porque el día que la garza cambie de talla la hebra se
-     queda descolocada y no hay nada que lo avise. */
-  .hilo { gap: 0.7rem; --canal: 3.2rem; }
-  .sello { width: 2.1rem; height: 2.6rem; }
-  .sello--grande { width: 2.5rem; height: 3.1rem; }   /* 2.5 + 0.7 = --canal */
-
-  /* ── LA HEBRA SE SALE DEL CANAL DE LA GARZA ────────────────────────
-     Medido en 375 px: con la hebra dentro de la columna del texto, cada
-     comentario paga los 51 px del canal de la garza del hilo ADEMÁS de
-     su propia sangría. El comentario de primer nivel se quedaba en 28
-     caracteres por renglón y la respuesta en 31 — y una respuesta más
-     ancha que el comentario al que contesta, encima, se lee al revés.
-
-     En una pantalla estrecha la conversación no cuelga del retrato de
-     quien abrió el hilo: empieza donde empieza la tarjeta. Es lo que
-     hacen las redes en móvil y es lo único que cabe. En escritorio la
-     sangría se queda, porque ahí sí sobra ancho y el canal es lo que
-     dice de un golpe qué es hilo y qué es respuesta. */
-  .hebra { margin-left: calc(0px - var(--canal)); }
+  .hilo { gap: 0.7rem; }
 
   /* La etiqueta baja a su propia línea: en la fila de arriba compite con
      el nombre y el tiempo, y es lo menos urgente de los tres. */
   .etiqueta { margin-left: 0; }
 
-  /* ── LA SEGUNDA VUELTA PIERDE SU GARZA, Y ESTÁ MEDIDO ─────────────
-     En una pantalla de 375 px la cadena de sangrías se come 121 de los
-     335 px de la tarjeta: la garza del hilo (40 + 11 de hueco), la
-     sangría de la hebra (25.6) y ADEMÁS la garza de la respuesta
-     (33.6 + 11). Lo que queda para el texto de una respuesta anidada son
-     177.8 px, o sea **24 caracteres por renglón**. Este archivo ya decía
-     unas líneas más arriba que por debajo de 30 se lee peor colgado de la
-     raíz que sin ella, así que la regla se aplica a sí misma.
-
-     Se retira la garza de la SEGUNDA vuelta, no la de la primera. Es la
-     única pieza de las cuatro que no lleva información: el sello es
-     `aria-hidden` y quién habla ya lo dice el nombre, que está justo al
-     lado. Con eso el texto pasa de 24 a unos 31 caracteres.
-
-     Y hay que cambiar la rejilla, no solo esconder el sello: con
-     `display: none` el hijo que queda caería en la primera columna, que
-     es `auto` —se ajusta al contenido— y un párrafo largo la desborda.
-     Pasa a una sola columna de `minmax(0, 1fr)`, que es lo que impide
-     que un texto sin espacios estire la caja. */
+  /* La respuesta anidada ya no paga tres sangrías: se fueron las dos
+     garzas —la del hilo y la suya— y queda solo la raíz. */
   .hebra__lista--hija { margin-left: 0.4rem; padding-left: 1rem; }
-  .nodo--hija .nodo__caja { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .nodo--hija > .nodo__caja > .sello { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

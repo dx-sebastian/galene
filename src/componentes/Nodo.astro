@@ -9,14 +9,11 @@
    tarjeta aquí, el árbol allí— no hace falta recursión ninguna y tampoco
    se duplica una línea de marcado.
 
-   DOS COLUMNAS: EL SELLO EN SU CANAL Y TODO LO DEMÁS AL LADO. El sello NO
-   va dentro de la cabecera. Puesto ahí, la garza solo mide lo que mide la
-   fila del nombre y el texto vuelve a empezar debajo, pegado al borde: se
-   lee como un párrafo con un icono encima. Con el sello en su propia
-   columna, el nombre, el texto y los votos comparten una sola sangría, y
-   la columna de la izquierda queda libre para que la raíz de las
-   respuestas baje por ella. Es la maqueta de los hilos de las redes, y se
-   usa aquí por lo que resuelve.
+   SIN FOTO DE PERFIL. Cada comentario llevaba a su izquierda una garza
+   posada, en su propia columna. El dueño las mandó quitar todas —«quita
+   todas las fotos de perfil»— y la tarjeta gana lo que ocupaban: el
+   nombre, el texto y los votos empiezan en el borde y el canal de la
+   izquierda queda entero para la raíz de las respuestas.
 
    LA FILA DE ABAJO ES LA DE REDDIT Y NADA MÁS: votos y responder. Sin
    compartir, sin guardar, sin premios, sin reacciones.
@@ -25,15 +22,12 @@
    cuando vuelve a hablar dentro de él. No hay karma, ni medallas, ni
    antigüedad. Un foro que reparte puntos convierte acompañar en competir.
    ═══════════════════════════════════════════════════════════════════ */
-import Sello from './Sello.astro';
 import Votos from './Votos.astro';
 
 const { c } = Astro.props;
 ---
 
 <article class="nodo__caja">
-  <Sello autora={c.autora} />
-
   <div class="nodo__col">
     <header class="nodo__cabeza">
       <span class:list={['nodo__autora', c.autora.anonima && 'nodo__autora--anonima']}>

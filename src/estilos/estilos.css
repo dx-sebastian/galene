@@ -788,6 +788,45 @@ body.pagina-papel { background: var(--papel); }
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   LA BARRA, EN EL MISMO SITIO Y CON EL MISMO VIDRIO EN TODO EL SITIO.
+
+   Dos quejas del dueño, y las dos son la misma: «al entrar en comunidad
+   el navbar está en una posición y en Recursos está en otra», y «dale
+   un background no blanco sino blur transparentoso».
+
+   Lo primero pasaba porque solo la barra de la portada iba fija: en las
+   páginas de papel la fila se iba con el scroll y volvía a aparecer
+   arriba del todo al cambiar de página. Ahora la de papel es `sticky`
+   en el canto superior — misma altura, mismo sitio, se cambie de página
+   por donde se cambie.
+
+   Lo segundo era literal: el velo de la portada pintaba `--papel` OPACO
+   detrás de la fila, o sea una banda blanca. Aquí las dos barras pasan a
+   papel translúcido con desenfoque: el texto de debajo se adivina y se
+   entiende que la fila flota sobre la hoja, en vez de taparla.
+
+   EL DESENFOQUE SE QUEDA TAMBIÉN EN EL TELÉFONO, y es una excepción
+   consciente a la regla de rendimiento de este sitio (`--difuminado:
+   none` en punteros gruesos): lo que se apagó allí eran veladuras a
+   pantalla completa, y esto es una tira de 60 px de alto — una capa
+   compuesta que el móvil resuelve sin despeinarse.
+   ═══════════════════════════════════════════════════════════════════ */
+.barra--papel {
+  position: sticky;
+  top: 0;
+}
+.barra--papel,
+.barra--flotante {
+  background: color-mix(in srgb, var(--papel) 66%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(118%);
+          backdrop-filter: blur(14px) saturate(118%);
+  border-bottom: 1px solid rgb(var(--letra-rgb) / 8%);
+}
+/* El velo de la portada sobra desde que la fila tiene vidrio propio:
+   dos fondos superpuestos son dos fondos que un día no coinciden. */
+.barra--flotante::before { display: none; }
+
 /* CUANDO BAJA. Dos condiciones y no una:
 
    `data-barra="visible"` es el scroll, que es el encargo.

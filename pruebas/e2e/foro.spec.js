@@ -67,10 +67,11 @@ test('publica un hilo, lo pone el primero y lo pinta como los demás', async ({ 
   await expect(primero.locator('.hilo__autora')).toHaveText('Anónima');
   await expect(primero.locator('.etiqueta')).toHaveText('Cuidados');
   await expect(primero.locator('.hilo__cuando')).toHaveText('ahora mismo');
-  /* Y trae las mismas piezas que una tarjeta del HTML: su garza, sus
-     flechas y su marcador a cero. */
-  await expect(primero.locator('.sello__ave')).toHaveAttribute('src', /posada\/.+\.webp$/);
+  /* Y trae las mismas piezas que una tarjeta del HTML: sus flechas y su
+     marcador a cero. (La garza de autoría ya no está en ninguna de las
+     dos: las fotos de perfil se quitaron del foro entero.) */
   await expect(primero.locator('[data-marcador]')).toHaveText('0');
+  await expect(page.locator('.sello')).toHaveCount(0);
 });
 
 test('se puede publicar con uno de los nombres de agua', async ({ page }) => {
@@ -148,6 +149,11 @@ test('ordenar y filtrar cuentan también los hilos escritos aquí', async ({ pag
   }));
   await page.evaluate(() => window.__com.sincronizar());
 
+  /* El mando vive plegado dentro de un <details>: primero se abre, que
+     es lo que hace cualquiera que quiera ordenar. */
+  await page.locator('.mando__boton').click();
+  await expect(page.locator('.mando__panel')).toBeVisible();
+
   await page.locator('.mando [data-orden="recientes"]').click();
   await expect(page.locator('.hilos__item').first().locator('.hilo__titulo'))
     .toHaveText('Hilo recién escrito');
@@ -164,6 +170,9 @@ test('ordenar y filtrar cuentan también los hilos escritos aquí', async ({ pag
   await page.locator('.mando [data-etiqueta="preguntas"]').click();
   const despues = await page.evaluate(() => window.__com.estado().visibles);
   expect(despues).toBeLessThan(antes);
+  /* Y el botón cerrado dice qué hay puesto, sin abrirlo. */
+  await expect(page.locator('[data-mando-estado]'))
+    .toHaveText('Sin responder · Preguntas');
   await expect(page.locator('.hilos__item:not([hidden])').first().locator('.hilo__titulo'))
     .toHaveText('Hilo recién escrito');
 });
