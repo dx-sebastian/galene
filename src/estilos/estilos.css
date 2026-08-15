@@ -3928,12 +3928,17 @@ body.pagina-papel { background: var(--papel); }
    corta con puntos en vez de ensanchar la caja. */
 .mapa__otras-lista {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  /* 6 rem y no 7,5: dentro del pliegue de la columna quedan unos 230
+     px útiles, y a 7,5 rem la segunda columna no entra por seis
+     píxeles — la lista salía a una ficha por renglón, que es lo que se
+     quería evitar. */
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
   gap: 0.35rem; margin-top: var(--e-3);
   max-height: 13rem; overflow-y: auto;
 }
 .mapa__otras-lista .ficha {
   min-width: 0;
+  text-align: left;              /* una lista se lee por su margen */
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .mapa__otras-nota { margin: var(--e-3) 0 0; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 72%); }
