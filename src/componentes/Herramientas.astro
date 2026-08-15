@@ -88,8 +88,12 @@ import { TERMINOS } from '../datos/glosario.js';
           No llevan `.fondo__capa`: esa clase trae `mix-blend-mode:
           multiply` y estas dos componen normal de día y en `screen` de
           noche. js/paralaje.js las recoge por `data-hondo`. */}
-      <div class="aguada aguada--1" data-hondo="0.26"></div>
-      <div class="aguada aguada--2" data-hondo="0.12"></div>
+      {/* `data-tope`: el descuelgue se asienta tras una pantalla de
+          recorrido. Sin él, `dentro` crece con la sección entera y la
+          mancha acompañaba al lector hasta lavar el rótulo de la
+          comunidad — visto en captura a 1710×900. */}
+      <div class="aguada aguada--1" data-hondo="0.26" data-tope="1.1"></div>
+      <div class="aguada aguada--2" data-hondo="0.12" data-tope="1.1"></div>
     </div>
 
     {/* Aquí iba el aviso de borrador —«N datos no tienen fuente

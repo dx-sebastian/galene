@@ -79,7 +79,20 @@ const seccion = document.getElementById('herramientas') ||
    de día y `screen` de noche. Sus valores son bajos a propósito —del
    papel, no del cristal— y el porqué está en Herramientas.astro. */
 const capas = [...document.querySelectorAll('.fondo__capa, .aguada[data-hondo]')]
-  .map((el) => ({ el, hondo: parseFloat(el.dataset.hondo) || 0.8 }));
+  .map((el) => ({
+    el,
+    hondo: parseFloat(el.dataset.hondo) || 0.8,
+    /* `data-tope`, en alturas de ventana: cuánto recorrido de sección
+       puede descolgar la capa antes de asentarse. Sin él no hay techo,
+       que es lo que piden las capas de la comunidad (0.94/0.86: su
+       oficio ES quedarse clavadas). Las aguadas de la portada SÍ lo
+       llevan, y la razón está medida: sin techo, `dentro` crece con
+       toda la sección —cuatro mil píxeles— y una aguada al 26 % acaba
+       lavando el rótulo de la comunidad, dos bloques más abajo. El
+       gesto de profundidad es de la ENTRADA; después la mancha vuelve
+       a ser pintura quieta del papel. */
+    tope: parseFloat(el.dataset.tope) || Infinity,
+  }));
 
 /* EL GATE NO PUEDE PEDIR `texto`. Pedía `hero && texto`, y el día que
    el hero se quedó sin una sola palabra `.hero__texto` desapareció del
@@ -309,7 +322,11 @@ function arrancar() {
       poner(seccion, 'opacity',   entra >= 1 ? '' : entra.toFixed(3));
 
       const dentro = Math.max(0, -arriba);     // px de sección recorridos
-      for (const { el, hondo } of capas) {
+      for (const { el, hondo, tope } of capas) {
+        /* El descuelgue se asienta en su techo (si lo hay): la aguada
+           se separa al entrar y luego viaja con la hoja, en vez de
+           acompañar al lector toda la sección. */
+        const desc = Math.min(dentro, tope * viewportHeight());
         /* Deriva lateral con el puntero, proporcional a la CERCANÍA:
            lo lejano casi no se mueve, lo cercano sí. Es el mismo
            reparto que separa el texto del manglar en el hero, y es lo
@@ -318,7 +335,7 @@ function arrancar() {
         const lado = curX * (1 - hondo) * 90;
         const vert = curY * (1 - hondo) * 34;
         poner(el, 'translate',
-          `${lado.toFixed(1)}px ${(dentro * hondo + vert).toFixed(1)}px`);
+          `${lado.toFixed(1)}px ${(desc * hondo + vert).toFixed(1)}px`);
       }
     }
 

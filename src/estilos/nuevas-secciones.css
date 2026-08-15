@@ -65,12 +65,21 @@
    un nivel del crema de la lámina, así que pintarlo sería pintar nada
    —y cuatro desenfoques por lámina son cuatro pasadas de GPU que la
    mitad de las visitas no tienen por qué pagar. */
+/* ── EL RADIO BAJÓ DE 10 A 6/8, y es la misma física a favor ────────
+   Con cuatro pasadas de 10 px el papel devuelto se veía como NUBE: en
+   captura nocturna a 1710×900 cada lámina flotaba dentro de un aura
+   blanca del tamaño del propio dibujo — el farol que la nota de las
+   aguadas prohíbe. Un desenfoque más corto CONCENTRA la misma alfa
+   junto al trazo: en el píxel de la línea el papel queda igual o más
+   cargado (el valor central de un blur crece al encoger el radio) y el
+   derrame hacia fuera se recorta a la mitad. La tinta conserva su
+   contraste medido; lo que se va es la aureola. */
 :root[data-tinta="clara"] .resonancia__lamina img {
   filter:
-    drop-shadow(0 0 10px rgb(249 243 238 / 95%))
-    drop-shadow(0 0 10px rgb(249 243 238 / 95%))
-    drop-shadow(0 0 10px rgb(249 243 238 / 95%))
-    drop-shadow(0 0 10px rgb(249 243 238 / 95%));
+    drop-shadow(0 0 6px rgb(249 243 238 / 92%))
+    drop-shadow(0 0 6px rgb(249 243 238 / 92%))
+    drop-shadow(0 0 8px rgb(249 243 238 / 88%))
+    drop-shadow(0 0 8px rgb(249 243 238 / 70%));
 }
 
 .resonancia figcaption {
