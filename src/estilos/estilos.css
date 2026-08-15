@@ -3944,33 +3944,78 @@ body {
   font-family: var(--tipo-titulo);
   font-size: var(--t-lg);
 }
+/* ── DOS COLUMNAS FIJAS, Y «NO SÉ» A ANCHO COMPLETO ─────────────────
+   Estuvo en `auto-fit, minmax(8.5rem, 1fr)`, y eso repartía las CINCO
+   fichas por igual: en un teléfono salían tres filas 2+2+1 con «No sé»
+   HUÉRFANA sola en la última —medido a 320/360/390/414, siempre 3
+   filas—. Una fila con una sola ficha no es una fila, es un descuido, y
+   encima estiraba la sección a 1.6-1.8 kpx de alto.
+
+   Las cuatro fichas de tiempo van en un 2×2 exacto —dos columnas fijas,
+   no `auto-fit`, porque «exactamente dos» es lo que hace que la quinta
+   no cuelgue—; «No sé», que es la última del DOM, ocupa la fila entera.
+   La huérfana deja de ser un accidente y pasa a ser lo que tiene que
+   ser: la barra primaria, la respuesta por defecto y el puerto al que
+   se vuelve. Un solo salto a 46rem la abre a cuatro en fila; ninguna
+   función continua garantiza «dos en móvil, cuatro en ancho». */
 .rr__chips {
   display: grid;
-  /* auto-fit: cinco columnas en un monitor, dos en un móvil, y ningún
-     media query que mantener. El mínimo es el ancho de «Hace unas
-     horas» sin partirse en tres renglones. */
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
+.rr__chip[for="rr-nose"] { grid-column: 1 / -1; }
+@media (min-width: 46rem) {
+  .rr__chips { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Nombre y rango EN LÍNEA, no apilados. Apilados sumaban dos renglones
+   por ficha y con eso el 2×2 crecía de más; en fila caben juntos y solo
+   envuelven —hacia abajo, nunca en scroll— cuando la ficha es estrecha.
+   El alto mínimo (52px) sostiene el caso envuelto sin saltos. */
 .rr__chip {
-  display: grid; align-content: center; gap: 0.12rem;
-  min-height: 3.5rem;              /* muy por encima del mínimo de WCAG */
-  padding: 0.65rem 0.9rem;
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  column-gap: 0.45rem; row-gap: 0.1rem;
+  min-height: 3.25rem;             /* 52px, holgado sobre el 44px táctil */
+  padding: 0.6rem 0.8rem;
   border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
   background: var(--papel-alto); color: var(--letra); cursor: pointer;
   transition: background-color 140ms linear, border-color 140ms linear;
 }
-.rr__chip__nombre { font-size: var(--t-md); line-height: 1.25; }
+.rr__chip__nombre { font-size: var(--t-md); line-height: 1.2; }
 .rr__chip__rango {
-  font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%);
+  font-size: var(--t-xs); line-height: 1.2;
+  color: rgb(var(--letra-rgb) / 69%);
   font-variant-numeric: tabular-nums;
 }
 .rr__chip:hover { border-color: var(--letra); }
+/* Marcada: se invierte a tinta plena. Máximo contraste y sin depender
+   del color, así que día y noche se voltean solos con los tokens. */
 .rr__radio:checked + .rr__chip {
   background: var(--letra); color: var(--contra); border-color: var(--letra);
 }
-.rr__radio:checked + .rr__chip .rr__chip__rango { color: var(--contra)b8; }
+/* EL RANGO MARCADO, Y AQUÍ HABÍA UN HEX ROTO. Era `var(--contra)b8`,
+   que de día expande a `#fffb8` —cinco dígitos, hex inválido— así que
+   el rango perdía su color y heredaba el de la ficha. `color-mix` da el
+   alfa de verdad y se voltea solo en los dos temas. */
+.rr__radio:checked + .rr__chip .rr__chip__rango {
+  color: color-mix(in srgb, var(--contra) 82%, transparent);
+}
 .rr__radio:focus-visible + .rr__chip { outline: 3px solid var(--letra); outline-offset: 2px; }
+
+/* «No sé» ES REFUGIO, NO DESCARTE. Marcada por defecto, se ve invertida
+   y a ancho completo —la pieza de más peso—. SIN marcar tampoco se
+   apaga: lleva un estante tintado y un borde firme (>=3:1 no-textual en
+   los dos temas) para que se lea como la opción segura a la que volver,
+   no como el último ítem de una lista. */
+.rr__chip[for="rr-nose"] {
+  justify-content: center; text-align: center;
+  background: rgb(var(--letra-rgb) / 8%);
+  border: 1.5px solid rgb(var(--letra-rgb) / 50%);
+}
+.rr__chip[for="rr-nose"] .rr__chip__nombre { font-weight: 600; }
+.rr__radio:checked + .rr__chip[for="rr-nose"] {
+  background: var(--letra); border-color: var(--letra);
+}
 
 /* ── El cuerpo: disco y acción ──────────────────────────────────────
    Una columna en móvil —disco, luego acción— y dos en cuanto hay sitio.
@@ -4023,6 +4068,33 @@ body {
     #000 0%, #000 42%, #0009 66%, #0000 90%);
   mask-image: radial-gradient(closest-side circle at 50% 53%,
     #000 0%, #000 42%, #0009 66%, #0000 90%);
+}
+
+/* ── EL DISCO DE NOCHE: SIN FAROLA EN EL CENTRO ────────────────────
+   El lavado de arriba pinta la lámina de papel —clara— y la lleva al
+   fondo con `multiply`. De día, sobre papel claro, se funde y no se
+   ve; de NOCHE, sobre el añil oscuro, `multiply` contra el fondo
+   transparente de su propia capa deja el papel a plena luz: un
+   MANCHÓN BLANCO tras el disco, y encima de él la frase «No sé / desde
+   lo que recuerdas» —tinta clara— se volvía ilegible (medido en
+   captura: texto claro sobre blanco).
+
+   Aquí NO vale invertir a `screen` como en el glosario: allí el fallo
+   es que multiply oscurece de más; aquí es que aclara de más, y
+   `screen` lo agravaría —probado, el centro desaparecía del todo—. Se
+   sustituye el lavado por una vela finísima: transparente en el centro
+   —así la frase queda sobre el añil limpio, a pleno contraste— y un
+   halo apenas insinuado en el canto, del color de la tinta de la hora.
+   Es el mismo gesto de aguada pero por el borde, no por el medio.
+   Decorativo entero: si no carga, el disco es el mismo. */
+:root[data-tinta="clara"] .rr__esfera::before {
+  background-image: radial-gradient(closest-side circle at 50% 53%,
+    transparent 40%, rgb(var(--letra-rgb) / 7%) 78%, rgb(var(--letra-rgb) / 12%) 100%);
+  background-size: 92% 88%;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-blend-mode: normal;
+  mix-blend-mode: screen;
 }
 
 /* EL CENTRO dice DÓNDE ESTÁS, nunca cuánto queda. Va anclado al centro
