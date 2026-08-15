@@ -29,6 +29,7 @@ import '../estilos/estilos.css';
 import '../estilos/comunidad.css';
 import '../estilos/responsive.css';
 import Comunidad from '../componentes/Comunidad.astro';
+import Pie from '../componentes/Pie.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
@@ -110,6 +111,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
   <main>
     <Comunidad />
+    <Pie />
   </main>
 
   <script>import '../js/viewport.js';</script>

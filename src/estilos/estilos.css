@@ -3344,6 +3344,19 @@ body {
 /* La aguada de abajo: más grande, más pálida y muy irregular. Es la
    que recoge las esquinas que el sesgo de la de arriba deja fuera —
    sin ella, el texto blanco puede quedar sobre papel desnudo. */
+/* EL RÓTULO, EN SU PROPIA CAPA. En Chromium móvil (390 px, emulado y
+   capturado) el ::after de abajo computaba z-index 0 aunque la hoja
+   dice −1 — y una aguada al 96 % encima del rótulo es un botón que no
+   se lee, en el peor botón posible. No se resolvió el porqué del 0; se
+   resolvió que dé igual: el texto posicionado en z:1 pinta encima de
+   los dos charcos pase lo que pase con ellos. El span lo pone quien
+   usa el botón (hoy, RelojRescate); sin span el texto sigue en la caja
+   y el orden vuelve a depender del pseudo. */
+.acuarela__texto {
+  position: relative;
+  z-index: 1;
+}
+
 .acuarela::before,
 .acuarela::after {
   content: "";

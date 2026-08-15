@@ -425,7 +425,13 @@ const horizontes = VENTANAS
             alguna, <strong>sigue valiendo la pena ir</strong>.</p>
 
           <div class="rr__salidas">
-            <a class="acuarela" href={m.ir.href}>{m.ir.texto}</a>
+            {/* El rótulo va en su propia capa (`.acuarela__texto`). En
+                Chromium móvil el ::after del pigmento computaba z-index
+                0 pese al −1 de la hoja —capturado y bisecado en 390 px:
+                el texto quedaba DEBAJO de la aguada casi opaca y el
+                botón era un chicle verde ilegible—. Con el rótulo
+                posicionado en z:1 el orden no depende del pseudo. */}
+            <a class="acuarela" href={m.ir.href}><span class="acuarela__texto">{m.ir.texto}</span></a>
             <a class="rr__otra" href={m.otra.href}>{m.otra.texto}</a>
           </div>
         </div>
