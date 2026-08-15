@@ -218,6 +218,10 @@ import { TERMINOS } from '../datos/glosario.js';
         Y no es una cuenta atrás: el anillo se recorre, no se vacía, y
         termina en una línea punteada que se sale del círculo. Ver su
         propia cabecera. */}
+    {/* Los trazos entre bloques: la respiración de la hoja. Ver
+        `.trazo` en estilos.css — filetes pintados de arte/, entintados
+        con la tinta de la hora vía máscara. */}
+    <div class="trazo" aria-hidden="true"></div>
     <RelojRescate />
 
     {/* ── EL GLOSARIO ───────────────────────────────────────────────
@@ -255,6 +259,7 @@ import { TERMINOS } from '../datos/glosario.js';
         Todo abierto y el buscador escondido, por el <noscript> de
         index.astro. Ni una palabra de esta sección depende de que un
         script llegue — la interacción solo decide qué se ve primero. */}
+    <div class="trazo trazo--2" aria-hidden="true"></div>
     <section class="bloque bloque--glosario" id="palabras"
              aria-labelledby="palabras-titulo">
       {/* SIN SUBTÍTULO. Decía de dónde salen estas palabras —hospitales,
@@ -327,6 +332,7 @@ import { TERMINOS } from '../datos/glosario.js';
 
     <Resonancias />
 
+    <div class="trazo" aria-hidden="true"></div>
     <section class="mapa-herramientas" id="mapa-herramientas"
              aria-labelledby="mapa-herramientas-titulo">
       <header class="mapa-herramientas__cabecera">
@@ -378,6 +384,7 @@ import { TERMINOS } from '../datos/glosario.js';
             <span class="emblema__nombre">Pedir ayuda sin hablar</span>
             <span class="emblema__pie">Canales que no exigen una llamada</span>
           </button>
+    <div class="trazo trazo--2" aria-hidden="true"></div>
     <section class="bloque bloque--panel" id="sin-hablar">
       <h3>Pedir ayuda sin hablar</h3>
       <p>Canales que no exigen una llamada.

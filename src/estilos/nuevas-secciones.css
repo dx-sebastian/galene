@@ -225,6 +225,15 @@
      Con menos pintura debajo, la misma rampa no llega a verse. */
   opacity: 0.35;
 }
+/* De noche el recuerdo también anochece. La lámina del manglar viene
+   pintada de día y no pasa por el shader: sin esto quedaba un borrón
+   PÁLIDO Y GRIS flotando bajo el titular — un fantasma de mediodía en
+   mitad de la noche, visto en captura. Se apaga hacia el añil y sube
+   un punto de presencia, porque oscurecida ya no compite con la letra. */
+:root[data-tinta="clara"] .comunidad-panel::before {
+  filter: blur(14px) saturate(0.72) brightness(0.36);
+  opacity: 0.5;
+}
 /* Y el velo de papel encima, para que el texto siga midiendo su
    contraste contra papel y no contra un paisaje. El tramo abierto se
    queda ARRIBA (donde el recuerdo asoma entre el título y el enlace) y
@@ -314,8 +323,12 @@
   z-index: 1;
   padding-block: 0 clamp(4rem, 9vw, 8rem);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+  /* Dos respiraciones de color, no una: el agua arriba a la derecha y
+     un eco cálido abajo a la izquierda. Es el mismo par de pigmentos
+     de las aguadas de la hoja — la sección deja de ser papel liso. */
   background:
-    radial-gradient(circle at 88% 24%, rgb(115 159 163 / 10%), transparent 32%),
+    radial-gradient(circle at 88% 24%, rgb(115 159 163 / 16%), transparent 34%),
+    radial-gradient(circle at 6% 88%, rgb(196 112 63 / 8%), transparent 30%),
     var(--papel-arriba);
   color: var(--letra);
 }
@@ -340,14 +353,53 @@
   margin-top: var(--e-6);
 }
 
+/* ── LA FICHA ES UNA HOJA, NO UN DIV ────────────────────────────────
+   Tenía fondo translúcido y un borde: la receta del vidrio de
+   plantilla, en la única sección que cita papeles de verdad. Ahora es
+   papel: fondo pleno con el grano de la lámina del shader mordido en
+   multiply (gratis, ya viaja en caché), el hilo dorado de las
+   resonancias como cabecera —es la firma que ya recorre la hoja— y
+   unas comillas serif grandes en acuarela aguada detrás de la cita.
+   Al pasar, la hoja se despega un par de milímetros: es algo que se
+   puede coger. */
 .experto {
+  position: relative;
   display: flex;
   min-height: 24rem;
   flex-direction: column;
   justify-content: space-between;
   padding: clamp(1.25rem, 3vw, 2rem);
+  padding-top: clamp(1.6rem, 3.4vw, 2.4rem);
   border: 1px solid rgb(var(--letra-rgb) / 14%);
-  background: color-mix(in srgb, var(--papel-alto) 86%, transparent);
+  border-top: 3px solid #b98e4f;
+  background-color: var(--papel-alto);
+  background-image: var(--arte-papel);
+  background-size: 300px;
+  background-blend-mode: multiply;
+  transition: translate 220ms cubic-bezier(.25,.8,.3,1),
+              box-shadow 220ms linear;
+}
+/* La comilla va en ::after y no en ::before A PROPÓSITO: el ::before
+   de la ficha ya tiene dueño de noche (el grano de papel del bloque
+   nocturno de abajo), y dos pseudos peleándose por el mismo hueco es
+   un tema que gana en silencio. Absoluta, así que el flex de la ficha
+   ni la ve. */
+.experto::after {
+  content: "\201C";
+  position: absolute;
+  top: 0.06em; left: 0.28em;
+  font-family: "Cormorant Garamond", "Didot", Georgia, serif;
+  font-size: 4.6rem;
+  line-height: 1;
+  color: rgb(var(--letra-rgb) / 14%);
+  pointer-events: none;
+}
+@media (min-width: 700px) {
+  .experto:hover {
+    translate: 0 -3px;
+    box-shadow: 0 14px 30px -18px rgb(0 0 0 / 45%);
+  }
+  .experto:nth-child(2):hover { translate: 0 calc(var(--e-4) - 3px); }
 }
 
 .experto:nth-child(2) { translate: 0 var(--e-4); }
@@ -785,6 +837,12 @@
    color los aporta el papel, no un velo encima. */
 :root[data-tinta="clara"] .experto {
   border-color: transparent;
+  /* El hilo dorado de la cabecera SOBREVIVE a la noche: es la firma
+     que ya llevan las resonancias y la pregunta del reloj, y de noche
+     un hilo cálido sobre añil es exactamente el punto de color que el
+     dueño pidió. Un pelo más tenue que de día, que aquí la luz es
+     poca. */
+  border-top-color: color-mix(in srgb, #b98e4f 74%, transparent);
   border-radius: 26px 10px 20px 14px / 16px 22px 12px 24px;
   /* NO SE ACLARA: SE TIÑE. La primera version subio la tarjeta a
      rgb(106,104,122) y el texto cayo de 13.24:1 a 4.63:1 — rozando el

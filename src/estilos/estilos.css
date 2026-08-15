@@ -1883,19 +1883,50 @@ body {
   filter: blur(clamp(8px, 1.1vw, 16px));
   mix-blend-mode: screen;
 }
+/* La fuerza subió un punto (0.32→0.42, 0.22→0.30) a pedido del dueño:
+   la noche se sentía CSS y no acuarela, y lo que faltaba no era otro
+   elemento sino que el pigmento que ya está se atreva a verse. Los
+   tintes no se tocan — más saturación rompería la calma; más presencia
+   no. */
 :root[data-tinta="clara"] .aguada--1 {
   --tinta-a: #8E4A3A; --tinta-b: #5A4A88;
-  opacity: 0.32;
+  opacity: 0.42;
 }
 :root[data-tinta="clara"] .aguada--2 {
   --tinta-a: #2F7A72; --tinta-b: #5D4A86;
-  opacity: 0.22;
+  opacity: 0.30;
 }
 .herramientas__titulo {
   font-family: var(--tipo-titulo);
   font-weight: 400;
   font-size: var(--t-3xl);
   margin: 0;
+}
+
+/* ═══ EL TRAZO — la respiración entre bloques ═══════════════════════
+   Los bloques de la hoja iban uno detrás de otro sin más frontera que
+   su propio margen, y el dueño lo dijo con la palabra justa: pegado.
+   Un `<hr>` sería la solución de un documento; esto es un cuadro, y en
+   un cuadro las partes se separan con un GESTO — un filete de pincel
+   de los que ya están pintados en arte/.
+
+   La lámina entra como MÁSCARA y no como <img>: así el trazo no trae
+   su gris de archivo sino la tinta de la hora — de día grafito suave,
+   de noche el hueso de la letra clara — y el mismo fichero sirve a los
+   dos temas. El aire alrededor es el separador de verdad; el trazo
+   solo lo hace visible. */
+.trazo {
+  height: 26px;
+  margin-block: clamp(3.5rem, 7vw, 6rem) clamp(2.25rem, 4.5vw, 4rem);
+  background: rgb(var(--letra-rgb) / 30%);
+  -webkit-mask: url("/galene/arte/filete-4.webp") 50% 50% / min(640px, 78%) auto no-repeat;
+          mask: url("/galene/arte/filete-4.webp") 50% 50% / min(640px, 78%) auto no-repeat;
+}
+/* Dos manos distintas, alternadas: dos trazos idénticos seguidos se
+   leen como plantilla. */
+.trazo--2 {
+  -webkit-mask-image: url("/galene/arte/filete-2.webp");
+          mask-image: url("/galene/arte/filete-2.webp");
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -2212,6 +2243,41 @@ body {
     no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-blend-mode: multiply,
     normal, normal, normal, normal, normal;
+}
+
+/* ── Y DE NOCHE, LA MÁSCARA — o la aguada vuelve a ser una caja ─────
+   Sobre papel claro los cinco toques funcionan porque sus bordes mueren
+   EN papel del mismo valor: lo que se ve es el pigmento, no la caja.
+   Sobre el añil pasa lo contrario: la lámina del grano es OPACA y
+   clara, así que el fondo entero del elemento se recorta contra la
+   noche como un rectángulo pálido — un «background», visto en captura
+   y dicho por el dueño del cuadro con esa misma palabra.
+
+   La cura no es tocar los toques: es RECORTAR LA CAJA CON ELLOS. La
+   máscara repite la geometría de los cinco charcos (mismas posiciones,
+   mismos tamaños) y deja que el conjunto muera en festón, como muere
+   una aguada. El núcleo va a alfa plena bien pasado el centro (74 %)
+   para que ni una letra pierda su papel: lo que se desvanece es el
+   canto, nunca el soporte del texto. */
+:root[data-tinta="clara"] .realce {
+  -webkit-mask-image:
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%);
+  mask-image:
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
+    radial-gradient(closest-side ellipse, #000 74%, transparent 100%);
+  -webkit-mask-size: 52% 150%, 44% 132%, 58% 156%, 40% 124%, 48% 140%;
+          mask-size: 52% 150%, 44% 132%, 58% 156%, 40% 124%, 48% 140%;
+  -webkit-mask-position: -4% 42%, 22% 64%, 49% 36%, 74% 68%, 103% 48%;
+          mask-position: -4% 42%, 22% 64%, 49% 36%, 74% 68%, 103% 48%;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
 }
 
 /* SIN `white-space: nowrap`. Lo tuvo y hubo que quitarlo.
@@ -3302,6 +3368,22 @@ body {
               border-radius 900ms cubic-bezier(.25,.8,.3,1),
               opacity 900ms linear;
 }
+/* ── DE NOCHE EL PIGMENTO PINTA, NO MULTIPLICA ──────────────────────
+   `multiply` es la física del papel claro: el pigmento solo puede
+   oscurecer. Sobre el añil multiplica contra oscuro y el verde se va a
+   barro — el botón principal del reloj quedaba HUNDIDO en la hoja,
+   con menos presencia que las fichas de al lado (dicho por el dueño:
+   «no es jerárquicamente suficiente»). De noche una acuarela sobre
+   papel oscuro es gouache: pinta encima. Composición normal, y la
+   sombra corta lo despega de la hoja. */
+:root[data-tinta="clara"] .acuarela::before,
+:root[data-tinta="clara"] .acuarela::after {
+  mix-blend-mode: normal;
+}
+:root[data-tinta="clara"] .acuarela {
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 42%));
+}
+
 .acuarela::before {
   opacity: 0.38;
   border-radius: 34px 14px 26px 30px / 22px 32px 18px 28px;
@@ -4060,10 +4142,23 @@ body {
    Y el teclado sigue siendo el de un grupo de radios de toda la vida —
    flechas para moverse—, porque no se ha reinventado el control. */
 .rr__eleccion { margin: var(--e-5) 0 0; padding: 0; border: 0; min-width: 0; }
+/* LA PREGUNTA MANDA SOBRE SUS FICHAS. Es el primer paso del gesto
+   —pregunta, respuesta, resultado, de arriba abajo— y con el mismo
+   peso que un párrafo no se leía como paso: se leía como pie de foto.
+   Peso pleno y el hilo dorado corto debajo, el mismo que firma las
+   resonancias: aquí empieza algo. */
 .rr__pregunta {
-  padding: 0; margin: 0 0 var(--e-3);
+  padding: 0 0 0.55rem; margin: 0 0 var(--e-3);
   font-family: var(--tipo-titulo);
   font-size: var(--t-lg);
+  font-weight: 700;
+  position: relative;
+}
+.rr__pregunta::after {
+  content: "";
+  position: absolute; left: 0; bottom: 0;
+  width: 2.5rem; height: 1px;
+  background: #b98e4f;
 }
 /* ── DOS COLUMNAS FIJAS, Y «NO SÉ» A ANCHO COMPLETO ─────────────────
    Estuvo en `auto-fit, minmax(8.5rem, 1fr)`, y eso repartía las CINCO
@@ -4083,6 +4178,24 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+  /* Sitio para la lengüeta de la elegida (abajo). */
+  margin-bottom: 0.9rem;
+}
+/* ── LA LENGÜETA — el gesto apunta hacia abajo ──────────────────────
+   La ficha marcada saca una punta de tinta por su canto inferior,
+   hacia lo que su elección acaba de decidir: el resultado que viene
+   debajo. Es la flecha del flujo pregunta → respuesta → resultado,
+   dicha con la forma y no con un icono. Del mismo color que el relleno
+   de la ficha, así que se lee como la ficha goteando, no como una
+   pieza aparte. */
+.rr__radio:checked + .rr__chip { position: relative; }
+.rr__radio:checked + .rr__chip::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: -7px;
+  width: 13px; height: 13px;
+  translate: -50% 0; rotate: 45deg;
+  background: var(--letra);
 }
 .rr__chip[for="rr-nose"] { grid-column: 1 / -1; }
 @media (min-width: 46rem) {
