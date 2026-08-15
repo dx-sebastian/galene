@@ -74,7 +74,11 @@ const desliza = document.querySelector('.desliza, .hero__deslizar');
    página lleva uno y no el otro sin que nadie se dé cuenta. */
 const seccion = document.getElementById('herramientas') ||
                 document.querySelector('[data-seccion-hoja]');
-const capas = [...document.querySelectorAll('.fondo__capa')]
+/* Las aguadas de la sección 2 entran por `data-hondo`, no por la clase:
+   `.fondo__capa` arrastra su `mix-blend-mode` y ellas componen normal
+   de día y `screen` de noche. Sus valores son bajos a propósito —del
+   papel, no del cristal— y el porqué está en Herramientas.astro. */
+const capas = [...document.querySelectorAll('.fondo__capa, .aguada[data-hondo]')]
   .map((el) => ({ el, hondo: parseFloat(el.dataset.hondo) || 0.8 }));
 
 /* EL GATE NO PUEDE PEDIR `texto`. Pedía `hero && texto`, y el día que
