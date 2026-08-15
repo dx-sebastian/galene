@@ -325,6 +325,14 @@ input, select, textarea { margin: 0; }
   --contra:       #171428;
   --aviso-fondo:  #3A2436;
 
+  /* EL PAPEL DEL CIELO, MÁS AÑIL DE NOCHE. La fórmula general mezcla
+     52 % de bruma, y la bruma nocturna es violeta rosada: la cabecera
+     de la hoja quedaba malva, un tono más claro y más cálido que el
+     resto de la noche. De noche la hoja se tiñe menos del cielo y más
+     de sí misma — 26 % deja el canto azul oscuro, del mismo mundo que
+     el añil del papel, sin perder el descuelgue hacia la bruma. */
+  --papel-cielo: color-mix(in srgb, var(--bruma) 26%, var(--papel-arriba));
+
   --tinta:        #E8EEF2;
   --tinta-suave:  #E8EEF2c0;
   --lamina:       #E9EFF2f0;
@@ -873,7 +881,26 @@ body {
    menú tomó su sitio y la ayuda viaja dentro del panel, en píldora,
    como lo primero que se ve al abrirlo. Una barra con dos cosas
    —marca y menú— no tiene anchos en los que romperse. */
+/* ── FILA EN ESCRITORIO, MENÚ EN TELÉFONO ──────────────────────────
+   (La nota de arriba cuenta la época en que el menú fue la única
+   navegación a todo ancho. La fila volvió a escritorio por orden del
+   dueño: en un monitor, cuatro enlaces detrás de un toque no ahorran
+   nada. Los dos salen del mismo array de index.astro, así que no hay
+   dos listas que mantener — solo dos anchos que las pintan.)
+
+   El corte sigue en 940 y no menos, por la medida vieja de esta misma
+   hoja: la fila necesita ~861 px con el cuerpo por defecto, y el margen
+   restante es lo que aguanta un navegador al 120 %. */
+.barra__enlaces { display: none; }
 .menu { display: block; }
+@media (min-width: 940px) {
+  .barra__enlaces {
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 2.4vw, 2.25rem);
+  }
+  .menu { display: none; }
+}
 
 /* ── DÓNDE SE ANCLA EL PANEL, Y POR QUÉ NO AL BOTÓN ────────────────
    Medido a 375 px: colgado del propio <details> con `right: 0`, el
@@ -1590,7 +1617,12 @@ body {
      tamaño de pantalla, o el que hace falta para centrar una columna de
      72rem. Así en un portátil se centra y en un móvil no pasa nada,
      porque ahí el segundo término es cero. */
-  padding-block: clamp(2rem, 7vw, 4.5rem);
+  /* EL AIRE DE ARRIBA SE ENCOGIÓ, medido: 72 px de relleno + 120 de
+     margen de la cabecera eran 212 px de papel en blanco entre el canto
+     de barbas y la pregunta del título — después de que la boca ya
+     gastó su recorrido en decir «aquí hay papel». La hoja recibe con
+     el canto, no con una página vacía. */
+  padding-block: clamp(1.5rem, 3vw, 2.5rem);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
   padding-bottom: clamp(3rem, 8vw, 6rem);
   color: var(--letra);
@@ -1759,12 +1791,15 @@ body {
 
 
 .aguada {
-  /* Quietas y ancladas al papel. Estuvieron dentro del paralaje y con un
-     factor de profundidad casi 1, o sea prácticamente clavadas al
-     viewport: la mancha te seguía media página abajo. Una aguada que
-     acompaña al lector no decora, compite. Estas se quedan donde están
-     pintadas y se van cuando pasas. */
+  /* Ancladas al papel, con un rezago corto. Estuvieron en el paralaje
+     con profundidad casi 1 —clavadas al viewport, la mancha te seguía
+     media página— y luego quietas del todo. Ahora llevan `data-hondo`
+     BAJO (ver Herramientas.astro): viajan con la hoja y solo se
+     descuelgan una fracción del scroll, lo justo para que los dos
+     pigmentos se separen al entrar. `will-change` porque paralaje.js
+     les escribe `translate` cada cuadro que algo se mueve. */
   position: absolute;
+  will-change: translate;
 
   /* La rampa de la marca. Dos pigmentos dentro de una sola aguada, para
      que sangre uno en otro como lo hace el agua — un tinte plano no da
@@ -1924,7 +1959,11 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-block: clamp(3rem, 7vw, 9rem) clamp(4rem, 8vw, 10rem);
+  /* El margen de arriba estuvo en clamp(3rem, 7vw, 9rem): en un
+     monitor eran 120 px más de silencio encima de los 72 del relleno
+     de la sección. El de abajo se queda: separa la cabecera de la
+     lectura, y ese aire sí trabaja. */
+  margin-block: clamp(1.5rem, 3vw, 3rem) clamp(4rem, 8vw, 10rem);
   /* Y CENTRADA. En cuanto la caja tiene medida propia (44rem, abajo)
      deja de ocupar el ancho de la sección, y sin márgenes automáticos
      se queda pegada a la izquierda con medio cuadro vacío a la derecha.
@@ -3359,8 +3398,20 @@ body {
   margin-top: var(--e-4); min-height: 3rem; padding: 0 1.2rem;
   border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
   background: var(--papel-hondo); color: var(--letra); font: inherit; font-size: var(--t-md); cursor: pointer;
+  transition: background-color 140ms linear, color 140ms linear,
+              border-color 140ms linear;
 }
-.esfera__nose[aria-pressed="true"] { border-color: var(--letra); box-shadow: 0 0 0 1px var(--letra); }
+/* ELEGIDO = TINTA PLENA, no un borde doblado. El anillo doble decía
+   «algo pasa aquí» sin decir «esto está puesto»: a un vistazo, un botón
+   con dos rayas y un botón sin ninguna eran el mismo botón. La
+   comunidad ya resolvió este estado (.orden en comunidad.css): fondo de
+   tinta, letra del papel — el pigmento entero, no su contorno. El mismo
+   trato aquí, que además es el que ya llevan las fichas del mapa. */
+.esfera__nose[aria-pressed="true"] {
+  background: var(--letra);
+  border-color: var(--letra);
+  color: var(--contra);
+}
 .esfera__nose:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
 
 .resultado { margin-top: var(--e-5); }
@@ -3485,9 +3536,16 @@ body {
 }
 .modo__nombre { font-size: var(--t-md); font-weight: 700; }
 .modo__lema   { font-size: var(--t-xs); line-height: 1.3; }
+/* LA PESTAÑA ELEGIDA LLEVA SU PIGMENTO PUESTO, no solo debajo. El
+   subrayado de 3 px se perdía a un palmo de distancia: las tres
+   pestañas leían iguales y había que fijarse para saber en qué mapa se
+   estaba. Ahora el pigmento del modo tiñe el fondo — un lavado al 14 %,
+   una aguada del color del mapa, no un botón de color — y el canto
+   inferior sigue siendo el trazo cargado de siempre. */
 .modo[aria-selected="true"] {
-  background: var(--papel-alto); color: var(--letra);
-  border-color: rgb(var(--letra-rgb) / 22%);
+  background: color-mix(in srgb, var(--pigmento-modo) 14%, var(--papel-alto));
+  color: var(--letra);
+  border-color: color-mix(in srgb, var(--pigmento-modo) 42%, transparent);
   border-bottom-color: var(--pigmento-modo);
 }
 .modo:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
@@ -3532,8 +3590,19 @@ body {
   min-height: 2.75rem; padding: 0 0.95rem;
   border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
   background: var(--papel-alto); color: var(--letra); font: inherit; font-size: var(--t-sm); cursor: pointer;
+  /* El estado cambia con un fundido corto, no con un salto: es el mismo
+     ritmo de .orden en la comunidad. 140 ms — se siente, no se espera. */
+  transition: background-color 140ms linear, color 140ms linear,
+              border-color 140ms linear, box-shadow 140ms linear;
 }
-.ficha[aria-pressed="true"] { background: var(--letra); color: var(--contra); border-color: var(--letra); }
+.ficha:hover { background: var(--papel-hondo); }
+/* La elegida va en tinta plena y además lleva el pigmento del mapa como
+   canto inferior: dice «puesta» desde lejos y dice EN QUÉ mapa sin
+   volver a mirar la pestaña. */
+.ficha[aria-pressed="true"] {
+  background: var(--letra); color: var(--contra); border-color: var(--letra);
+  box-shadow: inset 0 -3px 0 var(--pigmento-modo, currentColor);
+}
 .ficha:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
 .ficha--otra { border-style: dashed; background: transparent; }
 .ficha--otra[aria-expanded="true"] { border-style: solid; background: var(--papel-hondo); }

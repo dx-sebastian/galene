@@ -31,6 +31,19 @@ import { LIMITE_PORTADA } from '../datos/expertos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
+/* ── LOS ENLACES DE LA BARRA, UNA SOLA VEZ ─────────────────────────
+   Se pintan en DOS sitios —la fila de escritorio y el panel del menú
+   del teléfono— y por eso viven aquí como datos y no como marcado
+   duplicado: dos listas escritas a mano son dos listas que un día
+   divergen, y la que miente en silencio es la que no se ve en el
+   ancho en el que uno trabaja. */
+const ENLACES = [
+  ['Información', '#herramientas'],
+  ['Recursos', '#sin-hablar'],
+  ['Comunidad', base + 'comunidad'],
+  ['Panel de expertos', base + 'expertos'],
+];
+
 /* ── LAS URLS ABSOLUTAS, COMPUESTAS Y NO ESCRITAS A MANO ────────────
    `Astro.site` es lo que hay en astro.config.mjs; `base` es el prefijo
    de GitHub Pages. Un canonical o una `og:image` escritos a mano se
@@ -293,16 +306,29 @@ const DATOS = {
           fábrica y con el estado accesible ya cableado. El cierre por
           tocar-fuera y Escape lo añade js/menu.js, y es cortesía: sin
           el módulo, el botón sigue mandando. */}
+      {/* ── LA FILA DE ESCRITORIO ──────────────────────────────────
+          Los rótulos vuelven a estar escritos donde caben. El menú se
+          quedó como única navegación a todo ancho por consolidar tres
+          formas en una, pero en un monitor eso esconde cuatro enlaces
+          detrás de un toque que ahí no ahorra nada: el sitio sobra. A
+          partir de 940 px la fila está puesta y el botón se va; por
+          debajo, exactamente lo contrario. Salen del MISMO array del
+          frontmatter que el panel — no hay dos listas que sincronizar. */}
+      <div class="barra__enlaces">
+        {ENLACES.map(([texto, href]) => (
+          <a class="barra__enlace" href={href}>{texto}</a>
+        ))}
+      </div>
+
       <details class="menu" name="barra-menu">
         <summary class="menu__boton" aria-label="Abrir menu de navegacion">
           <span class="menu__rayas" aria-hidden="true"></span>
           <span class="menu__etiqueta">Menu</span>
         </summary>
         <div class="menu__panel">
-          <a class="barra__enlace" href="#herramientas">Información</a>
-          <a class="barra__enlace" href="#sin-hablar">Recursos</a>
-          <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
-          <a class="barra__enlace" href={base + 'expertos'}>Panel de expertos</a>
+          {ENLACES.map(([texto, href]) => (
+            <a class="barra__enlace" href={href}>{texto}</a>
+          ))}
           <a class="pildora pildora--menu" href="#ayuda">
             Buscar ayuda
             <svg class="pildora__icono" viewBox="0 0 14 12"

@@ -68,20 +68,28 @@ import { TERMINOS } from '../datos/glosario.js';
         el grupo entero se abre al bajar como se abre una nube. */}
     <div class="herramientas__fondo" aria-hidden="true">
       <div class="fondo__papel"></div>
-      {/* SIN `.fondo__capa` Y SIN `data-hondo`, o sea FUERA DEL PARALAJE.
+      {/* DE VUELTA AL PARALAJE, PERO POR EL EXTREMO CONTRARIO.
 
-          Con esa clase, js/paralaje.js les escribía un `translate` según
-          el scroll, y con un `hondo` de 0.92 la aguada iba casi clavada
-          al viewport: bajabas media página y la mancha seguía ahí, en el
-          mismo sitio de la pantalla, al lado de otra sección. Eso no
-          decora — ACOMPAÑA, y una mancha que te sigue mientras lees pide
-          atención todo el rato.
+          Estuvieron dentro con `hondo` 0.92 —casi clavadas al viewport—
+          y la mancha te seguía media página: eso no decora, ACOMPAÑA, y
+          se sacaron con razón. El error no era el paralaje, era el
+          extremo: a 0.92 la capa es del cristal de la ventana; lo que
+          pide el cuadro es que sea del PAPEL, con apenas un rezago.
 
-          Quietas, son lo que tienen que ser: pintura que está en un
-          sitio del papel. Pasas por delante de ellas y se van, como se
-          va todo lo demás de la página. */}
-      <div class="aguada aguada--1"></div>
-      <div class="aguada aguada--2"></div>
+          Con `hondo` bajo pasa lo contrario de lo que pasaba: la aguada
+          viaja con la página y solo se descuelga un 12–26 % del scroll
+          — al entrar en la sección los dos pigmentos se separan entre
+          sí y del texto, que es la profundidad de mirar una acuarela de
+          cerca, y para cuando lees ya se fueron como todo lo demás. El
+          puntero las deriva unos píxeles en contra (eso lo hace el
+          reparto `1 − hondo` de js/paralaje.js), así que la hoja
+          respira sin perseguir a nadie.
+
+          No llevan `.fondo__capa`: esa clase trae `mix-blend-mode:
+          multiply` y estas dos componen normal de día y en `screen` de
+          noche. js/paralaje.js las recoge por `data-hondo`. */}
+      <div class="aguada aguada--1" data-hondo="0.26"></div>
+      <div class="aguada aguada--2" data-hondo="0.12"></div>
     </div>
 
     {/* Aquí iba el aviso de borrador —«N datos no tienen fuente

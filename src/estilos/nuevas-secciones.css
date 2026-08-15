@@ -119,7 +119,13 @@
 .ayuda {
   position: relative;
   z-index: 1;
-  padding-block: clamp(4rem, 8vw, 7rem);
+  /* ASIMÉTRICO A PROPÓSITO. Arriba el aire de siempre: la sección
+     recibe a quien baja del hero. Abajo la mitad: lo siguiente es la
+     boca —la ventana al mar— y el vacío que había aquí se sumaba al
+     recorrido de la escena y al aire de #herramientas, tres huecos
+     seguidos contando el mismo silencio. Medido en 1710×900: eran
+     112 px de papel vacío antes de que empezara la ventana. */
+  padding-block: clamp(4rem, 8vw, 7rem) clamp(2.5rem, 4vw, 3.75rem);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
   background: var(--papel);
   color: var(--letra);
