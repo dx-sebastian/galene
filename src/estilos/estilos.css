@@ -1391,18 +1391,26 @@ body {
    profundidad al revés. La bandada no puede tener más aire delante que
    el manglar que la sostiene, y ese techo es la mitad.
 
-   Lo cercano se vela a la sexta parte de lo lejano. El aire entre quien
-   mira y una garza a tres metros no es el que hay hasta el manglar del
-   fondo, y ese cociente ES la profundidad del cuadro: si los dos planos
-   se velan igual, el cuadro es plano por mucho que las aves midan
-   distinto. */
+   Lo cercano se vela a POCO MÁS DE LA MITAD de lo lejano. El aire entre
+   quien mira y una garza a tres metros no es el que hay hasta el manglar
+   del fondo, y ese cociente ES la profundidad del cuadro: si los dos
+   planos se velan igual, el cuadro es plano por mucho que las aves midan
+   distinto.
+
+   El cociente estuvo en 0.17 y subió a 0.26, medido en la misma pose a
+   mediodía: a 0.17 la visitante conservaba su gris de archivo mientras
+   el cuadro entero se había ido al color de la hora — el único sujeto
+   sin teñir, o sea una calcomanía. A 0.34 ya fantasmea. Con 0.26 toma
+   la hora y la profundidad sigue ordenada: media veladura de lo lejano,
+   y el canto y el grano cuatro veces más gruesos siguen diciendo
+   «cerca». */
 #bruma-lejos {
   flood-color: var(--bruma, #CDDCDE);
   flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.5);
 }
 #bruma-cerca {
   flood-color: var(--bruma, #CDDCDE);
-  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.17);
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.26);
 }
 /* El filete del borde no es negro: es el mismo pigmento del cuadro
    cargado un punto más. Con negro sale un contorno de tebeo. */
@@ -1500,15 +1508,15 @@ body {
    y con razón — es la que se ve entera.
 
    UNA SOMBRA CORTA Y HACIA ABAJO. Se posa sobre una raíz, y un cuerpo
-   sobre una rama deja debajo una mancha corta, no un contorno. Dos
-   píxeles de desplazamiento y tres de radio: lo justo para que el pie
-   toque la madera en vez de flotar sobre ella.
+   sobre una rama deja debajo una mancha corta, no un contorno.
 
-   AHORA SON DOS SOMBRAS, y la nueva es la del CONTACTO: recta hacia
-   abajo, un radio mínimo y más cargada. `drop-shadow` solo asoma donde
-   la silueta desplazada sobresale del alfa original, o sea justo bajo
-   los dedos y la panza — exactamente la mancha que suelda el pie a la
-   madera. La blanda de siempre queda detrás, haciendo de penumbra.
+   SON DOS SOMBRAS, y la primera es la del CONTACTO: recta hacia abajo,
+   radio mínimo y bien cargada (78 %). `drop-shadow` solo asoma donde la
+   silueta desplazada sobresale del alfa original, o sea justo bajo los
+   dedos y la panza — exactamente la mancha que suelda el pie a la
+   madera. La segunda, desplazada y blanda, hace de penumbra. Las dos
+   subieron una vuelta a petición del dueño del cuadro: con 55 % el pie
+   seguía leyéndose despegado en pantallas reales.
 
    Y EL BRILLO DE LA HORA, que es lo que le faltaba: sin él, esta era
    la única ave del cuadro sin término de brillo, clavada en luz de día
@@ -1521,8 +1529,8 @@ body {
           contrast(var(--vuelo-contraste-cerca, 0.98))
           brightness(var(--vuelo-brillo-cerca, 1))
           url(#aguada-cerca)
-          drop-shadow(0 2px 1.5px color-mix(in srgb, var(--sombra-ave) 55%, transparent))
-          drop-shadow(1px 3px 3px color-mix(in srgb, var(--sombra-ave) 40%, transparent));
+          drop-shadow(0 3px 2px color-mix(in srgb, var(--sombra-ave) 78%, transparent))
+          drop-shadow(2px 5px 5px color-mix(in srgb, var(--sombra-ave) 45%, transparent));
 }
 
 /* LAS DE QUIEN MÁS ESTÉ. Se posan en la copa del manglar del fondo, o
