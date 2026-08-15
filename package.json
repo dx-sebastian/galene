@@ -12,7 +12,8 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "astro": "^7.2.0"
+    "astro": "^7.2.0",
+    "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1"

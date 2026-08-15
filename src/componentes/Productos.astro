@@ -41,16 +41,18 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
             la primera versión siguen en arte/productos/. */}
         <a class="producto__enlace" href={`${base}productos/${p.id}`}>
           <span class="producto__marco">
-            <span class="producto__sello">{p.sello}</span>
             <img src={`${base}productos/${p.id}.webp`} alt={p.nombre}
                  width="450" height="450" loading="lazy" decoding="async" />
           </span>
 
+          {/* SIN SELLO Y SIN PÁRRAFO, por orden del dueño: «quítale los
+              badgets y tanto texto». En el mostrador quedan la foto, el
+              nombre y una línea; todo lo demás —el tipo de uso, la
+              descripción, las especificaciones— está a un toque, en la
+              ficha de la pieza. */}
           <span class="producto__cuerpo">
             <span class="producto__nombre">{p.nombre}</span>
             <span class="producto__lema">{p.lema}</span>
-            <span class="producto__gancho">{p.gancho}</span>
-            <span class="producto__ver">Ver la ficha →</span>
           </span>
         </a>
 
@@ -63,8 +65,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   </ul>
 
   <p class="productos__nota">
-    Catálogo de importación en preparación: el botón registra tu interés
-    en el aparato y los pedidos se abrirán con la primera remesa.
+    Catálogo de importación en preparación: el botón registra tu interés.
     {' ' + CREDITO_FOTOS}
   </p>
 </section>

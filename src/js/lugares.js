@@ -36,6 +36,12 @@
    que el sitio ya usa: verde de tinta (abierto), añil (compañía) y
    rojo apagado (cuidado). Ninguno es rojo de alarma puro — la regla 2
    prohíbe el terror, y un mapa lleno de banderas rojas es terror. */
+/* ── QUÉ MAPAS SE VEN HOY ──────────────────────────────────────────
+   `oculto` deja un mapa fuera de la interfaz sin borrar su código: por
+   orden del dueño, luz y sombra se guardan «por ahora». El aparato que
+   los pinta sigue entero —marcas.js, los tipos, los globos— y vuelven
+   quitando una línea. Lo que NO se hace es dejar tres pestañas de las
+   que dos no llevan a ninguna parte. */
 export const MODOS = [
   {
     id: 'emergencia',
@@ -48,6 +54,7 @@ export const MODOS = [
   },
   {
     id: 'luz',
+    oculto: true,
     nombre: 'Luz',
     lema: 'Dónde estaré hoy',
     pie: 'Dejas dicho dónde vas a estar y hasta qué hora, para que quien te ' +
@@ -57,6 +64,7 @@ export const MODOS = [
   },
   {
     id: 'sombra',
+    oculto: true,
     nombre: 'Sombra',
     lema: 'Dónde no ir',
     pie: 'Sitios donde pasó algo, o donde no quieres que vaya nadie. ' +
@@ -66,6 +74,7 @@ export const MODOS = [
   },
 ];
 
+export const MODOS_VISIBLES = MODOS.filter((m) => !m.oculto);
 export const modoPor = (id) => MODOS.find((m) => m.id === id) || MODOS[0];
 
 /* ── LAS CIUDADES QUE SE VEN DE ENTRADA ────────────────────────────

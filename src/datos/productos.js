@@ -8,13 +8,19 @@
 
    QUÉ ES CADA CAMPO, y por qué hay dos textos:
 
-   · gancho — una frase. Es TODO lo que se lee en el mostrador. Antes
-     el párrafo largo iba en la tarjeta recortado a tres líneas con
-     puntos suspensivos, que es la forma más cara de no decir nada.
+   · lema — una frase. Es TODO lo que se lee en el mostrador, junto al
+     nombre y la foto: el dueño mandó quitar los sellos y recortar el
+     texto de las tarjetas, y lo que queda tiene que vender solo.
+   · gancho — el resumen de una línea. Lo usa la descripción social de
+     la ficha (og:description); en la tarjeta ya no se pinta.
    · descripcion — los párrafos de verdad. Viven en la ficha, donde
      hay sitio para leerlos.
    · especs — la tabla. En el mostrador no aparece; en la ficha va
      abierta, sin plegar: quien entró a la ficha vino a esto.
+
+   (El campo `sello` —«Reutilizable», «Un solo uso»— se retiró con los
+   badges. Lo que decía vive en las especificaciones, dentro de la
+   ficha, que es donde se compara de verdad.)
 
    LAS TRES REGLAS DE LA SECCIÓN siguen en pie (ver Acerca):
    nada promete seguridad total, nada traslada la carga a quien lo
@@ -24,7 +30,6 @@
 export const PRODUCTOS = [
   {
     id: 'funda-coletero',
-    sello: 'Reutilizable',
     nombre: 'La funda coletero',
     lema: 'Se lleva en la muñeca. Cuida tu copa.',
     gancho: 'De día es un coletero; de noche se abre sobre la boca del vaso.',
@@ -45,7 +50,6 @@ export const PRODUCTOS = [
   },
   {
     id: 'sombrero-lata',
-    sello: 'Reutilizable',
     nombre: 'El sombrero de lata',
     lema: 'La lata también sale de noche.',
     gancho: 'Tapa de silicona a presión para latas estándar.',
@@ -66,7 +70,6 @@ export const PRODUCTOS = [
   },
   {
     id: 'funda-llavero',
-    sello: 'Siempre contigo',
     nombre: 'La funda de llavero',
     lema: 'La que siempre está, porque vive en tus llaves.',
     gancho: 'La misma funda elástica, plegada en un estuche de llavero.',
@@ -87,7 +90,6 @@ export const PRODUCTOS = [
   },
   {
     id: 'sellos',
-    sello: 'Un solo uso',
     nombre: 'Los sellos adhesivos',
     lema: 'Un sello discreto para vasos que van y vienen.',
     gancho: 'Láminas adhesivas con sitio para el pitillo. El sello roto avisa.',
@@ -108,7 +110,6 @@ export const PRODUCTOS = [
   },
   {
     id: 'tapon-botella',
-    sello: 'Par de dos',
     nombre: 'El tapón de botella',
     lema: 'La botella queda cerrada hasta que tú digas.',
     gancho: 'Capuchón de silicona para la botella entre sorbo y sorbo.',
