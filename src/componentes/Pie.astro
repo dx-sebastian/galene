@@ -30,10 +30,11 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <footer class="pie">
-  {/* El mismo trazo que separa los bloques de la hoja: el pie es un
-      bloque más, no otro idioma. */}
-  <div class="trazo trazo--2" aria-hidden="true"></div>
-
+  {/* SIN CINTA Y SIN CAMBIO DE TONO. Llevaba un trazo de pincel encima
+      y un papel un punto más oscuro, y las dos cosas juntas dibujaban
+      una línea a lo ancho justo debajo del «volver a la portada»: la
+      hoja parecía CORTADA ahí (palabra del dueño). El pie no necesita
+      anunciarse — se entiende que es el pie por lo que dice. */}
   <div class="pie__fila">
     <p class="pie__marca">
       Galene
@@ -66,14 +67,16 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   .pie {
     position: relative;
     z-index: 1;
-    padding-block: 0 max(clamp(2rem, 4vw, 3rem), env(safe-area-inset-bottom));
+    padding-block: clamp(2rem, 4vw, 3rem)
+                   max(clamp(2rem, 4vw, 3rem), env(safe-area-inset-bottom));
     padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
-    background: var(--papel-arriba);
+    /* El MISMO papel que la hoja de arriba: el pie continúa la página,
+       no empieza otra. El fondo se pinta igual —y no transparente—
+       porque en la portada detrás hay pintura y un pie sin fondo sería
+       otra vez el agujero al lienzo. */
+    background: var(--papel);
     color: var(--letra);
   }
-  /* El trazo del pie no necesita el aire gigante de los de la hoja:
-     cierra, no separa lecturas. */
-  .pie :global(.trazo) { margin-block: 0 clamp(1.5rem, 3vw, 2.5rem); }
 
   .pie__fila {
     display: grid;

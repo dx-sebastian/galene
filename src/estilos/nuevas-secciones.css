@@ -1012,28 +1012,21 @@
   font-size: var(--t-3xl);
   line-height: 1.1;
 }
-.productos__intro {
-  margin: 0;
-  max-width: 62ch;
-  font-size: var(--t-md);
-  line-height: 1.55;
-  color: rgb(var(--letra-rgb) / 80%);
-}
-.productos__intro strong { color: var(--letra); }
-
+/* EL MOSTRADOR — RECUADROS, NO COLUMNAS ─────────────────────────────
+   Las cinco piezas ocupaban cinco columnas de una pantalla ancha y
+   salían altas y flacas: «en desktop parece columnas, deben ser
+   recuadros» (el dueño, con razón — eran tiras de texto, no fichas).
+   Ahora la retícula pide un ancho mínimo de recuadro y reparte lo que
+   quepa: tres arriba y dos abajo en una pantalla normal, cada una con
+   su foto cuadrada. La fila huérfana ya no molesta porque una ficha
+   ancha se sostiene sola; una tira flaca, no. */
 .productos__lista {
   list-style: none;
   margin: var(--e-6) 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
   gap: var(--e-4);
-}
-/* Cinco piezas, cinco columnas cuando caben: un catálogo con una
-   ficha huérfana en la segunda fila no es una fila, es un descuido —
-   la misma lección del 2×2 de los tramos. */
-@media (min-width: 1180px) {
-  .productos__lista { grid-template-columns: repeat(5, 1fr); gap: var(--e-3); }
 }
 
 .producto {
@@ -1045,6 +1038,7 @@
   background-image: var(--arte-papel);
   background-size: 300px;
   background-blend-mode: multiply;
+  padding-bottom: 1.15rem;
   transition: translate 220ms cubic-bezier(.25,.8,.3,1),
               box-shadow 220ms linear;
 }
@@ -1055,101 +1049,82 @@
   }
 }
 
-/* La lámina. Botón entero, con el asomo del catálogo al pasar y el
-   salto de zoom al tocar. `overflow: visible` en la ficha no: el zoom
-   se hace DENTRO del marco a 1.75 — un grabado acercado a la lupa, no
-   una lámina volando por la página. */
-.producto__lamina {
+/* LA TARJETA ENTERA ES UN ENLACE a la ficha del producto. Foto y texto
+   dentro del mismo <a> porque en un teléfono se toca la tarjeta, no la
+   palabra; el botón de compra queda fuera, que dos cosas pulsables no
+   se anidan. */
+.producto__enlace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+.producto__enlace:focus-visible {
+  outline: 3px solid var(--letra);
+  outline-offset: -3px;
+}
+
+.producto__marco {
+  position: relative;
   display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
+  aspect-ratio: 1;
   border-bottom: 1px solid rgb(var(--letra-rgb) / 10%);
   background:
     radial-gradient(circle at 50% 42%, rgb(255 253 250 / 85%), transparent 70%),
     transparent;
-  cursor: zoom-in;
   overflow: hidden;
 }
-.producto__lamina img {
+.producto__marco img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   transition: transform 420ms cubic-bezier(.25,.8,.3,1);
 }
 @media (min-width: 700px) {
-  .producto__lamina:hover img { transform: scale(1.06); }
-}
-.producto__lamina[aria-pressed="true"] { cursor: zoom-out; }
-.producto__lamina[aria-pressed="true"] img { transform: scale(1.75); }
-.producto__lamina:focus-visible {
-  outline: 3px solid var(--letra);
-  outline-offset: -3px;
+  .producto__enlace:hover .producto__marco img { transform: scale(1.06); }
 }
 
 .producto__cuerpo {
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 0.55rem;
-  padding: 1.1rem 1.15rem 1.25rem;
+  gap: 0.4rem;
+  padding: 1rem 1.15rem 0.9rem;
 }
 .producto__nombre {
-  margin: 0;
   font-size: var(--t-lg);
   font-weight: 700;
   line-height: 1.2;
 }
 .producto__lema {
-  margin: 0;
   font-size: var(--t-sm);
   color: #8E4C25;
   line-height: 1.4;
 }
-.producto__texto {
-  margin: 0;
+/* UNA FRASE Y NADA MÁS. El párrafo largo se fue a la ficha por orden
+   del dueño; recortarlo con puntos suspensivos era la forma más cara
+   de no decir nada. */
+.producto__gancho {
   font-size: var(--t-sm);
-  line-height: 1.55;
-  color: rgb(var(--letra-rgb) / 78%);
+  line-height: 1.5;
+  color: rgb(var(--letra-rgb) / 74%);
 }
-
-.producto__especs { margin-top: 0.2rem; }
-.producto__especs > summary {
-  display: inline-block;
-  cursor: pointer;
+.producto__ver {
+  margin-top: auto;
+  padding-top: 0.35rem;
   font-size: var(--t-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgb(var(--letra-rgb) / 62%);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.35em;
 }
-.producto__especs > summary:hover { color: var(--letra); }
-.producto__especs > summary:focus-visible {
-  outline: 2px solid var(--letra);
-  outline-offset: 3px;
-}
-.producto__especs dl {
-  margin: 0.7rem 0 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.3rem 0.8rem;
-  font-size: var(--t-xs);
-  line-height: 1.45;
-}
-.producto__especs dt {
-  font-weight: 700;
-  color: rgb(var(--letra-rgb) / 66%);
-  white-space: nowrap;
-}
-.producto__especs dd { margin: 0; color: rgb(var(--letra-rgb) / 82%); }
+.producto__enlace:hover .producto__ver { color: var(--letra); }
 
-/* La compra hereda el botón de acuarela del sitio y cierra la ficha
-   abajo, siempre a la misma altura aunque los textos midan distinto. */
+/* La compra cierra la ficha abajo, siempre a la misma altura aunque
+   los textos midan distinto. */
 .producto__comprar {
-  margin-top: auto;
-  align-self: flex-start;
+  margin: 0 1.15rem;
   min-height: 2.9rem;
   padding: 0 1.4rem;
   font-size: var(--t-sm);
@@ -1198,23 +1173,217 @@
 }
 .producto__comprar::before { display: none; }
 
+/* ═══ EN EL TELÉFONO, UN RESULTADO DE BÚSQUEDA ══════════════════════
+   «En mobile deberían verse como productos de amazon» — y así se ven
+   los de Amazon: una fila por pieza, la foto cuadrada a la izquierda,
+   el texto a la derecha y la acción debajo. Las dos columnas de la
+   vuelta anterior obligaban a recortar el nombre y el párrafo; en fila
+   caben enteros y el pulgar recorre el catálogo hacia abajo, que es
+   como se recorre un catálogo en la mano. */
 @media (max-width: 700px) {
   .productos__lista {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
   }
-  .producto__cuerpo { padding: 0.8rem 0.8rem 0.95rem; gap: 0.4rem; }
-  .producto__nombre { font-size: var(--t-ip, 1rem); }
+  .producto { padding-bottom: 0.85rem; }
+  .producto__enlace {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem 0.9rem 0.5rem;
+  }
+  .producto__marco {
+    flex: 0 0 38%;
+    max-width: 8.5rem;
+    border: 1px solid rgb(var(--letra-rgb) / 10%);
+    background-color: var(--papel);
+  }
+  .producto__cuerpo { padding: 0; gap: 0.3rem; }
+  .producto__nombre { font-size: var(--t-md); }
   .producto__lema { font-size: var(--t-xs); }
-  /* El párrafo se recorta a tres líneas: en el mostrador del teléfono
-     la foto y el nombre venden; el detalle vive en especificaciones. */
-  .producto__texto {
+  .producto__gancho { font-size: var(--t-xs); line-height: 1.45; }
+  .producto__ver { padding-top: 0.25rem; }
+  .producto__comprar {
+    margin: 0 0.9rem;
+    min-height: 2.7rem;
     font-size: var(--t-xs);
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
-  .producto__comprar { min-height: 2.6rem; font-size: var(--t-xs); }
-  .producto__sello { top: 8px; left: 7px; }
+  .producto__sello { top: 6px; left: 6px; font-size: 9px; }
+}
+
+/* ═══ LA FICHA DE UN PRODUCTO ═══════════════════════════════════════
+   /productos/<id>: la foto grande a la izquierda, la lectura a la
+   derecha, y las especificaciones abiertas —quien entró aquí vino a
+   leerlas, plegarlas sería esconder lo que se vino a buscar. */
+.ficha-pagina {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(1.5rem, 4vw, 3rem) 0;
+  padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+  background-color: var(--papel);
+  background-image: var(--arte-papel);
+  background-size: 820px;
+  background-blend-mode: multiply;
+  color: var(--letra);
+}
+
+.ficha__migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  color: rgb(var(--letra-rgb) / 55%);
+}
+.ficha__migas a { color: inherit; text-underline-offset: 0.3em; }
+.ficha__migas a:hover { color: var(--letra); }
+.ficha__migas [aria-current] { color: var(--letra); }
+
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+  margin-top: var(--e-4);
+}
+@media (min-width: 900px) {
+  .ficha {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(2rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+}
+
+.ficha__lamina {
+  position: relative;
+  border: 1px solid rgb(var(--letra-rgb) / 14%);
+  border-top: 3px solid #b98e4f;
+  background-color: var(--papel-alto);
+  background-image: var(--arte-papel);
+  background-size: 300px;
+  background-blend-mode: multiply;
+}
+/* El zoom se hace DENTRO del marco: un grabado acercado a la lupa, no
+   una lámina volando por la página. */
+.ficha__zoom {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgb(255 253 250 / 85%), transparent 70%),
+    transparent;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.ficha__zoom img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 420ms cubic-bezier(.25,.8,.3,1);
+}
+.ficha__zoom[aria-pressed="true"] { cursor: zoom-out; }
+.ficha__zoom[aria-pressed="true"] img { transform: scale(1.8); }
+.ficha__zoom:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; }
+.ficha__credito {
+  margin: 0;
+  padding: 0.7rem 0.9rem 0.8rem;
+  border-top: 1px solid rgb(var(--letra-rgb) / 10%);
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: rgb(var(--letra-rgb) / 55%);
+}
+
+.ficha__cuerpo > * { margin: 0; }
+.ficha__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.ficha__nombre {
+  font-family: var(--tipo-titulo);
+  font-weight: 400;
+  font-size: var(--t-3xl);
+  line-height: 1.1;
+}
+.ficha__lema {
+  font-size: var(--t-md);
+  line-height: 1.45;
+  color: #8E4C25;
+}
+.ficha__texto {
+  max-width: 60ch;
+  font-size: var(--t-md);
+  line-height: 1.62;
+  color: rgb(var(--letra-rgb) / 84%);
+}
+.ficha__rotulo {
+  margin-top: 0.6rem;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(var(--letra-rgb) / 62%);
+}
+.ficha__especs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(var(--letra-rgb) / 12%);
+  background: rgb(var(--papel-alto-rgb, 255 253 250) / 55%);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+.ficha__especs dt { font-weight: 700; color: rgb(var(--letra-rgb) / 66%); }
+.ficha__especs dd { margin: 0; color: rgb(var(--letra-rgb) / 86%); }
+
+.ficha__comprar {
+  margin: 0.5rem 0 0;
+  align-self: flex-start;
+  min-height: 3.1rem;
+  padding: 0 2.2rem;
+  font-size: var(--t-md);
+}
+.ficha__nota {
+  max-width: 60ch;
+  font-size: var(--t-xs);
+  line-height: 1.55;
+  color: rgb(var(--letra-rgb) / 58%);
+}
+
+/* Anterior y siguiente: el catálogo en anillo, para no obligar a
+   volver atrás entre pieza y pieza. */
+.ficha__vecinos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--e-3);
+  margin-top: var(--e-6);
+  padding-top: var(--e-4);
+  border-top: 1px solid rgb(var(--letra-rgb) / 12%);
+}
+.ficha__vecino {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgb(var(--letra-rgb) / 12%);
+  background-color: var(--papel-alto);
+  color: inherit;
+  text-decoration: none;
+}
+.ficha__vecino--der { text-align: right; }
+.ficha__vecino:hover { border-color: rgb(var(--letra-rgb) / 30%); }
+.ficha__vecino-guia {
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--letra-rgb) / 55%);
+}
+.ficha__vecino-nombre { font-weight: 700; line-height: 1.25; }
+@media (max-width: 560px) {
+  .ficha__vecinos { grid-template-columns: 1fr; }
+  .ficha__vecino--der { text-align: left; }
 }

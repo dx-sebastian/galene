@@ -1,0 +1,156 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — la ficha de un producto.
+
+   Nace de una orden del dueño: «la descripción dentro de la página
+   del producto». El mostrador enseña foto, nombre y una frase; aquí
+   está lo que hay que leer antes de pedir una pieza — los párrafos
+   enteros, la tabla de especificaciones ABIERTA (quien entró vino a
+   esto) y el botón de compra grande.
+
+   Una página por pieza, generadas en el compilado desde
+   datos/productos.js: cinco fichas hoy, las que haya mañana sin tocar
+   este archivo.
+
+   SIN PRECIO, como en el mostrador y por la misma razón: la
+   disponibilidad se está cerrando con el importador y el botón
+   registra interés, no cobra.
+   ═══════════════════════════════════════════════════════════════════ */
+import '../../estilos/estilos.css';
+import '../../estilos/nuevas-secciones.css';
+import '../../estilos/responsive.css';
+import Barra from '../../componentes/Barra.astro';
+import Pie from '../../componentes/Pie.astro';
+import { PRODUCTOS, CREDITO_FOTOS } from '../../datos/productos.js';
+
+export function getStaticPaths() {
+  return PRODUCTOS.map((p, i) => ({
+    params: { id: p.id },
+    props: {
+      producto: p,
+      /* El anillo del catálogo: de la última se vuelve a la primera,
+         para que nunca haya una flecha que no lleva a ninguna parte. */
+      anterior: PRODUCTOS[(i - 1 + PRODUCTOS.length) % PRODUCTOS.length],
+      siguiente: PRODUCTOS[(i + 1) % PRODUCTOS.length],
+    },
+  }));
+}
+
+const { producto, anterior, siguiente } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const TITULO = producto.nombre + ' — Galene';
+const RESUMEN = producto.lema + ' ' + producto.gancho;
+---
+
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>{TITULO}</title>
+  <meta name="description" content={RESUMEN} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={TITULO} />
+  <meta property="og:description" content={RESUMEN} />
+  <meta property="og:image" content={base + 'productos/' + producto.id + '.webp'} />
+  <meta name="theme-color" content="#2E4256" />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
+
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+</head>
+
+<body class="pagina-papel">
+
+  <Barra actual="productos" />
+
+  <main class="ficha-pagina">
+    <nav class="ficha__migas" aria-label="Ruta">
+      <a href={base}>Portada</a>
+      <span aria-hidden="true">/</span>
+      <a href={base + 'productos'}>Catálogo</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{producto.nombre}</span>
+    </nav>
+
+    <article class="ficha">
+      {/* La lámina se amplía al tocarla (botón de verdad, con su
+          estado accesible) y vuelve al tocarla otra vez. En el
+          mostrador ese gesto se perdió —la tarjeta entera es un
+          enlace— y aquí es donde tiene sentido: la foto en grande. */}
+      <div class="ficha__lamina">
+        <span class="producto__sello">{producto.sello}</span>
+        <button class="ficha__zoom" type="button" aria-pressed="false"
+                aria-label={'Ampliar la fotografía de ' + producto.nombre}>
+          <img src={`${base}productos/${producto.id}.webp`}
+               alt={producto.nombre}
+               width="450" height="450" decoding="async" />
+        </button>
+        <p class="ficha__credito">{CREDITO_FOTOS}</p>
+      </div>
+
+      <div class="ficha__cuerpo">
+        <p class="seccion-rotulo">Prevención · Catálogo</p>
+        <h1 class="ficha__nombre">{producto.nombre}</h1>
+        <p class="ficha__lema">{producto.lema}</p>
+
+        {producto.descripcion.map((parrafo) => (
+          <p class="ficha__texto">{parrafo}</p>
+        ))}
+
+        <h2 class="ficha__rotulo">Especificaciones</h2>
+        <dl class="ficha__especs">
+          {producto.especs.map(([k, v]) => (<><dt>{k}</dt><dd>{v}</dd></>))}
+        </dl>
+
+        <button class="producto__comprar ficha__comprar acuarela" type="button"
+                data-nombre={producto.nombre}>
+          <span class="acuarela__texto">Comprar</span>
+        </button>
+
+        <p class="ficha__nota">
+          Catálogo de importación en preparación: el botón registra tu
+          interés en el aparato y los pedidos se abrirán con la primera
+          remesa. Ninguna de estas piezas evita del todo el riesgo, y no
+          usarlas nunca es descuido de nadie: la responsabilidad es
+          siempre de quien agrede.
+        </p>
+      </div>
+    </article>
+
+    <nav class="ficha__vecinos" aria-label="Otras piezas del catálogo">
+      <a class="ficha__vecino" href={base + 'productos/' + anterior.id}>
+        <span class="ficha__vecino-guia">← Anterior</span>
+        <span class="ficha__vecino-nombre">{anterior.nombre}</span>
+      </a>
+      <a class="ficha__vecino ficha__vecino--der"
+         href={base + 'productos/' + siguiente.id}>
+        <span class="ficha__vecino-guia">Siguiente →</span>
+        <span class="ficha__vecino-nombre">{siguiente.nombre}</span>
+      </a>
+    </nav>
+
+    <p class="expertos-pagina__volver">
+      <a href={base + 'productos'}>← Volver al catálogo</a>
+    </p>
+    <Pie />
+  </main>
+
+  <script>import '../../js/viewport.js';</script>
+  <script>import '../../js/luz.js';</script>
+  <script>import '../../js/menu.js';</script>
+  <script>import '../../js/pedido.js';</script>
+  <script>
+    /* El zoom de la lámina: acercar un grabado a la luz y devolverlo. */
+    const zoom = document.querySelector('.ficha__zoom');
+    zoom?.addEventListener('click', () => {
+      const abierto = zoom.getAttribute('aria-pressed') === 'true';
+      zoom.setAttribute('aria-pressed', String(!abierto));
+    });
+  </script>
+</body>
+</html>

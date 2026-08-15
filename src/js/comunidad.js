@@ -202,6 +202,26 @@ function arrancar() {
 
   let ordenActual = 'recientes';
 
+  /* EL RÓTULO DEL MANDO CERRADO. Los filtros viven plegados dentro de un
+     <details> desde que el dueño los mandó a un botón, y un mando
+     cerrado que no dice qué tiene puesto es un mando que miente: esta
+     línea escribe el estado en la misma fila del botón —«Nuevos»,
+     «Sin responder · Cuidados»— para que se lea sin abrirlo. */
+  const rotulo = mando.querySelector('[data-mando-estado]');
+  const NOMBRE_ORDEN = {
+    recientes: 'Nuevos',
+    votados: 'Más votados',
+    solas: 'Sin responder',
+  };
+
+  function rotular() {
+    if (!rotulo) return;
+    const et = mando.querySelector('[data-etiqueta][aria-pressed="true"]');
+    const etiqueta = et && et.dataset.etiqueta ? et.textContent.trim() : '';
+    rotulo.textContent = NOMBRE_ORDEN[ordenActual] +
+      (etiqueta ? ` · ${etiqueta}` : '');
+  }
+
   function ordenar(clave, avisar) {
     const cmp = CRITERIOS[clave];
     if (!cmp) return;
@@ -216,6 +236,7 @@ function arrancar() {
       b.setAttribute('aria-pressed', String(b.dataset.orden === clave));
     }
     if (nota) nota.hidden = clave !== 'solas';
+    rotular();
 
     /* REORDENAR ES UN CAMBIO DE MAQUETA Y HAY QUE DECIRLO.
        `desplazamiento.js` mide una vez el `offsetTop` de cada hilo y vela
@@ -279,6 +300,7 @@ function arrancar() {
     }
     vacio.hidden = quedan > 0;
     parte.textContent = quedan === 1 ? 'Un hilo.' : `${quedan} hilos.`;
+    rotular();
     dispatchEvent(new Event('resize'));
   }
 
@@ -321,22 +343,14 @@ function arrancar() {
      dos veces (ver la nota de `despegue` en main.js). */
   let formaRespuesta = null;
 
-  /* El sello de autoría: la misma lámina y la misma regla determinista
-     que Sello.astro —el giro sale de las letras del nombre— para que la
-     garza de «Raíz» esté inclinada igual en un hilo escrito ahora que
-     en uno del HTML. */
-  function vestirSello(sello, autora) {
-    const semilla = [...(autora.nombre || '')].reduce((n, ch) => n + ch.codePointAt(0), 0);
-    sello.style.setProperty('--giro', (((semilla % 9) - 4) * 0.9).toFixed(1) + 'deg');
-    sello.style.setProperty('--mirar', String(autora.mirar || 1));
-    const img = sello.querySelector('.sello__ave');
-    if (img) img.src = `${base}arte/1024/posada/${autora.pose}.webp`;
-  }
+  /* (Aquí vivía `vestirSello`, que le ponía a cada hilo escrito su
+     garza posada con el mismo giro determinista que Sello.astro. Las
+     fotos de perfil se fueron enteras por orden del dueño, en el HTML
+     y aquí: un molde sin sello no necesita a nadie que lo vista.) */
 
   function pintarNodo(c, hilo) {
     const li = moldeNodo.content.firstElementChild.cloneNode(true);
     li.dataset.id = c.id;
-    vestirSello(li.querySelector('.sello'), c.autora);
     const autora = li.querySelector('.nodo__autora');
     autora.textContent = c.autora.nombre;
     autora.classList.toggle('nodo__autora--anonima', Boolean(c.autora.anonima));
@@ -368,7 +382,6 @@ function arrancar() {
     art.id = `hilo-${h.id}`;
     art.style.setProperty('--pigmento', et.pigmento);
 
-    vestirSello(li.querySelector('.sello'), h.autora);
     const autora = li.querySelector('.hilo__autora');
     autora.textContent = h.autora.nombre;
     autora.classList.toggle('hilo__autora--anonima', Boolean(h.autora.anonima));

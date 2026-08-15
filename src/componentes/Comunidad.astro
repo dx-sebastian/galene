@@ -35,10 +35,15 @@
 
    MATERIAL PRESTADO, CERO LÁMINAS NUEVAS. El fondo son las mismas clases
    del fondo de las herramientas (`.herramientas__fondo`, papel + dos
-   aguadas pintadas), los sellos son las seis garzas posadas del manglar
-   del hero, la viñeta de las reglas es el filete 5 que ya usan las
-   tarjetas de consejos, y el canto de arriba es el mismo `papel-barbas`.
-   La página no estrena ni un archivo.
+   aguadas pintadas), la viñeta de las reglas es el filete 5 que ya usan
+   las tarjetas de consejos, y el canto de arriba es el mismo
+   `papel-barbas`. La página no estrena ni un archivo.
+
+   SIN FOTOS DE PERFIL. Cada mensaje llevaba su garza posada del
+   manglar; el dueño las mandó quitar todas y el foro se quedó en lo
+   que dice, que era el punto. El componente Sello.astro y las láminas
+   de arte/1024/posada/ siguen ahí: las usa el hero, y volverían aquí
+   sin escribir nada nuevo.
 
    `data-seccion-hoja` es el ancla de los DOS módulos de la hoja, y con
    eso esta página hereda gratis los dos gestos que ya existen: las
@@ -49,7 +54,6 @@
    encuentran su trabajo solos.
    ═══════════════════════════════════════════════════════════════════ */
 import Comentario from './Comentario.astro';
-import Sello from './Sello.astro';
 import Votos from './Votos.astro';
 import { HILOS, ETIQUETAS, respuestasDe } from '../datos/comunidad.js';
 /* Los límites y los once nombres de agua salen del mismo sitio que los
@@ -81,80 +85,84 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <div class="fondo__capa fondo__capa--cercana" data-hondo="0.66"></div>
   </div>
 
-  {/* ── LA CABECERA ──────────────────────────────────────────────────
-      El H1 lleva la palabra que se busca —«comunidad»— y debajo va lo
-      que de verdad hace falta saber antes de leer el primer hilo: que
-      aquí nadie pregunta qué pasó. Es la regla 4 del proyecto puesta
-      como norma de la casa, y va ARRIBA porque es la que decide si
-      alguien se atreve a escribir. */}
-  {/* ── CABECERA DE FORO, NO DE PORTADA ─────────────────────────────
-      Estuvo maquetada como una landing: rótulo, título grande, filete,
-      declaración y una tarjeta con las tres normas — cinco pisos antes
-      del primer hilo. El dueño lo dijo sin rodeos: estorba; esto es un
-      foro y lo primero tienen que ser los hilos.
+  {/* ── SIN CABECERA ─────────────────────────────────────────────────
+      Aquí hubo un rótulo, un título grande, una declaración y una
+      tarjeta de normas: una pantalla entera antes del primer hilo.
+      Se plegó una vez y el dueño volvió a pedirlo con más claridad —
+      «quita todo ese header molesto que ocupa tanto espacio»—, así que
+      se va del todo. Un foro empieza por sus hilos.
 
-      Lo que NO se negocia se queda a la vista: «aquí nadie pregunta
-      qué pasó» es la regla 4 del proyecto y es la frase que decide si
-      alguien se atreve a escribir — va en la misma línea de la
-      declaración, siempre visible. Las otras dos normas viven en un
-      <details> al lado: quien las quiera las abre, y quien viene a
-      leer llega dos pantallas antes a lo que vino a buscar. */}
-  <header class="comunidad__cabecera">
-    <p class="comunidad__sobre">El manglar</p>
-    <h1 class="comunidad__titulo">Comunidad</h1>
+      El H1 se queda, invisible: una página sin encabezado no es
+      minimalista para quien la recorre con un lector de pantalla, es
+      una página sin nombre. Y las normas de la casa —la regla 4 del
+      proyecto, «aquí nadie pregunta qué pasó»— no desaparecen: viven
+      dentro del mismo pliegue que los filtros, a un toque de distancia
+      y no a cinco pisos de scroll. */}
+  <h1 class="visualmente-oculto">Comunidad</h1>
 
-    <p class="comunidad__declaracion">Lo que aprendimos después, contado
-      por quienes ya pasaron por ahí. Aquí <strong>nadie pregunta qué
-      pasó</strong>.</p>
+  {/* ── EL MANDO, PLEGADO ────────────────────────────────────────────
+      Los tres órdenes y las seis etiquetas ocupaban dos filas de
+      píldoras encima de los hilos. Ahora viven dentro de un <details>:
+      una sola línea en reposo —«Filtros»— y todo el mando al abrirlo.
+      Es el enfoque minimalista que pidió el dueño y, de paso, el
+      teléfono gana dos dedos de pantalla.
 
-    <details class="comunidad__normas">
-      <summary>Las normas de la casa</summary>
-      <ul class="comunidad__casa">
-        <li>Aquí <strong>nadie pregunta qué pasó</strong>.</li>
-        <li>Se puede escribir sin nombre, y no hay que explicar por qué.</li>
-        <li>No se vota en contra de nadie: se acompaña o se deja pasar.</li>
-      </ul>
-    </details>
-  </header>
+      <details> y no un botón con JavaScript: abre y cierra sin script,
+      como el compositor. La fila de etiquetas sigue naciendo OCULTA y
+      la enciende js/comunidad.js — un chip que no filtra porque el
+      módulo no llegó es un control muerto, y de esos aquí no queda
+      ninguno. */}
+  <details class="mando">
+    <summary class="mando__boton">
+      <span class="mando__icono" aria-hidden="true">
+        <svg viewBox="0 0 16 12" focusable="false">
+          <path d="M1 2.2 H15 M3.4 6 H12.6 M6.2 9.8 H9.8"
+                fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" vector-effect="non-scaling-stroke" />
+        </svg>
+      </span>
+      <span>Filtros</span>
+      <span class="mando__estado" data-mando-estado>Nuevos</span>
+    </summary>
 
-  {/* ── EL MANDO ─────────────────────────────────────────────────────
-      Tres órdenes y ningún filtro por defecto. «Sin responder» lleva su
-      propio pie porque es el que no se explica solo, y es el que
-      justifica que esta página no tenga un «lo mejor».
-
-      La fila de etiquetas nace OCULTA y la enciende js/comunidad.js. Un
-      chip que no filtra porque el script no llegó es un control muerto,
-      y este proyecto no deja controles muertos en pantalla: sin
-      JavaScript la lista sale entera y en orden de llegada, que es un
-      estado correcto. */}
-  <div class="mando">
-    <div class="mando__orden" role="group" aria-label="Ordenar los hilos">
-      <button class="orden" type="button" data-orden="recientes" aria-pressed="true">
-        Nuevos
-      </button>
-      <button class="orden" type="button" data-orden="votados" aria-pressed="false">
-        Más votados
-      </button>
-      <button class="orden orden--solas" type="button" data-orden="solas" aria-pressed="false">
-        Sin responder
-      </button>
-    </div>
-
-    <div class="mando__etiquetas" hidden="hidden">
-      <button class="chip chip--todas" type="button" data-etiqueta="" aria-pressed="true">
-        Todo
-      </button>
-      {ETIQUETAS.map((e) => (
-        <button class="chip" type="button" data-etiqueta={e.id} aria-pressed="false"
-                style={`--pigmento: ${e.pigmento}`} title={e.pie}>
-          {e.nombre}
+    <div class="mando__panel">
+      <div class="mando__orden" role="group" aria-label="Ordenar los hilos">
+        <button class="orden" type="button" data-orden="recientes" aria-pressed="true">
+          Nuevos
         </button>
-      ))}
-    </div>
+        <button class="orden" type="button" data-orden="votados" aria-pressed="false">
+          Más votados
+        </button>
+        <button class="orden orden--solas" type="button" data-orden="solas" aria-pressed="false">
+          Sin responder
+        </button>
+      </div>
 
-    <p class="mando__nota" data-nota-orden hidden="hidden">Arriba los hilos
-      que todavía no ha contestado nadie.</p>
-  </div>
+      <div class="mando__etiquetas" hidden="hidden">
+        <button class="chip chip--todas" type="button" data-etiqueta="" aria-pressed="true">
+          Todo
+        </button>
+        {ETIQUETAS.map((e) => (
+          <button class="chip" type="button" data-etiqueta={e.id} aria-pressed="false"
+                  style={`--pigmento: ${e.pigmento}`} title={e.pie}>
+            {e.nombre}
+          </button>
+        ))}
+      </div>
+
+      <p class="mando__nota" data-nota-orden hidden="hidden">Arriba los hilos
+        que todavía no ha contestado nadie.</p>
+
+      <details class="comunidad__normas">
+        <summary>Las normas de la casa</summary>
+        <ul class="comunidad__casa">
+          <li>Aquí <strong>nadie pregunta qué pasó</strong>.</li>
+          <li>Se puede escribir sin nombre, y no hay que explicar por qué.</li>
+          <li>No se vota en contra de nadie: se acompaña o se deja pasar.</li>
+        </ul>
+      </details>
+    </div>
+  </details>
 
   {/* ── ESCRIBIR ─────────────────────────────────────────────────────
       Va como <details>, así que abre y cierra sin JavaScript.
@@ -179,7 +187,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       es un control muerto, y de esos aquí no queda ninguno. */}
   <details class="escribir" id="escribir">
     <summary class="escribir__senuelo">
-      <Sello autora={{ nombre: 'quien llega', pose: 'mira-abajo', mirar: 1 }} />
       <span class="escribir__frase">Escribir en la comunidad…</span>
     </summary>
 
@@ -278,15 +285,8 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
               mismo color son dos colores el día que alguien toque una. */}
           <article class="hilo" id={`hilo-${h.id}`} style={`--pigmento: ${et.pigmento}`}>
 
-            {/* EL SELLO VA EN SU PROPIA COLUMNA, fuera de la cabecera:
-                así el nombre, el título, el cuerpo, los botones y la
-                hebra comparten una sola sangría, y el canal de la
-                izquierda queda libre para que la raíz de las respuestas
-                baje por debajo de la garza. Dentro de la cabecera, la
-                garza solo medía lo que mide la fila del nombre y el
-                título volvía a empezar pegado al borde. */}
-            <Sello autora={h.autora} grande={true} />
-
+            {/* SIN GARZA DE PERFIL: la columna del sello se fue con
+                todas las demás fotos, por orden del dueño. */}
             <div class="hilo__col">
               <header class="hilo__cabeza">
                 <span class:list={['hilo__autora', h.autora.anonima && 'hilo__autora--anonima']}>
@@ -388,7 +388,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       copias que hay que sincronizar a mano (ver la nota del glosario en
       index.astro: «un espejo que hay que sincronizar es un espejo que un
       día miente»). Aquí la copia no existe: el molde sale de
-      `Comentario.astro`, `Sello.astro` y `Votos.astro`, así que el día
+      `Comentario.astro` y `Votos.astro`, así que el día
       que a una tarjeta le cambie una clase, le cambia también a las que
       se escriben.
 
@@ -399,7 +399,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <li class="hilos__item" data-indice="0" data-etiqueta="" data-minutos="0"
         data-votos="0" data-respuestas="0" data-nuevo="1">
       <article class="hilo">
-        <Sello autora={{ nombre: 'Anónima', pose: 'reposo', mirar: 1 }} grande={true} />
         <div class="hilo__col">
           <header class="hilo__cabeza">
             <span class="hilo__autora"></span>
@@ -445,7 +444,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   <template data-molde-nodo>
     <li class="nodo">
       <article class="nodo__caja">
-        <Sello autora={{ nombre: 'Anónima', pose: 'reposo', mirar: 1 }} />
         <div class="nodo__col">
           <header class="nodo__cabeza">
             <span class="nodo__autora"></span>

@@ -1,112 +1,25 @@
 ---
 /* ═══════════════════════════════════════════════════════════════════
-   PRODUCTOS — la prevención que se puede llevar puesta.
+   EL MOSTRADOR — el catálogo de prevención, en lista.
 
-   Catálogo de importación (línea NightCap y afines): fundas y sellos
-   que cierran una copa, una lata o una botella. Cinco piezas, las más
-   pedidas de esa casa, adaptadas a la voz de este sitio.
+   Segunda forma de esta sección, a pedido del dueño: «en mobile
+   deberían verse como productos de amazon, y la descripción dentro de
+   la página del producto». Así que aquí NO hay descripción larga ni
+   especificaciones plegadas: foto, nombre, una frase y el botón. Todo
+   lo demás vive en /productos/<id>, la ficha de cada pieza.
 
-   TRES REGLAS DE ESTA SECCIÓN, y las tres vienen del compromiso del
-   proyecto (ver Acerca):
+   La tarjeta entera es un enlace a su ficha —foto y texto dentro del
+   mismo <a>, que es como se toca en un teléfono— y el botón de compra
+   queda FUERA de ese enlace: dos cosas que se pulsan no pueden estar
+   una dentro de la otra.
 
-   1 · NADA AQUÍ PROMETE SEGURIDAD TOTAL, y se dice en la cabecera.
-       Un catálogo de prevención que sobrevenda es el mismo daño que
-       una cifra sin fuente.
-   2 · NO TRASLADA LA CARGA. No usar ninguno de estos no es descuido
-       de nadie: la responsabilidad es siempre de quien agrede. Está
-       escrito EN la sección, no en la letra pequeña.
-   3 · SIN PRECIO. La disponibilidad se está cerrando con el
-       importador; el botón registra interés y no finge una caja de
-       pago que no existe.
-
-   LAS LÁMINAS SON NUESTRAS: ilustraciones en los pigmentos del sitio,
-   no fotografías del fabricante — un catálogo con fotos ajenas es un
-   catálogo prestado. Cuando lleguen las fotos propias del producto
-   importado, entran por aquí con el mismo marco.
-
-   EL ZOOM: cada lámina se amplía al tocarla (botón de verdad, con su
-   estado accesible) y vuelve al tocarla otra vez. En escritorio,
-   además, un asomo al pasar el ratón. */
+   LAS TRES REGLAS siguen escritas en datos/productos.js, con los
+   datos: nada promete seguridad total, nada traslada la carga, y no
+   hay precio mientras la importación se esté cerrando.
+   ═══════════════════════════════════════════════════════════════════ */
+import { PRODUCTOS, CREDITO_FOTOS } from '../datos/productos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-
-const PRODUCTOS = [
-  {
-    id: 'funda-coletero',
-    sello: 'Reutilizable',
-    nombre: 'La funda coletero',
-    lema: 'Se lleva en la muñeca. Cuida tu copa.',
-    texto: 'Una funda de tela elástica que durante el día es un coletero ' +
-           'y por la noche se abre sobre la boca de tu vaso o tu copa. ' +
-           'Discreta hasta que hace falta.',
-    especs: [
-      ['Material', 'Tela elástica, lavable a mano'],
-      ['Sirve para', 'Vasos y copas de boca ancha'],
-      ['Se lleva', 'Como coletero, en la muñeca o el pelo'],
-      ['Vida útil', 'Reutilizable, cientos de noches'],
-    ],
-  },
-  {
-    id: 'sombrero-lata',
-    sello: 'Reutilizable',
-    nombre: 'El sombrero de lata',
-    lema: 'La lata también sale de noche.',
-    texto: 'Una tapa de silicona que se ajusta a presión sobre ' +
-           'cualquier lata estándar y deja pasar solo tu propio sorbo. ' +
-           'Se enjuaga y vuelve al bolso.',
-    especs: [
-      ['Material', 'Silicona de grado alimentario'],
-      ['Sirve para', 'Latas estándar y delgadas'],
-      ['Se lleva', 'Plano, en cualquier bolsillo'],
-      ['Vida útil', 'Reutilizable, apto para enjuague'],
-    ],
-  },
-  {
-    id: 'funda-llavero',
-    sello: 'Siempre contigo',
-    nombre: 'La funda de llavero',
-    lema: 'La que siempre está, porque vive en tus llaves.',
-    texto: 'La misma funda elástica, plegada dentro de un estuche que ' +
-           'cuelga del llavero. Para la noche que no estaba planeada, ' +
-           'que es la mayoría.',
-    especs: [
-      ['Material', 'Estuche de polipiel, funda de tela elástica'],
-      ['Sirve para', 'Vasos y copas de boca ancha'],
-      ['Se lleva', 'En las llaves, siempre'],
-      ['Vida útil', 'Reutilizable; el estuche la protege'],
-    ],
-  },
-  {
-    id: 'sellos',
-    sello: 'Un solo uso',
-    nombre: 'Los sellos adhesivos',
-    lema: 'Un sello discreto para vasos que van y vienen.',
-    texto: 'Láminas adhesivas que sellan la boca del vaso y dejan sitio ' +
-           'para el pitillo. De un solo uso: se nota si alguien lo ' +
-           'levantó, y esa es exactamente su función.',
-    especs: [
-      ['Material', 'Lámina adhesiva sin residuo'],
-      ['Sirve para', 'Casi cualquier vaso, con o sin pitillo'],
-      ['Se lleva', 'Hoja plana, cabe en la billetera'],
-      ['Vida útil', 'Un uso por sello — el sello roto avisa'],
-    ],
-  },
-  {
-    id: 'tapon-botella',
-    sello: 'Par de dos',
-    nombre: 'El tapón de botella',
-    lema: 'La botella queda cerrada hasta que tú digas.',
-    texto: 'Un capuchón de silicona que abraza la boca de la botella ' +
-           'entre sorbo y sorbo. Para las noches largas en las que la ' +
-           'botella se queda en la mesa y tú no.',
-    especs: [
-      ['Material', 'Silicona de grado alimentario'],
-      ['Sirve para', 'Botellas de boca estándar'],
-      ['Se lleva', 'Par de tapones, bolsillo o bolso'],
-      ['Vida útil', 'Reutilizable, apto para enjuague'],
-    ],
-  },
-];
 ---
 
 <section class="productos" id="productos" aria-labelledby="productos-titulo">
@@ -126,31 +39,25 @@ const PRODUCTOS = [
             vende exactamente estas piezas (acuerdo de distribución en
             curso; crédito al pie de la sección). Las ilustraciones de
             la primera versión siguen en arte/productos/. */}
-        <span class="producto__sello">{p.sello}</span>
-        <button class="producto__lamina" type="button"
-                aria-pressed="false"
-                aria-label={'Ampliar la fotografía de ' + p.nombre}>
-          <img src={`${base}productos/${p.id}.webp`} alt={p.nombre}
-               width="450" height="450" loading="lazy" decoding="async" />
+        <a class="producto__enlace" href={`${base}productos/${p.id}`}>
+          <span class="producto__marco">
+            <span class="producto__sello">{p.sello}</span>
+            <img src={`${base}productos/${p.id}.webp`} alt={p.nombre}
+                 width="450" height="450" loading="lazy" decoding="async" />
+          </span>
+
+          <span class="producto__cuerpo">
+            <span class="producto__nombre">{p.nombre}</span>
+            <span class="producto__lema">{p.lema}</span>
+            <span class="producto__gancho">{p.gancho}</span>
+            <span class="producto__ver">Ver la ficha →</span>
+          </span>
+        </a>
+
+        <button class="producto__comprar acuarela" type="button"
+                data-nombre={p.nombre}>
+          <span class="acuarela__texto">Comprar</span>
         </button>
-
-        <div class="producto__cuerpo">
-          <h3 class="producto__nombre">{p.nombre}</h3>
-          <p class="producto__lema">{p.lema}</p>
-          <p class="producto__texto">{p.texto}</p>
-
-          <details class="producto__especs">
-            <summary>Especificaciones</summary>
-            <dl>
-              {p.especs.map(([k, v]) => (<><dt>{k}</dt><dd>{v}</dd></>))}
-            </dl>
-          </details>
-
-          <button class="producto__comprar acuarela" type="button"
-                  data-nombre={p.nombre}>
-            <span class="acuarela__texto">Comprar</span>
-          </button>
-        </div>
       </li>
     ))}
   </ul>
@@ -158,46 +65,8 @@ const PRODUCTOS = [
   <p class="productos__nota">
     Catálogo de importación en preparación: el botón registra tu interés
     en el aparato y los pedidos se abrirán con la primera remesa.
-    Fotografías del fabricante (NightCap®), usadas en el marco del
-    acuerdo de distribución.
+    {' ' + CREDITO_FOTOS}
   </p>
 </section>
 
-<script>
-  /* El zoom de la lámina y el registro de interés. Progresivo entero:
-     sin este módulo las láminas se ven y las especificaciones abren —
-     solo el zoom y el botón pierden su gesto. Nada sale del aparato:
-     el interés vive en sessionStorage, como toda elección de este
-     sitio, y muere al cerrar la pestaña. */
-  for (const boton of document.querySelectorAll('.producto__lamina')) {
-    boton.addEventListener('click', () => {
-      const abierto = boton.getAttribute('aria-pressed') === 'true';
-      /* Solo una ampliada a la vez: dos láminas al 170 % se pisan. */
-      for (const otro of document.querySelectorAll('.producto__lamina[aria-pressed="true"]'))
-        if (otro !== boton) otro.setAttribute('aria-pressed', 'false');
-      boton.setAttribute('aria-pressed', String(!abierto));
-    });
-  }
-
-  const CLAVE = 'galene:pedido';
-  const leer = () => {
-    try { return JSON.parse(sessionStorage.getItem(CLAVE) || '[]'); }
-    catch { return []; }
-  };
-  const pintar = (boton, dentro) => {
-    boton.querySelector('.acuarela__texto').textContent =
-      dentro ? 'En tu pedido ✓' : 'Comprar';
-    boton.classList.toggle('producto__comprar--dentro', dentro);
-  };
-  for (const boton of document.querySelectorAll('.producto__comprar')) {
-    const nombre = boton.dataset.nombre;
-    pintar(boton, leer().includes(nombre));
-    boton.addEventListener('click', () => {
-      const pedido = leer();
-      const i = pedido.indexOf(nombre);
-      if (i >= 0) pedido.splice(i, 1); else pedido.push(nombre);
-      try { sessionStorage.setItem(CLAVE, JSON.stringify(pedido)); } catch {}
-      pintar(boton, i < 0);
-    });
-  }
-</script>
+<script>import '../js/pedido.js';</script>
