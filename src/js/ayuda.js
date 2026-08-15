@@ -209,6 +209,108 @@ const guardar = (ciudad, firma, lugares) => {
   } catch { /* sin sessionStorage se pregunta otra vez y ya está */ }
 };
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA SEGUNDA FUENTE — Nominatim, cuando Overpass no está.
+
+   El dueño reportó dos veces que el mapa no traía nada, y la causa
+   medida fue siempre la misma: Overpass. Es un servicio gratuito que
+   ENCOLA, y el día que la cola está llena devuelve 504 en todos sus
+   espejos a la vez — cuatro puertas del mismo edificio. Reordenarlas y
+   reintentar ayuda, pero no arregla que el edificio esté cerrado.
+
+   Nominatim es OTRO edificio: el buscador de OpenStreetMap, otra
+   infraestructura, otra cola. No sabe hacer lo que hace Overpass —no
+   busca por etiqueta en un radio— pero sí sabe «hospitales dentro de
+   este rectángulo», que es justo lo que hace falta aquí. Medido: 8
+   resultados con nombre y coordenada en un segundo.
+
+   ES UN RESPALDO Y SE COMPORTA COMO TAL: se pide DESPUÉS de que
+   Overpass falle, trae menos campos (sin horario, sin teléfono) y solo
+   las dos categorías que importan cuando algo está pasando —urgencias
+   y centros de salud—, en dos peticiones separadas por un segundo,
+   que es lo que su política pide.
+
+   SOBRE EL REFERENTE: a Overpass se le manda `no-referrer`. A
+   Nominatim se le manda el ORIGEN —el dominio, no la página— porque su
+   política de uso exige poder identificar a quien consulta. Es el
+   mismo dato que ya ve el servidor de teselas por tener el mapa
+   abierto, y no incluye la ruta.
+   ═══════════════════════════════════════════════════════════════════ */
+const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+
+/* Qué frase especial de Nominatim corresponde a cada capa nuestra.
+   Solo las dos primeras: las de acompañamiento y denuncia no tienen
+   frase fiable, y un respaldo que trae ruido es peor que uno corto. */
+const FRASES = { urgencias: 'hospital', salud: 'clinic' };
+
+/* El rectángulo que abarca el radio de búsqueda. Nominatim no acepta
+   «a tantos metros de aquí»: acepta una caja, así que se convierte.
+   Un grado de latitud son ~111 km; los de longitud se encogen con el
+   coseno de la latitud, y a la altura de Colombia eso importa. */
+function caja(ll, metros) {
+  const dLat = metros / 111320;
+  const dLon = metros / (111320 * Math.cos(rad(ll[0])) || 1);
+  /* viewbox va en el orden que pide Nominatim: izquierda, arriba,
+     derecha, abajo — o sea lon,lat,lon,lat y no al revés. */
+  return [ll[1] - dLon, ll[0] + dLat, ll[1] + dLon, ll[0] - dLat]
+    .map((n) => n.toFixed(5)).join(',');
+}
+
+async function buscarEnNominatim(ciudad, { signal, capas } = {}) {
+  const pedidas = (capas?.length ? capas : Object.keys(FRASES))
+    .filter((id) => FRASES[id]);
+  if (!pedidas.length) return [];
+  const vista = caja(ciudad.ll, radioDe(ciudad));
+  const salida = [];
+
+  for (const [i, id] of pedidas.entries()) {
+    /* Una petición por segundo, que es lo que pide su política. La
+       primera sale ya: la que espera es la segunda. */
+    if (i) await new Promise((r) => setTimeout(r, 1100));
+    if (signal?.aborted) break;
+    const url = `${NOMINATIM}?q=${encodeURIComponent(`[${FRASES[id]}]`)}` +
+      `&format=jsonv2&limit=25&bounded=1&viewbox=${vista}&addressdetails=1`;
+    /* CON SU PROPIO RELOJ. Medido en un entorno con la salida cortada:
+       un `fetch` a un servicio inalcanzable tarda casi trece segundos
+       en fallar, y durante todo ese rato la pantalla sigue diciendo
+       «preguntando…». Ocho segundos es de sobra para un buscador que
+       responde en uno, y es lo máximo que se puede tener a alguien
+       esperando sin decirle nada. */
+    const corte = new AbortController();
+    signal?.addEventListener('abort', () => corte.abort());
+    const alarma = setTimeout(() => corte.abort(), 8000);
+    let datos;
+    try {
+      const r = await fetch(url, { signal: corte.signal, referrerPolicy: 'origin' });
+      if (!r.ok) throw new Error(`Nominatim ${r.status}`);
+      datos = await r.json();
+    } catch { continue; }          // una capa que falla no tumba la otra
+    finally { clearTimeout(alarma); }
+
+    for (const e of datos || []) {
+      const lat = Number(e.lat), lon = Number(e.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+      const a = e.address || {};
+      salida.push({
+        id: `${e.osm_type}/${e.osm_id}`,
+        capa: id,
+        nombre: e.name || e.display_name?.split(',')[0] || 'Sin nombre en el mapa',
+        anonimo: !e.name,
+        ll: [lat, lon],
+        direccion: [a.road, a.house_number].filter(Boolean).join(' '),
+        horario: '',               // Nominatim no lo trae, y no se inventa
+        telefono: '',
+        urgencias: id === 'urgencias',
+        distancia: distancia(ciudad.ll, [lat, lon]),
+        osm: `https://www.openstreetmap.org/${e.osm_type}/${e.osm_id}`,
+      });
+    }
+  }
+  salida.sort((a, b) => (a.anonimo - b.anonimo) || (a.distancia - b.distancia));
+  return salida;
+}
+
 /**
  * Trae los puntos de atención alrededor de una ciudad.
  * @returns {Promise<{lugares: array, deCache: boolean}>}
@@ -260,9 +362,20 @@ export async function buscarAyuda(ciudad, { signal, capas } = {}) {
   try {
     datos = await Promise.any(carrera);
   } catch (e) {
-    /* Promise.any junta todos los fallos en uno. Se devuelve el primero
+    /* Promise.any junta todos los fallos en uno. Se guarda el primero
        con motivo, que es el que se puede contar. */
     const causa = e?.errors?.find((x) => x?.message);
+    for (const c of cortes) c.abort();
+    if (signal?.aborted) throw new Error('cancelado');
+
+    /* SE CAYÓ OVERPASS ENTERO. Antes esto era el final del camino y la
+       pantalla decía «volver a intentarlo». Ahora se pregunta al otro
+       edificio: si Nominatim trae aunque sea un hospital, hay mapa. */
+    const respaldo = await buscarEnNominatim(ciudad, { signal, capas });
+    if (respaldo.length) {
+      guardar(ciudad, firma, respaldo);
+      return { lugares: respaldo, deCache: false, deRespaldo: true };
+    }
     throw new Error(causa?.message || 'sin respuesta');
   } finally {
     for (const c of cortes) c.abort();   // el que perdió, que se calle

@@ -3758,7 +3758,9 @@ body.pagina-papel { background: var(--papel); }
   grid-template-columns: minmax(0, 1fr);
   gap: var(--e-4);
   align-items: start;
+  min-width: 0;
 }
+.mapa__tablero > * { min-width: 0; }
 @media (min-width: 62rem) {
   .mapa__tablero { grid-template-columns: minmax(0, 1fr) 22rem; }
   /* En pantalla ancha la columna sí se desplaza sola: hay ratón, hay
@@ -3771,12 +3773,29 @@ body.pagina-papel { background: var(--papel); }
     padding-right: 0.35rem;
   }
 }
-.mapa__opciones { display: grid; gap: var(--e-3); align-content: start; }
+/* `minmax(0, 1fr)` Y NO `1fr` A SECAS, y esto costó un fallo: una
+   columna `1fr` de rejilla tiene mínimo automático, o sea que se
+   ensancha hasta donde llegue su contenido. Dentro hay tiras de fichas
+   que no se envuelven, así que la columna crecía hasta el ancho de
+   ocho botones en fila, empujaba la página y aparecía scroll lateral
+   en el teléfono —«los filtros rompen el scroll horizontal», y con
+   razón. Con el mínimo en cero la columna se queda en su sitio y quien
+   se desplaza es la tira, que es lo que se pretendía. */
+.mapa__opciones {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-3);
+  align-content: start;
+  min-width: 0;
+}
+.mapa__opciones > * { min-width: 0; max-width: 100%; }
 
 /* ── LOS PLIEGUES DE LA COLUMNA ────────────────────────────────────
    Ciudad y capas, cerrados de entrada y con su valor a la vista: el
    pliegue dice lo que esconde, o es scroll disfrazado de orden. */
 .mapa__pliegue {
+  min-width: 0;
+  overflow: hidden;              /* nada se sale del pliegue */
   border: 1px solid rgb(var(--letra-rgb) / 14%);
   border-radius: 2px;
   background: var(--papel-alto);
@@ -3797,7 +3816,7 @@ body.pagina-papel { background: var(--papel); }
   margin-left: auto; font-weight: 400;
   color: rgb(var(--letra-rgb) / 62%);
 }
-.mapa__pliegue > *:not(summary) { padding: 0 0.9rem 0.9rem; }
+.mapa__pliegue > *:not(summary) { padding: 0 0.9rem 0.9rem; min-width: 0; }
 .mapa__pliegue .mapa__ciudades { margin-bottom: 0; }
 
 /* ── LAS TRES PESTAÑAS ───────────────────────────────────────────
@@ -3902,9 +3921,20 @@ body.pagina-papel { background: var(--papel); }
   border: 1px solid rgb(var(--letra-rgb) / 22%); border-radius: 2px;
   background: var(--papel-alto); color: var(--letra); font: inherit; font-size: var(--t-md);
 }
+/* La lista larga —treinta y ocho ciudades— en rejilla y no en fila
+   envuelta: en la columna estrecha, un `flex-wrap` deja renglones de
+   una y de tres fichas según lo que mida cada nombre, y eso se lee
+   como una lista rota. Columnas iguales, y el nombre que no quepa se
+   corta con puntos en vez de ensanchar la caja. */
 .mapa__otras-lista {
-  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: var(--e-3);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.35rem; margin-top: var(--e-3);
   max-height: 13rem; overflow-y: auto;
+}
+.mapa__otras-lista .ficha {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .mapa__otras-nota { margin: var(--e-3) 0 0; font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 72%); }
 

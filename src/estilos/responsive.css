@@ -163,6 +163,11 @@ body {
   .mapa__pliegue .mapa__ciudades,
   .mapa__pliegue .mapa__capas {
     flex-wrap: nowrap;
+    /* `max-width` explícito además del `overflow`: sin él la caja mide
+       lo que mide su contenido y el desbordamiento se lo come la
+       página, no la tira. Es lo que sacaba scroll lateral en el
+       teléfono. */
+    max-width: 100%;
     overflow-x: auto;
     scrollbar-width: none;
     padding-bottom: 0.3rem;

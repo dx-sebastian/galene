@@ -386,7 +386,7 @@ export function montarMapa(host) {
               publicar de verdad (deuda en GUIA.md). */''}
         <p class="lugar__fuente">${verificado
           ? `Verificado por Galene el ${esc(l.verificado)}`
-          : 'Datos de OpenStreetMap'}</p>
+          : est.deRespaldo ? 'Buscador de OpenStreetMap' : 'Datos de OpenStreetMap'}</p>
       </li>`;
 
     return `
@@ -514,13 +514,20 @@ export function montarMapa(host) {
     pintarListado();
     try {
       const pedidas = [...est.capas];
-      const { lugares, truncado } = await buscarAyuda(est.ciudad,
+      const { lugares, truncado, deRespaldo } = await buscarAyuda(est.ciudad,
         { signal: peticion.signal, capas: pedidas });
       est.osm = lugares;
       est.capasTraidas = pedidas.sort().join('+');
       est.truncado = truncado;
+      est.deRespaldo = !!deRespaldo;
       est.cargando = false;
-      decir('');
+      /* Cuando la lista viene del buscador de OpenStreetMap y no de
+         Overpass se dice: trae menos campos —sin horario y sin
+         teléfono— y quien mire una ficha incompleta tiene derecho a
+         saber que no es que el sitio no los tenga. */
+      decir(deRespaldo
+        ? 'Overpass no respondió: la lista viene del buscador de OpenStreetMap, con menos datos.'
+        : '');
     } catch (e) {
       if (peticion.signal.aborted) return;      // cambió de ciudad, no es un fallo
       if (!reintento) {
@@ -531,7 +538,14 @@ export function montarMapa(host) {
       }
       est.osm = [];
       est.cargando = false;
-      est.fallo = e.message === 'sin red' ? 'no hay conexión' : 'el servicio no respondió';
+      /* EL MOTIVO EXACTO, EN PANTALLA. Decía siempre «el servicio no
+         respondió», y con esa frase no hay forma de distinguir un
+         teléfono sin datos de Overpass a rebosar — ni de contárselo a
+         nadie. Ahora se dice lo que dijo la red. */
+      est.fallo = e.message === 'sin red' ? 'no hay conexión'
+        : /^(Overpass|Nominatim) \d+$/.test(e.message) ? e.message
+        : e.message === 'sin respuesta' ? 'ningún servidor de mapas respondió'
+        : e.message || 'el servicio no respondió';
       decir('No se pudo traer el listado. Abajo queda lo que sí tenemos.', true);
     }
     pintarPuntos();
