@@ -1,0 +1,195 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   PRODUCTOS — la prevención que se puede llevar puesta.
+
+   Catálogo de importación (línea NightCap y afines): fundas y sellos
+   que cierran una copa, una lata o una botella. Cinco piezas, las más
+   pedidas de esa casa, adaptadas a la voz de este sitio.
+
+   TRES REGLAS DE ESTA SECCIÓN, y las tres vienen del compromiso del
+   proyecto (ver Acerca):
+
+   1 · NADA AQUÍ PROMETE SEGURIDAD TOTAL, y se dice en la cabecera.
+       Un catálogo de prevención que sobrevenda es el mismo daño que
+       una cifra sin fuente.
+   2 · NO TRASLADA LA CARGA. No usar ninguno de estos no es descuido
+       de nadie: la responsabilidad es siempre de quien agrede. Está
+       escrito EN la sección, no en la letra pequeña.
+   3 · SIN PRECIO. La disponibilidad se está cerrando con el
+       importador; el botón registra interés y no finge una caja de
+       pago que no existe.
+
+   LAS LÁMINAS SON NUESTRAS: ilustraciones en los pigmentos del sitio,
+   no fotografías del fabricante — un catálogo con fotos ajenas es un
+   catálogo prestado. Cuando lleguen las fotos propias del producto
+   importado, entran por aquí con el mismo marco.
+
+   EL ZOOM: cada lámina se amplía al tocarla (botón de verdad, con su
+   estado accesible) y vuelve al tocarla otra vez. En escritorio,
+   además, un asomo al pasar el ratón. */
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const PRODUCTOS = [
+  {
+    id: 'funda-coletero',
+    nombre: 'La funda coletero',
+    lema: 'Se lleva en la muñeca. Cuida tu copa.',
+    texto: 'Una funda de tela elástica que durante el día es un coletero ' +
+           'y por la noche se abre sobre la boca de tu vaso o tu copa. ' +
+           'Discreta hasta que hace falta.',
+    especs: [
+      ['Material', 'Tela elástica, lavable a mano'],
+      ['Sirve para', 'Vasos y copas de boca ancha'],
+      ['Se lleva', 'Como coletero, en la muñeca o el pelo'],
+      ['Vida útil', 'Reutilizable, cientos de noches'],
+    ],
+  },
+  {
+    id: 'sombrero-lata',
+    nombre: 'El sombrero de lata',
+    lema: 'La lata también sale de noche.',
+    texto: 'Una tapa de silicona que se ajusta a presión sobre ' +
+           'cualquier lata estándar y deja pasar solo tu propio sorbo. ' +
+           'Se enjuaga y vuelve al bolso.',
+    especs: [
+      ['Material', 'Silicona de grado alimentario'],
+      ['Sirve para', 'Latas estándar y delgadas'],
+      ['Se lleva', 'Plano, en cualquier bolsillo'],
+      ['Vida útil', 'Reutilizable, apto para enjuague'],
+    ],
+  },
+  {
+    id: 'funda-llavero',
+    nombre: 'La funda de llavero',
+    lema: 'La que siempre está, porque vive en tus llaves.',
+    texto: 'La misma funda elástica, plegada dentro de un estuche que ' +
+           'cuelga del llavero. Para la noche que no estaba planeada, ' +
+           'que es la mayoría.',
+    especs: [
+      ['Material', 'Estuche de polipiel, funda de tela elástica'],
+      ['Sirve para', 'Vasos y copas de boca ancha'],
+      ['Se lleva', 'En las llaves, siempre'],
+      ['Vida útil', 'Reutilizable; el estuche la protege'],
+    ],
+  },
+  {
+    id: 'sellos',
+    nombre: 'Los sellos adhesivos',
+    lema: 'Un sello discreto para vasos que van y vienen.',
+    texto: 'Láminas adhesivas que sellan la boca del vaso y dejan sitio ' +
+           'para el pitillo. De un solo uso: se nota si alguien lo ' +
+           'levantó, y esa es exactamente su función.',
+    especs: [
+      ['Material', 'Lámina adhesiva sin residuo'],
+      ['Sirve para', 'Casi cualquier vaso, con o sin pitillo'],
+      ['Se lleva', 'Hoja plana, cabe en la billetera'],
+      ['Vida útil', 'Un uso por sello — el sello roto avisa'],
+    ],
+  },
+  {
+    id: 'tapon-botella',
+    nombre: 'El tapón de botella',
+    lema: 'La botella queda cerrada hasta que tú digas.',
+    texto: 'Un capuchón de silicona que abraza la boca de la botella ' +
+           'entre sorbo y sorbo. Para las noches largas en las que la ' +
+           'botella se queda en la mesa y tú no.',
+    especs: [
+      ['Material', 'Silicona de grado alimentario'],
+      ['Sirve para', 'Botellas de boca estándar'],
+      ['Se lleva', 'Par de tapones, bolsillo o bolso'],
+      ['Vida útil', 'Reutilizable, apto para enjuague'],
+    ],
+  },
+];
+---
+
+<section class="productos" id="productos" aria-labelledby="productos-titulo">
+  <div class="trazo" aria-hidden="true"></div>
+
+  <header class="productos__cabecera">
+    <p class="seccion-rotulo">Prevención · Catálogo</p>
+    <h2 id="productos-titulo">Antes de esa noche</h2>
+    <p class="productos__intro">
+      Piezas sencillas que cierran una copa, una lata o una botella.
+      Ninguna promete seguridad total — dicen dónde están sus límites, y
+      no usarlas nunca es descuido de nadie:
+      <strong>la responsabilidad de una agresión es siempre de quien
+      agrede.</strong>
+    </p>
+  </header>
+
+  <ul class="productos__lista">
+    {PRODUCTOS.map((p) => (
+      <li class="producto" id={'producto-' + p.id}>
+        <button class="producto__lamina" type="button"
+                aria-pressed="false"
+                aria-label={'Ampliar la lámina de ' + p.nombre}>
+          <img src={`${base}arte/productos/${p.id}.svg`} alt="" width="220" height="220" loading="lazy" />
+        </button>
+
+        <div class="producto__cuerpo">
+          <h3 class="producto__nombre">{p.nombre}</h3>
+          <p class="producto__lema">{p.lema}</p>
+          <p class="producto__texto">{p.texto}</p>
+
+          <details class="producto__especs">
+            <summary>Especificaciones</summary>
+            <dl>
+              {p.especs.map(([k, v]) => (<><dt>{k}</dt><dd>{v}</dd></>))}
+            </dl>
+          </details>
+
+          <button class="producto__comprar acuarela" type="button"
+                  data-nombre={p.nombre}>
+            <span class="acuarela__texto">Comprar</span>
+          </button>
+        </div>
+      </li>
+    ))}
+  </ul>
+
+  <p class="productos__nota">
+    Catálogo de importación en preparación: el botón registra tu interés
+    en el aparato y los pedidos se abrirán con la primera remesa.
+  </p>
+</section>
+
+<script>
+  /* El zoom de la lámina y el registro de interés. Progresivo entero:
+     sin este módulo las láminas se ven y las especificaciones abren —
+     solo el zoom y el botón pierden su gesto. Nada sale del aparato:
+     el interés vive en sessionStorage, como toda elección de este
+     sitio, y muere al cerrar la pestaña. */
+  for (const boton of document.querySelectorAll('.producto__lamina')) {
+    boton.addEventListener('click', () => {
+      const abierto = boton.getAttribute('aria-pressed') === 'true';
+      /* Solo una ampliada a la vez: dos láminas al 170 % se pisan. */
+      for (const otro of document.querySelectorAll('.producto__lamina[aria-pressed="true"]'))
+        if (otro !== boton) otro.setAttribute('aria-pressed', 'false');
+      boton.setAttribute('aria-pressed', String(!abierto));
+    });
+  }
+
+  const CLAVE = 'galene:pedido';
+  const leer = () => {
+    try { return JSON.parse(sessionStorage.getItem(CLAVE) || '[]'); }
+    catch { return []; }
+  };
+  const pintar = (boton, dentro) => {
+    boton.querySelector('.acuarela__texto').textContent =
+      dentro ? 'En tu pedido ✓' : 'Comprar';
+    boton.classList.toggle('producto__comprar--dentro', dentro);
+  };
+  for (const boton of document.querySelectorAll('.producto__comprar')) {
+    const nombre = boton.dataset.nombre;
+    pintar(boton, leer().includes(nombre));
+    boton.addEventListener('click', () => {
+      const pedido = leer();
+      const i = pedido.indexOf(nombre);
+      if (i >= 0) pedido.splice(i, 1); else pedido.push(nombre);
+      try { sessionStorage.setItem(CLAVE, JSON.stringify(pedido)); } catch {}
+      pintar(boton, i < 0);
+    });
+  }
+</script>

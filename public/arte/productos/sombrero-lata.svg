@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="w2" cx="52%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#9FC6C0" stop-opacity=".5"/>
+      <stop offset="60%" stop-color="#9FC6C0" stop-opacity=".24"/>
+      <stop offset="100%" stop-color="#9FC6C0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B9BC4" stop-opacity=".85"/>
+      <stop offset="50%" stop-color="#5C6FA3" stop-opacity=".85"/>
+      <stop offset="100%" stop-color="#46578C" stop-opacity=".9"/>
+    </linearGradient>
+    <filter id="b2"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="b2s"><feGaussianBlur stdDeviation="1"/></filter>
+  </defs>
+  <ellipse cx="100" cy="98" rx="76" ry="72" fill="url(#w2)" filter="url(#b2)"/>
+  <ellipse cx="100" cy="168" rx="30" ry="6" fill="#2C3A5C" opacity=".14" filter="url(#b2)"/>
+  <rect x="70" y="56" width="60" height="110" rx="10" fill="url(#g2)" filter="url(#b2s)"/>
+  <rect x="70" y="56" width="60" height="110" rx="10" fill="none" stroke="#2C3A5C" stroke-opacity=".45" stroke-width="1.4"/>
+  <rect x="76" y="84" width="48" height="52" rx="6" fill="#F8F5F0" opacity=".28"/>
+  <path d="M64 58 C64 44 78 36 100 36 C122 36 136 44 136 58 L132 64 L68 64 Z"
+        fill="#2F6B4F" opacity=".9" filter="url(#b2s)"/>
+  <path d="M64 58 C64 44 78 36 100 36 C122 36 136 44 136 58" fill="none"
+        stroke="#1F4A36" stroke-width="1.6" stroke-opacity=".6"/>
+  <ellipse cx="100" cy="63" rx="36" ry="6.5" fill="#1F4A36" opacity=".35"/>
+</svg>

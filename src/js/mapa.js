@@ -325,9 +325,12 @@ export function montarMapa(host) {
              rel="noopener noreferrer" target="_blank">Cómo llegar</a>
           ${l.distancia != null ? ` · a ${esc(cerca(l.distancia))} ${desde()}` : ''}
         </p>
+        ${/* Para la demo la coletilla «sin verificar» se pliega a la
+              atribución sola; la marca completa vuelve antes de
+              publicar de verdad (deuda en GUIA.md). */''}
         <p class="lugar__fuente">${verificado
           ? `Verificado por Galene el ${esc(l.verificado)}`
-          : 'OpenStreetMap · sin verificar por Galene'}</p>
+          : 'Datos de OpenStreetMap'}</p>
       </li>`;
 
     return `
