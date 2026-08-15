@@ -532,8 +532,13 @@ export function aplicar(L, escribirLavado = true) {
      modelado de pleno día — una lámina atenuada, no un ave a oscuras.
      De día ambas caen donde estaban los respaldos del CSS: esto no
      toca el mediodía, enciende la noche. */
+  /* El suelo bajó de 0.50 a 0.36 midiendo contra la noche repintada:
+     con 0.50 el ave quedaba en 0.80 a las diez y media — otra vez la
+     más clara del cuadro, sobre una rama que ahora es casi silueta.
+     Con 0.36 cae a 0.66 a esa hora y 0.58 de madrugada: cuerpo en la
+     noche, cabeza todavía legible. El techo 1.0 no se toca. */
   r.style.setProperty('--vuelo-brillo-cerca',
-                      Math.min(1.0, 0.50 + 0.62 * L.int).toFixed(3));
+                      Math.min(1.0, 0.36 + 0.63 * L.int).toFixed(3));
   r.style.setProperty('--vuelo-sat-cerca', (0.70 + 0.26 * L.int).toFixed(3));
   r.style.setProperty('--vuelo-contraste-cerca', (0.90 + 0.08 * L.int).toFixed(3));
   r.dataset.tinta = L.tinta;
