@@ -87,24 +87,34 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       aquí nadie pregunta qué pasó. Es la regla 4 del proyecto puesta
       como norma de la casa, y va ARRIBA porque es la que decide si
       alguien se atreve a escribir. */}
+  {/* ── CABECERA DE FORO, NO DE PORTADA ─────────────────────────────
+      Estuvo maquetada como una landing: rótulo, título grande, filete,
+      declaración y una tarjeta con las tres normas — cinco pisos antes
+      del primer hilo. El dueño lo dijo sin rodeos: estorba; esto es un
+      foro y lo primero tienen que ser los hilos.
+
+      Lo que NO se negocia se queda a la vista: «aquí nadie pregunta
+      qué pasó» es la regla 4 del proyecto y es la frase que decide si
+      alguien se atreve a escribir — va en la misma línea de la
+      declaración, siempre visible. Las otras dos normas viven en un
+      <details> al lado: quien las quiera las abre, y quien viene a
+      leer llega dos pantallas antes a lo que vino a buscar. */}
   <header class="comunidad__cabecera">
     <p class="comunidad__sobre">El manglar</p>
     <h1 class="comunidad__titulo">Comunidad</h1>
 
-    <svg class="comunidad__filete" viewBox="0 0 44 4" aria-hidden="true" focusable="false">
-      <path d="M1 2.5 C 9 1.3, 17 3.1, 25 2 S 38 2.1, 43 2.6"
-            fill="none" stroke="currentColor" stroke-width="1.1"
-            stroke-linecap="round" vector-effect="non-scaling-stroke" />
-    </svg>
-
     <p class="comunidad__declaracion">Lo que aprendimos después, contado
-      por quienes ya pasaron por ahí.</p>
+      por quienes ya pasaron por ahí. Aquí <strong>nadie pregunta qué
+      pasó</strong>.</p>
 
-    <ul class="comunidad__casa">
-      <li>Aquí <strong>nadie pregunta qué pasó</strong>.</li>
-      <li>Se puede escribir sin nombre, y no hay que explicar por qué.</li>
-      <li>No se vota en contra de nadie: se acompaña o se deja pasar.</li>
-    </ul>
+    <details class="comunidad__normas">
+      <summary>Las normas de la casa</summary>
+      <ul class="comunidad__casa">
+        <li>Aquí <strong>nadie pregunta qué pasó</strong>.</li>
+        <li>Se puede escribir sin nombre, y no hay que explicar por qué.</li>
+        <li>No se vota en contra de nadie: se acompaña o se deja pasar.</li>
+      </ul>
+    </details>
   </header>
 
   {/* ── EL MANDO ─────────────────────────────────────────────────────

@@ -1599,6 +1599,19 @@ if (contenedor) {
     contenedor.appendChild(img);
     capas[clave] = img;
   }
+  /* EL CHARCO — la sombra que la posa. Mirando el sitio desplegado de
+     día quedó claro qué la delataba como recorte: todo lo del cuadro
+     proyecta algo —el manglar entero tiene su reflejo— y ella no
+     tocaba la rama con nada. Los drop-shadow del CSS solo asoman
+     donde la silueta desplazada sobresale del alfa; un cuerpo posado
+     necesita además su MANCHA debajo, la elipse que un acuarelista
+     deja caer bajo el ave antes de pintarla. Va ANTES de las láminas
+     en el DOM para pintarse debajo de ellas, y animarVisita la mueve
+     con los pies. */
+  const charco = document.createElement('div');
+  charco.className = 'vuelo-charco';
+  charco.style.opacity = '0';
+  contenedor.insertBefore(charco, contenedor.firstChild);
   /* UNA. La visitante es una y solo una, y no es una restricción de
      dibujo sino de sentido: representa a quien acaba de abrir el sitio,
      y quien abre el sitio es una persona. La rama cercana no admite
@@ -1608,7 +1621,7 @@ if (contenedor) {
      esté no vienen aquí: se posan en la copa del manglar del fondo, con
      la bandada. La rama de delante es de quien mira, y por eso es la
      única que se puede personalizar desde el panel. */
-  visita = { capas, px: 0, py: 0, vx: 0, vy: 0, arrancado: false,
+  visita = { capas, charco, px: 0, py: 0, vx: 0, vy: 0, arrancado: false,
              id: 'yo', plano: 1.35, espeja: true,
              tinte: crearTinteAve(),
              sena: { pico: null, frase: null },
@@ -2589,6 +2602,8 @@ function animarCaida(ave, t, paralaje) {
   if (t < p0) {                                   // todavia no ha entrado
     for (const el of Object.values(visita.capas))
       if (el.style.opacity !== '0') el.style.opacity = '0';
+    if (visita.charco && visita.charco.style.opacity !== '0')
+      visita.charco.style.opacity = '0';
     visita.tinte?.apagar();
     pico.registrar(visita.id, null);
     return;
@@ -2668,6 +2683,21 @@ function animarCaida(ave, t, paralaje) {
       dom = { clave: k, peso: enc[1], anchoPx, altoPx, izq, arr,
               origen: el.style.transformOrigin };
     }
+  }
+
+  /* ── EL CHARCO SIGUE A LOS PIES ─────────────────────────────────
+     Solo existe posada: cae con ella a cero durante el vuelo y se
+     derrama en un segundo al aterrizar, como se asienta una aguada.
+     `x`/`y` son exactamente los pies, que es donde un cuerpo toca. */
+  if (visita.charco) {
+    const anchoCharco = visita.alto * 1.02;
+    const altoCharco = anchoCharco * 0.20;
+    const opCharco = t < p1 ? 0 : Math.min(0.8, (t - p1) / 1.4);
+    visita.charco.style.width = anchoCharco.toFixed(1) + 'px';
+    visita.charco.style.height = altoCharco.toFixed(1) + 'px';
+    visita.charco.style.transform =
+      `translate3d(${(x - anchoCharco / 2).toFixed(1)}px, ${(y - altoCharco * 0.42).toFixed(1)}px, 0)`;
+    visita.charco.style.opacity = opCharco.toFixed(3);
   }
 
   /* ── LA SEÑA: EL PICO Y LA FRASE ────────────────────────────────
