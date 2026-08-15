@@ -1847,7 +1847,9 @@ function poblarBandada() {
          a través de un ave deja un canto de cuchillo, y en esta lámina
          no hay un solo borde duro. Con la banda suave, el cuerpo se
          pierde entre las hojas. */
-      asoma: n < (cuantas >= 7 ? 2 : 1),
+      /* Se deriva del hundimiento, más abajo: asoma toda la que tenga
+         cuerpo por debajo del canto de la copa, no solo las elegidas. */
+      asoma: false,
       /* Cuánto se hunde bajo el canto de la copa, EN ALTURAS DE AVE.
 
          La primera versión lo puso en unidades de la lámina y era un
@@ -1857,7 +1859,33 @@ function poblarBandada() {
          un tercio», y eso solo se puede decir en alturas de ave.
          La conversión a lámina es exacta y se hace al colocarla, donde
          se sabe cuánto mide el árbol. */
-      hunde: n < (cuantas >= 7 ? 2 : 1) ? 0.58 + Math.random() * 0.14 : 0.11,
+      /* ── Y NO SON DOS ALTURAS, SON TRES ──────────────────────────
+         Estaba en dos: una o dos aves hundidas hasta el cuello y TODAS
+         las demás apoyadas en el canto de la copa. Mirado en el sitio
+         publicado con la bandada ampliada, eso es exactamente lo que
+         las delataba: ocho siluetas pálidas de pie sobre una línea, con
+         cielo entero detrás de cada una y ni una hoja por delante. Un
+         dormidero no se posa SOBRE un árbol; se posa DENTRO.
+
+         Tres profundidades, entonces. Dos hasta el cuello —las que le
+         dan fondo a la copa—, tres metidas hasta la panza —las que
+         tienen hoja por delante de las patas— y el resto apoyadas
+         arriba, que también las hay. La variación importa tanto como
+         el hundimiento: diez aves a la misma altura vuelven a ser una
+         calcomanía repetida, aunque estén todas medio enterradas. */
+      hunde: (() => {
+        /* EN FRACCIONES DEL CENSO, no en números fijos. La primera
+           versión de esto decía «dos hondas y tres medias si hay siete
+           o más», y la bandada de esta portada son cuatro a seis: la
+           condición no se cumplía nunca y el reparto se quedaba en una
+           y una, o sea casi el de antes. Medido en el compilado: de
+           seis aves visibles solo dos llevaban máscara de copa. */
+        const hondas = Math.max(1, Math.round(cuantas * 0.22));
+        const medias = Math.max(1, Math.round(cuantas * 0.34));
+        if (n < hondas) return 0.58 + Math.random() * 0.14;
+        if (n < hondas + medias) return 0.26 + Math.random() * 0.14;
+        return 0.10 + Math.random() * 0.07;
+      })(),
 
       /* ── QUIETAS CASI TODAS ───────────────────────────────────────
          Diez aves haciendo gestos a la vez es un gallinero: el ojo no
@@ -1911,6 +1939,14 @@ function poblarBandada() {
     [sorteo[i], sorteo[j]] = [sorteo[j], sorteo[i]];
   }
   sorteo.slice(0, vivas).forEach((i) => { bandada[i].viva = true; });
+
+  /* QUIÉN SE PIERDE ENTRE LAS HOJAS. Sale del hundimiento y no de un
+     sorteo aparte: si un ave tiene cuerpo por debajo del canto de la
+     copa, la copa se lo tapa — eso no es una decisión de reparto, es
+     una consecuencia de dónde está posada. El umbral son dos décimas
+     de altura de ave: por debajo, lo que taparía la hoja son los dedos
+     y no vale la pena pintar una máscara para eso. */
+  for (const ave of bandada) ave.asoma = ave.hunde > 0.2;
 
   /* Las poses que valen para quedarse quieta: las de descanso y las de
      mirar. Ni `pAlas` ni los cuadros del amago — una pose de gesto
