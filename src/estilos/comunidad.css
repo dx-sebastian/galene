@@ -80,6 +80,13 @@
   --letra:        rgb(var(--letra-rgb));
   --contra:       #FFFFFF;
 
+  /* EL SUELO ES PAPEL, NO CIELO. El body del sitio pinta --cielo-bajo
+     (es el suelo del hero), y en estas páginas sin mar ese azul asomaba
+     por todo lo que no pintara su propia hoja: la barra de arriba, el
+     «volver» del final — la «barra azul sin sentido» que el dueño
+     señaló en /productos, con razón. Una página de papel pisa papel. */
+  background: var(--papel);
+
   /* ── EL SUELO DEL GRIS: 66 %. MEDIDO, NO ELEGIDO ───────────────────
      Aclarar el papel al blanco y suavizar la tinta a la vez tiene un
      precio y hay que pagarlo entero: los grises secundarios se caen. Las

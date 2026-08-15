@@ -1164,3 +1164,57 @@
   line-height: 1.5;
   color: rgb(var(--letra-rgb) / 58%);
 }
+
+/* ═══ EL CATÁLOGO, EN CLAVE DE TIENDA ═══════════════════════════════
+   Segunda vuelta a pedido del dueño: más e-commerce sin dejar el
+   papel. Lo que eso significa aquí: la foto manda, el sello de uso va
+   encima de ella como etiqueta de tienda, la compra cierra la ficha a
+   todo lo ancho, y en el teléfono el catálogo va A DOS COLUMNAS — una
+   ficha por fila es una lista de lectura; dos es un mostrador. */
+.producto { position: relative; }
+.producto__sello {
+  position: absolute;
+  top: 12px; left: 10px;
+  z-index: 2;
+  padding: 0.28em 0.7em;
+  border: 1px solid color-mix(in srgb, #2F6B4F 38%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #2F6B4F 10%, var(--papel-alto));
+  color: #1F4A36;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* La compra cierra la ficha a todo lo ancho, como en un mostrador, y
+   sin el charco desplazado de la aguada: dentro de una retícula de
+   fichas el borrón se leía como una sombra rota, no como pintura. El
+   pigmento pleno con su grano se queda; el eco, no. */
+.producto__comprar {
+  align-self: stretch;
+  justify-content: center;
+}
+.producto__comprar::before { display: none; }
+
+@media (max-width: 700px) {
+  .productos__lista {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .producto__cuerpo { padding: 0.8rem 0.8rem 0.95rem; gap: 0.4rem; }
+  .producto__nombre { font-size: var(--t-ip, 1rem); }
+  .producto__lema { font-size: var(--t-xs); }
+  /* El párrafo se recorta a tres líneas: en el mostrador del teléfono
+     la foto y el nombre venden; el detalle vive en especificaciones. */
+  .producto__texto {
+    font-size: var(--t-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .producto__comprar { min-height: 2.6rem; font-size: var(--t-xs); }
+  .producto__sello { top: 8px; left: 7px; }
+}

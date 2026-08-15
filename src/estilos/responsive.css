@@ -199,7 +199,12 @@ body {
   }
 
   .expertos {
-    margin-top: var(--e-7);
+    /* RELLENO, NO MARGEN. Con margen, este aire era un AGUJERO: el
+       main es transparente y por 48 px se veia el lienzo del hero
+       entre la banda de comunidad y el panel — la franja que el dueño
+       reporto dos veces en movil. El aire es de la seccion, asi que lo
+       paga la seccion con su propio papel. */
+    padding-top: var(--e-7);
   }
 
   .experto {
