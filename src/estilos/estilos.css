@@ -242,7 +242,12 @@ input, select, textarea { margin: 0; }
      `--bruma` la reescribe js/hora.js cada 30 s. El `color-mix` se
      resuelve en el momento de usarse, así que esto sigue a la hora sin
      que nadie lo recalcule. */
-  --papel-cielo: color-mix(in srgb, var(--bruma) 52%, var(--papel-arriba));
+  /* 52 % → 20 %: con la página siempre de papel, la bruma NOCTURNA es
+     violeta oscura y al 52 % la cabeza de la hoja salía gris malva —
+     una banda sucia entre dos papeles claros, vista en captura. Al
+     20 % queda lo que tiene que quedar: el papel recordando apenas de
+     qué color está el cielo, a cualquier hora. */
+  --papel-cielo: color-mix(in srgb, var(--bruma) 20%, var(--papel-arriba));
 
   --horizonte: 56%;
 
@@ -1433,25 +1438,19 @@ body {
    la hora y la profundidad sigue ordenada: media veladura de lo lejano,
    y el canto y el grano cuatro veces más gruesos siguen diciendo
    «cerca». */
+/* DE NOCHE LA VELADURA PESA MÁS, y la fracción la escribe js/hora.js
+   (--velo-parte-*): mirado en el sitio publicado a las 21.5, las aves
+   eran lo más blanco del cuadro — el brillo las apaga, pero lo que las
+   mete EN la noche es que su velo comparta el añil de la hora. Estuvo
+   colgado de data-tinta y era un error de pertenencia: la veladura es
+   de la ESCENA, que anochece siempre; la hoja ya no. */
 #bruma-lejos {
   flood-color: var(--bruma, #CDDCDE);
-  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.5);
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-lejos, 0.5));
 }
 #bruma-cerca {
   flood-color: var(--bruma, #CDDCDE);
-  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.26);
-}
-/* DE NOCHE LA VELADURA SUBE. Mirado en el sitio publicado a las 21.5:
-   las aves seguían siendo lo más blanco del cuadro — cuerpos de día
-   sobre una copa que ya es silueta. El brillo las hunde (js/hora.js)
-   pero el brillo solo apaga; lo que las mete EN la noche es que su
-   velo comparta el añil de la hora, y de noche ese velo tiene que
-   pesar más que el aire de mediodía. */
-:root[data-tinta="clara"] #bruma-lejos {
-  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.68);
-}
-:root[data-tinta="clara"] #bruma-cerca {
-  flood-opacity: calc(var(--vuelo-velo, 0.28) * 0.38);
+  flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-cerca, 0.26));
 }
 /* El filete del borde no es negro: es el mismo pigmento del cuadro
    cargado un punto más. Con negro sale un contorno de tebeo. */

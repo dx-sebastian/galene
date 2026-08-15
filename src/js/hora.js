@@ -551,7 +551,25 @@ export function aplicar(L, escribirLavado = true) {
                       Math.min(1.0, 0.30 + 0.70 * L.int).toFixed(3));
   r.style.setProperty('--vuelo-sat-cerca', (0.68 + 0.24 * L.int).toFixed(3));
   r.style.setProperty('--vuelo-contraste-cerca', (0.87 + 0.07 * L.int).toFixed(3));
-  r.dataset.tinta = L.tinta;
+  /* CUÁNTO PESA LA VELADURA de las garzas, en fracciones del velo.
+     Iba fijado en CSS y con un empujón nocturno colgado de
+     `data-tinta` — pero la veladura es de la ESCENA (la pintura anochece
+     siempre), no de la hoja, y la hoja ya no anochece. La escribe la
+     hora, como todo lo que es del cuadro. */
+  r.style.setProperty('--velo-parte-lejos', (0.50 + 0.18 * (1 - L.int)).toFixed(3));
+  r.style.setProperty('--velo-parte-cerca', (0.26 + 0.12 * (1 - L.int)).toFixed(3));
+  /* ── LA HOJA YA NO ANOCHECE ────────────────────────────────────────
+     `data-tinta` fue el interruptor del modo oscuro de la lectura, y el
+     dueño del cuadro lo dijo sin ambigüedad: ese modo era horrible. La
+     decisión de diseño que lo reemplaza es la de un CUADERNO DE
+     ACUARELA: la PINTURA vive con la hora —anochece, amanece, y las
+     garzas con ella—, y la PÁGINA es siempre papel, como una hoja se
+     lee bajo la lámpara sea la hora que sea. Se escribe 'oscura' fija
+     (= tinta oscura sobre papel claro): todas las reglas
+     `[data-tinta="clara"]` de las hojas de estilo quedan dormidas a
+     propósito, y el mapa toma siempre las teselas de papel claro.
+     `L.tinta` se sigue calculando: el lavado del hero lo necesita. */
+  r.dataset.tinta = 'oscura';
 }
 
 export const horaAhora = () => {
