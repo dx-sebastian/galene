@@ -1825,6 +1825,37 @@ body {
   .aguada--1 { right: -42%; }
   .aguada--2 { left: -42%; }
 }
+
+/* ── Y DE NOCHE NO SON DOS FAROLAS ─────────────────────────────────
+   Sin `mix-blend-mode` y con las tintas del amanecer, sobre el añil de
+   la noche estas dos aguadas se pintan como manchas PÁLIDAS y CÁLIDAS
+   flotando encima del papel oscuro —un farol ámbar a la derecha y su
+   eco abajo, se vio en captura—. El fallo es el que este sitio YA
+   resolvió en las otras tres secciones de abajo (nuevas-secciones.css,
+   «QUE SE SIENTA ACUARELA»): con `background-blend-mode: color` la
+   luminosidad la pone el papel escaneado, que es claro, así que de
+   noche la aguada llega clara y encima se pinta opaca. `#herramientas`
+   se quedó fuera de aquella tanda porque era EL EJEMPLO a imitar —y
+   resultó necesitar la misma cura.
+
+   Con sus mismos números medidos: `screen` en vez de pintar normal
+   —sobre oscuro el color SUBE, y una aguada que suma luz se funde con
+   el añil en vez de posarse encima—, pigmentos PROFUNDOS y no pastel
+   —un tinte ya claro en `screen` sale desaturado, un borrón gris— y
+   menos desenfoque, para que el granulado escaneado se lea y no quede
+   un degradado. La 1 es la brasa del amanecer; la 2, su eco lavanda. */
+:root[data-tinta="clara"] .aguada {
+  filter: blur(clamp(8px, 1.1vw, 16px));
+  mix-blend-mode: screen;
+}
+:root[data-tinta="clara"] .aguada--1 {
+  --tinta-a: #8E4A3A; --tinta-b: #5A4A88;
+  opacity: 0.32;
+}
+:root[data-tinta="clara"] .aguada--2 {
+  --tinta-a: #2F7A72; --tinta-b: #5D4A86;
+  opacity: 0.22;
+}
 .herramientas__titulo {
   font-family: var(--tipo-titulo);
   font-weight: 400;
