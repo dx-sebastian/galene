@@ -30,6 +30,9 @@ import Pie from '../componentes/Pie.astro';
 import { EXPERTOS } from '../datos/expertos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+import { enlaces } from '../datos/navegacion.js';
+const ENLACES = enlaces(base);
+const ACTUAL = 'expertos';
 
 const TITULO = 'Panel de expertos — Galene';
 const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
@@ -76,19 +79,28 @@ const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
     </a>
 
     <nav class="barra__nav" aria-label="Principal">
-      {/* Solo el menú, a cualquier ancho — mismo trato que la portada
-          (ver allí la razón). La ayuda va dentro, en píldora, y apunta
-          a la sección #ayuda de la portada. */}
+      {/* La fila de escritorio faltaba en esta pagina: a partir de
+          940 px el menu se esconde y la barra quedaba VACIA — sin
+          navegacion ninguna, visto por el dueño. La lista sale de
+          datos/navegacion.js, la misma que pinta el menu: una sola
+          fuente para las tres paginas. */}
+      <div class="barra__enlaces">
+        {ENLACES.map(([texto, href]) => (
+          <a class="barra__enlace" href={href}
+             aria-current={href.endsWith(ACTUAL) ? 'page' : undefined}>{texto}</a>
+        ))}
+      </div>
+
       <details class="menu" name="barra-menu">
         <summary class="menu__boton" aria-label="Abrir menu de navegacion">
           <span class="menu__rayas" aria-hidden="true"></span>
           <span class="menu__etiqueta">Menu</span>
         </summary>
         <div class="menu__panel">
-          <a class="barra__enlace" href={base + '#herramientas'}>Información</a>
-          <a class="barra__enlace" href={base + '#sin-hablar'}>Recursos</a>
-          <a class="barra__enlace" href={base + 'comunidad'}>Comunidad</a>
-          <a class="barra__enlace" href={base + 'expertos'} aria-current="page">Panel de expertos</a>
+          {ENLACES.map(([texto, href]) => (
+            <a class="barra__enlace" href={href}
+               aria-current={href.endsWith(ACTUAL) ? 'page' : undefined}>{texto}</a>
+          ))}
           <a class="pildora pildora--menu" href={base + '#ayuda'}>
             Buscar ayuda
             <svg class="pildora__icono" viewBox="0 0 14 12"

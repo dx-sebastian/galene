@@ -851,10 +851,27 @@ body {
   text-decoration: none;
   white-space: nowrap;
 }
-.barra__enlace:hover {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.45em;
+/* El subrayado ya no aparece: SE DIBUJA. Un trazo fino que crece desde
+   la izquierda al pasar y al enfocar — el gesto de las tiendas bien
+   hechas que el dueño señaló como referencia, dicho con la tinta de
+   esta casa. Con movimiento reducido, el bloque global de abajo apaga
+   la transición y queda el subrayado puesto, que es el estado honesto. */
+.barra__enlace { position: relative; }
+.barra__enlace::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -0.42em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms cubic-bezier(.25,.8,.3,1);
+}
+.barra__enlace:hover::after,
+.barra__enlace:focus-visible::after,
+.barra__enlace[aria-current="page"]::after {
+  transform: scaleX(1);
 }
 
 /* ═══ EL MENÚ DEL TELÉFONO ═════════════════════════════════════════
@@ -1649,6 +1666,11 @@ body {
    ═══════════════════════════════════════════════════════════════════ */
 .herramientas {
   position: relative;             /* se desliza POR ENCIMA del mar fijo */
+  /* Al nivel de la ayuda (z 1): sin esto, el canto de barbas del
+     ::before —que muerde la sección ANTERIOR— quedaba pintado debajo
+     de ella y la costura no existía. Hermanas al mismo nivel pintan
+     en orden de documento, que es exactamente lo que el canto pide. */
+  z-index: 1;
   /* EL CONTENIDO SE CENTRA EN PANTALLA ANCHA.
      Subir el padding lateral no bastaba: en un monitor de 1280 el texto
      seguía arrimado a la izquierda con medio cuadro vacío a la derecha,
@@ -1662,10 +1684,18 @@ body {
      de barbas y la pregunta del título — después de que la boca ya
      gastó su recorrido en decir «aquí hay papel». La hoja recibe con
      el canto, no con una página vacía. */
-  padding-block: clamp(1.5rem, 3vw, 2.5rem);
+  padding-block: clamp(2.25rem, 4vw, 3.5rem);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
   padding-bottom: clamp(3rem, 8vw, 6rem);
   color: var(--letra);
+
+  /* ── LA HOJA DE ENCIMA ────────────────────────────────────────────
+     La costura con la ayuda era un corte recto —dos papeles pegados a
+     tope, dicho por el dueño: limpio y seco—. Un cuaderno no pega sus
+     hojas a tope: la de encima ASOMA. El ::before de abajo es el canto
+     de barbas de esta hoja mordiendo la anterior, con una sombra corta
+     de página sobre página. El mismo material que abre la ayuda sobre
+     el mar, así que las dos costuras del sitio hablan igual. */
 
   /* HOJA OPACA DESDE EL PRIMER PÍXEL, y sin canto propio.
 
@@ -5864,4 +5894,37 @@ body {
   .rr__salida, .rr__etiqueta, .rr__marcas,
   .rr__horizonte--eterna .rr__riel::after { opacity: 1 !important; }
   .rr__riel__pigmento { clip-path: none !important; }
+}
+
+/* El canto de la hoja de herramientas sobre la ayuda (ver la nota en
+   su bloque principal). El color es el del arranque de su degradado
+   (--papel-cielo) para que el canto y la hoja sean la misma agua. */
+.herramientas::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  top: 0;
+  height: var(--barbas, 34px);
+  /* HACIA DENTRO Y NO POR ENCIMA, y el porqué es de motor:
+     `content-visibility: auto` (regla de arriba) trae contención de
+     PINTURA, así que un pseudo asomado fuera de la caja se recorta en
+     el canto y no existe — se vio en dos capturas seguidas antes de
+     encontrar la causa. La misma costura, dicha al revés: el papel de
+     la AYUDA baja mordiendo el primer palmo de esta hoja, con su borde
+     rasgado abajo (el canto de barbas volteado) y su sombra cayendo
+     sobre la página nueva. Dos hojas de cuaderno, la de arriba asoma. */
+  background: var(--papel);
+  -webkit-mask-image: var(--arte-barbas, linear-gradient(#000, #000));
+          mask-image: var(--arte-barbas, linear-gradient(#000, #000));
+  -webkit-mask-size: auto 100%;
+          mask-size: auto 100%;
+  -webkit-mask-position: top center;
+          mask-position: top center;
+  -webkit-mask-repeat: repeat-x;
+          mask-repeat: repeat-x;
+  /* El volteo pone las barbas abajo; la sombra se escribe hacia
+     arriba para que, volteada, caiga hacia abajo sobre la hoja. */
+  transform: scale(1, -1);
+  filter: drop-shadow(0 -3px 5px rgb(28 42 48 / 22%));
+  pointer-events: none;
 }

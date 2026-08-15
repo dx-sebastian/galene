@@ -33,18 +33,14 @@ import { LIMITE_PORTADA } from '../datos/expertos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
-/* ── LOS ENLACES DE LA BARRA, UNA SOLA VEZ ─────────────────────────
-   Se pintan en DOS sitios —la fila de escritorio y el panel del menú
-   del teléfono— y por eso viven aquí como datos y no como marcado
-   duplicado: dos listas escritas a mano son dos listas que un día
-   divergen, y la que miente en silencio es la que no se ve en el
-   ancho en el que uno trabaja. */
-const ENLACES = [
-  ['Información', '#herramientas'],
-  ['Recursos', '#sin-hablar'],
-  ['Comunidad', base + 'comunidad'],
-  ['Panel de expertos', base + 'expertos'],
-];
+/* ── LOS ENLACES DE LA BARRA, UNA SOLA VEZ Y PARA LAS TRES PÁGINAS ──
+   Vivieron aquí como array local y las otras dos páginas escribían el
+   suyo a mano — que es exactamente cómo comunidad y expertos se
+   quedaron SIN fila de escritorio cuando esta la ganó. Ahora la lista
+   vive en datos/navegacion.js y las tres páginas la leen. */
+import { enlaces } from '../datos/navegacion.js';
+import Productos from '../componentes/Productos.astro';
+const ENLACES = enlaces(base);
 
 /* ── LAS URLS ABSOLUTAS, COMPUESTAS Y NO ESCRITAS A MANO ────────────
    `Astro.site` es lo que hay en astro.config.mjs; `base` es el prefijo
@@ -499,6 +495,8 @@ const DATOS = {
     <Ayuda />
 
     <Herramientas />
+
+    <Productos />
 
     <ComunidadExpertos />
 
