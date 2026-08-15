@@ -171,8 +171,26 @@ function arrancar() {
     el.style.filter    = `blur(${((1 - q) * FILO).toFixed(2)}px)`;
   }
 
+  /* ── UN SALTO NO ES UN SCROLL ─────────────────────────────────────
+     Los anclajes de la barra («Información», «Recursos») aterrizan en
+     seco a miles de píxeles, y ahí las medidas tomadas al cargar pueden
+     venir de una sección que `content-visibility: auto` tenía sin
+     desplegar: el bloque bajo el dedo se quedaba MOJADO —0.45 de velo y
+     su desenfoque— sin que ningún scroll posterior lo curara, porque la
+     altura de la sección no cambia y el ResizeObserver no tiene nada
+     que observar. Visto en el teléfono, en el botón que pide que
+     alguien venga por ti: el peor sitio posible para un velo.
+
+     La cura cuesta una resta: si entre un cuadro y el siguiente el
+     scroll se movió más de una pantalla, eso no fue un pulgar — fue un
+     salto, y después de un salto no se pinta con medidas viejas. Se
+     remide y ya. En scroll normal la rama no entra nunca. */
+  let scrollPrevio = scrollY;
+
   function pintar() {
     pedido = false;
+    if (Math.abs(scrollY - scrollPrevio) > viewportHeight()) remedir();
+    scrollPrevio = scrollY;
     const alto   = viewportHeight();
     const inicio = alto * ENTRA;
     const largo  = Math.max(1, alto * (ENTRA - FIN));

@@ -26,6 +26,7 @@ import '../estilos/estilos.css';
 import '../estilos/nuevas-secciones.css';
 import '../estilos/responsive.css';
 import Expertos from '../componentes/Expertos.astro';
+import Pie from '../componentes/Pie.astro';
 import { EXPERTOS } from '../datos/expertos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -112,6 +113,7 @@ const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
     <p class="expertos-pagina__volver">
       <a href={base}>← Volver a la portada</a>
     </p>
+    <Pie />
   </main>
 
   <script>import '../js/viewport.js';</script>

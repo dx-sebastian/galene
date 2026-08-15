@@ -1,0 +1,157 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   EL PIE — el borde inferior de la hoja, y el sello de la edición.
+
+   Existe por una petición directa del dueño: al revisar el sitio en el
+   teléfono no había forma de saber si estaba mirando la edición nueva
+   o la caché de la anterior. Un pie con la versión es la respuesta de
+   instrumento: exacta, pequeña y siempre en el mismo sitio.
+
+   LA VERSIÓN NO SE ESCRIBE A MANO. Sale del commit en el momento de
+   compilar — un número escrito a mano es un número que un día miente,
+   y este existe precisamente para no mentir. Si no hay git (un zip,
+   un entorno raro), dice «local» y no finge. */
+import { execSync } from 'node:child_process';
+
+let version = 'local';
+let fecha = '';
+try {
+  version = execSync('git rev-parse --short HEAD').toString().trim();
+  /* La fecha del COMMIT, no la del build: dos builds del mismo commit
+     son la misma edición. En hora de Colombia, que es donde se lee. */
+  const iso = execSync('git show -s --format=%cI HEAD').toString().trim();
+  fecha = new Date(iso).toLocaleDateString('es-CO', {
+    day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+} catch { /* sin git: «local», sin fecha, sin drama */ }
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<footer class="pie">
+  {/* El mismo trazo que separa los bloques de la hoja: el pie es un
+      bloque más, no otro idioma. */}
+  <div class="trazo trazo--2" aria-hidden="true"></div>
+
+  <div class="pie__fila">
+    <p class="pie__marca">
+      Galene
+      <svg class="pie__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
+           aria-hidden="true" focusable="false">
+        <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
+                 S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
+              fill="none" stroke="currentColor" stroke-width="1.15"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      </svg>
+    </p>
+
+    <p class="pie__lema">El mar en calma. Información clara y apoyo
+      para actuar con seguridad.</p>
+
+    <nav class="pie__nav" aria-label="Pie de página">
+      <a href={base}>Inicio</a>
+      <a href={base + 'comunidad'}>Comunidad</a>
+      <a href={base + 'expertos'}>Panel de expertos</a>
+    </nav>
+  </div>
+
+  <p class="pie__version">
+    <span>Borrador — plazos y líneas sin verificar contra fuente primaria.</span>
+    <span class="pie__sello">edición <code>{version}</code>{fecha && ` · ${fecha}`}</span>
+  </p>
+</footer>
+
+<style>
+  .pie {
+    position: relative;
+    z-index: 1;
+    padding-block: 0 max(clamp(2rem, 4vw, 3rem), env(safe-area-inset-bottom));
+    padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+    background: var(--papel-arriba);
+    color: var(--letra);
+  }
+  /* El trazo del pie no necesita el aire gigante de los de la hoja:
+     cierra, no separa lecturas. */
+  .pie :global(.trazo) { margin-block: 0 clamp(1.5rem, 3vw, 2.5rem); }
+
+  .pie__fila {
+    display: grid;
+    gap: 1.2rem clamp(2rem, 5vw, 5rem);
+    align-items: start;
+    max-width: 72rem;
+    margin-inline: auto;
+  }
+  @media (min-width: 860px) {
+    .pie__fila { grid-template-columns: auto 1fr auto; align-items: center; }
+  }
+
+  .pie__marca {
+    margin: 0;
+    font-family: var(--tipo-titulo);
+    font-size: var(--t-lg);
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+  }
+  .pie__ola {
+    display: block;
+    width: 5.2em;
+    height: 0.5em;
+    margin-top: 0.4em;
+    overflow: visible;
+    color: var(--tinta-suave, currentColor);
+  }
+
+  .pie__lema {
+    margin: 0;
+    max-width: 44ch;
+    font-size: var(--t-sm);
+    line-height: 1.5;
+    color: rgb(var(--letra-rgb) / 72%);
+  }
+
+  .pie__nav { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; }
+  .pie__nav a {
+    color: var(--letra);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .pie__nav a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.45em;
+  }
+  .pie__nav a:focus-visible {
+    outline: 2px solid var(--letra);
+    outline-offset: 3px;
+  }
+
+  /* La línea del sello: el aviso a la izquierda, la edición a la
+     derecha, y un filete fino encima que la separa de la conversación.
+     Cifras tabulares y monoespacio para el hash: es un dato, se viste
+     de dato. */
+  .pie__version {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    max-width: 72rem;
+    margin: clamp(1.5rem, 3vw, 2.5rem) auto 0;
+    padding-top: 0.9rem;
+    border-top: 1px solid rgb(var(--letra-rgb) / 14%);
+    font-size: var(--t-xs);
+    color: rgb(var(--letra-rgb) / 58%);
+  }
+  .pie__version span { margin: 0; }
+  .pie__sello { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pie__sello code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.95em;
+    padding: 0.1em 0.4em;
+    border: 1px solid rgb(var(--letra-rgb) / 18%);
+    border-radius: 3px;
+  }
+</style>
