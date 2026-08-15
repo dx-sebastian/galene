@@ -12,7 +12,7 @@
    `import.meta.env.BASE_URL` se resuelve en el .astro, no aquí. */
 export const enlaces = (base) => [
   ['Información', base + '#herramientas'],
-  ['Productos', base + '#productos'],
+  ['Productos', base + 'productos'],
   ['Recursos', base + '#sin-hablar'],
   ['Comunidad', base + 'comunidad'],
   ['Panel de expertos', base + 'expertos'],

@@ -270,10 +270,15 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* 62 % → 90 %: por la ventana del medio se veía el recuerdo borroso
+     del mar como una franja humosa entre dos papeles — el dueño la
+     leyó como «background transparente» encima del panel de expertos,
+     y con razón. El recuerdo se queda, pero como tinte bajo el papel,
+     no como agujero. */
   background: linear-gradient(to bottom,
     var(--papel-arriba) 0%,
-    color-mix(in srgb, var(--papel-arriba) 62%, transparent) 30%,
-    color-mix(in srgb, var(--papel-arriba) 62%, transparent) 55%,
+    color-mix(in srgb, var(--papel-arriba) 90%, transparent) 30%,
+    color-mix(in srgb, var(--papel-arriba) 90%, transparent) 55%,
     var(--papel-arriba) 96%);
 }
 .comunidad-panel > * { position: relative; z-index: 1; }

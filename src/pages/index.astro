@@ -39,7 +39,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
    quedaron SIN fila de escritorio cuando esta la ganó. Ahora la lista
    vive en datos/navegacion.js y las tres páginas la leen. */
 import { enlaces } from '../datos/navegacion.js';
-import Productos from '../componentes/Productos.astro';
 const ENLACES = enlaces(base);
 
 /* ── LAS URLS ABSOLUTAS, COMPUESTAS Y NO ESCRITAS A MANO ────────────
@@ -495,8 +494,6 @@ const DATOS = {
     <Ayuda />
 
     <Herramientas />
-
-    <Productos />
 
     <ComunidadExpertos />
 

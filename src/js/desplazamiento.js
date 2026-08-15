@@ -124,7 +124,14 @@ const ENTRA = 1.00;
 const FIN   = 0.82;
 const ALZA  = 20;
 const VELO  = 0.45;
-const FILO  = 1.1;
+/* EL FILO SE QUEDA EN ESCRITORIO. Un `filter: blur()` que cambia cada
+   cuadro obliga a re-rasterizar el bloque entero mientras se hace
+   scroll, y en un teléfono esos bloques miden miles de píxeles: era
+   una parte medible de la lentitud que el dueño reportó en móvil. El
+   secado en táctil conserva el alza y el velo —transform y opacity,
+   que compone la GPU sin repintar— y suelta el desenfoque, que es el
+   matiz que un pulgar en movimiento no llega a ver. */
+const FILO  = matchMedia('(pointer: coarse)').matches ? 0 : 1.1;
 
 if (seccion) arrancar();
 
@@ -168,7 +175,9 @@ function arrancar() {
     const q = suave3(p);
     el.style.translate = `0px ${((1 - q) * ALZA).toFixed(1)}px`;
     el.style.opacity   = (VELO + q * (1 - VELO)).toFixed(3);
-    el.style.filter    = `blur(${((1 - q) * FILO).toFixed(2)}px)`;
+    /* Con FILO en 0 no se escribe la propiedad: un filter presente,
+       aunque valga blur(0), ya obliga a componer el bloque aparte. */
+    if (FILO) el.style.filter = `blur(${((1 - q) * FILO).toFixed(2)}px)`;
   }
 
   /* ── UN SALTO NO ES UN SCROLL ─────────────────────────────────────

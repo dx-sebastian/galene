@@ -271,6 +271,20 @@
     --vidrio-alto: var(--papel-alto);
   }
 }
+/* Y EN TÁCTIL, LO MISMO — pero por COSTE, no por preferencia. Un
+   `backdrop-filter: blur(18px)` por tarjeta de hilo es de lo más caro
+   que un móvil puede componer en scroll: cada cuadro re-desenfoca lo
+   que pasa por detrás. En un escritorio sobra GPU; en el teléfono de
+   gama baja al que este sitio se debe, era jank medible. El vidrio se
+   vuelve papel sólido y la página vuela — el dueño lo dijo con la
+   palabra exacta: lenta. */
+@media (pointer: coarse) {
+  .pagina-papel {
+    --difuminado:  none;
+    --vidrio:      var(--papel-alto);
+    --vidrio-alto: var(--papel-alto);
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    LA BARRA SOBRE PAPEL
@@ -290,6 +304,9 @@
   padding-block: var(--e-4);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
   color: var(--letra);
+  /* (El apilamiento de la barra vive en el base de estilos.css: esta
+     hoja no se carga en /expertos y una regla aquí no arregla esa
+     página — se aprendió al probarlo.) */
 }
 
 /* DÓNDE ESTOY. Se cuelga de `aria-current` y no de una clase: el estado

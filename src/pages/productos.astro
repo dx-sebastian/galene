@@ -1,0 +1,113 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — el catálogo de prevención, en su propia página.
+
+   Estuvo en la portada y salió por orden del dueño: la portada cuenta
+   qué hacer DESPUÉS, y un catálogo en medio de esa lectura era otra
+   voz. Aquí tiene la suya, con la misma hoja de papel, la misma barra
+   y el mismo pie que /comunidad y /expertos.
+
+   LAS FOTOGRAFÍAS SON DEL FABRICANTE (NightCap). Se usan por el
+   acuerdo de distribución en curso — Galene importará y venderá estas
+   mismas piezas — y se acredita al pie de la sección. Si el acuerdo
+   cambiara, las láminas ilustradas de la primera versión siguen en
+   arte/productos/ listas para volver.
+   ═══════════════════════════════════════════════════════════════════ */
+import '../estilos/estilos.css';
+import '../estilos/nuevas-secciones.css';
+import '../estilos/responsive.css';
+import Productos from '../componentes/Productos.astro';
+import Pie from '../componentes/Pie.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+import { enlaces } from '../datos/navegacion.js';
+const ENLACES = enlaces(base);
+const ACTUAL = 'productos';
+
+const TITULO = 'Productos de prevención — Galene';
+const RESUMEN = 'Fundas, sellos y tapas que cierran una copa, una lata ' +
+  'o una botella. Piezas sencillas de prevención, con sus límites ' +
+  'dichos de frente.';
+---
+
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>{TITULO}</title>
+  <meta name="description" content={RESUMEN} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={TITULO} />
+  <meta property="og:description" content={RESUMEN} />
+  <meta name="theme-color" content="#2E4256" />
+  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
+
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+</head>
+
+<body class="pagina-papel">
+
+  <header class="barra barra--papel">
+    <a class="marca" href={base}>
+      <span class="marca__nombre">Galene</span>
+      <svg class="marca__ola" viewBox="0 0 120 10" preserveAspectRatio="none"
+           aria-hidden="true" focusable="false">
+        <path d="M1 6 C 10 2.2, 21 2.2, 30 6 S 50 9.8, 60 5.8
+                 S 80 1.8, 90 5.6 S 111 9.4, 119 6.6"
+              fill="none" stroke="currentColor" stroke-width="1.15"
+              stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      </svg>
+    </a>
+
+    <nav class="barra__nav" aria-label="Principal">
+      <div class="barra__enlaces">
+        {ENLACES.map(([texto, href]) => (
+          <a class="barra__enlace" href={href}
+             aria-current={href.endsWith(ACTUAL) ? 'page' : undefined}>{texto}</a>
+        ))}
+      </div>
+
+      <details class="menu" name="barra-menu">
+        <summary class="menu__boton" aria-label="Abrir menu de navegacion">
+          <span class="menu__rayas" aria-hidden="true"></span>
+          <span class="menu__etiqueta">Menu</span>
+        </summary>
+        <div class="menu__panel">
+          {ENLACES.map(([texto, href]) => (
+            <a class="barra__enlace" href={href}
+               aria-current={href.endsWith(ACTUAL) ? 'page' : undefined}>{texto}</a>
+          ))}
+          <a class="pildora pildora--menu" href={base + '#ayuda'}>
+            Buscar ayuda
+            <svg class="pildora__icono" viewBox="0 0 14 12"
+             aria-hidden="true" focusable="false">
+          <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
+                fill="none" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"
+                vector-effect="non-scaling-stroke" />
+        </svg>
+          </a>
+        </div>
+      </details>
+    </nav>
+  </header>
+
+  <main class="productos-pagina">
+    <Productos />
+
+    <p class="expertos-pagina__volver">
+      <a href={base}>← Volver a la portada</a>
+    </p>
+    <Pie />
+  </main>
+
+  <script>import '../js/viewport.js';</script>
+  <script>import '../js/luz.js';</script>
+  <script>import '../js/menu.js';</script>
+</body>
+</html>

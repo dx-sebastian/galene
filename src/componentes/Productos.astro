@@ -122,10 +122,15 @@ const PRODUCTOS = [
   <ul class="productos__lista">
     {PRODUCTOS.map((p) => (
       <li class="producto" id={'producto-' + p.id}>
+        {/* FOTOGRAFÍA DEL FABRICANTE, no lámina propia: el catálogo
+            vende exactamente estas piezas (acuerdo de distribución en
+            curso; crédito al pie de la sección). Las ilustraciones de
+            la primera versión siguen en arte/productos/. */}
         <button class="producto__lamina" type="button"
                 aria-pressed="false"
-                aria-label={'Ampliar la lámina de ' + p.nombre}>
-          <img src={`${base}arte/productos/${p.id}.svg`} alt="" width="220" height="220" loading="lazy" />
+                aria-label={'Ampliar la fotografía de ' + p.nombre}>
+          <img src={`${base}productos/${p.id}.webp`} alt={p.nombre}
+               width="450" height="450" loading="lazy" decoding="async" />
         </button>
 
         <div class="producto__cuerpo">
@@ -152,6 +157,8 @@ const PRODUCTOS = [
   <p class="productos__nota">
     Catálogo de importación en preparación: el botón registra tu interés
     en el aparato y los pedidos se abrirán con la primera remesa.
+    Fotografías del fabricante (NightCap®), usadas en el marco del
+    acuerdo de distribución.
   </p>
 </section>
 
