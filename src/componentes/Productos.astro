@@ -33,6 +33,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const PRODUCTOS = [
   {
     id: 'funda-coletero',
+    sello: 'Reutilizable',
     nombre: 'La funda coletero',
     lema: 'Se lleva en la muñeca. Cuida tu copa.',
     texto: 'Una funda de tela elástica que durante el día es un coletero ' +
@@ -47,6 +48,7 @@ const PRODUCTOS = [
   },
   {
     id: 'sombrero-lata',
+    sello: 'Reutilizable',
     nombre: 'El sombrero de lata',
     lema: 'La lata también sale de noche.',
     texto: 'Una tapa de silicona que se ajusta a presión sobre ' +
@@ -61,6 +63,7 @@ const PRODUCTOS = [
   },
   {
     id: 'funda-llavero',
+    sello: 'Siempre contigo',
     nombre: 'La funda de llavero',
     lema: 'La que siempre está, porque vive en tus llaves.',
     texto: 'La misma funda elástica, plegada dentro de un estuche que ' +
@@ -75,6 +78,7 @@ const PRODUCTOS = [
   },
   {
     id: 'sellos',
+    sello: 'Un solo uso',
     nombre: 'Los sellos adhesivos',
     lema: 'Un sello discreto para vasos que van y vienen.',
     texto: 'Láminas adhesivas que sellan la boca del vaso y dejan sitio ' +
@@ -89,6 +93,7 @@ const PRODUCTOS = [
   },
   {
     id: 'tapon-botella',
+    sello: 'Par de dos',
     nombre: 'El tapón de botella',
     lema: 'La botella queda cerrada hasta que tú digas.',
     texto: 'Un capuchón de silicona que abraza la boca de la botella ' +
@@ -107,16 +112,11 @@ const PRODUCTOS = [
 <section class="productos" id="productos" aria-labelledby="productos-titulo">
   <div class="trazo" aria-hidden="true"></div>
 
+  {/* Sin párrafo de intro, por orden del dueño: en un catálogo la
+      cabecera presenta y las fichas hablan. */}
   <header class="productos__cabecera">
     <p class="seccion-rotulo">Prevención · Catálogo</p>
     <h2 id="productos-titulo">Antes de esa noche</h2>
-    <p class="productos__intro">
-      Piezas sencillas que cierran una copa, una lata o una botella.
-      Ninguna promete seguridad total — dicen dónde están sus límites, y
-      no usarlas nunca es descuido de nadie:
-      <strong>la responsabilidad de una agresión es siempre de quien
-      agrede.</strong>
-    </p>
   </header>
 
   <ul class="productos__lista">
@@ -126,6 +126,7 @@ const PRODUCTOS = [
             vende exactamente estas piezas (acuerdo de distribución en
             curso; crédito al pie de la sección). Las ilustraciones de
             la primera versión siguen en arte/productos/. */}
+        <span class="producto__sello">{p.sello}</span>
         <button class="producto__lamina" type="button"
                 aria-pressed="false"
                 aria-label={'Ampliar la fotografía de ' + p.nombre}>
