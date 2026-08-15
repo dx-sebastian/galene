@@ -139,6 +139,31 @@
   background: var(--papel);
   color: var(--letra);
 }
+/* EL CANTO DE LA PÁGINA. La hoja ya no anochece (ver hora.js: la
+   pintura vive con la hora, la página es siempre papel), así que su
+   primer borde es LA costura del sitio: donde acaba el mar y empieza
+   el cuaderno. Una línea recta ahí es la solución de un documento; el
+   papel de verdad se rasga. El mismo canto de barbas que tuvo la boca,
+   ahora quieto: papel del color de la página, asomado una barba por
+   encima de su propio canto, mordiendo la pintura. Sin JavaScript y
+   sin escena: es un borde, no un gesto. */
+.ayuda::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(1px - var(--barbas, 34px));
+  height: var(--barbas, 34px);
+  background: var(--papel);
+  -webkit-mask-image: var(--arte-barbas, linear-gradient(#000, #000));
+          mask-image: var(--arte-barbas, linear-gradient(#000, #000));
+  -webkit-mask-size: auto 100%;
+          mask-size: auto 100%;
+  -webkit-mask-position: top center;
+          mask-position: top center;
+  -webkit-mask-repeat: repeat-x;
+          mask-repeat: repeat-x;
+  pointer-events: none;
+}
 .ayuda h2 {
   margin: 0 0 var(--e-5);
   font-family: var(--tipo-titulo);
