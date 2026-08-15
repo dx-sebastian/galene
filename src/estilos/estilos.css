@@ -5389,6 +5389,15 @@ body {
      Es también lo que hace que sin script no se vea nada de la escena
      por encima de la franja corta. */
   overflow: hidden;
+  /* EL VIDRIO DE LA VENTANA. La rendija entre la ayuda y la hoja
+     enseña una franja arbitraria de la pintura fija, y a según qué
+     scroll esa franja es LA BRUMA — el pasaje más pálido del cuadro.
+     De noche eso es una barra blanca entre dos paneles añil, visto en
+     captura a 1710×900. Un velo del papel de la hora (28 %) entona lo
+     que pase por detrás sin cerrar la ventana: las estrellas siguen,
+     la bruma deja de deslumbrar, y de día es un empañado leve del
+     mismo papel que la rodea. */
+  background: color-mix(in srgb, var(--papel-arriba) 28%, transparent);
 }
 .boca.escena--viva .boca__escena {
   position: sticky;
