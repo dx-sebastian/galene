@@ -98,10 +98,15 @@
             sustituye. */}
         <feFlood id="bruma-lejos" result="niebla" />
         <feComposite in="niebla" in2="limpiaAlfa" operator="in" result="velo" />
-        <feMerge>
+        <feMerge result="pintada">
           <feMergeNode in="granosa" />
           <feMergeNode in="velo" />
         </feMerge>
+        {/* La misma aguada de tinta que lleva la visitante, y por la
+            misma medición. Ver `#tinta-cerca`. */}
+        <feFlood id="tinta-lejos" result="tintaPlana" />
+        <feComposite in="tintaPlana" in2="limpiaAlfa" operator="in" result="tintaAve" />
+        <feBlend in="tintaAve" in2="pintada" mode="color" />
       </filter>
 
       {/* ── LO QUE ESTÁ DENTRO DE LA COPA ────────────────────────────
@@ -175,11 +180,16 @@
             hoja flotando en el aire a su lado. */}
         <feComposite in="manchas" in2="limpiaAlfa" operator="in" result="dapple" />
 
-        <feMerge>
+        <feMerge result="pintada">
           <feMergeNode in="granosa" />
           <feMergeNode in="velo" />
           <feMergeNode in="dapple" />
         </feMerge>
+        {/* Y la de la copa se tiñe con lo que tiene alrededor, que es
+            hoja y cielo a partes iguales (ver `#tinta-copa`). */}
+        <feFlood id="tinta-copa" result="tintaPlana" />
+        <feComposite in="tintaPlana" in2="limpiaAlfa" operator="in" result="tintaAve" />
+        <feBlend in="tintaAve" in2="pintada" mode="color" />
       </filter>
 
       {/* ── LO CERCANO: grano más grueso, menos bruma y canto mojado ──
@@ -284,7 +294,34 @@
           <feMergeNode in="pintada" />
           <feMergeNode in="filete" />
         </feMerge>
-        <feBlend in="conCanto" in2="rebote" mode="screen" />
+        <feBlend in="rebote" in2="conCanto" mode="screen" result="conRebote" />
+
+        {/* ── LA TINTA DEL CUADRO, EN MODO COLOR ───────────────────
+            MEDIDO en Lab sobre el sitio publicado, a mediodía: la
+            visitante rendía croma 3.0 dentro de un entorno de croma
+            11.3. Casi neutra — y la ley de esta pintura, escrita en la
+            nota de `--sombra-ave`, es que aquí no hay un solo píxel
+            neutro. De noche no pasaba (tono 295 contra 297 del
+            entorno); de día el ave era el único objeto gris del cuadro.
+
+            Subir la veladura no lo arregla y está probado: con un
+            tercio de agua en la bruma el croma pasó de 3.0 a 3.2,
+            porque a mediodía esa veladura pesa un 9 % y la bruma es
+            casi blanca. Lo que hace falta no es más velo, es TINTA.
+
+            `mode="color"` toma el tono y el croma de la capa de arriba
+            y CONSERVA la luminosidad de la de abajo — o sea, tiñe sin
+            tocar los valores que tanto costó medir en las cuatro
+            vueltas anteriores. Al 30 % de opacidad el ave se lleva
+            aproximadamente un tercio del color del agua y sigue siendo
+            una garza gris, no una garza azul.
+
+            Va al final de la cadena, después del canto y del rebote:
+            se tiñe el ave TERMINADA, como quien pasa una aguada por
+            encima de un dibujo seco. */}
+        <feFlood id="tinta-cerca" result="tintaPlana" />
+        <feComposite in="tintaPlana" in2="limpiaAlfa" operator="in" result="tintaAve" />
+        <feBlend in="tintaAve" in2="conRebote" mode="color" />
       </filter>
     </defs>
   </svg>

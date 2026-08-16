@@ -1514,12 +1514,30 @@ body.pagina-papel { background: var(--papel); }
    mete EN la noche es que su velo comparta el añil de la hora. Estuvo
    colgado de data-tinta y era un error de pertenencia: la veladura es
    de la ESCENA, que anochece siempre; la hoja ya no. */
+/* ── Y LA VELADURA LLEVA AGUA, NO SOLO BRUMA ───────────────────────
+   MEDIDO en el sitio publicado a mediodía, en Lab: la visitante rendía
+   croma 3.0 dentro de un entorno de croma 11.3, y la bandada 6.4 en una
+   copa de 19.6. O sea que el ave era CASI NEUTRA en un cuadro donde no
+   hay un solo píxel neutro —lo dice la nota de `--sombra-ave` unas
+   líneas más abajo, y es la ley de esta pintura—. Un gris de archivo
+   dentro de una acuarela teñida se ve como lo que es, aunque su valor
+   sea el correcto: por eso de noche estaban bien (tono 295 contra 297,
+   croma 6 contra 18) y de día seguían cantando.
+
+   La bruma sola no lo arregla porque la bruma de día es casi blanca:
+   velar con ella sube el valor y no la tinta. Lo que sí tiñe es el
+   AGUA, que es el color grande del cuadro a esa hora. Un tercio de agua
+   en la veladura le da al ave la tinta del sitio donde está sin
+   convertirla en un ave azul: el pigmento entra al 12 % de opacidad.
+
+   De noche no cambia nada apreciable: agua y bruma comparten tono
+   (295 y 297 medidos), así que la mezcla es del mismo añil. */
 #bruma-lejos {
-  flood-color: var(--bruma, #CDDCDE);
+  flood-color: color-mix(in srgb, var(--bruma, #CDDCDE) 66%, var(--agua, #4E8A94));
   flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-lejos, 0.5));
 }
 #bruma-cerca {
-  flood-color: var(--bruma, #CDDCDE);
+  flood-color: color-mix(in srgb, var(--bruma, #CDDCDE) 66%, var(--agua, #4E8A94));
   flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-cerca, 0.26));
 }
 /* ── LOS DOS COLORES NUEVOS DE LA COPA Y DEL AGUA ──────────────────
@@ -1538,16 +1556,43 @@ body.pagina-papel { background: var(--papel); }
    Mundo.astro), o sea que solo aclara: el color es el agua de la hora
    subida de brillo, que es lo que devuelve una superficie mojada. */
 #bruma-copa {
-  flood-color: var(--bruma, #CDDCDE);
+  flood-color: color-mix(in srgb, var(--bruma, #CDDCDE) 66%, var(--agua, #4E8A94));
   flood-opacity: calc(var(--vuelo-velo, 0.28) * var(--velo-parte-lejos, 0.5));
 }
+/* La mancha de hoja sube de 0.30 a 0.38 y de 62 % a 72 % de verde por
+   la misma medición: la bandada estaba tres veces menos teñida que la
+   copa en la que se posa. */
 #sombra-copa {
-  flood-color: color-mix(in srgb, #5F7340 62%, var(--bruma, #CDDCDE));
+  flood-color: color-mix(in srgb, #5F7340 72%, var(--bruma, #CDDCDE));
+  flood-opacity: 0.38;
+}
+/* Y el rebote deja de ser casi blanco: lo que sube del mar es el color
+   DEL MAR. Con `agua-altas` mezclada a partes iguales con blanco el
+   reflejo tenía croma 8 y no teñía nada; con el agua al 55 % teñe y
+   sigue aclarando, que es lo único que puede hacer una luz rebotada. */
+#rebote-agua {
+  flood-color: color-mix(in srgb, var(--agua, #4E8A94) 55%, #FFFFFF);
+  flood-opacity: 0.40;
+}
+
+/* ── LAS TRES AGUADAS DE TINTA ─────────────────────────────────────
+   El color con el que se tiñe cada ave es el de lo que tiene alrededor:
+   el agua para la que se posa sobre el mar, y hoja con cielo para las
+   que duermen en la copa. La opacidad es la fuerza del teñido — con
+   `mode="color"` (ver Mundo.astro) eso es literalmente qué fracción del
+   color del sitio se lleva el ave. Un tercio: lo justo para que deje de
+   ser neutra sin volverse un ave de otro color. */
+#tinta-cerca {
+  flood-color: var(--agua, #4E8A94);
   flood-opacity: 0.30;
 }
-#rebote-agua {
-  flood-color: color-mix(in srgb, var(--agua-altas, #7FB4B8) 74%, #FFFFFF);
-  flood-opacity: 0.34;
+#tinta-lejos {
+  flood-color: color-mix(in srgb, var(--agua, #4E8A94) 60%, var(--bruma, #CDDCDE));
+  flood-opacity: 0.26;
+}
+#tinta-copa {
+  flood-color: color-mix(in srgb, #5F7340 45%, var(--agua, #4E8A94));
+  flood-opacity: 0.28;
 }
 
 /* El filete del borde no es negro: es el mismo pigmento del cuadro

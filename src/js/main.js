@@ -1371,6 +1371,22 @@ function nuevoReposo(calma, calma0, pesos) {
 }
 const reposo = nuevoReposo([7.0, 19.0], [3.0, 6.5]);
 
+/* ── LA DISOLVENCIA NO PUEDE VOLVER TRANSPARENTE AL AVE ────────────
+   Dos láminas cruzándose a alfa `1-m` y `m` son dos capas
+   independientes, así que en el solape el ave queda a `1-(1-m)·m` — a
+   mitad de gesto, un 75 % de opacidad, y por debajo de ella se ve el
+   agua. Medido en el compilado: a las 10.5 había SIEMPRE dos láminas a
+   media opacidad en pantalla. Es exactamente el aspecto de una
+   calcomanía mal pegada, y es de las cosas que se ven sin saber qué se
+   está viendo.
+
+   La disolvencia se queda —es acuarela, no cine— pero la que SALE se
+   sostiene: `1 − m³` la deja casi entera hasta el final del cruce y la
+   suelta al terminar. Con eso el solape nunca baja del 90 % y el ave
+   no se transparenta. Lo que se pierde es un pelo de la mezcla, y lo
+   que se gana es que el cuadro no se vea a través del pájaro. */
+const saleFundido = (m) => 1 - m * m * m;
+
 /* Devuelve { visibles, alza }.
 
    `visibles` son pares [clave, alfa]: una lámina, o dos cruzándose. La
@@ -1426,9 +1442,9 @@ function vidaEnReposo(g, t) {
        mano— pero el salto duro no. */
     const cruce = dentro < 0.68 ? 0 : (dentro - 0.68) / 0.32;
     const visibles = (i === 0 && m < 1 && g.previa !== clave)
-      ? [[g.previa, 1 - m], [clave, m]]
+      ? [[g.previa, saleFundido(m)], [clave, m]]
       : (cruce > 0 && sig !== clave)
-        ? [[clave, 1 - cruce], [sig, cruce]]
+        ? [[clave, saleFundido(cruce)], [sig, cruce]]
         : [[clave, 1]];
     /* Sube rápido y baja despacio, y vuelve al suelo ANTES de que
        termine la secuencia: los dos últimos cuadros son ya el ave
@@ -1440,7 +1456,7 @@ function vidaEnReposo(g, t) {
 
   return {
     visibles: (m < 1 && g.previa !== g.actual)
-      ? [[g.previa, 1 - m], [g.actual, m]]
+      ? [[g.previa, saleFundido(m)], [g.actual, m]]
       : [[g.actual, 1]],
     alza: 0,
   };
@@ -2554,10 +2570,10 @@ function animarGarzas(t, paralaje, dt) {
         ? [[CICLO[iA], 1 - cruce], [CICLO[iB], cruce]]
         : [[CICLO[iA], 1]])
     : aterA
-      ? (entra < 1 ? [[CICLO[iA], 1 - entra], [aterA, entra]]
-         : mezcla > 0 ? [[aterA, 1 - mezcla], ['posada', mezcla]]
+      ? (entra < 1 ? [[CICLO[iA], saleFundido(entra)], [aterA, entra]]
+         : mezcla > 0 ? [[aterA, saleFundido(mezcla)], ['posada', mezcla]]
          : aterM > 0 && aterA !== aterB
-           ? [[aterA, 1 - aterM], [aterB, aterM]]
+           ? [[aterA, saleFundido(aterM)], [aterB, aterM]]
            : [[aterA, 1]])
     : plato === 'posada' ? posadas
     : [[plato, 1]];
@@ -2682,7 +2698,7 @@ function animarCaida(ave, t, paralaje) {
 
   const visibles = posadas
     || ((mezcla > 0 && siguiente && siguiente !== clave)
-      ? [[clave, 1 - mezcla], [siguiente, mezcla]] : [[clave, 1]]);
+      ? [[clave, saleFundido(mezcla)], [siguiente, mezcla]] : [[clave, 1]]);
 
   /* MIRA HACIA LA DERECHA — la de la rama de delante. Las laminas estan
      pintadas mirando a la izquierda, asi que se espeja. El origen de
