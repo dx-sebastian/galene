@@ -18,7 +18,14 @@ const aves = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11]
   .map((n) => `aves/ave${String(n).padStart(2, '0')}.webp`);
 const aterriza = Array.from({ length: 8 }, (_, i) =>
   `aterriza/a${String(i + 1).padStart(2, '0')}.webp`);
-const posada = ['reposo', 'alerta', 'encogida', 'una-pata', 'mira-abajo', 'alas']
+/* `agarre` es la séptima: la pose con los dedos curvados sobre la rama,
+   solo para la visitante. Va en esta lista y no la caza el rastreo
+   automático porque su ruta se arma en JavaScript por trozos —`ARTE +
+   'posada/agarre.webp'`— y en el compilado no queda ninguna cadena que
+   contenga «arte/». Sin esta línea el podador se la lleva y el ave
+   aparece sin lámina de reposo: comprobado. */
+const posada = ['reposo', 'alerta', 'encogida', 'una-pata', 'mira-abajo',
+                'alas', 'agarre']
   .map((nombre) => `posada/${nombre}.webp`);
 const dinamicas = [...texturasHero, ...aves, ...aterriza, ...posada];
 const conservar = new Set([

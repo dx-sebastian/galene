@@ -1286,6 +1286,40 @@ const VUELO = {
               aspecto: 0.687, pies: [0.448, 0.988], altoTinta: 0.979, factor: 0.984 },
   pAlas:    { src: ARTE + 'posada/alas.webp',       cx: 0.480, cy: 0.438,
               aspecto: 0.716, pies: [0.513, 0.987], altoTinta: 0.979, factor: 0.973 },
+
+  /* ── LA QUE AGARRA LA RAMA ────────────────────────────────────────
+     La séptima, y la única que no vino en la rejilla de seis: se pidió
+     aparte porque las otras están pintadas con los dedos EXTENDIDOS EN
+     HORIZONTAL —como quien se posa en un suelo plano— y la raíz de la
+     visitante baja 28 grados. Aquí los dedos se curvan hacia abajo,
+     que es lo que hace que un pie agarre en vez de apoyarse.
+
+     Es la pose de reposo SOLO de la visitante: la bandada se queda con
+     `posada`, que a 35 px de alto no enseña un dedo.
+
+     Los seis números NO están escritos a ojo: salen de contar los
+     píxeles del archivo (centroide ponderado por alfa, caja de tinta y
+     punto más bajo). Y es la misma garza que el juego —medido: la
+     esbeltez, que es ancho máximo entre alto de tinta, difiere un
+     2.5 % de `posada`—, así que `factor` se queda en 1 y cambiar de
+     pose no le cambia la talla. */
+  /* `pies` NO es el píxel más bajo, y esta es la única pose donde eso
+     importa: en las otras seis el punto más bajo es la planta, aquí es
+     la punta de la garra, que baja por DETRÁS de la rama. Anclando por
+     ahí el ave quedaba flotando un dedo por encima de la madera —visto
+     en el compilado—. El punto bueno es donde la rama cruza entre los
+     dos pies: media entre las dos plantas (0.941 y 0.839, contadas
+     desde las garras menos el 60 % del rizo de los dedos) y el centro
+     entre las dos patas, que los componentes conexos dan en 0.455 y
+     0.652.
+
+     Y la lámina trae su propia pendiente: el pie de delante cae 0.102
+     de alto por debajo del otro con 0.136 de separación, o sea 0.75
+     —espejada, bajando a la derecha en pantalla, como la raíz de
+     verdad, que va a 0.54—. Los cinco grados de diferencia se los come
+     el rizo del dedo. */
+  agarre:   { src: ARTE + 'posada/agarre.webp',     cx: 0.588, cy: 0.404,
+              aspecto: 0.689, pies: [0.554, 0.890], altoTinta: 0.972, factor: 1.000 },
 };
 
 /* ── LA VIDA EN REPOSO ──────────────────────────────────────────────
@@ -1365,8 +1399,12 @@ function caracter() {
 
 /* El estado de reposo de UN ave. `calma` es cuánto aguanta quieta entre
    gestos y `calma0` lo que espera antes del primero. */
-function nuevoReposo(calma, calma0, pesos) {
-  return { actual: 'posada', previa: 'posada', desde: 0, hasta: 0,
+/* `base` es la pose a la que vuelve el ave entre gesto y gesto. Era
+   siempre 'posada'; desde que la visitante tiene su propia lámina con
+   los dedos agarrando, cada ave dice cuál es la suya. */
+function nuevoReposo(calma, calma0, pesos, base) {
+  const quieta = base || 'posada';
+  return { actual: quieta, previa: quieta, desde: 0, hasta: 0, base: quieta,
            arrancado: false, calma, calma0, pesos: pesos || null };
 }
 const reposo = nuevoReposo([7.0, 19.0], [3.0, 6.5]);
@@ -1408,8 +1446,8 @@ function vidaEnReposo(g, t) {
        existe y el ave desaparecería medio segundo. Se guarda su ÚLTIMO
        cuadro, que es lo que de verdad se estaba viendo. */
     g.previa = g.actual === 'amago' ? AMAGO[AMAGO.length - 1][0] : g.actual;
-    if (g.actual !== 'posada') {                    // vuelve a la calma
-      g.actual = 'posada';
+    if (g.actual !== g.base) {                      // vuelve a la calma
+      g.actual = g.base;
       g.hasta = t + entre(g.calma[0], g.calma[1]);
     } else {
       const pesos = g.pesos || GESTOS.map((c) => c.peso);
@@ -1559,7 +1597,7 @@ const CAIDA_DURA   = 3.4;    // s de caida y aterrizaje
    porque ahora la usan dos sitios —la visitante y las de presencia— y
    dos listas iguales en dos sitios son dos listas el día que alguien
    toque una. */
-const LAMINAS_CAIDA = [...CAIDA, 'posada', 'pAlerta', 'pEncoge',
+const LAMINAS_CAIDA = [...CAIDA, 'posada', 'agarre', 'pAlerta', 'pEncoge',
                        'pUnaPata', 'pMira', 'pAlas'];
 const crearTinteAve = () =>
   contenedor ? pico.crearTinte(contenedor, (k) => VUELO[k].src) : null;
@@ -1641,7 +1679,7 @@ if (contenedor) {
              id: 'yo', plano: 1.35, espeja: true,
              tinte: crearTinteAve(),
              sena: { pico: null, frase: null },
-             reposo: nuevoReposo([8.0, 21.0], [4.0, 8.0]) };
+             reposo: nuevoReposo([8.0, 21.0], [4.0, 8.0], null, 'agarre') };
 }
 
 /* ═══ LAS GARZAS DE QUIEN MÁS ESTÁ ════════════════════════════════
@@ -2030,18 +2068,41 @@ const POSADERO = [0.40, 0.15];
    columna la encogería un 14 %, y la visitante ya estuvo demasiado
    pequeña una vez (ver «no tiene protagonismo» en la nota del
    posadero). Queda como está, y queda dicho por qué. */
-const POSADERO_CERCA = [0.244, 0.307];
+/* ── Y SE MUDA OTRA VEZ, AHORA POR LA PENDIENTE ────────────────────
+   La lámina de agarre viene pintada con los dos pies a distinta
+   altura, o sea con una pendiente propia: 0.102 de alto de diferencia
+   sobre 0.136 de separación, que son 0.75 en pantalla. En la percha
+   anterior (x 0.244) la raíz baja a 0.54, y esos veinte puntos de
+   diferencia dejaban el pie de delante colgando por fuera del canto:
+   se ve en el compilado, con la garra sobre el agua.
+
+   No se fuerza la lámina —ni se rota el ave, que un cuerpo inclinado
+   nueve grados se lee como que se cae—: se la lleva al tramo de raíz
+   que TIENE esa pendiente. Medido columna por columna, x 0.204 baja a
+   0.76 en pantalla, que es la de la lámina con dos centésimas de
+   diferencia, y da 1.6 % de apoyo a cada lado — menos que el 2.7 % de
+   antes, pero de sobra para unos pies que miden 0.027 de pantalla.
+
+   El hundimiento baja de 0.015 a 0.005: aquel margen existía para que
+   la planta plana no flotara sobre el filo, y una garra que se curva
+   por detrás de la rama no lo necesita. */
+const POSADERO_CERCA = [0.204, 0.256];
 const GROSOR_RAMA = 0.076;
 
 /* ── CÓMO CAE LA RAMA BAJO EL PIE ──────────────────────────────────
-   Medido en la misma pasada que la percha, con el canto de la madera
-   de dos columnas vecinas: 0.81 de pendiente en unidades de LÁMINA.
-   La lámina es 1.5 veces más ancha que alta, así que en pantalla eso
-   son 0.81 / 1.5 = 0.54, o sea unos 28 grados bajando hacia la
-   derecha.
+   Medido con el canto de la madera de dos columnas vecinas, en la
+   percha donde está posada: 1.14 en unidades de LÁMINA. La lámina es
+   1.5 veces más ancha que alta, así que en pantalla son 1.14 / 1.5 =
+   0.76, o sea unos 37 grados bajando hacia la derecha.
 
-   Lo usa el recorte del pie. Ver `mascaraPie`. */
-const PENDIENTE_RAMA = 0.54;
+   Cambió con la percha: el tramo anterior (x 0.244) bajaba a 0.54, y
+   el ave se mudó a este porque es el que tiene la inclinación con la
+   que está pintada la lámina de agarre. El recorte del pie de las
+   otras seis poses tiene que seguir a la rama, no quedarse en la
+   pendiente vieja.
+
+   Lo usa `mascaraPie`. */
+const PENDIENTE_RAMA = 0.76;
 
 /* ── EL PIE SE MUERDE CON LA RAMA ──────────────────────────────────
    El dueño lo dijo después de arreglar la percha: los dedos siguen
@@ -2764,7 +2825,10 @@ function animarCaida(ave, t, paralaje) {
     clave = CAIDA[i];
     siguiente = CAIDA[Math.min(i + 1, CAIDA.length - 1)];
     mezcla = dentro < 0.72 ? 0 : (dentro - 0.72) / 0.28;
-    if (i === CAIDA.length - 1) { siguiente = 'posada'; mezcla = suave3(Math.min(1, dentro / 0.8)); }
+    if (i === CAIDA.length - 1) {
+      siguiente = visita.reposo?.base || 'posada';
+      mezcla = suave3(Math.min(1, dentro / 0.8));
+    }
   } else {
     ({ visibles: posadas, alza } = vidaEnReposo(visita.reposo, t));
     y -= alza * visita.alto;
@@ -2825,7 +2889,11 @@ function animarCaida(ave, t, paralaje) {
       /* El alza se redondea a píxel entero: durante el amago cambia en
          cada cuadro, y reescribir la máscara sesenta veces por segundo
          es repintar el filtro sesenta veces por segundo. */
-      const m = t >= p1
+      /* La lámina de agarre no se muerde: sus dedos ya están pintados
+         curvándose sobre la rama, y recortarlos sería borrar justo lo
+         que se encargó. El corte se queda para las otras seis, que
+         siguen teniendo el pie plano. */
+      const m = t >= p1 && k !== 'agarre'
         ? mascaraPie(v, anchoPx, altoPx, espejo !== '',
                      Math.round(alza * visita.alto))
         : 'none';
