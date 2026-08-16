@@ -2005,7 +2005,32 @@ const POSADERO = [0.40, 0.15];
    solido va de x 0.279 a 0.311, y a y=0.400 va de 0.262 a 0.292 — es la
    misma raiz, que sube hacia la izquierda. Se planta en el centro del
    tramo alto, no en su borde. */
-const POSADERO_CERCA = [0.277, 0.400];
+/* ── DÓNDE PISA LA VISITANTE, MEDIDO SOBRE LA LÁMINA ───────────────
+   Estuvo en [0.277, 0.400], puesto a ojo, y el dueño lo cazó mirando
+   la portada: «al posarse sus patas parecen salirse de la rama». Lo
+   son. Medido en los píxeles de `manglar-cerca.webp`, en esa columna:
+
+     · la raíz solo da 1.5 % del ancho de lámina de apoyo a CADA LADO
+       del pie —es el tramo más estrecho y más inclinado de toda la
+       raíz— y los dedos, que miden más que eso, sobresalen al agua;
+     · y el pie caía 7.9 % de lámina POR DEBAJO del canto de la
+       madera, o sea clavado dentro de la raíz. Un ave metida en su
+       rama no se lee como posada: se lee como pegada por delante.
+
+   El nuevo punto sale de recorrer la lámina columna por columna
+   buscando canto ancho y poco inclinado. El mejor de todos está en
+   x≈0.47, con un 8 % de apoyo a cada lado y prácticamente plano —pero
+   cae 208 px por debajo del canto inferior de la pantalla, así que no
+   sirve—. El mejor de los que SÍ caben es este: 2.7 % de apoyo a cada
+   lado (casi el doble que antes) y el pie a ras del canto, hundido
+   solo un 1.5 % para que la pata no flote sobre el filo.
+
+   `GROSOR_RAMA` NO se remide con él. Es la referencia de tamaño del
+   ave, no una medida de la madera: bajarlo al grosor exacto de esta
+   columna la encogería un 14 %, y la visitante ya estuvo demasiado
+   pequeña una vez (ver «no tiene protagonismo» en la nota del
+   posadero). Queda como está, y queda dicho por qué. */
+const POSADERO_CERCA = [0.244, 0.307];
 const GROSOR_RAMA = 0.076;
 
 /* ── CUÁNTO DEL ÁRBOL QUEDA BAJO EL AGUA ────────────────────────────
