@@ -2033,6 +2033,67 @@ const POSADERO = [0.40, 0.15];
 const POSADERO_CERCA = [0.244, 0.307];
 const GROSOR_RAMA = 0.076;
 
+/* ── CÓMO CAE LA RAMA BAJO EL PIE ──────────────────────────────────
+   Medido en la misma pasada que la percha, con el canto de la madera
+   de dos columnas vecinas: 0.81 de pendiente en unidades de LÁMINA.
+   La lámina es 1.5 veces más ancha que alta, así que en pantalla eso
+   son 0.81 / 1.5 = 0.54, o sea unos 28 grados bajando hacia la
+   derecha.
+
+   Lo usa el recorte del pie. Ver `mascaraPie`. */
+const PENDIENTE_RAMA = 0.54;
+
+/* ── EL PIE SE MUERDE CON LA RAMA ──────────────────────────────────
+   El dueño lo dijo después de arreglar la percha: los dedos siguen
+   pareciendo de otra pieza. Y lo son — la lámina está pintada con los
+   dedos EXTENDIDOS EN HORIZONTAL, como quien se posa en un suelo
+   plano, y esta raíz baja 28 grados. Por eso el dedo de la izquierda
+   queda enterrado en la madera y el de la derecha colgando sobre el
+   agua: no hay ninguna posición en la que una línea horizontal apoye
+   entera sobre una diagonal.
+
+   Sin lámina nueva, lo que sí se puede es DEJAR DE PINTAR lo que la
+   rama taparía. Es exactamente el recurso que ya usa la bandada para
+   meterse en la copa (ver `ave.asoma`), y aquí va inclinado: el corte
+   sigue la pendiente de la raíz, así que se come el dedo que se hunde
+   en la madera y deja el que apoya. Lo que queda es una pata que
+   entra en la rama en vez de una suela apoyada encima.
+
+   Y va con un degradado corto, no con un corte: en esta pintura no
+   hay un solo borde duro, y un pie rebanado por una recta se vería
+   peor que el problema que viene a arreglar.
+
+   El ángulo se escribe en el espacio de la LÁMINA, que para esta ave
+   está espejado (`scaleX(-1)`): por eso la pendiente entra con el
+   signo cambiado cuando mira a la derecha. La posición del corte a lo
+   largo del degradado se proyecta a mano — CSS mide sus paradas sobre
+   la línea del degradado, no sobre el alto de la caja. */
+function mascaraPie(v, anchoPx, altoPx, espejada, alzaPx) {
+  const s = espejada ? -PENDIENTE_RAMA : PENDIENTE_RAMA;
+  const ang = 180 + Math.atan(s) * 180 / Math.PI;    // grados CSS
+  const rad = ang * Math.PI / 180;
+  const dx = Math.sin(rad), dy = -Math.cos(rad);     // dirección, y hacia abajo
+  const L = Math.abs(anchoPx * dx) + Math.abs(altoPx * dy);
+  /* Dónde cae el pie a lo largo de esa línea, en tanto por uno. */
+  const px = v.pies[0] * anchoPx, py = v.pies[1] * altoPx;
+  /* Y SIGUE A LA RAMA CUANDO EL AVE SE LEVANTA. En el amago el ave se
+     alza hasta un 26 % de su alto sobre la rama; con el corte quieto
+     se quedaría sin pies EN EL AIRE, que es peor que el problema de
+     partida. La rama no se mueve, así que en el espacio de la lámina
+     el corte baja exactamente lo que el ave sube. */
+  const tPie = 0.5 + ((px - anchoPx / 2) * dx + (py - altoPx / 2) * dy) / L
+             + (alzaPx * dy) / L;
+  /* El corte pasa un pelo POR ENCIMA del punto de apoyo —los dedos
+     empiezan ahí— y termina justo debajo. Dos números y nada más:
+     `sube` es cuánto del dedo se come y `banda` lo suave que entra. */
+  const sube = (0.020 * altoPx) / L;
+  const banda = (0.030 * altoPx) / L;
+  const dentro = Math.max(0, Math.min(1, tPie - sube));
+  const fuera = Math.max(dentro + 0.001, Math.min(1, dentro + banda));
+  return `linear-gradient(${ang.toFixed(1)}deg, #000 ${(dentro * 100).toFixed(1)}%,`
+       + ` transparent ${(fuera * 100).toFixed(1)}%)`;
+}
+
 /* ── CUÁNTO DEL ÁRBOL QUEDA BAJO EL AGUA ────────────────────────────
    Una fracción del PROPIO ÁRBOL, no del alto de pantalla. El valor sale
    de la composición que ya estaba calibrada en escritorio —0.252 de
@@ -2756,6 +2817,24 @@ function animarCaida(ave, t, paralaje) {
     el.style.width = anchoPx.toFixed(1) + 'px';
     el.style.transform =
       `translate3d(${izq.toFixed(1)}px, ${arr.toFixed(1)}px, 0)${espejo}`;
+    /* El pie se muerde con la rama SOLO cuando ya está posada: en el
+       aire no hay rama que la tape. La cadena se guarda por lámina
+       porque no cambia mientras no cambie de tamaño, y escribir una
+       máscara en cada cuadro es repintar el filtro en cada cuadro. */
+    if (visita.plano == null || visita.plano === 1.35) {
+      /* El alza se redondea a píxel entero: durante el amago cambia en
+         cada cuadro, y reescribir la máscara sesenta veces por segundo
+         es repintar el filtro sesenta veces por segundo. */
+      const m = t >= p1
+        ? mascaraPie(v, anchoPx, altoPx, espejo !== '',
+                     Math.round(alza * visita.alto))
+        : 'none';
+      if (visita.mascaras?.[k] !== m) {
+        el.style.maskImage = m;
+        el.style.webkitMaskImage = m;
+        (visita.mascaras ||= {})[k] = m;
+      }
+    }
     if (!dom || enc[1] > dom.peso) {
       dom = { clave: k, peso: enc[1], anchoPx, altoPx, izq, arr,
               origen: el.style.transformOrigin };
