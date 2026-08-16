@@ -831,7 +831,19 @@ function arrancar(mar) {
     estado.horizonte = horizonte;
     estado.luz = L;
     avanzarToques(dtMar);
+    /* CUÁNTO CUESTA UN CUADRO DE MAR, medido en el aparato de quien
+       mira y no supuesto por su user-agent. Es lo único honesto para
+       decidir a qué resolución se puede pintar: dos teléfonos con la
+       misma pantalla pueden ir cuatro veces distintos. Media móvil
+       para que un cuadro suelto no decida nada. */
+    const t0Mar = performance.now();
     mar.dibujar(estado);
+    /* `finish()` no se pide a propósito: bloquear la GPU para medirla
+       cuesta más que el error de medida. Lo que se lee aquí es el
+       trabajo de CPU de emitir el cuadro más lo que el driver haga
+       síncrono, y sube y baja con la carga real. */
+    msMar = msMar ? msMar * 0.9 + (performance.now() - t0Mar) * 0.1
+                  : performance.now() - t0Mar;
     calibrarLavado();
     /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito
        del agua y arrastraba al ave fuera de cuadro igual que hacía con
@@ -962,16 +974,63 @@ function arrancar(mar) {
     document.documentElement.style.setProperty('--lavado-color', '#0B141A');
   }
 
-  /* El perfil móvil elige un buen punto de partida, pero el dato que al
-     final importa es la cadencia que la persona recibe. Tras el arranque
-     se observa rAF en ventanas de tres segundos. Si el navegador no
-     sostiene 48 actualizaciones se reduce la frecuencia del mar, nunca
-     su resolución: las garzas y el scroll siguen ligados al refresco de
-     la pantalla y la acuarela conserva siempre detalle CSS nativo. */
+  /* ═══ LA RESOLUCIÓN SUBE SI EL APARATO LA AGUANTA ═══════════════════
+     El perfil móvil elige un buen punto de partida, pero el dato que al
+     final importa es lo que la persona recibe. Tras el arranque se
+     observa rAF en ventanas de tres segundos, y hay dos direcciones.
+
+     HACIA ABAJO, como siempre: si el navegador no sostiene 48
+     actualizaciones se reduce la FRECUENCIA del mar, nunca su
+     resolución — las garzas y el scroll siguen ligados al refresco de
+     la pantalla y la acuarela conserva su detalle.
+
+     Y HACIA ARRIBA, que es lo nuevo. La pintura se calculaba SIEMPRE a
+     1× CSS en todo teléfono, y de ahí sale a DPR 2 con el pase de
+     reconstrucción: en un móvil de 3× eso son 329 000 píxeles pintados
+     para 3 millones de píxeles de pantalla. Un teléfono de gama alta
+     tiene de sobra para pintar el doble y no se le pedía nunca. Ahora,
+     si sostiene la cadencia Y el cuadro de mar le cuesta poco —los dos,
+     medidos en el aparato—, la escena sube un escalón: 1.0 → 1.30 →
+     1.60, con techo en el propio DPR, porque pintar más píxeles de los
+     que tiene la pantalla no se ve.
+
+     Las tres cautelas que hacen que esto no sea una apuesta:
+
+     · SE EMPIEZA ABAJO. El primer cuadro y la primera pantalla son
+       exactamente los de antes; subir es una decisión posterior y
+       tomada con datos.
+     · SE BAJA ANTES QUE SUBIR. Si una ventana cae de 48 Hz se deshace
+       el último escalón en el acto, antes de tocar la frecuencia.
+     · NO SUBE EN PERFIL DE AHORRO. Con `saveData`, red 2G/3G o poca
+       memoria, esto no existe: quien pidió ahorrar no pidió nitidez.
+
+     Y no cuesta un byte de descarga: es el mismo shader sobre más
+     píxeles, decidido en el aparato. */
   let muestraCadencia = 0, cuadrosCadencia = 0, ajustesCadencia = 0;
+  let msMar = 0;
   const cadenciaDesde = performance.now() + 4000;
+  /* Los escalones y el presupuesto. 1.30 y 1.60 y no 2.0: el pase de
+     reconstrucción presenta a DPR 2 como mucho, así que a 1.60 el
+     estirado que queda es de 1.25× —prácticamente nada— y el salto a
+     2.0 costaría un 56 % más de píxeles para ganar ese resto.
+
+     `MS_SUBIR` es el techo de coste por cuadro para atreverse a subir.
+     A 30 fps el presupuesto entero son 33 ms; con 6 se sube solo si el
+     cuadro cuesta menos de una quinta parte, o sea si sobra sitio para
+     que al subir un escalón —un 69 % más de píxeles— siga sobrando. */
+  const ESCALONES = [1.0, 1.30, 1.60];
+  const MS_SUBIR = 6.0;
+  let escalonActual = 0;
+
+  function ponerEscala(nueva, motivo) {
+    if (Math.abs(nueva - escala) < 0.01) return;
+    escala = nueva;
+    medidas();                     // reconstruye el lienzo y la escena
+    console.info(`[mar] escala → ${escala} (${motivo}, ${msMar.toFixed(1)} ms/cuadro)`);
+  }
+
   function adaptarCadencia(ms) {
-    if (!MOVIL || ms < cadenciaDesde || ajustesCadencia >= 3) return;
+    if (!MOVIL || ms < cadenciaDesde) return;
     if (!muestraCadencia) { muestraCadencia = ms; cuadrosCadencia = 0; return; }
     cuadrosCadencia++;
     const lapso = ms - muestraCadencia;
@@ -979,13 +1038,33 @@ function arrancar(mar) {
     const hz = cuadrosCadencia * 1000 / lapso;
     muestraCadencia = ms;
     cuadrosCadencia = 0;
-    if (hz >= 48) return;
 
-    const fpsAnterior = fpsMar;
-    fpsMar = Math.min(fpsMar, hz < 34 ? 20 : 24);
-    intervaloMar = 1000 / fpsMar;
-    ajustesCadencia++;
-    console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: ${fpsAnterior} → ${fpsMar} fps, escala ${escala}`);
+    /* ── VA JUSTO: primero se deshace la nitidez, después la fluidez ── */
+    if (hz < 48) {
+      if (escalonActual > 0) {
+        escalonActual--;
+        ponerEscala(ESCALONES[escalonActual], `${hz.toFixed(0)} Hz, se baja`);
+        return;                    // se le da una ventana para respirar
+      }
+      if (ajustesCadencia >= 3) return;
+      const fpsAnterior = fpsMar;
+      fpsMar = Math.min(fpsMar, hz < 34 ? 20 : 24);
+      intervaloMar = 1000 / fpsMar;
+      ajustesCadencia++;
+      console.info(`[mar] cadencia ${hz.toFixed(1)} Hz: ${fpsAnterior} → ${fpsMar} fps, escala ${escala}`);
+      return;
+    }
+
+    /* ── VA SOBRADO: se le pide más pintura ── */
+    if (PERFIL_AHORRO || ajustesCadencia > 0) return;
+    if (escalonActual >= ESCALONES.length - 1) return;
+    if (msMar > MS_SUBIR) return;
+    const siguiente = ESCALONES[escalonActual + 1];
+    /* Techo en el DPR real: más píxeles de los que tiene la pantalla no
+       se ven, y el pase de reconstrucción ya presenta a DPR 2. */
+    if (siguiente > Math.min(devicePixelRatio || 1, 2.0) + 0.001) return;
+    escalonActual++;
+    ponerEscala(siguiente, `${hz.toFixed(0)} Hz de sobra`);
   }
 
   function bucle() {
