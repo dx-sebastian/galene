@@ -73,6 +73,14 @@ const SIN_TILDE = [
   'tecnico', 'tecnica', 'fisico', 'fisica', 'automatico', 'automatica',
   'minimo', 'maximo', 'proximo', 'proxima', 'medico', 'medicos',
   'telefonico', 'telefonica', 'psiquico', 'psiquica',
+  'examenes', 'edicion',
+  /* «mas» no puede entrar: sin tilde es la conjunción antigua —«pobre
+     mas honrado»— y por tanto una palabra de verdad. En el sitio
+     apareció una vez mal escrita, en el contador «{n} mas» del panel de
+     expertos, y la encontró una lectura a ojo. Hay una franja de
+     palabras así —«mi», «tu», «el», «si», «se», «de»— que ninguna lista
+     puede vigilar sin llenarse de falsos positivos, y es honesto
+     escribir aquí que existen en vez de fingir que la prueba las cubre. */
 ];
 
 /* ── QUÉ SE MIRA: LO QUE ALGUIEN LEE O ESCUCHA ─────────────────────
