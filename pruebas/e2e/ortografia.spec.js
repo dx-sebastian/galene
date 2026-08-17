@@ -59,6 +59,20 @@ const SIN_TILDE = [
   'tambien', 'despues', 'deberia', 'podria', 'seria', 'habia',
   'estan', 'asi', 'aqui', 'alli', 'dias', 'vacios', 'judia',
   'compañia', 'mayoria',
+  /* Esdrújulas. Se añadieron cuando «espectaculo» llegó a producción y
+     lo vio el dueño antes que esta prueba: la lista es curada y por
+     tanto tiene agujeros, y la única forma honesta de mantenerla es
+     tapar el agujero cada vez que uno se ve, con su familia al lado.
+
+     NO ENTRAN AQUÍ las que sin tilde son otra palabra de verdad
+     —«publico», «practica», «critica», «numero», «continuo»— porque
+     todas son formas verbales corrientes y darían falso positivo. Esta
+     lista solo admite palabras que sin tilde no existen. */
+  'espectaculo', 'espectaculos', 'analisis', 'anonimo', 'anonima',
+  'rapido', 'rapida', 'unico', 'unica', 'basico', 'basica',
+  'tecnico', 'tecnica', 'fisico', 'fisica', 'automatico', 'automatica',
+  'minimo', 'maximo', 'proximo', 'proxima', 'medico', 'medicos',
+  'telefonico', 'telefonica', 'psiquico', 'psiquica',
 ];
 
 /* ── QUÉ SE MIRA: LO QUE ALGUIEN LEE O ESCUCHA ─────────────────────
