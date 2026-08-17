@@ -140,6 +140,12 @@ const calma = 0.35 + 0.50 * (1 - Math.exp(-raices / TAU_CALMA));
 /* Cursor: sobre el agua se puede sostener, y hay que verlo. */
 document.getElementById('mar')?.style.setProperty('cursor', 'grab');
 
+/* Se levanta si el navegador se lleva el contexto WebGL. Vive aquí
+   arriba porque lo leen dos sitios que no se ven entre sí: el bucle de
+   dibujo, para pararse, y el arranque del final, que es quien lo
+   levanta. Ver `caerAlRespaldo`. */
+let marPerdido = false;
+
 function arrancar(mar) {
   /* En móvil esta es la resolución de SIMULACIÓN, no la de salida: el
      reconstructor HD de mar.js presenta hasta 2×. Se mantiene en 1× CSS
@@ -1211,6 +1217,11 @@ function arrancar(mar) {
     if (corriendo) return;
     corriendo = true;
     const paso = (ms) => {
+      /* Si el navegador se llevó el contexto, este bucle ya no pinta
+         nada: sigue llamando a un WebGL muerto, que no lanza errores
+         —falla en silencio— y gasta un cuadro por fotograma para
+         siempre. Ver `caerAlRespaldo` al final del archivo. */
+      if (marPerdido) { corriendo = false; return; }
       if (!visible || quieto.matches) { corriendo = false; return; }
       adaptarCadencia(ms);
       /* El MAR va a 30 fps porque cada cuadro es un render WebGL de
@@ -3596,12 +3607,56 @@ window.__garzas = {
 /* La escena es la misma en escritorio y móvil. El perfil de arriba
    reduce resolución, láminas y cadencia cuando hace falta, pero nunca
    sustituye el cielo, el agua o las garzas por otra composición. */
-const mar = crear(lienzo);
-if (!mar) {
+/* ── LA CAÍDA AL RESPALDO ──────────────────────────────────────────
+   Una sola puerta para las dos formas de quedarse sin shader, y esa
+   unidad es el punto: el respaldo CSS es una pintura completa —cielo
+   de la hora, agua, horizonte al 74 %, medido en portada.spec.js— y
+   tiene que verse igual se llegue por donde se llegue.
+
+   Quitar el lienzo no es un detalle de limpieza: es lo que descubre el
+   respaldo, que está debajo. Mientras el <canvas> siga en el DOM, tapa
+   la pintura de CSS con lo que tenga dentro — y lo que tiene dentro un
+   contexto perdido es NEGRO. */
+function caerAlRespaldo(motivo) {
   lienzo.remove();                 // el respaldo CSS ya es un mar
   hero?.setAttribute('data-mar', 'sin-webgl');
+  hero?.setAttribute('data-mar-motivo', motivo);
   document.documentElement.classList.add('hero-estatico');
-  dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo: 'css' } }));
+  dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo: 'css', motivo } }));
+}
+
+/* ── ARRANQUE ──────────────────────────────────────────────────────
+   Al final: el mar es lo último que se enciende, después de que los
+   reflejos, la hora y las garzas ya existen. */
+/* La escena es la misma en escritorio y móvil. El perfil de arriba
+   reduce resolución, láminas y cadencia cuando hace falta, pero nunca
+   sustituye el cielo, el agua o las garzas por otra composición. */
+const mar = crear(lienzo);
+if (!mar) {
+  caerAlRespaldo('sin-webgl');
 } else {
+  /* ── Y SI EL CONTEXTO SE PIERDE A MITAD ─────────────────────────
+     Esto pasa de verdad y se vio en producción: la pestaña se queda en
+     segundo plano un rato, el navegador recupera memoria de vídeo, y
+     al volver el lienzo está EN NEGRO. Las garzas seguían encima
+     —viven en el DOM, no en el shader—, así que quedaban tres aves
+     flotando en un vacío negro a los lados de la página. Peor que no
+     tener pintura: una pintura rota se lee como una avería.
+
+     `preventDefault` es obligatorio o el navegador da el contexto por
+     muerto sin apelación. Aun así no se espera a que vuelva: se cae al
+     respaldo AHORA. Recuperar un contexto pide recompilar el shader y
+     volver a subir catorce láminas, y hacerlo mientras alguien mira es
+     un parpadeo largo en la mitad de la página; el respaldo CSS ya es
+     un cuadro y aparece en el mismo fotograma.
+
+     `once` porque después del primero ya no hay lienzo al que
+     escuchar. */
+  lienzo.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    marPerdido = true;
+    console.info('[mar] contexto WebGL perdido: se cae al respaldo CSS');
+    caerAlRespaldo('contexto-perdido');
+  }, { once: true });
   arrancar(mar);
 }

@@ -151,3 +151,55 @@ test('portada · el respaldo sin WebGL es un cuadro, no un recorte', async ({ pa
     .toMatch(/^\d+%$/);
   expect(r.aguaVisible, 'sin agua, el manglar flota en el vacío').toBe(true);
 });
+
+/* ── Y EL RESPALDO CUANDO EL MAR SE MUERE A MITAD ───────────────────
+   El de arriba es el camino de quien nunca tuvo WebGL. Este es otro, y
+   se vio en producción antes que aquí: la pintura arranca bien, la
+   pestaña se queda un rato en segundo plano, el navegador recupera
+   memoria de vídeo y al volver el lienzo está EN NEGRO. Las garzas
+   siguen encima —viven en el DOM— así que quedan tres aves flotando en
+   un vacío negro a los lados de la página.
+
+   No es un caso raro de laboratorio: es lo que hace cualquier
+   navegador con una pestaña vieja y una máquina con poca memoria de
+   vídeo, y esta página está pensada para que alguien la deje abierta.
+
+   `WEBGL_lose_context` es la extensión estándar para provocarlo, y
+   provoca EL MISMO evento que el navegador de verdad. */
+test('portada · si el navegador se lleva el contexto, queda el cuadro y no un agujero negro',
+  async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('?auditar-mar=1&hora=13', { waitUntil: 'load', timeout: 90_000 });
+    await page.waitForFunction(() => document.querySelector('.hero')?.dataset.mar === 'listo',
+      null, { timeout: 60_000 });
+
+    const antes = await page.evaluate(() => Boolean(document.getElementById('lienzo')));
+    expect(antes, 'esta prueba necesita el mar de verdad, no el respaldo').toBe(true);
+
+    await page.evaluate(() => {
+      const gl = document.getElementById('lienzo').getContext('webgl2')
+             || document.getElementById('lienzo').getContext('webgl');
+      gl.getExtension('WEBGL_lose_context').loseContext();
+    });
+    /* El evento llega en un turno posterior, no dentro de loseContext(). */
+    await page.waitForTimeout(500);
+
+    const r = await page.evaluate(() => {
+      const mundo = document.querySelector('.mundo');
+      const agua = getComputedStyle(mundo, '::after');
+      const alto = (cs) => { const h = parseFloat(cs.height); return Number.isFinite(h) ? h : 0; };
+      return {
+        lienzo: Boolean(document.getElementById('lienzo')),
+        estatico: document.documentElement.classList.contains('hero-estatico'),
+        motivo: document.querySelector('.hero')?.dataset.marMotivo || '',
+        aguaVisible: agua.content !== 'none' && Number(agua.opacity) > 0.05 && alto(agua) > 20,
+      };
+    });
+
+    console.log(`  contexto perdido → lienzo=${r.lienzo} estático=${r.estatico}`
+      + ` motivo=${r.motivo} agua=${r.aguaVisible}`);
+    expect(r.lienzo, 'un lienzo con el contexto perdido pinta NEGRO: hay que quitarlo').toBe(false);
+    expect(r.estatico, 'sin la clase, el respaldo CSS no se enciende').toBe(true);
+    expect(r.motivo).toBe('contexto-perdido');
+    expect(r.aguaVisible, 'lo que queda tiene que seguir siendo un cuadro').toBe(true);
+  });
