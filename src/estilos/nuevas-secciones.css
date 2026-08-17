@@ -82,18 +82,41 @@
     drop-shadow(0 0 8px rgb(249 243 238 / 70%));
 }
 
+/* ── EL PIE NO VA EN UNA CAJA ──────────────────────────────────────
+   Iba: un rectángulo de papel opaco con las cuatro esquinas iguales,
+   encima de una acuarela. El canto duro es lo que lo delata — una
+   pintura y una caja de interfaz tocándose sin nada que las medie.
+
+   Lo que hace falta no es un fondo: es que el papel suba un poco
+   donde va el texto, para que el renglón no compita con el dibujo.
+   Eso es un velo difuminado y sin borde, el mismo recurso que sostiene
+   el rótulo del héroe sobre el mar (`.hero__enlace::after`). Un solo
+   idioma para el mismo problema en dos sitios.
+
+   `isolation: isolate` no es adorno: crea el contexto de apilado que
+   deja al velo en z −1 DENTRO del pie —detrás del texto— y no detrás
+   de la lámina, que es donde acabaría si el pie no lo creara. */
 .resonancia figcaption {
   position: relative;
+  isolation: isolate;
   width: fit-content;
   max-width: 19rem;
   margin: -1.25rem auto 0;
   padding: 0.6rem 1.1rem;
-  background: color-mix(in srgb, var(--papel) 88%, transparent);
   color: rgb(var(--letra-rgb) / 70%);
   font-family: var(--tipo-titulo);
   font-size: var(--t-lg);
   line-height: 1.25;
   text-wrap: balance;
+}
+.resonancia figcaption::after {
+  content: "";
+  position: absolute;
+  inset: -0.15rem -0.9rem;
+  z-index: -1;
+  background: color-mix(in srgb, var(--papel) 86%, transparent);
+  border-radius: 42% 58% 46% 54% / 52% 44% 56% 48%;
+  filter: blur(9px);
 }
 
 .resonancia figcaption::before {
@@ -216,7 +239,7 @@
   gap: 0.35rem;
   padding: var(--e-5);
   border: 1px solid rgb(var(--letra-rgb) / 22%);
-  border-radius: 6px;
+  border-radius: var(--canto);
   background: var(--papel-alto);
   color: var(--letra);
   text-decoration: none;
@@ -1013,10 +1036,13 @@
 }
 
 /* ── 5 · EL PIE DE LAS RESONANCIAS ─────────────────────────────────
-   Vive sobre la lamina y es lo unico de la seccion que sigue siendo un
-   rectangulo de color plano. Mismo grano, mismas esquinas desiguales. */
-:root[data-tinta="clara"] .resonancia figcaption {
-  border-radius: 14px 6px 12px 8px / 8px 12px 6px 14px;
+   Ya no es un rectángulo de color plano: es un velo difuminado sin
+   borde, y el color lo saca de `--papel`, que de noche ya es el papel
+   oscuro. Lo único que cambia con la luz es cuánto tiene que cubrir —
+   sobre hoja oscura las aguadas pálidas de estas láminas pasan más, y
+   el renglón necesita algo más de papel debajo. */
+:root[data-tinta="clara"] .resonancia figcaption::after {
+  background: color-mix(in srgb, var(--papel) 92%, transparent);
 }
 
 /* ═══ PRODUCTOS — el catálogo de prevención ═════════════════════════

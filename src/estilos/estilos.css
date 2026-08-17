@@ -251,6 +251,30 @@ input, select, textarea { margin: 0; }
 
   --horizonte: 56%;
 
+  /* ── LAS DOS ESQUINAS QUE HAY, Y NO SIETE ───────────────────────
+     Inventariado sobre la edición publicada 4964bbb: la portada
+     redondeaba sus controles de SEIS maneras distintas —999px, una
+     forma orgánica, 2px, 14px, 6px, 6.4px y 10px—, todas menos la
+     píldora a menos de cuatro píxeles unas de otras. Nadie las
+     distingue y todas juntas no dicen nada: es lo que queda cuando
+     cada pieza se dibujó un día distinto.
+
+     Aquí hay dos, y una tercera que no es geométrica:
+
+       --canto          el filete de tinta. Casi recto, porque una
+                        línea a pluma sobre papel no se curva.
+       --canto-pildora  lo que de verdad es una píldora.
+       (las formas orgánicas)  el canto de una aguada, escrito con
+                        cuatro radios distintos por eje. No es una
+                        excepción al sistema: es la otra mitad del
+                        sistema, y por eso `controles.spec.js` las
+                        cuenta como UNA entrada del vocabulario.
+
+     Quien añada una pieza nueva usa una de las tres. Si necesita una
+     cuarta, la discusión es esa y no «pongo 12px que queda bien». */
+  --canto: 2px;
+  --canto-pildora: 999px;
+
   --tipo-titulo: "Atkinson Hyperlegible Next", system-ui, sans-serif;
   --tipo-texto:  "Atkinson Hyperlegible Next", system-ui, -apple-system,
                  "Segoe UI", sans-serif;
@@ -409,7 +433,7 @@ body.pagina-papel { background: var(--papel); }
   background: var(--papel, #FBF7F0);
   color: var(--letra, #16222E);
   border: 1px solid rgb(0 0 0 / 18%);
-  border-radius: 0.4rem;
+  border-radius: var(--canto);
   box-shadow: 0 8px 24px rgb(16 26 34 / 22%);
   font-size: 1rem;
   text-decoration: underline;
@@ -3615,7 +3639,7 @@ main:focus { outline: none; }
   justify-content: flex-start;
   padding: clamp(1.5rem, 3.5vw, 2.25rem) clamp(1rem, 2.5vw, 1.5rem);
   border: 1px solid rgb(var(--letra-rgb) / 16%);
-  border-radius: clamp(0.5rem, 1.5vw, 0.875rem);
+  border-radius: var(--canto);
   background: color-mix(in srgb, var(--papel-alto) 82%, transparent);
   color: var(--letra);
   font: inherit;
@@ -3806,6 +3830,24 @@ main:focus { outline: none; }
    OSCURO. Con un tinte claro el texto blanco se cae, y ningún modo de
    fusión lo salva.
    ═══════════════════════════════════════════════════════════════════ */
+/* ── EL BORDE ERA EL CHICLE ─────────────────────────────────────────
+   Este botón llevaba `border: 2px solid` con `border-radius: 10px`
+   encima de dos aguadas. Y ese es exactamente el fallo, dicho en dos
+   declaraciones: un rectángulo mecánico de trazo uniforme metido
+   dentro de una mancha irregular. La acuarela no tiene trazos de dos
+   píxeles constantes ni esquinas de radio diez; el ojo lee las dos
+   cosas a la vez, no puede conciliarlas, y resuelve el conflicto por
+   donde más pesa — «chicle verde», que fue la palabra que le puso el
+   dueño y que este mismo archivo llevaba escrita hace meses sin que
+   nadie quitara el borde.
+
+   Ahora no hay caja: la mancha ES el botón. Lo que lo delimita es
+   donde el pigmento se acaba, que es como se delimita una aguada.
+
+   Y baja el rótulo de mayúsculas a caja normal. «DÓNDE IR» en
+   versalitas apretadas y peso 700 es la tipografía de un botón de
+   formulario; el resto del sitio dice «Entrar a Comunidad». Un solo
+   idioma también aquí.                                              */
 .acuarela {
   --acuarela-tinte: #2F6B4F;      /* el mismo verde de «ventana abierta» */
 
@@ -3815,16 +3857,17 @@ main:focus { outline: none; }
   align-items: center;
   justify-content: center;
   min-height: 3.25rem;            /* objetivo táctil, no los 50px del original */
-  padding: 0 1.75rem;
-  border: 2px solid var(--acuarela-tinte);
-  border-radius: 10px;
+  /* Más aire a los lados que un botón normal: el canto de la mancha es
+     irregular y el rótulo no puede quedar cerca de donde el pigmento
+     adelgaza. */
+  padding: 0 2.1rem;
+  border: 0;
   background: transparent;
   color: #F7FAF9;
   font: inherit;
   font-size: var(--t-md);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   text-decoration: none;
   cursor: pointer;
 }
@@ -3881,35 +3924,110 @@ main:focus { outline: none; }
 :root[data-tinta="clara"] .acuarela::after {
   mix-blend-mode: normal;
 }
-:root[data-tinta="clara"] .acuarela {
-  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 42%));
+/* Y la separación de la hoja NO la hace una sombra proyectada, que es
+   la pieza de fábrica que este pase vino a quitar. La hace el halo:
+   sobre papel oscuro el agua alrededor de una carga de gouache se ve
+   más CLARA que la hoja, no más oscura. Sube y se aclara, y el botón
+   se despega igual sin que nada flote. */
+:root[data-tinta="clara"] .acuarela::before {
+  opacity: 0.3;
+  background-color: color-mix(in srgb, var(--acuarela-tinte) 55%, #9FC6B3);
 }
 
+/* ── EL HALO, NO LA SEGUNDA MANCHA ─────────────────────────────────
+   Estas dos aguadas medían casi lo mismo y las dos iban saturadas
+   —0.38 y 0.96—, así que en pantalla no se leían como una marca
+   mojada: se leían como dos formas apiladas con dos cantos visibles.
+
+   Lo que hace el agua de verdad es otra cosa. El pigmento se queda
+   dentro y el agua se va MÁS LEJOS y MUCHO MÁS PÁLIDA, dejando un
+   halo que casi no se ve hasta que se busca. Así que la de abajo se
+   agranda y se apaga: deja de competir y pasa a ser la humedad
+   alrededor de la mancha. */
 .acuarela::before {
-  opacity: 0.38;
-  border-radius: 34px 14px 26px 30px / 22px 32px 18px 28px;
-  transform: scale(1.07, 1.18) translate(-2px, 0) skew(6deg, -1.5deg);
+  opacity: 0.2;
+  border-radius: 44px 20px 36px 40px / 30px 42px 24px 36px;
+  transform: scale(1.16, 1.42) translate(-3px, 0) skew(6deg, -1.5deg);
+  /* DIFUMINADO, y esto es lo que separa un halo de una pegatina. Sin
+     el desenfoque, una forma de color plano al 20 % detrás de otra se
+     lee como un CONTORNO —dos cantos concéntricos, que es justo el
+     aspecto de calcomanía del que veníamos—. El agua que se adelanta
+     al pigmento no tiene borde: por eso se difumina y por eso se
+     difumina bastante. */
+  filter: blur(7px);
 }
 .acuarela::after {
-  /* Casi opaca. La aguada de arriba es la que sostiene el texto: si
-     deja pasar papel, el blanco se cae. Medido con este valor:
-     5.75:1 sobre el fondo de la sección. */
-  opacity: 0.96;
+  /* Casi opaca. Esta es la que sostiene el texto: si deja pasar papel,
+     el blanco se cae. Medido: ver contraste.spec.js. */
+  opacity: 0.97;
   border-radius: 20px 20px 40px 10px / 20px 25px 20px 40px;
   transform: scale(1.03, 1.06) translate(0, 1px) skew(-9deg, 1.6deg);
+  /* ── EL CANTO MOJADO ─────────────────────────────────────────────
+     Lo que hace que una aguada se reconozca como aguada y no como un
+     relleno de color es que el pigmento se acumula en el borde
+     mientras se seca: el centro queda más claro y la orilla más
+     oscura. Es la propiedad más característica del medio y este botón
+     no la tenía — era verde plano dentro de un contorno.
+
+     Va como degradado radial encima del color y debajo del grano, no
+     como sombra interior: una sombra sigue la caja, y aquí la caja es
+     irregular a propósito. El degradado sigue la forma. */
+  background-image:
+    /* El poso de abajo: la gravedad arrastra el pigmento mientras la
+       aguada se seca, y el canto inferior siempre queda más cargado
+       que el superior. Sin esto la mancha es simétrica, y una mancha
+       simétrica no la ha hecho el agua. */
+    linear-gradient(to bottom, rgb(255 255 255 / 7%) 0%, transparent 38%,
+      rgb(9 26 19 / 20%) 100%),
+    radial-gradient(112% 130% at 47% 40%,
+      transparent 40%, rgb(9 26 19 / 34%) 100%),
+    var(--arte-papel);
+  background-size: auto, auto, 260px;
+  background-blend-mode: normal, normal, multiply;
+  /* Y el canto, medio píxel de agua. Un borde perfectamente nítido es
+     un rectángulo recortado; medio píxel de difusión es papel. */
+  filter: blur(0.6px);
+  /* ── LOS DOS MORDISCOS ───────────────────────────────────────────
+     Un `border-radius`, por irregular que sean sus ocho valores, solo
+     dobla las ESQUINAS: en una caja ancha los cuatro lados siguen
+     siendo rectas largas, y una recta larga es lo que hace que esto se
+     leyera como una pastilla por muy pintada que estuviera.
+
+     Estas dos máscaras muerden el canto por arriba a la izquierda y
+     por abajo a la derecha —en diagonal, nunca simétricas—, que es lo
+     que hace el papel cuando el agua no llega a los dos extremos por
+     igual. Se cruzan con `intersect`: lo que queda es la mancha menos
+     los dos mordiscos.
+
+     Van sobre el pseudo, no sobre el enlace: el rótulo vive en
+     `.acuarela__texto` y no lo toca ninguna de las dos. */
+  -webkit-mask-image:
+    radial-gradient(30% 62% at 8% -26%, transparent 0 54%, #000 70%),
+    radial-gradient(26% 56% at 93% 126%, transparent 0 52%, #000 68%);
+  mask-image:
+    radial-gradient(30% 62% at 8% -26%, transparent 0 54%, #000 70%),
+    radial-gradient(26% 56% at 93% 126%, transparent 0 52%, #000 68%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 /* Al pasar por encima el pigmento se extiende, como agua que encuentra
    más papel. Lento a propósito: la acuarela no reacciona, se difunde. */
 @media (min-width: 700px) {
   .acuarela:hover::before {
-    opacity: 0.5;
-    border-radius: 40px 22px 34px 38px / 30px 40px 24px 34px;
-    transform: scale(1.13, 1.3) translate(-3px, -1px) skew(8deg, -2deg);
+    /* Sube poco: el halo es humedad, y la humedad que se dobla de
+       golpe al pasar el ratón deja de ser humedad y vuelve a ser un
+       estado de interfaz. */
+    opacity: 0.26;
+    border-radius: 52px 26px 44px 46px / 36px 50px 30px 44px;
+    transform: scale(1.24, 1.56) translate(-4px, -1px) skew(8deg, -2deg);
   }
   .acuarela:hover::after {
     opacity: 0.95;
-    border-radius: 30px;
+    /* Orgánico también aquí. Esto decía `border-radius: 30px` —una
+       esquina geométrica que solo aparecía al pasar el ratón, o sea
+       justo cuando alguien está mirando el botón de cerca. */
+    border-radius: 26px 22px 44px 14px / 24px 28px 22px 42px;
     transform: scale(1.07, 1.16) translate(0, 1px) skew(-7deg, 1deg);
   }
 }
@@ -5089,24 +5207,68 @@ main:focus { outline: none; }
   font-size: var(--t-xs); color: rgb(var(--letra-rgb) / 69%);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
+/* ── ESTO ERAN SEIS SLIDERS ────────────────────────────────────────
+   Riel de 8 px con `border-radius: 999px`, relleno verde con el mismo
+   radio y un círculo perfecto de 13 px al final. Eso es, literalmente,
+   el control deslizante de una biblioteca de interfaz — y estaba
+   dibujando los plazos médicos de un sitio pintado a mano, a dos
+   centímetros de una acuarela.
+
+   Un riel redondeado promete además algo que aquí es falso: que se
+   puede arrastrar. No hay nada que arrastrar; son seis medidas.
+
+   Ahora son seis pinceladas. Lo que cambia no es el dato —los anchos
+   siguen saliendo de `cierra / TOPE` en el componente— sino de qué
+   está hecha la marca: canto irregular, grano de papel, el pigmento
+   acumulado donde el pincel se levanta, y el papel que queda por
+   pintar en vez de un canal vacío. */
 .rr__riel {
   grid-column: 1 / -1; position: relative;
-  height: 8px; margin-top: var(--e-1);
-  border-radius: 999px; background: rgb(var(--letra-rgb) / 8%);
-}
-.rr__riel__pigmento {
-  position: absolute; inset: 0 auto 0 0; width: var(--ancho, 0%);
-  border-radius: 999px;
-  background-color: #2F6B4F;
+  height: 11px; margin-top: var(--e-1);
+  /* Sin radio de píldora: es el papel que falta por cubrir. */
+  border-radius: 5px 2px 6px 3px / 3px 5px 2px 4px;
+  background-color: rgb(var(--letra-rgb) / 6%);
   background-image: var(--arte-papel);
   background-size: 180px;
   background-blend-mode: multiply;
 }
-/* El punto del final es el plazo: la barra no se desvanece, se para. */
+.rr__riel__pigmento {
+  position: absolute; inset: 0 auto 0 0; width: var(--ancho, 0%);
+  border-radius: 7px 3px 9px 4px / 4px 8px 3px 7px;
+  /* ── LA ENTRADA DEL PINCEL ───────────────────────────────────────
+     Un trazo con la misma altura de punta a punta es una barra de
+     progreso, y ninguna cantidad de grano lo arregla. Esta máscara
+     corta el arranque en diagonal: el pincel apoya y va ganando
+     anchura, que es lo que se ve en cualquier trazo de verdad. */
+  -webkit-mask-image: linear-gradient(104deg, transparent 0 1px, #000 13px);
+  mask-image: linear-gradient(104deg, transparent 0 1px, #000 13px);
+  background-color: #2F6B4F;
+  /* El canto mojado, otra vez: el pincel entra flojo por la izquierda
+     y deposita al pararse. Un trazo con la misma densidad de punta a
+     punta es un relleno, no una pincelada. */
+  background-image:
+    linear-gradient(to right,
+      rgb(9 26 19 / 14%) 0%, transparent 9%,
+      transparent 64%, rgb(9 26 19 / 26%) 100%),
+    var(--arte-papel);
+  background-size: auto, 180px;
+  background-blend-mode: normal, multiply;
+}
+/* El final es el plazo: la marca no se desvanece, se para. Y donde un
+   pincel se para queda más pigmento que en el recorrido — nunca un
+   círculo perfecto. */
+/* Y NO ES UN CÍRCULO. Era uno de 13 px perfectamente centrado sobre el
+   final de la barra — o sea, exactamente el pulgar de un control
+   deslizante, que es de donde venía casi todo el aire de «esto es un
+   slider». Ahora es lo que deja un pincel al pararse: una carga
+   irregular, más ancha que alta, caída hacia abajo porque el pigmento
+   pesa. */
 .rr__riel__pigmento::after {
   content: ""; position: absolute; right: -2px; top: 50%;
-  width: 13px; height: 13px; margin-top: -6.5px;
-  border-radius: 50%; background-color: inherit;
+  width: 12px; height: 13px; margin-top: -5px;
+  border-radius: 62% 38% 44% 56% / 70% 55% 45% 30%;
+  background-color: inherit;
+  filter: brightness(0.9);
 }
 /* Las que no caducan no tienen punto: se desvanecen y siguen. */
 .rr__horizonte--eterna .rr__riel__pigmento {

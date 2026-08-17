@@ -104,7 +104,11 @@ body {
   );
 }
 
-.resonancia figcaption,
+/* `.resonancia figcaption` salió de aquí. Esta línea era la que lo
+   pintaba de #FFFDFA opaco y convertía el pie de cada acuarela en un
+   rectángulo blanco de canto duro flotando sobre el papel — lo mejor
+   que hay debajo del héroe, con un tooltip pegado encima. Su fondo
+   translúcido vive en nuevas-secciones.css y ahora manda ese. */
 .experto {
   background-color: var(--papel-alto);
 }
