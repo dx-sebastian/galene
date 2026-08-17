@@ -5102,8 +5102,16 @@ main:focus { outline: none; }
 /* La aguada del tramo elegido: el mismo trazo, cuatro veces más ancho y
    casi transparente. Pigmento que se sale de la línea. */
 .rr__aguada {
-  fill: none; stroke: #2F6B4F; stroke-width: 26; stroke-linecap: round;
+  fill: none; stroke: #2F6B4F; stroke-width: 24; stroke-linecap: round;
   opacity: 0; transition: opacity 320ms linear;
+  /* EL DESENFOQUE ES LA MITAD DEL EFECTO. Un trazo ancho y translúcido
+     con el canto nítido no es pigmento corrido: es un halo de
+     interfaz, que es lo que parecía. El agua no tiene borde — y basta
+     un desenfoque pequeño, porque lo que ya rompe la simetría es que
+     este trazado NO sigue al del arco (otra semilla, otro radio). Los
+     dos juntos son lo que se lee como acuarela; cualquiera de los dos
+     solo, no. */
+  filter: blur(2.5px);
 }
 /* LA COLA. El círculo no termina en una pared. */
 .rr__cola {

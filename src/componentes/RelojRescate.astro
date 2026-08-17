@@ -52,10 +52,60 @@ const pt = (h, r) => {
   return [CX + Math.cos(a) * r, CY + Math.sin(a) * r];
 };
 const n = (v) => Number(v.toFixed(1));
-const arco = (h0, h1, r) => {
-  const [x0, y0] = pt(h0, r);
-  const [x1, y1] = pt(h1, r);
-  return `M ${n(x0)} ${n(y0)} A ${r} ${r} 0 ${(h1 - h0) / VUELTA > 0.5 ? 1 : 0} 1 ${n(x1)} ${n(y1)}`;
+
+/* ── EL ARCO SE DIBUJA A MANO, Y LA ESCALA NO SE TOCA ───────────────
+   Esto era un comando `A`: un arco de compás, perfecto, del grosor de
+   una regla. Al lado de una acuarela pintada a mano se lee como lo que
+   es, un alambre — y era, medido, el elemento menos diseñado de la
+   página más diseñada del sitio.
+
+   Ahora ondula. La clave de que eso NO falsee nada está en qué ondula
+   y qué no:
+
+     · el ÁNGULO de cada punto es exacto, calculado como siempre desde
+       la hora. De ahí sale la escala, y la escala es un dato médico.
+     · lo que se mueve es el RADIO, ±1,2 px sobre 126. Perpendicular a
+       la marcha, así que ningún punto del trazo cambia de hora.
+
+   La ondulación no es ruido blanco: son tres senos de frecuencias
+   distintas sumados. Un pulso humano tiene esa forma —desvíos largos
+   con temblor corto encima— y además, al ser suave, la longitud del
+   trazado crece por debajo del 0,3 %, o sea que `pathLength="1"` sigue
+   normalizando lo mismo y la escena de trazado no se entera.
+
+   Y es DETERMINISTA: la misma semilla da la misma línea en cada carga.
+   Un anillo que temblara distinto en cada visita sería un efecto; este
+   es un dibujo. */
+const onda = (t, semilla) =>
+  Math.sin(t * 0.9 + semilla) * 0.55
+  + Math.sin(t * 2.3 + semilla * 1.7) * 0.31
+  + Math.sin(t * 5.7 + semilla * 2.9) * 0.14;
+
+/* `semilla` distingue una línea de otra: el pigmento que se sale no
+   puede seguir exactamente el mismo camino que el trazo, o vuelve a
+   parecer una sola forma con borde. */
+const arco = (h0, h1, r, semilla = 0, amplitud = 1.2) => {
+  /* Un punto cada media hora, y ocho como mínimo: por debajo de eso el
+     tramo de 0–6 h se quedaría sin curva que enseñar. */
+  const pasos = Math.max(8, Math.round((h1 - h0) * 2));
+  const puntos = [];
+  for (let i = 0; i <= pasos; i++) {
+    const h = h0 + ((h1 - h0) * i) / pasos;
+    puntos.push(pt(h, r + onda(h, semilla) * amplitud));
+  }
+  /* Suavizado por puntos medios: cada punto es el control de una
+     cuadrática y el trazo pasa por los medios. Da una curva continua
+     sin esquinas, que es lo que separa una línea temblorosa de una
+     línea rota. */
+  let d = `M ${n(puntos[0][0])} ${n(puntos[0][1])}`;
+  for (let i = 1; i < puntos.length - 1; i++) {
+    const [x, y] = puntos[i];
+    const [xs, ys] = puntos[i + 1];
+    d += ` Q ${n(x)} ${n(y)} ${n((x + xs) / 2)} ${n((y + ys) / 2)}`;
+  }
+  const [xf, yf] = puntos[puntos.length - 1];
+  d += ` L ${n(xf)} ${n(yf)}`;
+  return d;
 };
 
 /* Los tres tramos del anillo.
@@ -119,11 +169,24 @@ const puntaGiro = n((Math.atan2(-18, 16) * 180) / Math.PI);
 /* Las marcas de las horas, cada 6. Las de 0, 6 y 24 son los bordes de
    los tramos y van más largas: el ojo tiene que poder contar el reloj
    sin leer una sola etiqueta. */
+/* Y TAMBIÉN VAN A MANO. Doce rayas perfectamente radiales, todas del
+   mismo largo exacto, alrededor de un anillo que ondula: eran lo que
+   quedaba delatando la regla. El desvío es el mismo pulso de `onda`,
+   así que las rayas y el anillo tiemblan con la misma mano.
+
+   Lo que NO se mueve, otra vez, es la hora: el ángulo del punto de
+   apoyo —el de dentro, el que toca el anillo— es exacto. Lo que varía
+   es hacia dónde y cuánto sale la raya, que es lo que varía cuando
+   alguien traza doce marcas seguidas sin levantar la vista. */
 const MARCAS = Array.from({ length: 12 }, (_, i) => {
   const h = i * 6;
   const borde = h === 0 || h === 6 || h === 24;
-  const [xa, ya] = pt(h, R + 7);
-  const [xb, yb] = pt(h, R + (borde ? 17 : 12));
+  const largo = (borde ? 17 : 12) + onda(h * 1.7, 2.4) * 1.4;
+  /* La punta se va de lo radial hasta media hora de arco: una raya
+     hecha a pulso nunca apunta exactamente al centro. */
+  const inclina = onda(h * 0.8, 5.6) * 0.45;
+  const [xa, ya] = pt(h, R + 7 + onda(h, 1.1) * 0.8);
+  const [xb, yb] = pt(h + inclina, R + largo);
   return { h, borde, xa: n(xa), ya: n(ya), xb: n(xb), yb: n(yb) };
 });
 
@@ -343,15 +406,26 @@ const horizontes = VENTANAS
             es un atributo de geometría del SVG, no un estilo.
             `--desde`/`--hasta` son el tramo de la escena que le toca a
             cada arco — ver TRAMOS arriba. */}
+        {/* DOS SEMILLAS Y DOS RADIOS, y ahí está casi todo el trabajo
+            de esta pasada. La aguada llevaba EL MISMO trazado que el
+            arco, cuatro veces más gorda: dos formas concéntricas
+            perfectas, que es exactamente el aspecto de un halo de
+            interfaz y no el de pigmento corrido.
+
+            El agua no sigue la línea. Va por donde el papel la deja:
+            se adelanta un poco por fuera —de ahí el +1,5 de radio—,
+            ondula con otro pulso y con más amplitud. Lo que hace que
+            se lea como acuarela no es que sea ancha y translúcida; es
+            que NO COINCIDE. */}
         {ARCOS.map((a) => (
           <path class={`rr__aguada rr__aguada--${a.id}`} pathLength="1"
                 style={`--desde:${TRAMOS[a.id].desde}; --hasta:${TRAMOS[a.id].hasta}`}
-                d={arco(a.h0 + HUECO, a.h1 - HUECO, R)} />
+                d={arco(a.h0 + HUECO, a.h1 - HUECO, R + 1.5, 4.1, 2.6)} />
         ))}
         {ARCOS.map((a) => (
           <path class={`rr__arco rr__arco--${a.id}`} pathLength="1"
                 style={`--desde:${TRAMOS[a.id].desde}; --hasta:${TRAMOS[a.id].hasta}`}
-                d={arco(a.h0 + HUECO, a.h1 - HUECO, R)} />
+                d={arco(a.h0 + HUECO, a.h1 - HUECO, R, 0.7, 1.2)} />
         ))}
 
         {/* LA SALIDA EN UN GRUPO, y no es maquetación: la escena la
