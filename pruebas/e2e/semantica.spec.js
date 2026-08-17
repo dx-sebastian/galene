@@ -19,6 +19,7 @@ const PAGINAS = [
   ['expertos', 'expertos/'],
   ['productos', 'productos/'],
   ['ficha', 'productos/funda-coletero/'],
+  ['acerca', 'acerca/'],
 ];
 
 /* ── UN h1 POR PÁGINA ───────────────────────────────────────────────

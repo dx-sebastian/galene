@@ -22,6 +22,7 @@ const PAGINAS = [
   ['expertos', 'expertos/'],
   ['productos', 'productos/'],
   ['ficha', 'productos/funda-coletero/'],
+  ['acerca', 'acerca/'],
 ];
 
 /* El sitio de verdad, el que se publica. Sale de astro.config.mjs y es

@@ -38,7 +38,8 @@ import { join } from 'node:path';
 
 const SITIO = 'https://dx-sebastian.github.io/galene/';
 const PAGINAS = ['index.html', 'comunidad/index.html', 'expertos/index.html',
-  'productos/index.html', 'productos/funda-coletero/index.html'];
+  'productos/index.html', 'productos/funda-coletero/index.html',
+  'acerca/index.html'];
 
 let fallos = 0;
 const comprobar = (bien, texto) => {
@@ -97,7 +98,7 @@ function revisar(verificado) {
 
     const mapa = readFileSync(join(salida, 'sitemap.xml'), 'utf8');
     const locs = [...mapa.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    comprobar(locs.length === 9, `el sitemap lista ${locs.length} direcciones (se esperaban 9)`);
+    comprobar(locs.length === 10, `el sitemap lista ${locs.length} direcciones (se esperaban 10)`);
     comprobar(locs.every((u) => u.startsWith(SITIO)), 'todas absolutas y del sitio bueno');
     comprobar(locs.every((u) => u.endsWith('/')),
       'todas con barra final (sin ella GitHub Pages responde 301)');

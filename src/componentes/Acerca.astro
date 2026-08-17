@@ -1,7 +1,16 @@
+---
+/* El mismo bloque es el CIERRE de la portada y es TODA la página
+   /acerca. En la portada su encabezado es un h2 entre iguales; en su
+   propia página es el nombre de la página y tiene que ser el h1. Mismo
+   mecanismo que Expertos.astro y Productos.astro. */
+const { nivel = 2 } = Astro.props;
+const Titulo = `h${nivel}`;
+---
+
 <section class="acerca" id="acerca" aria-labelledby="acerca-titulo">
   <header class="acerca__cabecera">
     <p class="seccion-rotulo">ACERCA DE GALENE</p>
-    <h2 id="acerca-titulo">La ventaja nunca debería estar del lado de quien agrede.</h2>
+    <Titulo id="acerca-titulo">La ventaja nunca debería estar del lado de quien agrede.</Titulo>
     <p>Galene nace para responder a una forma de violencia que usa sustancias, confusión y vacíos de memoria como instrumentos de control. Trabajamos para todas las personas, sin importar su género.</p>
   </header>
 

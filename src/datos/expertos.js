@@ -35,9 +35,19 @@
    el HTML compilado y tumba el despliegue si vuelven a caerse.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Cuántas se pintan en la portada. El resto vive en /expertos, detrás
-   del enlace «Ver todo el panel». */
-export const LIMITE_PORTADA = 6;
+/* ── CUÁNTAS SE PINTAN EN LA PORTADA ────────────────────────────────
+   Eran seis, y ocupaban 2 717 px: un 23 % de una portada que medía 12,7
+   pantallas en un teléfono. El argumento de las seis era bueno —«están
+   para leerse, no para ojearse»— y sigue valiendo; lo que no valía era
+   el número. Nadie lee seis síntesis clínicas seguidas en mitad de una
+   página: se leen dos, se ojean cuatro y se baja.
+
+   Tres se leen. Y las tres primeras son a propósito las que contestan
+   lo que alguien se pregunta en la primera hora —por qué no me defendí,
+   por qué no recuerdo— que es el orden en que está escrita esta lista.
+   Las veinte restantes viven en /expertos, a un toque y con la cuenta
+   escrita en el enlace. */
+export const LIMITE_PORTADA = 3;
 
 export const EXPERTOS = [
   {

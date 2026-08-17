@@ -26,19 +26,24 @@
    ═══════════════════════════════════════════════════════════════════ */
 import { test, expect } from '@playwright/test';
 
-/* ── EL LÍMITE DE ALTURA ES UN TRINQUETE, NO EL OBJETIVO ───────────
-   La portada mide 12,7 pantallas en un teléfono y eso sigue siendo
-   mucho. Bajarla de diez pide mudar secciones enteras a páginas
-   propias, que es trabajo de otra fase y además le da al sitio las URL
-   indexables que hoy no tiene.
+/* ── DE 12,7 PANTALLAS A 9,9 ───────────────────────────────────────
+   La portada medía 13 286 px en un teléfono. Se recortó por donde
+   sobraba y nada se borró:
 
-   Lo que hace este número hoy es impedir que CREZCA: cada cosa que se
-   añada a la portada tendrá que pagar su sitio quitando otra. Cuando la
-   fase de recorte llegue, este número baja con ella. */
+     · «Acerca de Galene» se mudó a su propia página  −1 753 px
+     · el panel de expertos pasó de seis tarjetas a tres  −1 142 px
+
+   Las dos cosas ganan además una dirección propia y un enlace con la
+   cuenta escrita. Lo que queda —el reloj, el glosario, las
+   herramientas, el mapa— es aquello a lo que la gente viene, y recortar
+   ahí sería quitar el sitio en vez de acortarlo.
+
+   Estos números son un trinquete: cada cosa que se añada a la portada
+   tendrá que pagar su sitio quitando otra. */
 const VISTAS = [
   ['móvil', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
-              isMobile: true, hasTouch: true }, 13_400],
-  ['escritorio', { viewport: { width: 1440, height: 900 } }, 10_200],
+              isMobile: true, hasTouch: true }, 10_600],
+  ['escritorio', { viewport: { width: 1440, height: 900 } }, 8_800],
 ];
 
 for (const [nombre, opciones, altoMaximo] of VISTAS) {

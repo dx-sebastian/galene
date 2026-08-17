@@ -1,0 +1,61 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   Galene — quiénes somos, en su propia página.
+
+   Esto cerraba la portada, y ahí ocupaba 1 913 px: un 14 % de una
+   página que ya medía 12,7 pantallas en un teléfono. Y no es contenido
+   de urgencia. Quien llega a las cuatro de la mañana buscando qué hacer
+   no necesita leer nuestra misión antes de encontrar el 123; quien
+   quiere saber quién está detrás de esto viene a buscarlo, y merece una
+   dirección a la que llegar.
+
+   Mudarlo hace las dos cosas a la vez: acorta la portada por donde
+   sobra y le da al sitio una URL más que existe de verdad, con su
+   título, su descripción y su sitio en el sitemap. Nada se borró.
+   ═══════════════════════════════════════════════════════════════════ */
+import '../estilos/estilos.css';
+import '../estilos/nuevas-secciones.css';
+import '../estilos/responsive.css';
+import Barra from '../componentes/Barra.astro';
+import Acerca from '../componentes/Acerca.astro';
+import Pie from '../componentes/Pie.astro';
+import Meta from '../componentes/Meta.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const TITULO = 'Acerca de Galene';
+const RESUMEN = 'Por qué existe Galene, qué se propone y qué no promete: '
+  + 'reparar lo reparable, decir siempre dónde están los límites de cada '
+  + 'herramienta, y no trasladar nunca la carga a quien sufrió la agresión.';
+---
+
+<!doctype html>
+<html lang="es" data-tinta="oscura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <Meta titulo={TITULO} resumen={RESUMEN} ruta="acerca/" />
+
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+</head>
+
+<body class="pagina-papel">
+
+  <Barra />
+
+  <main id="contenido" tabindex="-1" class="expertos-pagina">
+    <Acerca nivel={1} />
+
+    <p class="expertos-pagina__volver">
+      <a href={base}>← Volver a la portada</a>
+    </p>
+    <Pie />
+  </main>
+
+  <script>import '../js/viewport.js';</script>
+  <script>import '../js/luz.js';</script>
+  <script>import '../js/menu.js';</script>
+</body>
+</html>

@@ -33,6 +33,7 @@ const PAGINAS = [
   ['expertos', 'expertos/'],
   ['productos', 'productos/'],
   ['ficha', 'productos/funda-coletero/'],
+  ['acerca', 'acerca/'],
 ];
 
 /* Formas que no existen sin tilde en español. Ordenadas por familia

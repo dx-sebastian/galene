@@ -19,7 +19,6 @@ import Ayuda from '../componentes/Ayuda.astro';
 import Herramientas from '../componentes/Herramientas.astro';
 import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
 import Expertos from '../componentes/Expertos.astro';
-import Acerca from '../componentes/Acerca.astro';
 import Pie from '../componentes/Pie.astro';
 import Salto from '../componentes/Salto.astro';
 import '../estilos/nuevas-secciones.css';
@@ -515,7 +514,14 @@ const DATOS = {
         /expertos, a un clic y con la cuenta escrita en el enlace. */}
     <Expertos limite={LIMITE_PORTADA} enlace={base + 'expertos/'} />
 
-    <Acerca />
+    {/* ── ACERCA SE MUDÓ A SU PROPIA PÁGINA ───────────────────────
+        Ocupaba 1 913 px al final de una portada de 12,7 pantallas, y
+        no es contenido de urgencia. Quien quiera saber quién está
+        detrás de esto viene a buscarlo; queda esta línea, que es lo
+        que hace falta para encontrarlo. */}
+    <p class="acerca__salida">
+      <a href={base + 'acerca/'}>Acerca de Galene · por qué existe y qué no promete →</a>
+    </p>
 
     <Pie />
 

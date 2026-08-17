@@ -50,6 +50,7 @@ export const PAGINAS = [
   { ruta: 'expertos/', cambia: 'monthly', peso: '0.8' },
   { ruta: 'comunidad/', cambia: 'daily', peso: '0.7' },
   { ruta: 'productos/', cambia: 'monthly', peso: '0.5' },
+  { ruta: 'acerca/', cambia: 'yearly', peso: '0.4' },
 ];
 
 /* Las fichas de producto se añaden desde donde vive su lista, para no

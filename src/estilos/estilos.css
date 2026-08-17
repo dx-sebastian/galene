@@ -5843,28 +5843,85 @@ main:focus { outline: none; }
   to   { opacity: 1;    filter: blur(0)    saturate(1);    scale: 1; }
 }
 
-/* El loader ya espera a que la pintura crítica esté lista. En móvil no
-   se vuelve a rasterizar el mundo entero dentro de un filtro blur: esa
-   capa intermedia suavizaba canvas y aves incluso mientras terminaba de
-   desmontarse. La acuarela abre lista y a resolución física. */
+/* ── EN EL TELÉFONO, LA MISMA IDEA SIN LO QUE COSTABA ──────────────
+   Aquí la entrada estaba APAGADA del todo, y con un motivo bueno: el
+   `blur` obliga a rasterizar el mundo entero en una capa intermedia, y
+   esa capa suavizaba el lienzo y las aves incluso mientras se
+   desmontaba. En un teléfono eso se ve.
+
+   Lo que no era necesario es tirar la entrada con el agua sucia. Lo
+   caro del secado son el desenfoque —que rasteriza— y la escala —que
+   reescala el lienzo—; la opacidad no hace ninguna de las dos cosas: es
+   una composición, la resuelve la GPU y no toca un solo píxel del
+   canvas. Así que en el teléfono la pintura ENTRA, sencillamente
+   aclarándose, y sigue abriendo a resolución física.
+
+   Importa porque el 67,5 % del tráfico colombiano es móvil: la entrada
+   que no existía era la que ve la mayoría. */
 @media (max-width: 700px), (pointer: coarse) {
   .entrando .mundo {
-    animation: none !important;
+    animation: llegar-pintura 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
     filter: none !important;
     scale: 1 !important;
-    opacity: 1 !important;
   }
 }
+@keyframes llegar-pintura {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}
 
-/* (Aquí el lockup entraba medio segundo antes que la pintura, con un
-   velo y sin desplazamiento. Se fue con el texto del hero: ahora la
-   entrada es solo la pintura secándose.) */
+/* ── Y EL TEXTO TIENE SU PROPIO TIEMPO ─────────────────────────────
+   Aquí hubo un intento anterior y se retiró: el lockup entraba MEDIO
+   SEGUNDO ANTES que la pintura. Ese era el problema, y no que el texto
+   se moviera — un título que aparece sobre un cuadro que todavía no ha
+   llegado es un título flotando en el vacío.
+
+   Ahora entra DESPUÉS, y escalonado: el rótulo, su subtítulo, el
+   filete, la declaración y el enlace, cada uno un pelo detrás del
+   anterior. Es el orden en que se lee, y es el orden en que un pintor
+   los pondría: primero el nombre, al final la puerta.
+
+   ── LAS TRES REGLAS QUE NO SE NEGOCIAN ────────────────────────────
+   1 · Solo `opacity` y `translate`. Nada que mueva la maqueta: un
+       desplazamiento de diez píxeles compuesto por la GPU no empuja
+       nada, y el desplazamiento acumulado de la página tiene que
+       seguir siendo cero.
+   2 · Termina pronto. El último elemento está entero a los 760 ms. En
+       una web sobre qué hacer en las próximas horas, una coreografía
+       que haga esperar es una coreografía mal puesta.
+   3 · Al primer gesto se acaba. `entrada.js` quita `.entrando` en
+       cuanto alguien toca, teclea o baja: quien no vino a mirar el
+       cuadro no espera a que termine.
+
+   Con movimiento reducido esto no corre, como todo lo demás de aquí
+   abajo. `pruebas/e2e/entrada.spec.js` lo comprueba mirando
+   `animationName` y no la pantalla, que es como se cazó la vez que
+   este selector no casaba con nada y la secuencia «funcionaba» sin
+   animar un píxel. */
+.entrando .titulo            { animation: asentar-texto 400ms ease-out  80ms both; }
+.entrando .lockup            { animation: asentar-texto 400ms ease-out 170ms both; }
+.entrando .hero__filete      { animation: asentar-texto 400ms ease-out 240ms both; }
+.entrando .hero__declaracion { animation: asentar-texto 400ms ease-out 290ms both; }
+.entrando .hero__enlace      { animation: asentar-texto 400ms ease-out 360ms both; }
+@keyframes asentar-texto {
+  from { opacity: 0; translate: 0 9px; }
+  to   { opacity: 1; translate: 0 0; }
+}
 
 /* Ni el botón ni la salida rápida aparecen aquí. Están desde el
    principio, y esa es la única línea de esta hoja que no se negocia. */
 
 @media (prefers-reduced-motion: reduce) {
-  .entrando .mundo { animation: none !important; }
+  .entrando .mundo,
+  .entrando .titulo,
+  .entrando .lockup,
+  .entrando .hero__filete,
+  .entrando .hero__declaracion,
+  .entrando .hero__enlace {
+    animation: none !important;
+    opacity: 1 !important;
+    translate: none !important;
+  }
   .cargador__agua { animation: none; stroke-dashoffset: 0; }
   .cargador { transition-duration: 120ms; }
 }
