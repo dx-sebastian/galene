@@ -24,7 +24,8 @@ import { test, expect } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const PAGINAS = ['', 'comunidad/', 'expertos/', 'productos/', 'productos/funda-coletero/'];
+const PAGINAS = ['', 'comunidad/', 'expertos/', 'productos/',
+  'productos/funda-coletero/', 'acerca/'];
 
 test('indexación · las páginas y el robots.txt dicen lo mismo', async ({ page, request }) => {
   const conNoindex = [];
