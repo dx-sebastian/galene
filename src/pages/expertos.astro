@@ -43,7 +43,20 @@ const RESUMEN = 'Síntesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
 ---
 
 <!doctype html>
-<html lang="es" data-tinta="oscura">
+ <!-- `lectura-cerca` DE ENTRADA, y no cuando algo se acerque.
+
+     Esa clase abre las URLs de `--arte-papel`, `--arte-aguadas` y los
+     filetes, que hasta entonces valen `none`. La puso `entrada.js`
+     para no pedir el papel de lectura mientras el hero de la portada
+     se está montando — una decisión buena, y que aquí no aplica: esta
+     página no tiene hero al que proteger.
+
+     Y como `entrada.js` solo se carga en la portada, aquí no la ponía
+     NADIE. Medido: cero piezas pintadas y la página entera
+     renderizando `none`, o sea un documento de texto en un sitio que
+     es un cuaderno de acuarela. Va en el HTML y no en un guion porque
+     el papel de esta página no es diferido: es la página. -->
+<html lang="es" data-tinta="oscura" class="lectura-cerca">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
