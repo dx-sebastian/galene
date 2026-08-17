@@ -1531,6 +1531,34 @@ main:focus { outline: none; }
   font-size: var(--t-sm);
   text-decoration: none;
 }
+/* ── EL CTA LLEVA SU PROPIO VELO, Y ES EL ÚNICO QUE LO NECESITA ────
+   La banda de bruma de detrás del bloque la calcula el shader, que ve
+   el cielo pero NO ve la capa de las garzas que el navegador compone
+   encima. Casi siempre da igual. Para este enlace no: es pequeño, vive
+   en el canto bajo del bloque y de noche le pasa cerca la garza posada
+   —pálida sobre cielo oscuro—. Medido en ejecuciones seguidas del
+   mismo caso, su contraste bailaba entre 4,5 y 5,8 según dónde cayera
+   el ave: unas veces cumplía y otras no, que es peor que fallar
+   siempre porque no se puede ver mirando una captura.
+
+   Un velo propio, mínimo y siempre puesto, lo saca de esa lotería. Es
+   pequeño y va desenfocado: sobre la pintura no se distingue del aire.
+   Y sigue a `--lavado`, así que cuando la banda crece este crece con
+   ella; lo que añade es el suelo. Del lado que toque: oscuro debajo de
+   tinta clara, claro debajo de tinta oscura, que es lo que ya decide
+   `calibrarTinta()`. */
+.hero__enlace::after {
+  content: "";
+  position: absolute;
+  inset: -0.55em -1em;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 0.75em;
+  background: var(--lavado-color, transparent);
+  opacity: calc(var(--lavado, 0) + 0.18);
+  filter: blur(9px);
+}
+
 .hero__enlace > span {
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -3546,7 +3574,24 @@ main:focus { outline: none; }
    era el bug — una captura ilegible de un formulario haciendo de icono.
    Sigue en el DOM (y `inert` por JavaScript) para que abrirlo no tenga
    que construir nada. */
-.mapa-herramientas--viva .mapa-herramientas__escena > .bloque { display: none; }
+/* ── Y CON EL BLOQUE SE VA SU TRAZO ────────────────────────────────
+   Aquí solo se escondía `.bloque`, y dentro de dos de las tres escenas
+   hay además un `.trazo` —la raya de aguada que separa secciones en la
+   lectura normal—. Escondido el texto, la raya se quedaba: un elemento
+   invisible de más de cien píxeles de alto dentro de la primera
+   tarjeta.
+
+   Y como la rejilla iguala las filas, ESA tarjeta estiraba a las tres.
+   Medido: 391 px de caja para 131 px de texto en escritorio, o sea un
+   67 % de nada, con el aspecto de tres cajas que no cargaron. En móvil,
+   donde cada tarjeta es su propia fila, solo se hinchaba la primera
+   —276 px contra 158— que es la pista que lo delató.
+
+   Una raya de separación entre secciones no tiene sentido dentro de una
+   tarjeta de un mapa: se va con el bloque al que pertenece y vuelve con
+   él cuando la herramienta se abre. */
+.mapa-herramientas--viva .mapa-herramientas__escena > .bloque,
+.mapa-herramientas--viva .mapa-herramientas__escena > .trazo { display: none; }
 
 /* ── EL EMBLEMA ────────────────────────────────────────────────────
    Una tarjeta de verdad: dibujo, nombre y una línea de qué hay dentro.
@@ -3644,6 +3689,22 @@ main:focus { outline: none; }
   text-wrap: pretty;
 }
 
+/* Lo que hay dentro de la herramienta, en la propia tarjeta. Va en
+   versalitas y separado por una raya fina: es una etiqueta de
+   contenido, no una frase — el mismo registro que un rótulo de mapa. */
+.emblema__dentro {
+  margin-top: 0.25rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgb(var(--letra-rgb) / 14%);
+  align-self: stretch;
+  color: rgb(var(--letra-rgb) / 56%);
+  font-size: calc(var(--t-xs) * 0.92);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
 /* ── ABIERTA ───────────────────────────────────────────────────────
    Sin posiciones absolutas ni `scale`: la escena activa ocupa la
    rejilla entera y las otras dos se van. Es la misma transición
@@ -3658,6 +3719,10 @@ main:focus { outline: none; }
 
 .mapa-herramientas--activa .mapa-herramientas__escena--activa { display: block; }
 .mapa-herramientas--activa .mapa-herramientas__escena--activa > .bloque { display: block; }
+/* La raya vuelve con su bloque: dentro de la tarjeta cerrada no pintaba
+   nada y solo estiraba la caja; abierta la herramienta, separa igual
+   que en el resto de la lectura. */
+.mapa-herramientas--activa .mapa-herramientas__escena--activa > .trazo { display: block; }
 .mapa-herramientas__escena--activa .emblema { display: none; }
 
 /* CON UNA HERRAMIENTA ABIERTA EL MARCO DEJA DE SER LIENZO: lo que hay
@@ -4173,6 +4238,14 @@ main:focus { outline: none; }
   background: var(--aviso-fondo); border-radius: 2px;
   border-left: 4px solid #A33B2A;
 }
+/* El reintento no es una salida: es volver a lo que acaba de fallar.
+   Va debajo y en voz baja, separado de las dos que sí llevan a alguna
+   parte. */
+.mapa__reintento {
+  margin: 0.55rem 0 0;
+  font-size: var(--t-xs);
+}
+
 .mapa__linea {
   font-size: var(--t-xl); font-weight: 700; line-height: 1;
   color: var(--letra); text-decoration: none;

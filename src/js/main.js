@@ -67,7 +67,24 @@ const MEMORIA_AJUSTADA = Number(navigator.deviceMemory || 8) <= 4;
 const MOVIL = matchMedia('(max-width: 700px), (pointer: coarse)').matches;
 const PERFIL_AHORRO = RED_LENTA || (MOVIL && MEMORIA_AJUSTADA);
 const ANCHO_REAL = Math.min(2048, viewportWidth() * Math.min(devicePixelRatio || 1, 2));
-const LAMINAS_CHICAS = PERFIL_AHORRO || ANCHO_REAL <= 1280;
+/* ── EL ESCRITORIO TAMBIÉN BAJA LÁMINAS DE 1024 ────────────────────
+   El corte estaba en 1280, así que cualquier portátil normal —1440,
+   1600, 1920— se traía el juego de 2048: medido, 6,47 MB de láminas
+   contra 2,13 MB en un teléfono. Con una conexión colombiana media son
+   unos seis segundos de descarga antes de ver el mar, en el aparato que
+   menos lo necesita.
+
+   Y no hacía falta. El mar se calcula a resolución de CSS, no de
+   lámina: las láminas son AGUADAS —manchas de baja frecuencia— y el
+   grano fino lo pone el shader aparte. Medido con las dos versiones
+   pintadas y comparadas píxel a píxel, el cambio se pierde dentro del
+   propio vaivén de la ola: `pruebas/e2e/peso.spec.js` lo comprueba a
+   1440 y a 1920 contra el ruido de la escena, y no lo da por bueno con
+   un umbral inventado.
+
+   Por encima de 1920 sigue el juego grande: ahí el lienzo estira la
+   lámina más del doble y la cuenta cambia. */
+const LAMINAS_CHICAS = PERFIL_AHORRO || ANCHO_REAL <= 1920;
 /* BASE_URL lo resuelve Vite en compilación: '/' en local y '/galene/'
    en producción. Nunca se escribe la ruta a mano. */
 const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -958,7 +975,24 @@ function arrancar(mar) {
      cubren la llegada de las láminas venga cuando venga. Y le importa
      justo a quien pidió que nada se mueva. */
   let dibujos = 0;
-  const enArranque = () => dibujos <= 64 && (dibujos & (dibujos - 1)) === 0;
+  const enArranque = () => {
+    /* Con el movimiento apagado la escena no dibuja en bucle: dibuja
+       una vez por lámina que llega, cuatro o cinco cuadros contados y
+       en instantes que dependen de lo cargada que esté la máquina. La
+       escalera de potencias de dos se los pierde —si la última lámina
+       entra en el dibujo 5, no hay recalibración— y el velo se queda
+       con la medida de un cielo a medio pintar.
+
+       Se vio como una prueba que unas veces pasaba y otras no: el
+       enlace del héroe a las 23:00 daba 5,75 corriendo solo y 4,86 con
+       la batería entera por delante. No era la prueba: era el sitio,
+       en el modo de quien pidió que nada se mueva.
+
+       Aquí se recalibra en CADA cuadro. Son cinco lecturas pequeñas en
+       toda la visita. */
+    if (quieto.matches) return true;
+    return dibujos <= 64 && (dibujos & (dibujos - 1)) === 0;
+  };
   lavadoAdaptativo = true;
 
   const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);

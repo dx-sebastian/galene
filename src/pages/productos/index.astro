@@ -23,6 +23,7 @@ import '../../estilos/responsive.css';
 import Barra from '../../componentes/Barra.astro';
 import Productos from '../../componentes/Productos.astro';
 import Pie from '../../componentes/Pie.astro';
+import Meta from '../../componentes/Meta.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
@@ -38,15 +39,11 @@ const RESUMEN = 'Fundas, sellos y tapas que cierran una copa, una lata ' +
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <title>{TITULO}</title>
-  <meta name="description" content={RESUMEN} />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content={TITULO} />
-  <meta property="og:description" content={RESUMEN} />
-  <meta name="theme-color" content="#2E4256" />
-  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
-
-  <meta name="robots" content="noindex, nofollow" />
+  <Meta
+    titulo={TITULO} resumen={RESUMEN} ruta="productos/"
+    imagen="productos/funda-coletero.webp"
+    imagenAlt="La funda coletero puesta sobre un vaso, recortada sobre papel."
+  />
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />

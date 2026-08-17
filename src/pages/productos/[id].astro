@@ -21,6 +21,7 @@ import '../../estilos/nuevas-secciones.css';
 import '../../estilos/responsive.css';
 import Barra from '../../componentes/Barra.astro';
 import Pie from '../../componentes/Pie.astro';
+import Meta from '../../componentes/Meta.astro';
 import { PRODUCTOS, CREDITO_FOTOS } from '../../datos/productos.js';
 
 export function getStaticPaths() {
@@ -49,16 +50,14 @@ const RESUMEN = producto.lema + ' ' + producto.gancho;
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <title>{TITULO}</title>
-  <meta name="description" content={RESUMEN} />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content={TITULO} />
-  <meta property="og:description" content={RESUMEN} />
-  <meta property="og:image" content={base + 'productos/' + producto.id + '.webp'} />
-  <meta name="theme-color" content="#2E4256" />
-  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
-
-  <meta name="robots" content="noindex, nofollow" />
+  {/* La og:image iba como ruta relativa y Open Graph no las resuelve:
+      esta ficha se compartía sin foto. Meta.astro compone la absoluta. */}
+  <Meta
+    titulo={TITULO} resumen={RESUMEN}
+    ruta={'productos/' + producto.id + '/'}
+    imagen={'productos/' + producto.id + '.webp'}
+    imagenAlt={producto.nombre + ', recortada sobre papel.'}
+  />
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />

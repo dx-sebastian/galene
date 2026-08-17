@@ -340,23 +340,35 @@ export function montarMapa(host) {
         El 123 de arriba funciona ya.</p>`;
     }
     if (est.fallo && !propios.length) {
-      /* CUANDO OVERPASS NO CONTESTA, ESTO NO PUEDE SER UN CALLEJÓN.
-         Antes había un botón de reintentar y nada más, y eso deja a
-         alguien mirando una pantalla que no le dice a dónde ir. Ahora
-         el fallo sale con tres salidas de verdad: el 123, y los dos
-         buscadores de hospitales cercanos —Waze y Maps— que funcionan
-         aunque OpenStreetMap esté caído, porque son otros servidores.
-         El reintento se queda, pero ya no es lo único. */
+      /* ── CUANDO ESTO FALLA, SE DICE UNA COSA Y SE OFRECEN DOS ─────
+         Aquí llegó a haber un botón de reintentar y nada más, y eso
+         deja a alguien mirando una pantalla que no le dice a dónde ir.
+         Se arregló poniendo salidas de verdad. Pero se arregló de más:
+         con el aviso de las teselas, el rótulo de estado y este
+         párrafo, la pantalla del fallo acabó con CINCO mensajes y TRES
+         botones, y la frase que más importa —que el 123 funciona
+         igual— quedó enterrada en la mitad de un párrafo que empieza
+         explicando qué es Overpass.
+
+         Quien lee esto puede estar en crisis a las cuatro de la
+         mañana. Una cosa que no funcionó, dicha corta, y el camino más
+         corto a un hospital. El motivo técnico va a la consola: sirve
+         para depurar, no para leerlo temblando. El reintento tampoco
+         es una salida —es volver a lo que acaba de fallar— así que
+         baja a enlace pequeño debajo. */
       const centro = est.aqui || est.ciudad.ll;
+      console.warn('[mapa] listado no disponible en', donde(), '·', est.fallo);
       return `<p class="mapa__vacio mapa__vacio--malo">
-        No se pudo traer el listado de ${esc(donde())}: ${esc(est.fallo)}.
-        <strong>El 123 funciona igual</strong>, y en cualquier urgencia de un
-        hospital tienen que atenderte sin denuncia y sin cita.</p>
+        No pudimos traer los sitios de ${esc(donde())}.
+        <strong>El 123 funciona igual</strong>, y en urgencias tienen que
+        atenderte sin denuncia y sin cita.</p>
         <p class="lugar__ir mapa__salidas">
           <a class="lugar__waze" href="https://www.waze.com/ul?ll=${centro[0]}%2C${centro[1]}&zoom=15&q=hospital"
-             rel="noopener noreferrer" target="_blank">Buscar hospitales en Waze</a>
+             rel="noopener noreferrer" target="_blank">Hospitales en Waze</a>
           <a href="https://www.google.com/maps/search/hospital+urgencias/@${centro[0]},${centro[1]},14z"
-             rel="noopener noreferrer" target="_blank">Buscarlos en Maps</a>
+             rel="noopener noreferrer" target="_blank">Hospitales en Maps</a>
+        </p>
+        <p class="mapa__reintento">
           <button type="button" class="enlace-boton" data-reintentar="1">Volver a intentarlo</button>
         </p>`;
     }
@@ -546,7 +558,10 @@ export function montarMapa(host) {
         : /^(Overpass|Nominatim) \d+$/.test(e.message) ? e.message
         : e.message === 'sin respuesta' ? 'ningún servidor de mapas respondió'
         : e.message || 'el servicio no respondió';
-      decir('No se pudo traer el listado. Abajo queda lo que sí tenemos.', true);
+      /* Sin rótulo: el panel de abajo ya lo cuenta, con las salidas al
+         lado. Dos mensajes distintos para el mismo fallo, uno arriba y
+         otro abajo, es la pantalla que había que deshacer. */
+      decir('');
     }
     pintarPuntos();
     pintarListado();
@@ -852,7 +867,12 @@ export function montarMapa(host) {
       capaTeselas.setUrl(RESPALDO);
       capaTeselas.options.subdomains = 'abc';
       mapa.attributionControl.addAttribution(CREDITO_RESPALDO);
-      decir('El dibujo del mapa venía fallando: se cambió al mapa base de OpenStreetMap.');
+      /* A la consola. Que el dibujo venga de CARTO o de OpenStreetMap
+         no cambia nada de lo que esta persona tiene que hacer, y en la
+         pantalla del fallo era el mensaje que sobraba: uno más, encima
+         del que sí importa. La atribución de la nueva fuente sí queda,
+         que eso es una obligación de la licencia. */
+      console.info('[mapa] teselas de CARTO fallando: se pasa a OpenStreetMap');
     });
 
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(mapa);

@@ -68,10 +68,20 @@ const Titulo = `h${nivel}`;
           </span>
         </a>
 
-        <button class="producto__comprar acuarela" type="button"
-                data-nombre={p.nombre}>
-          <span class="acuarela__texto">Comprar</span>
-        </button>
+        {/* ── LA COMPRA, EN VOZ BAJA ────────────────────────────────
+            Esto era la misma lámina de acuarela maciza que cierra la
+            ficha, repetida cinco veces a todo lo ancho. En una pantalla
+            de un sitio cuyo primer mensaje es que no viene a venderte
+            nada, cinco manchas verdes saturadas eran lo más pesado del
+            cuadro — y competían con las propias piezas, que es de lo
+            que va un mostrador.
+
+            La lámina maciza se queda donde tiene sentido: en la ficha,
+            que es donde alguien ya decidió mirar la pieza. Aquí baja a
+            un contorno de tinta. Hace lo mismo, pesa lo que le toca.
+            `pruebas/e2e/catalogo.spec.js` vigila que no vuelva. */}
+        <button class="producto__comprar producto__comprar--sobrio" type="button"
+                data-nombre={p.nombre}>Comprar</button>
       </li>
     ))}
   </ul>
