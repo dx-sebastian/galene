@@ -20,6 +20,18 @@
 import { PRODUCTOS, CREDITO_FOTOS } from '../datos/productos.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+/* ── EL NIVEL DEL TÍTULO LO DECIDE QUIEN LO PINTA ─────────────────
+   El mismo mostrador es una SECCIÓN de la portada y es TODA la página
+   en /productos. En la portada su encabezado es un h2 entre iguales;
+   en su propia página es el nombre de la página y tiene que ser el h1.
+
+   Estaba fijo en h2, y el resultado era una página sin h1: sin nombre
+   para un lector de pantalla, que navega saltando de encabezado en
+   encabezado, y sin nombre para un buscador el día que se levante el
+   noindex. Mismo mecanismo que ya usa Expertos.astro. */
+const { nivel = 2 } = Astro.props;
+const Titulo = `h${nivel}`;
 ---
 
 <section class="productos" id="productos" aria-labelledby="productos-titulo">
@@ -29,7 +41,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       cabecera presenta y las fichas hablan. */}
   <header class="productos__cabecera">
     <p class="seccion-rotulo">Prevención · Catálogo</p>
-    <h2 id="productos-titulo">Antes de esa noche</h2>
+    <Titulo id="productos-titulo">Antes de esa noche</Titulo>
   </header>
 
   <ul class="productos__lista">
@@ -39,7 +51,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
             vende exactamente estas piezas (acuerdo de distribución en
             curso; crédito al pie de la sección). Las ilustraciones de
             la primera versión siguen en arte/productos/. */}
-        <a class="producto__enlace" href={`${base}productos/${p.id}`}>
+        <a class="producto__enlace" href={`${base}productos/${p.id}/`}>
           <span class="producto__marco">
             <img src={`${base}productos/${p.id}.webp`} alt={p.nombre}
                  width="450" height="450" loading="lazy" decoding="async" />

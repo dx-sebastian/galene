@@ -3357,13 +3357,62 @@ export function crear(lienzo) {
        máxima y media: con eso el lavado se calibra contra lo que de
        verdad hay detrás del texto —el disco de la luna, el sol, una
        lámina clara— y no contra una suposición. */
-    medirZona(x, y, w, h) {
+    /* `baldosa` = a qué escala se mide. Con 1 el histograma va sobre
+       píxeles sueltos; con 3 se promedia antes en cuadros de 3×3.
+
+       No es un detalle: el percentil sobre píxeles sueltos funciona en
+       una caja grande —donde el 0.5 % son cientos de píxeles y las
+       estrellas se diluyen— y se rompe en una caja pequeña, donde el
+       0.5 % son cuatro píxeles y basta un puñado de estrellas para que
+       la medida diga que el fondo es blanco. Medido: la caja del
+       enlace del héroe a las 23:00 daba 1,17:1 por seis estrellas,
+       cuando lo que se ve son 15:1.
+
+       Promediar primero mide a la escala del TRAZO de la letra, que es
+       lo que el ojo integra: el disco de la luna sigue contando entero
+       porque es una mancha grande, y el polvo de estrellas deja de
+       mandar porque no llena una baldosa. */
+    medirZona(x, y, w, h, baldosa = 1) {
       w = Math.max(1, Math.min(w, ancho - x));
       h = Math.max(1, Math.min(h, alto - y));
       if (x < 0 || y < 0 || w < 1 || h < 1) return null;
       const px = new Uint8Array(w * h * 4);
       gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
       const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      if (baldosa > 1) {
+        const cubetas = new Uint32Array(1024);
+        let max = 0, min = 1, suma = 0, n = 0;
+        for (let by = 0; by < h; by += baldosa) {
+          for (let bx = 0; bx < w; bx += baldosa) {
+            let s = 0, m = 0;
+            for (let dy = 0; dy < baldosa && by + dy < h; dy++) {
+              for (let dx = 0; dx < baldosa && bx + dx < w; dx++) {
+                const i = ((by + dy) * w + (bx + dx)) * 4;
+                s += 0.2126 * linz(px[i] / 255)
+                   + 0.7152 * linz(px[i + 1] / 255)
+                   + 0.0722 * linz(px[i + 2] / 255);
+                m++;
+              }
+            }
+            if (!m) continue;
+            const l = s / m;
+            if (l > max) max = l;
+            if (l < min) min = l;
+            suma += l; n++;
+            cubetas[Math.min(1023, Math.round(l * 1023))]++;
+          }
+        }
+        if (!n) return null;
+        const pc = (p) => {
+          let acum = 0;
+          for (let i = 0; i < 1024; i++) {
+            acum += cubetas[i];
+            if (acum >= p * n) return i / 1023;
+          }
+          return 1;
+        };
+        return { max, min, prom: suma / n, p995: pc(0.995), p005: pc(0.005) };
+      }
       /* ── Y TAMBIEN PERCENTILES, NO SOLO EL EXTREMO ─────────────────
          Esto devolvia el pixel mas claro y el mas oscuro, y el
          calibrador del lavado se protegia del PEOR de los dos. Es lo

@@ -36,9 +36,9 @@ const ENLACES = enlaces(base);
 const ACTUAL = 'expertos';
 
 const TITULO = 'Panel de expertos — Galene';
-const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
-  'publicados sobre sumision quimica, memoria, inmovilidad tonica y ' +
-  'atencion despues de una agresion. Cada una enlaza a su fuente.';
+const RESUMEN = 'Síntesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
+  'publicados sobre sumisión química, memoria, inmovilidad tónica y ' +
+  'atención después de una agresión. Cada una enlaza a su fuente.';
 ---
 
 <!doctype html>
@@ -69,7 +69,7 @@ const RESUMEN = 'Sintesis editoriales de ' + EXPERTOS.length + ' trabajos ' +
       el desplegable. */}
   <Barra actual={ACTUAL} />
 
-  <main class="expertos-pagina">
+  <main id="contenido" tabindex="-1" class="expertos-pagina">
     <Expertos
       nivel={1}
       titulo="Lo que la evidencia permite decir"

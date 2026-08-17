@@ -12,11 +12,21 @@
    (`barra--flotante`) y tiene su propia vida.
    ═══════════════════════════════════════════════════════════════════ */
 import { enlaces } from '../datos/navegacion.js';
+import Salto from './Salto.astro';
 
 const { actual } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const ENLACES = enlaces(base);
+
+/* `actual` llega sin barra final («productos») y los href ahora la
+   llevan («…/productos/»). Comparar en crudo dejaba la página sin
+   marcar en su propio enlace. Se compara sobre la ruta pelada. */
+const esActual = (href) => Boolean(actual) && href.replace(/\/$/, '').endsWith(actual);
 ---
+
+{/* Antes que la marca y que los cinco enlaces: con teclado esta es la
+    primera parada de la página. Ver Salto.astro. */}
+<Salto />
 
 <header class="barra barra--papel">
   <a class="marca" href={base}>
@@ -37,7 +47,7 @@ const ENLACES = enlaces(base);
     <div class="barra__enlaces">
       {ENLACES.map(([texto, href]) => (
         <a class="barra__enlace" href={href}
-           aria-current={href.endsWith(actual) ? 'page' : undefined}>{texto}</a>
+           aria-current={esActual(href) ? 'page' : undefined}>{texto}</a>
       ))}
     </div>
 
@@ -49,7 +59,7 @@ const ENLACES = enlaces(base);
       <div class="menu__panel">
         {ENLACES.map(([texto, href]) => (
           <a class="barra__enlace" href={href}
-             aria-current={href.endsWith(actual) ? 'page' : undefined}>{texto}</a>
+             aria-current={esActual(href) ? 'page' : undefined}>{texto}</a>
         ))}
         <a class="pildora pildora--menu" href={base + '#ayuda'}>
           Buscar ayuda

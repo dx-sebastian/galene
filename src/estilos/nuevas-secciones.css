@@ -1005,6 +1005,10 @@
 }
 .productos > .trazo { margin-top: 0; }
 .productos__cabecera { max-width: 48rem; }
+/* h1 y h2 porque el mismo mostrador es sección en la portada y página
+   entera en /productos (ver el `nivel` de Productos.astro). El aspecto
+   no cambia: lo que cambia es qué nombre tiene la página. */
+.productos__cabecera h1,
 .productos__cabecera h2 {
   margin: 0 0 var(--e-3);
   font-family: var(--tipo-titulo);

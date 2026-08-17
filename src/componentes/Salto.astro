@@ -1,0 +1,27 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   EL SALTO AL CONTENIDO.
+
+   Con teclado, cada página empezaba obligando a pasar por la marca y
+   los cinco enlaces de navegación antes de llegar a una sola palabra
+   de lo que se venía a leer. En la portada eran siete paradas. En una
+   web sobre qué hacer en las próximas horas, eso es una barrera puesta
+   justo delante de la puerta.
+
+   ── POR QUÉ NO SE ESCONDE CON `display: none` ──────────────────────
+   Un enlace con `display: none` o `visibility: hidden` no recibe foco:
+   sería un salto que no existe. Se saca de la pantalla con posición y
+   vuelve al recibir el foco, que es la única forma que deja el enlace
+   en el árbol de foco estando invisible.
+
+   ── Y POR QUÉ SE VE DE VERDAD AL ENFOCARLO ─────────────────────────
+   Un salto invisible es peor que ninguno: se pulsa sin querer, la
+   página da un brinco y nadie sabe por qué. Al enfocarlo aparece como
+   una pastilla de papel sobre todo lo demás.
+   `pruebas/e2e/semantica.spec.js` comprueba las dos cosas: que el
+   primer Tab lo encuentra y que al encontrarlo ocupa sitio en pantalla.
+   ═══════════════════════════════════════════════════════════════════ */
+const { destino = '#contenido' } = Astro.props;
+---
+
+<a class="salto" href={destino}>Ir al contenido</a>

@@ -21,6 +21,7 @@ import ComunidadExpertos from '../componentes/ComunidadExpertos.astro';
 import Expertos from '../componentes/Expertos.astro';
 import Acerca from '../componentes/Acerca.astro';
 import Pie from '../componentes/Pie.astro';
+import Salto from '../componentes/Salto.astro';
 import '../estilos/nuevas-secciones.css';
 import '../estilos/garza.css';
 import '../estilos/responsive.css';
@@ -255,6 +256,11 @@ const DATOS = {
 
   </div>
 
+  {/* Antes que la barra: con teclado, la primera parada de la
+      portada eran siete —marca y seis enlaces— antes de una sola
+      palabra del contenido. Ver Salto.astro. */}
+  <Salto />
+
   {/* ── LA BARRA, FUERA DEL CUADRO ──────────────────────────────────
       Estuvo dentro del hero, como fila 1 de su rejilla, y ahí el
       argumento era que pertenecía a la pintura. Ahora no aparece hasta
@@ -343,7 +349,7 @@ const DATOS = {
 
   <Mundo />
 
-  <main>
+  <main id="contenido" tabindex="-1">
     <section class="hero" id="mar">
 
       {/* (LA BARRA YA NO ESTÁ AQUÍ. Estuvo dentro de esta rejilla como
@@ -501,7 +507,7 @@ const DATOS = {
         texto— sino porque veintitrés tarjetas seguidas dejan de leerse
         y pasan a ojearse, y estas están para leerse. El resto vive en
         /expertos, a un clic y con la cuenta escrita en el enlace. */}
-    <Expertos limite={LIMITE_PORTADA} enlace={base + 'expertos'} />
+    <Expertos limite={LIMITE_PORTADA} enlace={base + 'expertos/'} />
 
     <Acerca />
 

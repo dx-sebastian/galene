@@ -844,7 +844,7 @@ function arrancar(mar) {
        síncrono, y sube y baja con la carga real. */
     msMar = msMar ? msMar * 0.9 + (performance.now() - t0Mar) * 0.1
                   : performance.now() - t0Mar;
-    calibrarLavado();
+    calibrarTinta();
     /* estado.paralaje, NO la deriva: la deriva es el acumulador infinito
        del agua y arrastraba al ave fuera de cuadro igual que hacía con
        el manglar. El ave tiene que moverse con el ÁRBOL, no con el mar. */
@@ -875,10 +875,30 @@ function arrancar(mar) {
   /* Margen sobre el 4.5:1 exigido. Con papel de verdad el grano añade
      motas claras que se comen el margen: medido, con objetivo 4.8 el
      peor píxel quedaba en 4.51 — pasa, pero por un pelo. */
-  /* 4.5:1 es el umbral WCAG para el cuerpo pequeno del bloque. El
-     objetivo anterior de 5.4 obligaba al dia claro a cargar con una
-     nube oscura mucho mayor que el texto, ajena a la referencia. */
-  const OBJETIVO = 4.5;
+  /* ── EL OBJETIVO, CON MARGEN ─────────────────────────────────────
+     4.5:1 es el umbral WCAG para el cuerpo pequeño del bloque, y
+     apuntar exactamente al umbral es quedarse en el umbral: cualquier
+     diferencia entre lo que mide el shader y lo que acaba componiendo
+     el navegador —el grano del papel, el suavizado de las letras, el
+     desvanecido del propio velo— cae del lado malo.
+
+     Un objetivo de 5.4 llegó a estar puesto y se bajó a 4.5 porque
+     obligaba al día claro a cargar con una nube oscura mucho mayor que
+     el texto. Ese motivo ya no existe: de día la tinta es oscura y el
+     velo vale cero, así que este número solo gobierna la noche, donde
+     una veladura tenue no le quita nada a la pintura.
+
+     Y hay una razón concreta para pedir de más: el calibrador lee el
+     BÚFER DEL SHADER, y encima de ese búfer el navegador todavía
+     compone la capa de las garzas. Un ave pálida cruzando por detrás
+     del texto aclara lo que se ve y el calibrador no la ha visto.
+     No hay forma barata de medir el compuesto desde dentro de la
+     página, así que se compensa con holgura.
+
+     6.6 es lo que hace falta para que la medida sobre los píxeles ya
+     compuestos —`pruebas/e2e/contraste.spec.js`, que exige el umbral
+     más un 10 %— salga en verde a las catorce horas medidas. */
+  const OBJETIVO = 6.6;
   /* ── UNA ZONA, QUE ES LA QUE HAY ───────────────────────────────────
      Llegó a medir tres —el bloque de texto, el logotipo y la fila de
      enlaces— porque la barra vivía sobre la pintura y su peor caso sin
@@ -898,33 +918,102 @@ function arrancar(mar) {
      en esquinas opuestas necesitan un alfa CADA UNO. Con uno solo, el
      que menos lo necesita carga con el velo del otro y en una pantalla
      de 1900 px eso es una cinta de lado a lado cruzando el cielo.) */
+  /* ── Y SE MIDEN LAS CUATRO PIEZAS, NO EL BLOQUE ───────────────────
+     Medir la caja entera del bloque tapaba un fallo local: a las 23:00
+     el bloque completo es cielo oscuro y sale de sobra, pero la banda
+     de la Vía Láctea cruzaba justo por el subtítulo y ahí el contraste
+     bajaba a 3,27:1. El promedio de una caja grande no ve un problema
+     que solo ocupa una franja de ella.
+
+     Cada pieza se mide aparte y el lavado —que es uno solo, el óvalo
+     de detrás del bloque— se calcula con el peor de los cuatro. Es
+     medio milisegundo más de `readPixels` cada diez segundos. */
   const ZONAS = [
-    { sel: '.hero__texto', prop: '--lavado', v: 0 },
+    { sel: '.titulo' }, { sel: '.lockup' },
+    { sel: '.hero__declaracion' }, { sel: '.hero__enlace' },
   ];
+  let alfaLavado = 0;
   /* `readPixels` sincroniza CPU y GPU. Dos lecturas por segundo eran un
      microtirón periódico en móvil aunque el shader cupiera en el cuadro.
      La luz real solo se actualiza cada 30 s: una medida cada 10 s mantiene
      el contraste protegido sin serruchar la animación. */
   const cadaLavado = MOVIL ? 300 : 15;
   let contadorLavado = cadaLavado - 1, primeraCalibracion = true;
+  /* ── Y UNA TANDA DE ARRANQUE, QUE FALTABA ────────────────────────
+     La primera calibración caía en el primer cuadro, cuando aún no han
+     llegado todas las láminas: se medía un cielo liso y se daba por
+     bueno. Con el movimiento encendido daba igual —diez segundos
+     después se vuelve a medir—, pero con `prefers-reduced-motion` la
+     escena dibuja un puñado de cuadros (uno por lámina que llega) y
+     luego se queda quieta para siempre: la medida del cielo vacío se
+     quedaba clavada.
+
+     Medido a las 23:00 en un teléfono: el calibrador veía 0,337 de
+     fondo donde la pintura terminada tiene 0,53 —la banda de la Vía
+     Láctea cruzando por detrás del subtítulo— y no lavaba nada. El
+     subtítulo se quedaba en 3,27:1.
+
+     Se recalibra en los dibujos 1, 2, 4, 8… hasta el 64: seis lecturas
+     repartidas por el primer medio segundo, que no se notan, y que
+     cubren la llegada de las láminas venga cuando venga. Y le importa
+     justo a quien pidió que nada se mueva. */
+  let dibujos = 0;
+  const enArranque = () => dibujos <= 64 && (dibujos & (dibujos - 1)) === 0;
   lavadoAdaptativo = true;
 
   const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
   const lumRel = (c) => 0.2126 * linz(c[0]) + 0.7152 * linz(c[1]) + 0.0722 * linz(c[2]);
   const hexArr = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16) / 255);
 
-  function calibrarLavado() {
-    if (++contadorLavado % cadaLavado !== 0) return;
+  /* ── LAS DOS TINTAS ────────────────────────────────────────────────
+     Clara y oscura, con su sombra corta de acompañamiento. La oscura no
+     es negra: es la misma tinta con la que está escrita la página de
+     lectura (`--letra` en :root), para que el héroe y el papel hablen
+     con la misma voz cuando la hora los pone del mismo lado. */
+  const TINTAS = {
+    clara: {
+      color: '#FFFFFF',
+      suave: 'rgb(255 255 255 / 78%)',
+      halo: '0 1px 3px rgb(18 35 48 / 30%)',
+      lavado: '#0B141A',           // hacia dónde se lava si no llega
+    },
+    oscura: {
+      color: '#16222E',
+      suave: 'rgb(22 34 46 / 76%)',
+      halo: '0 1px 3px rgb(255 255 255 / 38%)',
+      lavado: '#F4EFE6',
+    },
+  };
+  let tintaPuesta = 'clara';
+
+  function calibrarTinta() {
+    dibujos++;
+    const arranque = enArranque();
+    if (++contadorLavado % cadaLavado !== 0 && !arranque) return;
     const caja = hero.getBoundingClientRect();
     const k = lienzo.width / Math.max(1, caja.width);
 
-    /* El hero conserva tinta blanca las 24 horas. data-tinta sigue
-       gobernando la pagina de lectura, pero ya no decide esta medicion:
-       aqui siempre se busca el fondo mas claro y se lava hacia oscuro. */
-    const lt     = lumRel(hexArr('#FFFFFF'));
-    const lavCol = hexArr('#0B141A');
+    const aGamma = (v) => (v <= 0.0031308 ? v * 12.92
+                                          : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
+    const razon = (a, b) => {
+      const [hi, lo] = a > b ? [a, b] : [b, a];
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    /* Al tamaño del trazo, no del píxel: ver `medirZona()` en mar.js. */
+    const baldosa = Math.max(2, Math.round(3 * k));
 
-    let alguna = false;
+    /* ── EL PEOR FONDO DE CADA LADO, ENTRE LAS CUATRO PIEZAS ─────────
+       Para tinta clara el enemigo es el fondo más CLARO; para tinta
+       oscura, el más OSCURO. Se miran los dos, y de cada uno se guarda
+       el peor caso de todas las piezas: la tinta es una sola y el
+       lavado también, así que los dos los decide la pieza peor parada.
+
+       Por percentil y no por extremo, que es lo que el código de aquí
+       ya había aprendido: con el máximo absoluto, una sola ESTRELLA
+       detrás del rótulo tumbaba el contraste nominal de 13.4:1 a
+       2.12:1 y el lavado se iba a 0.48 — medio velo negro sobre la
+       pintura por el 0.372 % de los píxeles. */
+    let fondoClaro = 0, fondoOscuro = 1, alguna = false;
     for (const z of ZONAS) {
       const el = document.querySelector(z.sel);
       if (!el) continue;
@@ -935,43 +1024,60 @@ function arrancar(mar) {
         Math.round(r.left * k),
         Math.round(lienzo.height - (r.bottom - caja.top) * k),
         Math.round(r.width * k),
-        Math.round(r.height * k));
+        Math.round(r.height * k),
+        baldosa);
       if (!zona) continue;
       alguna = true;
-
-      /* El peor píxel es el que manda. Como la tinta del hero es blanca
-         de forma estable, el peor fondo es siempre el más CLARO.
-
-         PERO NO EL EXTREMO ABSOLUTO, sino el percentil 99.5. Con el
-         máximo, una sola ESTRELLA detrás del rótulo tumbaba el contraste
-         nominal de 13.4:1 a 2.12:1 y el lavado se iba a 0.48 — medio
-         velo negro sobre la pintura por el 0.372 % de los píxeles de la
-         caja. Ver el comentario de `medirZona()` en mar.js, donde está
-         la medida entera: el disco de la luna sigue contando porque es
-         una mancha grande, y el campo de estrellas deja de mandar
-         porque son puntos. */
-      const peor = zona.p995;
-      const gFondo = peor <= 0.0031308 ? peor * 12.92
-                   : 1.055 * Math.pow(peor, 1 / 2.4) - 0.055;
-
-      // Alfa mínimo que alcanza el objetivo. Se mezcla en sRGB, que es
-      // como lo va a componer el navegador.
-      let necesario = 0.62;
-      for (let a = 0; a <= 0.62; a += 0.02) {
-        const lf = lumRel(lavCol.map((c) => gFondo * (1 - a) + c * a));
-        const [hi, lo] = [lt, lf].sort((p, q) => q - p);
-        if ((hi + 0.05) / (lo + 0.05) >= OBJETIVO) { necesario = a; break; }
-      }
-      /* La primera vez se fija de golpe. Con movimiento apagado se dibuja
-         UN solo cuadro, y con suavizado el lavado se quedaría a un cuarto
-         de camino para siempre — justo en el modo de quien pidió calma. */
-      if (primeraCalibracion) z.v = necesario;
-      else z.v += (necesario - z.v) * 0.25;
-      document.documentElement.style.setProperty(z.prop, z.v.toFixed(3));
+      fondoClaro = Math.max(fondoClaro, aGamma(zona.p995));
+      fondoOscuro = Math.min(fondoOscuro, aGamma(zona.p005));
     }
     if (!alguna) return;
+
+    const conTinta = (t, fondo) =>
+      razon(lumRel(hexArr(TINTAS[t].color)), lumRel([fondo, fondo, fondo]));
+    const rClara = conTinta('clara', fondoClaro);
+    const rOscura = conTinta('oscura', fondoOscuro);
+
+    /* ── QUÉ TINTA, CON HISTÉRESIS ──────────────────────────────────
+       La que más contraste da, pero la que ya está puesta no cede
+       hasta que la otra la supera con holgura: en el crepúsculo las dos
+       se cruzan despacio y sin este freno el rótulo parpadearía de
+       blanco a negro cada pocos segundos, que es peor que cualquier
+       problema de contraste. */
+    const candidata = rOscura > rClara ? 'oscura' : 'clara';
+    const mejor = Math.max(rClara, rOscura);
+    const actual = tintaPuesta === 'clara' ? rClara : rOscura;
+    if (candidata !== tintaPuesta && mejor > actual * 1.35) tintaPuesta = candidata;
+
+    const T = TINTAS[tintaPuesta];
+    hero.style.setProperty('--tinta', T.color);
+    hero.style.setProperty('--tinta-suave', T.suave);
+    hero.style.setProperty('--halo', T.halo);
+
+    /* ── Y EL LAVADO, SOLO SI AÚN NO LLEGA ──────────────────────────
+       Con la tinta bien elegida esto vale 0 casi todo el día. Donde
+       hace falta es de noche, cuando la Vía Láctea cruza por detrás del
+       subtítulo, y en el cruce del crepúsculo, cuando ninguna de las
+       dos tintas alcanza sola: ahí sale una veladura pequeña, hacia el
+       lado contrario a la tinta, con el alfa mínimo que llega al
+       objetivo. Se mezcla en sRGB, que es como lo compone el navegador. */
+    const fondoPeor = tintaPuesta === 'clara' ? fondoClaro : fondoOscuro;
+    const lavCol = hexArr(T.lavado);
+    const lt = lumRel(hexArr(T.color));
+    let necesario = 0.62;
+    for (let a = 0; a <= 0.62; a += 0.02) {
+      const lf = lumRel(lavCol.map((c) => fondoPeor * (1 - a) + c * a));
+      if (razon(lt, lf) >= OBJETIVO) { necesario = a; break; }
+    }
+    /* Durante el arranque se fija de golpe. Con movimiento apagado se
+       dibujan cuatro cuadros contados, y con suavizado el lavado se
+       quedaría a un cuarto de camino para siempre — justo en el modo de
+       quien pidió calma. Después ya se acompaña con suavizado. */
+    if (primeraCalibracion || arranque) alfaLavado = necesario;
+    else alfaLavado += (necesario - alfaLavado) * 0.25;
+    document.documentElement.style.setProperty('--lavado', alfaLavado.toFixed(3));
+    document.documentElement.style.setProperty('--lavado-color', T.lavado);
     primeraCalibracion = false;
-    document.documentElement.style.setProperty('--lavado-color', '#0B141A');
   }
 
   /* ═══ LA RESOLUCIÓN SUBE SI EL APARATO LA AGUANTA ═══════════════════

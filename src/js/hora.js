@@ -474,15 +474,33 @@ export function aplicar(L, escribirLavado = true) {
   const alto = mezcla(L.cieloAlto, medio, k);
   const bajo = mezcla(L.cieloBajo, medio, k);
 
-  /* Cuando hay lienzo, el lavado lo calibra main.js midiendo lo que de
-     verdad quedó pintado detrás del texto (la luna se pasea por ahí).
-     Este valor por compresión es solo el respaldo sin WebGL. */
+  /* ── SIN LIENZO, LA TINTA LA ELIGE LA CURVA DE LUZ ─────────────────
+     Cuando hay lienzo, esto lo calibra `calibrarTinta()` en main.js
+     midiendo lo que de verdad quedó pintado detrás del texto —la luna
+     se pasea por ahí—. Este camino es el respaldo sin WebGL, y tiene
+     que tomar la MISMA decisión con lo único que hay aquí: `L.tinta`,
+     que ya compara la luminancia de la banda alta del cielo contra el
+     cruce. Antes escribía tinta blanca a cualquier hora y un lavado
+     oscuro detrás; sobre el cielo de mediodía eso medía 1,5:1.
+
+     Las tres variables van sobre el propio `.hero` porque la regla
+     `.hero { --tinta: … }` de la hoja gana a cualquier valor heredado
+     de :root: para pisarla hay que escribir en el elemento. */
   if (escribirLavado) {
+    const claro = L.tinta === 'clara';
+    const hero = document.querySelector('.hero');
+    if (hero) {
+      hero.style.setProperty('--tinta', claro ? '#FFFFFF' : '#16222E');
+      hero.style.setProperty('--tinta-suave',
+        claro ? 'rgb(255 255 255 / 78%)' : 'rgb(22 34 46 / 76%)');
+      hero.style.setProperty('--halo',
+        claro ? '0 1px 3px rgb(18 35 48 / 30%)' : '0 1px 3px rgb(255 255 255 / 38%)');
+    }
+    /* El lavado sale del lado CONTRARIO a la tinta —uno claro debajo de
+       letra blanca borraría las dos cosas— y solo cerca del cruce, que
+       es donde la compresión del cielo deja de bastar. */
     r.style.setProperty('--lavado', (k * 0.30).toFixed(3));
-    /* La tinta del hero ya es blanca de forma estable. Incluso en el
-       respaldo sin WebGL, el lavado que la sostiene tiene que ser oscuro;
-       un lavado claro debajo de letra blanca borraria las dos cosas. */
-    r.style.setProperty('--lavado-color', '#0B141A');
+    r.style.setProperty('--lavado-color', claro ? '#0B141A' : '#F4EFE6');
   }
   r.style.setProperty('--cielo-alto', aCss(alto));
   r.style.setProperty('--cielo-bajo', aCss(bajo));
