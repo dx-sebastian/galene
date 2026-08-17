@@ -199,6 +199,25 @@ test(`peso · las láminas de 1024 px pintan el mismo mar a ${ancho} px`, async 
      Así que primero se mide el ruido: dos cargas idénticas. Y después
      se exige que cambiar de láminas no añada mucho más que eso. Es la
      comparación honesta y no depende de ningún número inventado. */
+  /* ── UNA CARGA DE CALENTAMIENTO, Y NO ES UN PARCHE ────────────────
+     La tercera captura descarga cuatro megas MÁS que las otras dos: son
+     las láminas completas, que hasta ese momento nadie ha pedido. Si
+     esa descarga ocurre dentro de la medición, lo que se compara no es
+     «cómo pinta una lámina de 1024 frente a una completa» sino «cómo
+     pinta una escena que lleva seis segundos montada frente a otra que
+     todavía está bajando archivos».
+
+     Medido, y por eso está escrito: contra el compilado local —donde
+     los cuatro megas salen de un disco— el cambio da 3,6 y 4,1. Contra
+     el espejo de producción con la caché fría, 5,7 y 6,5; y en la misma
+     ejecución, a 1920 px —donde las láminas YA están en la caché del
+     espejo porque las pidió el caso de 1440— vuelve a dar 3,03, que es
+     exactamente el número documentado.
+
+     O sea que el rojo no era del sitio: era del instrumento midiendo
+     una red. Se pide todo antes de empezar a cronometrar. */
+  await capturar(true);
+
   const encogidasA = await capturar(false);
   const encogidasB = await capturar(false);
   const conCompletas = await capturar(true);
