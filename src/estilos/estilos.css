@@ -275,6 +275,31 @@ input, select, textarea { margin: 0; }
   --canto: 2px;
   --canto-pildora: 999px;
 
+  /* ── CÓMO SE MUEVEN LAS COSAS AQUÍ ──────────────────────────────
+     Medido con el movimiento encendido sobre la edición publicada:
+     103 elementos con transición, UNA sola animación en toda la
+     portada —la flecha de «Desliza», que rebota— y **238 de las
+     curvas de tiempo eran `linear`**, o sea el valor por defecto del
+     navegador. Diecisiete usaban la curva pensada que este mismo
+     archivo ya tenía escrita.
+
+     `linear` es la forma de moverse de una máquina: velocidad
+     constante, arranque instantáneo, parada seca. Nada del mundo
+     físico se mueve así, y menos el agua. Es el detalle que hace que
+     una interfaz se sienta de plantilla aunque cada pieza esté bien
+     dibujada — y es el que un jurado nota sin saber que lo nota,
+     porque lo nota con el ratón y no con el ojo.
+
+     Una sola curva para todo el sitio. Sale despacio, llega deprisa y
+     se asienta: es como se posa algo que tiene peso, y es la que ya
+     usaban el hero y el reloj.
+
+     LO QUE NO SE TOCA: las animaciones por fotogramas que dependen
+     del scroll —el trazado del anillo, el hundido del mundo— siguen
+     mandadas por `--avance`, que es una posición y no un tiempo. Una
+     curva ahí desincronizaría el dibujo del dedo. */
+  --paso: cubic-bezier(0.2, 0.7, 0.2, 1);
+
   --tipo-titulo: "Atkinson Hyperlegible Next", system-ui, sans-serif;
   --tipo-texto:  "Atkinson Hyperlegible Next", system-ui, -apple-system,
                  "Segoe UI", sans-serif;
@@ -910,7 +935,7 @@ main:focus { outline: none; }
   opacity: 0;
   pointer-events: none;
   transition: translate 300ms cubic-bezier(.2,.7,.2,1),
-              opacity   240ms linear;
+              opacity   240ms var(--paso);
 }
 
 /* EL VELO, EN UN PSEUDO Y NO EN EL `background` DE LA BARRA. Tiene que
@@ -1151,7 +1176,16 @@ main:focus { outline: none; }
     gap: clamp(1rem, 2.4vw, 2.25rem);
   }
   .menu { display: none; }
+  /* La píldora de ayuda se separa del resto: los seis enlaces son
+     secciones y ella no es una séptima. Un hueco mayor es más barato
+     que una línea divisoria y dice lo mismo. */
+  .pildora--barra { margin-left: clamp(0.5rem, 1.4vw, 1.25rem); }
 }
+/* Y por debajo de 940 no aparece: ahí la fila entera se esconde y la
+   ayuda vive en el menú, que es donde cabe. Dos píldoras a la vez
+   serían la misma acción ofrecida dos veces en la misma pantalla. */
+.pildora--barra { display: none; }
+@media (min-width: 940px) { .pildora--barra { display: inline-flex; } }
 
 /* ── DÓNDE SE ANCLA EL PANEL, Y POR QUÉ NO AL BOTÓN ────────────────
    Medido a 375 px: colgado del propio <details> con `right: 0`, el
@@ -1260,7 +1294,7 @@ main:focus { outline: none; }
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
-  transition: border-color 160ms linear;
+  transition: border-color 160ms var(--paso);
 }
 .pildora:hover { border-color: var(--tinta); }
 .pildora__icono {
@@ -1627,7 +1661,7 @@ main:focus { outline: none; }
      asentamiento, nunca la existencia. */
   transform: translateY(0);
   transition: transform 420ms cubic-bezier(.2,.7,.2,1),
-              opacity 420ms linear;
+              opacity 420ms var(--paso);
 }
 .hero[data-mar="listo"] .cta { animation: asentar 520ms cubic-bezier(.2,.7,.2,1) both; }
 @keyframes asentar {
@@ -3026,7 +3060,7 @@ main:focus { outline: none; }
      papel vacío debajo de las cortas; alineadas arriba, cada una mide
      lo que dice. */
   align-self: start;
-  transition: border-color 700ms linear;
+  transition: border-color 700ms var(--paso);
 }
 .glosario__ficha:focus-visible { outline: 3px solid var(--letra); }
 
@@ -3055,7 +3089,7 @@ main:focus { outline: none; }
   background-repeat: repeat, no-repeat;
   background-blend-mode: multiply, normal;
   opacity: 0.62;
-  transition: opacity 700ms linear;
+  transition: opacity 700ms var(--paso);
 }
 /* De noche el papel es añil y `multiply` no muerde: oscurece hasta
    tapar. Se invierte a `screen`, como en `.termino` y en el grano del
@@ -3092,7 +3126,7 @@ main:focus { outline: none; }
     color-mix(in srgb, #41707F 52%, transparent) 70%,
     color-mix(in srgb, #41707F 88%, transparent) 100%);
   transition: inset 700ms cubic-bezier(.25,.8,.3,1),
-              opacity 700ms linear;
+              opacity 700ms var(--paso);
 }
 
 /* AL PASAR POR ENCIMA Y AL ABRIR, EL PIGMENTO SE EXTIENDE. Lento —700 ms
@@ -3171,7 +3205,7 @@ main:focus { outline: none; }
   border-radius: 46% 54% 52% 48% / 50% 46% 54% 50%;
   background: color-mix(in srgb, #41707F 16%, transparent);
   transition: rotate 260ms cubic-bezier(.2,.7,.2,1),
-              background-color 260ms linear;
+              background-color 260ms var(--paso);
 }
 .glosario__mas::before,
 .glosario__mas::after {
@@ -3183,7 +3217,7 @@ main:focus { outline: none; }
   border-radius: 1px;
   background: #2F5A6B;
 }
-.glosario__mas::after { rotate: 90deg; transition: opacity 200ms linear; }
+.glosario__mas::after { rotate: 90deg; transition: opacity 200ms var(--paso); }
 
 .glosario__ficha--abierta .glosario__mas {
   rotate: 90deg;
@@ -3338,7 +3372,7 @@ main:focus { outline: none; }
   display: grid; gap: 0.25rem; padding: 1.15rem 1.25rem;
   border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
   background: var(--papel-alto); color: var(--letra); text-decoration: none;
-  transition: border-color 140ms linear, transform 140ms ease-out;
+  transition: border-color 140ms var(--paso), transform 140ms ease-out;
 }
 .puerta:hover, .puerta:focus-visible { border-color: var(--letra); }
 .puerta:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
@@ -3910,7 +3944,7 @@ main:focus { outline: none; }
   transform-origin: center;
   transition: transform 900ms cubic-bezier(.25,.8,.3,1),
               border-radius 900ms cubic-bezier(.25,.8,.3,1),
-              opacity 900ms linear;
+              opacity 900ms var(--paso);
 }
 /* ── DE NOCHE EL PIGMENTO PINTA, NO MULTIPLICA ──────────────────────
    `multiply` es la física del papel claro: el pigmento solo puede
@@ -4082,7 +4116,7 @@ main:focus { outline: none; }
   dominant-baseline: middle; font-variant-numeric: tabular-nums;
 }
 
-.pista { stroke-width: 7; stroke-linecap: round; transition: stroke 180ms linear, opacity 180ms linear; }
+.pista { stroke-width: 7; stroke-linecap: round; transition: stroke 180ms var(--paso), opacity 180ms var(--paso); }
 .pista--abierta { stroke: #2F6B4F; opacity: 1; }
 .pista--quizas  { stroke: #4A6274; opacity: 0.75; }
 .pista--cerrada { stroke: var(--letra); opacity: 0.13; }
@@ -4099,8 +4133,8 @@ main:focus { outline: none; }
   margin-top: var(--e-4); min-height: 3rem; padding: 0 1.2rem;
   border: 1px solid rgb(var(--letra-rgb) / 20%); border-radius: 2px;
   background: var(--papel-hondo); color: var(--letra); font: inherit; font-size: var(--t-md); cursor: pointer;
-  transition: background-color 140ms linear, color 140ms linear,
-              border-color 140ms linear;
+  transition: background-color 140ms var(--paso), color 140ms var(--paso),
+              border-color 140ms var(--paso);
 }
 /* ELEGIDO = TINTA PLENA, no un borde doblado. El anillo doble decía
    «algo pasa aquí» sin decir «esto está puesto»: a un vistazo, un botón
@@ -4383,8 +4417,8 @@ main:focus { outline: none; }
   background: var(--papel-alto); color: var(--letra); font: inherit; font-size: var(--t-sm); cursor: pointer;
   /* El estado cambia con un fundido corto, no con un salto: es el mismo
      ritmo de .orden en la comunidad. 140 ms — se siente, no se espera. */
-  transition: background-color 140ms linear, color 140ms linear,
-              border-color 140ms linear, box-shadow 140ms linear;
+  transition: background-color 140ms var(--paso), color 140ms var(--paso),
+              border-color 140ms var(--paso), box-shadow 140ms var(--paso);
 }
 .ficha:hover { background: var(--papel-hondo); }
 /* La elegida va en tinta plena y además lleva el pigmento del mapa como
@@ -4955,7 +4989,7 @@ main:focus { outline: none; }
   padding: 0.6rem 0.8rem;
   border: 1px solid rgb(var(--letra-rgb) / 15%); border-radius: 2px;
   background: var(--papel-alto); color: var(--letra); cursor: pointer;
-  transition: background-color 140ms linear, border-color 140ms linear;
+  transition: background-color 140ms var(--paso), border-color 140ms var(--paso);
 }
 .rr__chip__nombre { font-size: var(--t-md); line-height: 1.2; }
 .rr__chip__rango {
@@ -5097,13 +5131,13 @@ main:focus { outline: none; }
 .rr__marca--borde { stroke: var(--letra); stroke-width: 1.8; }
 .rr__arco {
   fill: none; stroke: var(--letra); stroke-width: 9; stroke-linecap: round;
-  opacity: 0.13; transition: opacity 220ms linear, stroke 220ms linear;
+  opacity: 0.13; transition: opacity 220ms var(--paso), stroke 220ms var(--paso);
 }
 /* La aguada del tramo elegido: el mismo trazo, cuatro veces más ancho y
    casi transparente. Pigmento que se sale de la línea. */
 .rr__aguada {
   fill: none; stroke: #2F6B4F; stroke-width: 24; stroke-linecap: round;
-  opacity: 0; transition: opacity 320ms linear;
+  opacity: 0; transition: opacity 320ms var(--paso);
   /* EL DESENFOQUE ES LA MITAD DEL EFECTO. Un trazo ancho y translúcido
      con el canto nítido no es pigmento corrido: es un halo de
      interfaz, que es lo que parecía. El agua no tiene borde — y basta
@@ -5117,17 +5151,17 @@ main:focus { outline: none; }
 .rr__cola {
   fill: none; stroke: #2F6B4F; stroke-width: 4.5;
   stroke-linecap: round; stroke-dasharray: 0.5 9;
-  opacity: 0.45; transition: opacity 220ms linear, stroke-width 220ms linear;
+  opacity: 0.45; transition: opacity 220ms var(--paso), stroke-width 220ms var(--paso);
 }
 .rr__punta {
   fill: none; stroke: #2F6B4F; stroke-width: 4;
   stroke-linecap: round; stroke-linejoin: round;
-  opacity: 0.4; transition: opacity 220ms linear;
+  opacity: 0.4; transition: opacity 220ms var(--paso);
 }
 .rr__etiqueta {
   fill: rgb(var(--letra-rgb) / 69%); font-family: var(--tipo-texto); font-size: 15px;
   text-anchor: middle; dominant-baseline: middle;
-  transition: fill 220ms linear;
+  transition: fill 220ms var(--paso);
 }
 
 /* Qué se enciende con cada respuesta. El verde es el mismo «abierta»
@@ -5208,7 +5242,7 @@ main:focus { outline: none; }
 .rr__horizonte {
   display: grid; grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline; gap: 0.15rem 0.9rem;
-  transition: opacity 220ms linear;
+  transition: opacity 220ms var(--paso);
 }
 .rr__horizonte__nombre { font-size: var(--t-md); line-height: 1.35; }
 .rr__horizonte__plazo {

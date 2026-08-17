@@ -465,7 +465,7 @@
   background-size: 300px;
   background-blend-mode: multiply;
   transition: translate 220ms cubic-bezier(.25,.8,.3,1),
-              box-shadow 220ms linear;
+              box-shadow 220ms var(--paso);
 }
 /* La comilla va en ::after y no en ::before A PROPÓSITO: el ::before
    de la ficha ya tiene dueño de noche (el grano de papel del bloque
@@ -1189,7 +1189,7 @@
   background-blend-mode: multiply;
   padding-bottom: 1.15rem;
   transition: translate 220ms cubic-bezier(.25,.8,.3,1),
-              box-shadow 220ms linear;
+              box-shadow 220ms var(--paso);
 }
 @media (min-width: 700px) {
   .producto:hover {
@@ -1251,7 +1251,7 @@
     rgb(var(--letra-rgb) / 13%) 52%,
     transparent 78%);
   filter: blur(6px);
-  transition: opacity 220ms linear, scale 420ms cubic-bezier(.25,.8,.3,1);
+  transition: opacity 220ms var(--paso), scale 420ms cubic-bezier(.25,.8,.3,1);
 }
 .producto__marco img {
   position: relative;
@@ -1364,7 +1364,7 @@
   border: 1px solid rgb(var(--letra-rgb) / 34%);
   border-radius: 2px;
   cursor: pointer;
-  transition: background-color 160ms linear, border-color 160ms linear;
+  transition: background-color 160ms var(--paso), border-color 160ms var(--paso);
 }
 .producto__comprar--sobrio:hover,
 .producto__comprar--sobrio:focus-visible {

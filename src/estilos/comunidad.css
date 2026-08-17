@@ -574,8 +574,8 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 180ms linear, color 180ms linear,
-              box-shadow 180ms linear, translate 180ms ease-out;
+  transition: background-color 180ms var(--paso), color 180ms var(--paso),
+              box-shadow 180ms var(--paso), translate 180ms ease-out;
 }
 .orden:hover { background: var(--vidrio-alto); color: var(--letra); }
 .orden[aria-pressed="true"] {
@@ -628,7 +628,7 @@
   font: inherit;
   font-size: var(--t-xs);
   cursor: pointer;
-  transition: background-color 180ms linear, box-shadow 180ms linear;
+  transition: background-color 180ms var(--paso), box-shadow 180ms var(--paso);
 }
 .chip::before {
   content: "";
@@ -662,7 +662,7 @@
   background: var(--vidrio);
   backdrop-filter: var(--difuminado);
   box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
-  transition: box-shadow 220ms linear;
+  transition: box-shadow 220ms var(--paso);
 }
 .escribir[open] { box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo); }
 .escribir__senuelo {
@@ -961,7 +961,7 @@
   background: var(--vidrio);
   backdrop-filter: var(--difuminado);
   box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
-  transition: background-color 220ms linear, box-shadow 220ms linear,
+  transition: background-color 220ms var(--paso), box-shadow 220ms var(--paso),
               translate 220ms cubic-bezier(.2,.7,.2,1);
 }
 /* SE LEVANTA DOS PÍXELES, y no más. Lo que dice el gesto es «esto se
@@ -1136,7 +1136,7 @@
   background: transparent;
   color: rgb(var(--letra-rgb) / var(--gris-suelo));
   cursor: pointer;
-  transition: background-color 160ms linear, color 160ms linear,
+  transition: background-color 160ms var(--paso), color 160ms var(--paso),
               scale 160ms cubic-bezier(.2,.7,.2,1);
 }
 .voto__flecha { width: 1.15em; height: 1.15em; overflow: visible; }
@@ -1167,7 +1167,7 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: rgb(var(--letra-rgb) / 88%);
-  transition: color 160ms linear;
+  transition: color 160ms var(--paso);
 }
 /* El marcador se tiñe del lado al que se empujó, como en Reddit. */
 .votos[data-tenido="sube"] .votos__marcador { color: var(--sube); }
@@ -1224,7 +1224,7 @@
   font-size: var(--t-xs);
   letter-spacing: 0.06em;
   color: rgb(var(--letra-rgb) / 76%);
-  transition: background-color 180ms linear, color 180ms linear;
+  transition: background-color 180ms var(--paso), color 180ms var(--paso);
 }
 .hebra__abrir:hover { background: rgb(var(--letra-rgb) / 10%); color: var(--letra); }
 .hebra__abrir:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
@@ -1340,7 +1340,7 @@
   font-size: var(--t-xs);
   color: rgb(var(--letra-rgb) / 72%);
   text-decoration: none;
-  transition: background-color 180ms linear, color 180ms linear;
+  transition: background-color 180ms var(--paso), color 180ms var(--paso);
 }
 .nodo__responder:hover {
   background: rgb(var(--letra-rgb) / 9%);
@@ -1437,7 +1437,7 @@
   color: var(--letra);
   font-size: var(--t-sm);
   text-decoration: none;
-  transition: background-color 180ms linear;
+  transition: background-color 180ms var(--paso);
 }
 .comunidad__pie-enlaces a:hover { background: rgb(var(--letra-rgb) / 11%); }
 .comunidad__pie-enlaces a:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
