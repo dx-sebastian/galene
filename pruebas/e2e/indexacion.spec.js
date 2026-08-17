@@ -21,6 +21,7 @@
    batería normal y no dentro.
    ═══════════════════════════════════════════════════════════════════ */
 import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -108,4 +109,30 @@ test('indexación · la decisión vive en un solo sitio', async () => {
   recorrer(paginas);
   expect(sueltos.join(', '),
     'Páginas que se escriben su propio noindex sin pasar por VERIFICADO').toBe('');
+});
+
+/* ── Y QUE LO QUE HAY QUE FIRMAR SIGA SIENDO LO QUE EL SITIO DICE ──
+   El freno se levanta con una firma, y una firma cubre un texto
+   concreto. `docs/verificacion/DOSSIER.md` es ese texto: las 37
+   afirmaciones clínicas que el sitio publica, sacadas de donde viven
+   —`js/reloj.js`, `datos/expertos.js`, `componentes/Ayuda.astro`— y no
+   escritas a mano.
+
+   Esta prueba comprueba que no se ha desincronizado. Si se pone en
+   rojo, el aviso no es «falta regenerar un archivo»: es que alguien
+   cambió una afirmación clínica y el documento que se envió a firmar
+   —o que ya se firmó— habla de otra versión del sitio.
+
+   No abre navegador. Mira el código, como la de aquí arriba. */
+test('indexación · la lista de lo que hay que firmar está al día', async () => {
+  let salida = '';
+  let fallo = null;
+  try {
+    salida = execFileSync('node', ['scripts/dossier-clinico.mjs', '--comprobar'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    fallo = (e.stderr || e.stdout || e.message).toString().trim();
+  }
+  expect(fallo, fallo || '').toBe(null);
+  console.log(`  ${salida.trim()}`);
 });

@@ -25,6 +25,7 @@
    prueba de lo que pasa cuando no hay internet.
    ═══════════════════════════════════════════════════════════════════ */
 import { test, expect } from '@playwright/test';
+import { BASE } from '../../playwright.config.js';
 
 test.use({
   viewport: { width: 390, height: 844 },
@@ -130,8 +131,12 @@ test('mapa · con la ubicación denegada dice lo mismo', async ({ browser }) => 
   });
   const page = await ctx.newPage();
   await sinRed(page);
-  await page.goto(new URL('#mapa', page.context()._options?.baseURL
-    || 'http://localhost:5178/galene/').href, { waitUntil: 'load' });
+  /* Este contexto se crea a mano —hace falta para denegar el permiso—
+     y por eso no hereda el `baseURL` del proyecto. La dirección sale de
+     la configuración y no escrita aquí: con `GALENE_PROD=1` apunta al
+     espejo de producción, y una dirección a mano dejaría esta prueba
+     midiendo el compilado local mientras las otras miden lo publicado. */
+  await page.goto(new URL('#mapa', BASE).href, { waitUntil: 'load' });
   await page.waitForFunction(() => !document.querySelector('.cargador'),
     null, { timeout: 30_000 }).catch(() => {});
   await page.waitForTimeout(2500);

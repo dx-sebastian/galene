@@ -130,15 +130,42 @@ de ficheros de veinte líneas (`pruebas/servidor.mjs`), que es como sirve
 GitHub Pages—, no contra el servidor de desarrollo. Un fallo que solo
 aparece al compilar es el que nadie descubre hasta que está publicado.
 
-Dos suites:
+Lo que vigila, por archivo:
 
-- `pruebas/e2e/foro.spec.js` — publicar, validar, contestar, votar,
-  ordenar, filtrar, borrar lo propio, y que lo escrito sobreviva a una
-  recarga pero no a otra pestaña.
-- `pruebas/e2e/garzas.spec.js` — el panel opt-in, el pico teñido, el
-  globo al pasar el ratón, la garza que aparece cuando se abre otra
-  pestaña y desaparece al cerrarla, y el gesto de calma con una mano y
-  con dos.
+- `foro.spec.js` — publicar, validar, contestar, votar, ordenar,
+  filtrar, borrar lo propio, y que lo escrito sobreviva a una recarga
+  pero no a otra pestaña.
+- `garzas.spec.js` — el panel opt-in, el pico teñido, el globo al pasar
+  el ratón, la garza que aparece cuando se abre otra pestaña y
+  desaparece al cerrarla, y el gesto de calma con una mano y con dos.
+- `contraste.spec.js` — las cuatro piezas del héroe, a siete horas y en
+  dos pantallas, midiendo **los píxeles pintados**: el fondo lo hace un
+  shader y no hay hoja de estilos a la que preguntarle.
+- `semantica.spec.js` — un solo `h1` por página, el salto al contenido,
+  y los objetivos táctiles medidos por **impacto real**
+  (`elementFromPoint`), no por su caja.
+- `ortografia.spec.js`, `metadatos.spec.js`, `indexacion.spec.js`,
+  `peso.spec.js`, `portada.spec.js`, `catalogo.spec.js`, `mapa.spec.js`,
+  `entrada.spec.js`.
+
+### Contra lo que hay publicado
+
+```bash
+npm run test:prod
+```
+
+La misma batería, apuntada al **espejo de producción**
+(`prod-espejo.mjs`, que pide cada archivo a `dx-sebastian.github.io` con
+curl y lo sirve tal cual). No compila nada: mide los bytes que le llegan
+a quien entra. Entre `dist/` y eso hay un push, un flujo de trabajo, un
+empaquetado y una CDN, y cada uno de ellos ha roto algo alguna vez.
+
+### La maquinaria del freno
+
+```bash
+npm run interruptor    # compila las dos versiones y las compara
+npm run dossier        # reescribe docs/verificacion/DOSSIER.md
+```
 
 Dos asideros hacen falta para esto y viajan al sitio publicado a
 propósito: `window.__hero.estado()`, `window.__garzas`, `window.__foro`
@@ -157,12 +184,22 @@ el cielo con 4.5:1 en el peor píxel a cualquier hora, y cero bandas planas.
 
 ## Antes de publicar
 
-- [ ] Verificar cada ventana de tiempo contra el protocolo vigente del
-      Ministerio de Salud. Anotar fuente y fecha en `js/reloj.js`.
-- [ ] Verificar cada línea telefónica llamando: número, horario, cobertura
-      y qué atiende realmente.
+La maquinaria ya está hecha: **`VERIFICADO` en `src/datos/sitio.js` es
+una palabra que mueve las seis páginas, el `robots.txt` y el
+`sitemap.xml` a la vez**, y `npm run interruptor` lo comprueba
+compilando las dos versiones. Lo que falta no es código.
+
+- [ ] **La firma.** Que un profesional de salud o de medicina forense en
+      Colombia revise las 37 afirmaciones clínicas del sitio. La lista
+      está enumerada, con su cita, en `docs/verificacion/DOSSIER.md`; la
+      carta para pedirla, en `docs/verificacion/SOLICITUD.md`.
+- [ ] Confirmar bajo qué número quedó publicada la actualización que
+      deroga la Resolución 459 de 2012.
+- [ ] Verificar cada línea telefónica llamando: número, horario,
+      cobertura y qué atiende realmente.
+- [ ] El mapa en un teléfono de verdad, con datos móviles, con el
+      permiso de ubicación concedido y denegado.
 - [ ] Sustituir el amanecer fijo (5:54) por cálculo real por latitud.
 - [ ] Cero organizaciones nombradas como aliadas sin acuerdo por escrito.
-- [ ] Revisión por una organización que atienda violencia sexual.
-- [ ] Quitar `noindex` y el aviso de borrador — **solo cuando todo lo
-      anterior esté hecho**.
+- [ ] `VERIFICADO = true` — **solo cuando la firma esté guardada en
+      `docs/verificacion/`**.

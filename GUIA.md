@@ -155,6 +155,19 @@ confundir:
 
 Hoy: seis ventanas con fuente, **cero verificadas**.
 
+Y para que eso deje de ser una frase: `docs/verificacion/DOSSIER.md`
+enumera las **37 afirmaciones** que el sitio publica —las seis ventanas,
+los cinco consejos con fuente, las tres líneas y las veintitrés tarjetas
+del panel—, cada una con su cita y una casilla de veredicto. No está
+escrito a mano: lo genera `npm run dossier` desde `js/reloj.js`,
+`datos/expertos.js` y `componentes/Ayuda.astro`, y lleva una huella. Si
+alguien corrige una hora, la huella cambia y la firma que hubiera deja
+de cubrir el texto — `npm run dossier -- --comprobar` lo vigila dentro
+de la batería de pruebas.
+
+La carta para pedir esa firma, y a qué puerta tocar primero, está en
+`docs/verificacion/SOLICITUD.md`.
+
 ---
 
 ## 6 · Cómo está hecho
@@ -438,6 +451,12 @@ sobre violencia sexual es la peor forma posible de mentir.
 
 ## 12 · Lo que falta antes de publicar
 
+- [ ] **La firma.** Las 37 afirmaciones están enumeradas con su cita en
+      `docs/verificacion/DOSSIER.md` y la carta para pedirla en
+      `docs/verificacion/SOLICITUD.md`. Es lo único que queda entre este
+      sitio y estar publicado: la maquinaria —`VERIFICADO`, el
+      `robots.txt`, el `sitemap.xml`— ya está hecha y comprobada con
+      `npm run interruptor`.
 - [ ] Verificar cada ventana de tiempo contra el protocolo vigente del
       Ministerio de Salud. Anotar fuente y fecha en `js/reloj.js`.
       **Pendiente: comprobar bajo qué número quedó publicada la

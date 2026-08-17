@@ -23,7 +23,25 @@ import { defineConfig, devices } from '@playwright/test';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const PUERTO = 5178;
+/* ── CONTRA EL COMPILADO DE AQUÍ, O CONTRA LO QUE HAY PUBLICADO ────
+   `npm test` mide `dist/`: lo que acaba de salir del horno, antes de
+   que nadie lo vea. `npm run test:prod` mide LOS BYTES QUE RESPONDE
+   dx-sebastian.github.io, servidos por el espejo de `prod-espejo.mjs`.
+
+   La diferencia importa y no es teórica. Entre las dos hay un `git
+   push`, un flujo de trabajo de GitHub, un empaquetado y una CDN, y
+   cada una de esas cosas ha roto algo alguna vez: una ruta que en
+   local resuelve y publicada no, un archivo que la poda de `dist` se
+   llevó, una edición que no llegó a desplegarse y deja mirando a la
+   anterior sin avisar. Una prueba en verde contra el compilado local
+   no dice nada sobre lo que le llega a quien entra a las cuatro de la
+   mañana; esta batería, apuntada al espejo, sí.
+
+   Con el espejo NO se compila: se mide lo que hay publicado, tal cual,
+   y si eso no es lo que se acaba de escribir, esa diferencia es
+   precisamente el hallazgo.                                            */
+const ESPEJO = process.env.GALENE_PROD === '1';
+const PUERTO = ESPEJO ? 5179 : 5178;
 export const BASE = `http://localhost:${PUERTO}/galene/`;
 
 /* ── QUÉ CHROMIUM SE USA ───────────────────────────────────────────
@@ -110,12 +128,24 @@ export default defineConfig({
      levantado— compila siempre, y reaprovechar el servidor entre
      ejecuciones ahorra minutos mientras se escribe una prueba. Si has
      dejado un servidor a mano en este puerto: bájalo o compila tú. */
-  webServer: {
-    command: `npm run build && node pruebas/servidor.mjs ${PUERTO}`,
-    url: BASE,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    stdout: 'ignore',
-    stderr: 'pipe',
-  },
+  webServer: ESPEJO
+    /* El espejo pide cada archivo a dx-sebastian.github.io con curl y
+       lo sirve tal cual. NO compila nada: si compilara, dejaría de ser
+       una medición de producción y volvería a ser una de `dist/`. */
+    ? {
+      command: 'node prod-espejo.mjs',
+      url: BASE,
+      reuseExistingServer: true,
+      timeout: 60_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+    }
+    : {
+      command: `npm run build && node pruebas/servidor.mjs ${PUERTO}`,
+      url: BASE,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+    },
 });
