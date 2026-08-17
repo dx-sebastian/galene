@@ -112,10 +112,25 @@
   font-weight: 500;
 }
 
-.comunidad-panel,
 /* La línea que sustituye al bloque de «Acerca» al final de la portada.
    Discreta y centrada: no es una llamada a la acción, es una puerta
-   para quien vino a preguntar quién está detrás de esto. */
+   para quien vino a preguntar quién está detrás de esto.
+
+   ── LA COMA QUE COSTÓ LA BANDA DE COMUNIDAD ────────────────────────
+   Esta regla nació pegada a la de abajo: se escribió justo detrás de
+   `.comunidad-panel,` y esa coma la arrastró dentro. Resultado, en
+   producción y durante toda la edición 8bc5261: la banda de Comunidad
+   dejó de ser de ancho completo —se llevó `max-width: 62rem`— y a la
+   vez siguió calculando su relleno con `(100% − 72rem) / 2`, que mide
+   contra el PADRE, no contra ella. Los dos juntos se comen la caja
+   desde los lados: a 1440 px el titular caía en tres líneas, a 1680 en
+   siete, y a 1920 la columna medía CERO y «resolverse» se partía letra
+   a letra en treinta y una líneas. Cuanto más grande la pantalla, más
+   estrecho el texto.
+
+   No se vio antes porque toda la batería miraba a 1440 px o menos, que
+   es justo donde el daño todavía parece una decisión tipográfica. De
+   ahí sale `pruebas/e2e/anchos.spec.js`, que mira hasta 2560. */
 .acerca__salida {
   margin: var(--e-6) auto var(--e-5);
   max-width: 62rem;
@@ -131,6 +146,7 @@
 }
 .acerca__salida a:hover { color: var(--letra); }
 
+.comunidad-panel,
 .acerca {
   position: relative;
   z-index: 1;
