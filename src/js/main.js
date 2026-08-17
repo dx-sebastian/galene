@@ -895,10 +895,10 @@ function arrancar(mar) {
      No hay forma barata de medir el compuesto desde dentro de la
      página, así que se compensa con holgura.
 
-     6.6 es lo que hace falta para que la medida sobre los píxeles ya
+     8.0 es lo que hace falta para que la medida sobre los píxeles ya
      compuestos —`pruebas/e2e/contraste.spec.js`, que exige el umbral
      más un 10 %— salga en verde a las catorce horas medidas. */
-  const OBJETIVO = 6.6;
+  const OBJETIVO = 8.0;
   /* ── UNA ZONA, QUE ES LA QUE HAY ───────────────────────────────────
      Llegó a medir tres —el bloque de texto, el logotipo y la fila de
      enlaces— porque la barra vivía sobre la pintura y su peor caso sin
