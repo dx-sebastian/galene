@@ -1,7 +1,20 @@
 /* Espejo de producción: sirve en localhost:5179 exactamente los bytes
    que responde dx-sebastian.github.io, pedidos con curl (que sí sale
    por el proxy del entorno). Con esto el navegador local renderiza EL
-   SITIO DESPLEGADO, no una copia compilada aquí. */
+   SITIO DESPLEGADO, no una copia compilada aquí.
+
+   ── LAS REDIRECCIONES SE PASAN, NO SE SIGUEN ───────────────────────
+   Y esa es la parte delicada. GitHub Pages responde 301 a cualquier
+   dirección de página sin barra final —`/galene/comunidad` manda a
+   `/galene/comunidad/`—, y un espejo que siguiera el salto por dentro
+   con `curl -L` devolvería un 200 limpio: el navegador vería la página
+   y nadie se enteraría de que hubo un rodeo. Eso es exactamente lo que
+   este archivo no puede hacer, porque hay pruebas que comprueban que
+   el sitemap NO redirige, y saldrían verdes por ceguera.
+
+   Así que el 301 se pasa tal cual, con su `Location` reescrita al
+   espejo. El navegador salta —igual que en producción— y quien mire el
+   código de respuesta ve el 301 que hubo de verdad. */
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 
@@ -11,21 +24,35 @@ const cache = new Map();
 createServer((req, res) => {
   const ruta = req.url.split('#')[0];
   if (cache.has(ruta)) {
-    const { tipo, cuerpo } = cache.get(ruta);
-    res.writeHead(200, { 'content-type': tipo });
+    const { codigo, cabeceras, cuerpo } = cache.get(ruta);
+    res.writeHead(codigo, cabeceras);
     return res.end(cuerpo);
   }
-  execFile('curl', ['-sS', '--compressed', '-w', '\n%{content_type}|%{http_code}',
+  execFile('curl', ['-sS', '--compressed',
+    '-w', '\n%{content_type}|%{http_code}|%{redirect_url}',
     ORIGEN + ruta], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 },
     (err, stdout) => {
       if (err) { res.writeHead(502); return res.end('espejo: ' + err.message); }
       const nl = stdout.lastIndexOf(0x0A);
       const meta = stdout.subarray(nl + 1).toString();
-      const [tipo, codigo] = meta.split('|');
+      const [tipo, texto, saltoA] = meta.split('|');
+      const codigo = +texto || 502;
       const cuerpo = stdout.subarray(0, nl);
-      if (codigo !== '200') { res.writeHead(+codigo || 502); return res.end(cuerpo); }
-      cache.set(ruta, { tipo, cuerpo });
-      res.writeHead(200, { 'content-type': tipo });
+
+      /* El salto, con su destino traído al espejo: si se dejara
+         apuntando a dx-sebastian.github.io, el navegador se iría a
+         internet y la medición dejaría de pasar por aquí. */
+      if (codigo >= 300 && codigo < 400 && saltoA) {
+        const cabeceras = { location: saltoA.replace(ORIGEN, '') };
+        cache.set(ruta, { codigo, cabeceras, cuerpo });
+        res.writeHead(codigo, cabeceras);
+        return res.end(cuerpo);
+      }
+
+      if (codigo !== 200) { res.writeHead(codigo); return res.end(cuerpo); }
+      const cabeceras = { 'content-type': tipo };
+      cache.set(ruta, { codigo, cabeceras, cuerpo });
+      res.writeHead(codigo, cabeceras);
       res.end(cuerpo);
     });
 }).listen(5179, () => console.log('espejo de prod en :5179'));
