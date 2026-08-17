@@ -340,3 +340,101 @@ for (const [nombre, ruta] of PAGINAS) {
     expect(sinBarra.join(', '), `Enlaces internos sin barra final en /${ruta}`).toBe('');
   });
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA AYUDA, A CERO CLICS, EN LAS DOS PANTALLAS Y EN LAS SEIS PÁGINAS.
+
+   La regla 5 del proyecto dice que la ayuda está a cero clics, y este
+   sitio la cumple de DOS maneras distintas a propósito:
+
+     · En la portada, bajando. La sección #ayuda está plantada justo
+       debajo del héroe, y por eso su barra —`barra--flotante`, escrita
+       aparte— no lleva píldora: un botón ahí competiría con el
+       logotipo para ahorrar un scroll que no cuesta nada. Está
+       argumentado en index.astro y es una decisión, no un olvido.
+
+     · En las otras cinco páginas, con la píldora de `Barra.astro`.
+       Ahí no hay #ayuda debajo de nada: la sección vive en la portada.
+
+   Y ahí estaba el agujero. La píldora existía solo dentro del panel
+   del menú, que se esconde a partir de 940 px — así que en /expertos,
+   /comunidad, /productos y /acerca abiertas en un portátil no había
+   NINGUNA ruta visible a la ayuda. Ni píldora, ni sección debajo, ni
+   nada en los seis rótulos de la fila.
+
+   No lo vio ninguna prueba porque todas las de este archivo miraban la
+   estructura —un h1, el salto al contenido, los objetivos táctiles— y
+   ninguna preguntaba si la acción principal del sitio se ve.
+   ═══════════════════════════════════════════════════════════════════ */
+const rotulos = (page) => page.evaluate(() =>
+  [...document.querySelectorAll('header a, header button, header summary')]
+    .filter((el) => el.getClientRects().length
+      && getComputedStyle(el).visibility !== 'hidden'
+      && parseFloat(getComputedStyle(el).opacity) > 0.02)
+    .map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24)));
+
+const hayAyuda = (l) => l.some((t) => /buscar ayuda/i.test(t));
+
+for (const [nombre, ruta] of [['expertos', 'expertos/'], ['comunidad', 'comunidad/'],
+  ['productos', 'productos/'], ['acerca', 'acerca/']]) {
+  test(`semántica · ${nombre} ofrece la ayuda en la barra de escritorio`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(ruta, { waitUntil: 'load', timeout: 90_000 });
+    await page.waitForTimeout(600);
+    const barra = await rotulos(page);
+    console.log(`  ${nombre}: ${JSON.stringify(barra)}`);
+    expect(hayAyuda(barra),
+      `en /${ruta} y en escritorio no hay ninguna ruta visible a la ayuda`).toBe(true);
+  });
+}
+
+test('semántica · en la portada la ayuda está a un scroll, no a un clic', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('./', { waitUntil: 'load', timeout: 90_000 });
+  await page.waitForTimeout(800);
+  const r = await page.evaluate(() => {
+    const a = document.querySelector('#ayuda');
+    if (!a) return null;
+    return { arriba: Math.round(a.getBoundingClientRect().top + scrollY), ventana: innerHeight };
+  });
+  expect(r, 'la portada tiene que llevar la sección de ayuda').toBeTruthy();
+  const pantallas = +(r.arriba / r.ventana).toFixed(2);
+  console.log(`  portada: #ayuda empieza a ${r.arriba} px = ${pantallas} pantallas`);
+  /* Un scroll, no tres. Si algún día la sección se aleja del héroe, la
+     decisión de no poner píldora aquí deja de sostenerse y hay que
+     volver a ponerla. */
+  expect(pantallas, '#ayuda se ha alejado del héroe').toBeLessThanOrEqual(1.35);
+});
+
+test('semántica · en el teléfono la ayuda va dentro del menú, no suelta', async ({ browser }) => {
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, reducedMotion: 'reduce',
+  });
+  const page = await ctx.newPage();
+  await page.goto('expertos/', { waitUntil: 'load', timeout: 90_000 });
+  await page.waitForTimeout(600);
+
+  /* Se pregunta por la ESTRUCTURA y no por lo que se ve: el panel de
+     este menú no se esconde con `display`, se pliega, así que sus
+     enlaces siguen teniendo caja aunque nadie pueda tocarlos. Medirlo
+     por visibilidad daría que la píldora está suelta en la barra, y no
+     lo está. */
+  const r = await page.evaluate(() => {
+    const p = document.querySelector('.menu__panel .pildora');
+    const suelta = document.querySelector('.barra__enlaces .pildora');
+    return {
+      enElMenu: Boolean(p),
+      abierto: document.querySelector('details.menu')?.open ?? null,
+      sueltaVisible: Boolean(suelta && suelta.getClientRects().length
+        && getComputedStyle(suelta).display !== 'none'),
+    };
+  });
+  console.log(`  móvil: ayuda en el menú=${r.enElMenu} · menú abierto=${r.abierto}`
+    + ` · píldora suelta visible=${r.sueltaVisible}`);
+  expect(r.enElMenu, 'la ayuda tiene que estar dentro del menú del teléfono').toBe(true);
+  expect(r.abierto, 'el menú arranca cerrado').toBe(false);
+  expect(r.sueltaVisible,
+    'dos píldoras a la vez son la misma acción ofrecida dos veces').toBe(false);
+  await ctx.close();
+});

@@ -237,3 +237,72 @@ for (const [nombre, ruta] of PAGINAS) {
     expect(r.contraste, 'el rótulo del botón se cae').toBeGreaterThanOrEqual(4.5);
   });
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Y CÓMO SE MUEVE LO QUE SE TOCA.
+
+   Medido con el movimiento encendido sobre la edición publicada:
+   103 elementos con transición y **238 curvas `linear`** — el valor por
+   defecto del navegador— contra 17 que usaban la curva pensada que este
+   sitio ya tenía escrita.
+
+   `linear` es velocidad constante, arranque instantáneo y parada seca.
+   Es como se mueve una máquina, no como se mueve nada que tenga peso, y
+   es lo que hace que una interfaz se sienta de plantilla aunque cada
+   pieza esté bien dibujada. Un jurado de diseño no lo ve: lo nota con
+   el ratón.
+
+   Esta prueba no juzga la curva —eso es una decisión, y está tomada en
+   `--paso`—. Lo que impide es que vuelva a colarse el valor por
+   defecto, que es como llegaron las 238.
+   ═══════════════════════════════════════════════════════════════════ */
+for (const [nombre, ruta] of [['portada', ''], ['comunidad', 'comunidad/'],
+  ['expertos', 'expertos/']]) {
+  test(`controles · ${nombre} no se mueve en línea recta`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    /* Sin `reducedMotion: reduce`: con el movimiento apagado el sitio
+       pone las transiciones a 0.001 s y esta medición no mediría nada
+       —ese error ya se cometió una vez en esta misma auditoría—. */
+    await page.goto(ruta, { waitUntil: 'load', timeout: 90_000 });
+    await page.waitForTimeout(1500);
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 400) {
+        window.scrollTo(0, y);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      window.scrollTo(0, 0);
+      await new Promise((r) => setTimeout(r, 400));
+    });
+
+    const r = await page.evaluate(() => {
+      const curvas = new Map();
+      const rectas = [];
+      for (const el of document.querySelectorAll('body *')) {
+        const cs = getComputedStyle(el);
+        if (cs.transitionDuration === '0s' || cs.transitionProperty === 'none') continue;
+        const duraciones = cs.transitionDuration.split(',').map((s) => s.trim());
+        /* Una curva por propiedad, y se emparejan por orden. Una
+           transición de 0 s no cuenta: no hay movimiento que curvar. */
+        cs.transitionTimingFunction.split(/,(?![^(]*\))/).map((s) => s.trim())
+          .forEach((c, i) => {
+            const dur = duraciones[i % duraciones.length];
+            if (dur === '0s') return;
+            curvas.set(c, (curvas.get(c) || 0) + 1);
+            if (c === 'linear' && rectas.length < 6) {
+              rectas.push(`${el.className?.toString?.().slice(0, 30) || el.tagName}`
+                + ` (${cs.transitionProperty.split(',')[i] || '?'})`);
+            }
+          });
+      }
+      return {
+        curvas: [...curvas.entries()].sort((a, b) => b[1] - a[1]),
+        rectas: [...new Set(rectas)],
+      };
+    });
+
+    console.log(`  ${nombre}: ${r.curvas.map(([c, n]) => `${c.slice(0, 28)}×${n}`).join(' · ')}`);
+    const linear = r.curvas.find(([c]) => c === 'linear');
+    expect(linear ? `${linear[1]} transiciones en línea recta — ${r.rectas.join(', ')}` : '',
+      'Movimiento sin curva').toBe('');
+  });
+}

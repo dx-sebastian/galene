@@ -49,6 +49,34 @@ const esActual = (href) => Boolean(actual) && href.replace(/\/$/, '').endsWith(a
         <a class="barra__enlace" href={href}
            aria-current={esActual(href) ? 'page' : undefined}>{texto}</a>
       ))}
+      {/* ── LA ACCIÓN PRINCIPAL, QUE EN ESCRITORIO NO ESTABA ────────
+          Medido sobre la edición publicada, listando los controles
+          visibles de la cabecera:
+
+            escritorio  Galene · Información · Productos · Recursos ·
+                        Comunidad · Panel de expertos
+            móvil       …los mismos, y «Buscar ayuda»
+
+          La píldora existía solo dentro de `.menu__panel`, y ese panel
+          se esconde a partir de 940 px. O sea que en un portátil, en
+          una pantalla de escritorio y en una tableta apaisada, lo único
+          que este sitio existe para dar —la ayuda— no estaba en la
+          barra. Se llegaba a ella bajando por la portada o adivinando
+          que vive detrás de «Información».
+
+          No es una mejora de conversión: es la regla 5 del proyecto,
+          «la ayuda está a cero clics», que se cumplía en el teléfono y
+          no en la mesa. */}
+      <a class="pildora pildora--barra" href={base + '#ayuda'}>
+        Buscar ayuda
+        <svg class="pildora__icono" viewBox="0 0 14 12"
+             aria-hidden="true" focusable="false">
+          <path d="M1 6 H12.4 M8.6 2.2 L12.6 6 L8.6 9.8"
+                fill="none" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"
+                vector-effect="non-scaling-stroke" />
+        </svg>
+      </a>
     </div>
 
     <details class="menu" name="barra-menu">

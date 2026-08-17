@@ -210,7 +210,7 @@
   line-height: 1.35;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 160ms linear;
+  transition: opacity 160ms var(--paso);
   /* `translate` lo escribe main.js con el sitio del ave. Se declara
      aquí para que la primera escritura no herede un valor raro. */
   translate: 0 0;
@@ -241,7 +241,7 @@
   line-height: 1.4;
   text-shadow: 0 1px 3px rgb(18 35 48 / 35%);
   opacity: 0;
-  transition: opacity 400ms linear;
+  transition: opacity 400ms var(--paso);
   pointer-events: none;
 }
 .manos[data-visible="1"] { opacity: 1; }

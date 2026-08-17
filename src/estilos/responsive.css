@@ -344,7 +344,7 @@ body {
 @supports not (translate: 0) {
   .barra--flotante {
     transform: translateY(-100%);
-    transition: transform 300ms cubic-bezier(.2, .7, .2, 1), opacity 240ms linear;
+    transition: transform 300ms cubic-bezier(.2, .7, .2, 1), opacity 240ms var(--paso);
   }
 
   .barra--flotante[data-barra="visible"],
