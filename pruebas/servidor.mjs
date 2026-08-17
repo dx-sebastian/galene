@@ -60,10 +60,28 @@ createServer(async (pet, res) => {
 
     let archivo = dentro;
     try {
-      if ((await stat(archivo)).isDirectory()) archivo = join(archivo, 'index.html');
+      if ((await stat(archivo)).isDirectory()) {
+        /* ── EL SALTO A LA BARRA FINAL, COMO EL DE VERDAD ──────────
+           GitHub Pages responde 301 a una carpeta pedida sin barra
+           final: `/galene/comunidad` manda a `/galene/comunidad/`.
+           Este servidor servía las dos igual, y esa comodidad costó
+           cara — once pruebas del foro pedían `comunidad` sin barra y
+           salían verdes durante meses; solo se vieron el día que la
+           batería miró a producción, donde eso es un rodeo.
+
+           Un servidor de pruebas que es más permisivo que el de verdad
+           no es más cómodo: es un sitio donde se esconden fallos. */
+        if (!ruta.endsWith('/')) {
+          const consulta = new URL(pet.url, 'http://x').search;
+          res.writeHead(301, { Location: `${BASE}${ruta}/${consulta}` });
+          res.end();
+          return;
+        }
+        archivo = join(archivo, 'index.html');
+      }
     } catch {
-      /* Sin extensión, se prueba con index.html dentro: es como sirve
-         GitHub Pages `format: 'directory'`. */
+      /* Sin extensión y sin carpeta que valga: se prueba con index.html
+         dentro, que es lo que hace `format: 'directory'`. */
       if (!extname(archivo)) archivo = join(archivo, 'index.html');
     }
 
