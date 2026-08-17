@@ -68,11 +68,11 @@ const RESUMEN = producto.lema + ' ' + producto.gancho;
 
   <Barra actual="productos" />
 
-  <main class="ficha-pagina">
+  <main id="contenido" tabindex="-1" class="ficha-pagina">
     <nav class="ficha__migas" aria-label="Ruta">
       <a href={base}>Portada</a>
       <span aria-hidden="true">/</span>
-      <a href={base + 'productos'}>Catálogo</a>
+      <a href={base + 'productos/'}>Catálogo</a>
       <span aria-hidden="true">/</span>
       <span aria-current="page">{producto.nombre}</span>
     </nav>
@@ -122,19 +122,19 @@ const RESUMEN = producto.lema + ' ' + producto.gancho;
     </article>
 
     <nav class="ficha__vecinos" aria-label="Otras piezas del catálogo">
-      <a class="ficha__vecino" href={base + 'productos/' + anterior.id}>
+      <a class="ficha__vecino" href={base + 'productos/' + anterior.id + '/'}>
         <span class="ficha__vecino-guia">← Anterior</span>
         <span class="ficha__vecino-nombre">{anterior.nombre}</span>
       </a>
       <a class="ficha__vecino ficha__vecino--der"
-         href={base + 'productos/' + siguiente.id}>
+         href={base + 'productos/' + siguiente.id + '/'}>
         <span class="ficha__vecino-guia">Siguiente →</span>
         <span class="ficha__vecino-nombre">{siguiente.nombre}</span>
       </a>
     </nav>
 
     <p class="expertos-pagina__volver">
-      <a href={base + 'productos'}>← Volver al catálogo</a>
+      <a href={base + 'productos/'}>← Volver al catálogo</a>
     </p>
     <Pie />
   </main>

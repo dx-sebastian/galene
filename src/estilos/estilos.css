@@ -384,6 +384,142 @@ body.pagina-papel { background: var(--papel); }
   clip-path: inset(50%); white-space: nowrap;
 }
 
+/* ── EL SALTO AL CONTENIDO ──────────────────────────────────────────
+   Fuera de la pantalla mientras nadie lo busca, y una pastilla de
+   papel en cuanto recibe el foco. No usa `.visualmente-oculto`: ese
+   recorta a 1×1 con `clip-path`, y al enfocarlo habría que deshacer
+   cinco propiedades. Aquí basta con moverlo.
+
+   Va por encima de todo (`z-index` alto) porque las barras de las
+   páginas son pegajosas y translúcidas: si el salto sale por debajo,
+   sale borroso y medio tapado justo cuando hay que leerlo.
+
+   `top` cuenta con el canto seguro del teléfono; en un iPhone con
+   muesca, 0 queda debajo del reloj del sistema. */
+.salto {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  left: 0.75rem;
+  z-index: 9999;
+  transform: translateY(-160%);
+  padding: 0.7rem 1.15rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--papel, #FBF7F0);
+  color: var(--letra, #16222E);
+  border: 1px solid rgb(0 0 0 / 18%);
+  border-radius: 0.4rem;
+  box-shadow: 0 8px 24px rgb(16 26 34 / 22%);
+  font-size: 1rem;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.salto:focus-visible,
+.salto:focus {
+  transform: translateY(0);
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .salto { transition: transform 140ms ease-out; }
+}
+
+/* El destino recibe el foco de verdad —lleva `tabindex="-1"`— y no
+   tiene por qué enseñar un cerco por ello: quien saltó ya sabe dónde
+   está, y el cerco de un <main> entero es una caja alrededor de media
+   página. */
+main:focus { outline: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL ÁREA QUE SE TOCA NO ES LA QUE SE VE
+   ═══════════════════════════════════════════════════════════════════
+   La auditoría contó 28 objetivos por debajo de 24 px, y el peor era
+   el más importante: el enlace al 123 medía 22×19 px en un teléfono.
+   El enlace más urgente del sitio era el más difícil de acertar, y
+   quien lo va a tocar puede estar temblando.
+
+   ── NO SE ENGORDA LA LETRA, SE ENGORDA EL OBJETIVO ─────────────────
+   Subirle la caja a 44 px al «123» que va DENTRO de una frase
+   separaría el renglón del párrafo entero: se arregla el objetivo y se
+   rompe la composición. Lo que se agranda es un pseudoelemento
+   transparente, que el dedo encuentra y el ojo no.
+
+   `min(0px, …)` para no encoger nunca: en un elemento que ya pasa del
+   mínimo, la expresión da positivo y el `min` la deja en cero.
+   Las unidades porcentuales de `top`/`bottom` se resuelven contra el
+   ALTO del elemento y las de `left`/`right` contra su ANCHO, que es
+   justo lo que hace falta aquí.
+
+   ── DOS MEDIDAS, Y LA GRANDE ES PARA EL TELÉFONO ───────────────────
+   44 px —criterio 2.5.5 de WCAG, nivel AAA, y la recomendación de
+   Apple— para cualquier enlace que MARQUE UN NÚMERO. 24 px —criterio
+   2.5.8, nivel AA— para el resto de la navegación.
+
+   Los enlaces sueltos dentro de un párrafo están exentos por el propio
+   criterio: no se puede engordar una palabra en mitad de una línea sin
+   romperla. Por eso esta lista nombra elementos de navegación, no
+   prosa. `pruebas/e2e/semantica.spec.js` lo comprueba sondeando con
+   `elementFromPoint`, o sea midiendo lo que el dedo encuentra.       */
+/* ── DOS QUE NECESITAN CAJA, NO PSEUDOELEMENTO ─────────────────────
+   El truco del `::before` funciona sobre una caja con altura propia.
+   Estos dos son enlaces EN LÍNEA sueltos —el del pie y el de la fuente
+   de cada tarjeta de experto, que además parte en dos renglones— y ahí
+   el pseudoelemento se queda corto: medidos con `elementFromPoint`
+   daban 22 y 23 px contra un mínimo de 24.
+
+   Como no van dentro de una frase sino solos en su fila, se les puede
+   dar caja de verdad sin romper ninguna línea de texto. Es la solución
+   simple, y la simple es la que se sostiene. */
+.pie__nav a,
+.experto > footer a {
+  display: inline-block;
+  padding-block: 0.3rem;
+}
+
+:where(a[href^="tel:"]) { --toque: 44px; }
+:where(
+  .barra__enlace,
+  .marca,
+  .pie__nav a,
+  .pie__version a,
+  .ficha__migas a,
+  .ficha__vecino,
+  .expertos-pagina__volver a,
+  .experto__cita a,
+  .experto a,
+  .comunidad__normas summary,
+  .hero__enlace,
+  .ayuda__mas a
+) { --toque: 24px; }
+
+:where(a[href^="tel:"],
+  .barra__enlace, .marca, .pie__nav a, .pie__version a,
+  .ficha__migas a, .ficha__vecino, .expertos-pagina__volver a,
+  .experto__cita a, .experto a, .comunidad__normas summary,
+  .hero__enlace, .ayuda__mas a) {
+  position: relative;
+}
+:where(a[href^="tel:"],
+  .barra__enlace, .marca, .pie__nav a, .pie__version a,
+  .ficha__migas a, .ficha__vecino, .expertos-pagina__volver a,
+  .experto__cita a, .experto a, .comunidad__normas summary,
+  .hero__enlace, .ayuda__mas a)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  /* El `- 1px` dentro del calc y el `-2px` como tope son el pelo de
+     margen que hace falta: la caja de línea de un enlace trae
+     decimales y el borde exacto de un pseudoelemento devuelve el
+     elemento de DEBAJO en `elementFromPoint`. Sin ese margen, un
+     enlace de pie de página se quedaba en 23 px medidos contra un
+     mínimo de 24 — cumplía sobre el papel y fallaba en la báscula. */
+  top:    min(-2px, calc((100% - var(--toque)) / 2 - 1px));
+  bottom: min(-2px, calc((100% - var(--toque)) / 2 - 1px));
+  left:   min(-2px, calc((100% - var(--toque)) / 2 - 1px));
+  right:  min(-2px, calc((100% - var(--toque)) / 2 - 1px));
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    HERO — planos 0 y 1
    ═══════════════════════════════════════════════════════════════════ */
@@ -417,15 +553,29 @@ body.pagina-papel { background: var(--papel); }
   grid-template-rows: auto 1fr auto auto;
   padding: clamp(1.25rem, 4vw, 3rem);
   padding-bottom: clamp(1.25rem, 4vw, 3rem);
-  /* La interfaz del hero es blanca a todas horas, como en la referencia.
-     La pagina de lectura conserva su tinta adaptativa: este override vive
-     solo dentro del cuadro. El contraste ya no se resuelve invirtiendo la
-     letra sino con el lavado oscuro que calibra main.js contra los pixeles
-     reales del lienzo. */
+  /* ── LA TINTA DEL HÉROE LA DECIDE LA PINTURA ───────────────────
+     Fue blanca las 24 horas «como en la referencia», y esa referencia
+     tenía un cielo oscuro. Sobre el cielo claro del mediodía, la misma
+     tinta medía 1,05:1 contra el 4,5:1 que pide la AA — la marca, la
+     frase y el único botón de la primera pantalla, ilegibles a plena
+     luz para cualquiera que no tenga vista de halcón.
+
+     Estos valores son el ARRANQUE y el respaldo. Cuando hay lienzo,
+     `calibrarTinta()` en js/main.js mide lo que quedó pintado detrás
+     del texto y reescribe las tres variables sobre el elemento; sin
+     lienzo las escribe hora.js con la curva de luz. Se arranca en
+     blanco porque el primer cuadro que se ve al cargar es el cielo de
+     la hora en curso y de noche —cuando más se visita— es lo correcto.
+
+     `--halo` es la sombra corta que despega la letra del grano del
+     papel pintado: oscura debajo de tinta clara y clara debajo de
+     tinta oscura. Con la sombra del lado equivocado la letra se
+     empasta en vez de despegarse. */
   --tinta: #FFFFFF;
   --tinta-suave: rgb(255 255 255 / 78%);
+  --halo: 0 1px 3px rgb(18 35 48 / 30%);
   color: var(--tinta);
-  text-shadow: 0 1px 3px rgb(18 35 48 / 30%);
+  text-shadow: var(--halo);
 }
 
 /* Respaldo animado si WebGL no existe. Una visita normal —también en
@@ -1223,18 +1373,81 @@ body.pagina-papel { background: var(--papel); }
 .hero__texto::before {
   content: "";
   position: absolute;
-  inset: -5% -9% -9% -7%;
+  /* ── LA ELIPSE SE SALE DEL BLOQUE A PROPÓSITO ────────────────────
+     Iba en `-5% -9% -9% -7%`, o sea pegada al texto, y entonces el
+     desvanecido del desenfoque caía ENCIMA de las letras: el alfa que
+     calcula el calibrador es el del centro, pero en el borde vale la
+     mitad o menos. Medido a las 23:00, con el lavado calculado para
+     4,5:1 el subtítulo se quedaba en 3,77 y el enlace —que vive abajo
+     del todo, en pleno canto— en 3,39.
+
+     Sacando la elipse bien fuera, el desvanecido ocurre en el cielo y
+     sobre el texto el velo es parejo, que es lo que el cálculo da por
+     hecho. Y de paso se ve mejor: un óvalo grande y suave se lee como
+     un nublado, y el pequeño y ceñido se leía como una placa con la
+     forma del bloque de texto — la razón por la que este lavado se
+     había apagado. */
+  /* ── UNA BANDA DE BRUMA, NO UN ÓVALO ─────────────────────────────
+     El óvalo tuvo dos intentos y los dos fallaron por lo mismo: sus
+     cantos caen sobre el texto. Con la elipse ceñida, el desvanecido
+     del desenfoque se comía las letras del borde; agrandándola y
+     poniéndole núcleo plano, el enlace —abajo a la izquierda, o sea
+     en una esquina— seguía quedando FUERA del núcleo, porque una
+     elipse inscrita no cubre las esquinas de su caja. Medido: 3,48:1
+     donde el cálculo pedía 5,2.
+
+     La forma que sí cubre a las cuatro piezas por igual es una BANDA:
+     de lado a lado de la pantalla, sin ningún borde vertical que
+     pueda caer sobre una letra, y con el degradado solo arriba y
+     abajo, en el aire. Así el alfa que calcula `calibrarTinta()` es
+     de verdad el alfa que recibe cada pieza, que es lo que el cálculo
+     daba por hecho desde el principio.
+
+     Y es lo que la pintura haría: una banda de bruma tendida sobre el
+     agua es un gesto de acuarela; un óvalo detrás de un bloque de
+     texto es una etiqueta. */
+  top: -20%;
+  bottom: -16%;
+  left: -50vw;
+  right: -50vw;
   z-index: -1;
   pointer-events: none;
-  /* La referencia deja el cielo visible entre y alrededor de las
-     letras. El lavado adaptativo garantizaba contraste numerico, pero
-     en pleno dia aparecia como una nube gris del tamano del bloque.
-     La tinta blanca se sostiene con su sombra corta; no se tapa la
-     pintura con una placa. */
-  opacity: 0;
-  background: var(--lavado-color, transparent);
-  border-radius: 46% / 40%;
-  filter: blur(clamp(18px, 2.2vw, 34px));
+  /* ── ESTE LAVADO ESTUVO APAGADO, Y CON RAZÓN ────────────────────
+     Decía la nota anterior: «el lavado adaptativo garantizaba
+     contraste numérico, pero en pleno día aparecía como una nube gris
+     del tamaño del bloque». Cierto, y por eso se puso a cero. Lo que
+     pasa es que apagarlo dejó el otro problema entero: medido sobre
+     los píxeles, a las 13:00 la marca quedaba en 1,05:1 y la
+     declaración en 1,44:1, cuando la AA pide 4,5.
+
+     Las dos observaciones eran verdad a la vez porque las dos daban
+     por buena la misma premisa: que la tinta del héroe es blanca las
+     24 horas. Sobre un cielo claro, sostener tinta blanca EXIGE una
+     nube gris; no hay tercera salida.
+
+     Ahora la premisa se cae. `calibrarTinta()` en js/main.js mira lo
+     que hay pintado detrás y elige la tinta que ese cielo admite:
+     oscura sobre un cielo claro, clara sobre uno oscuro. Que es, por
+     lo demás, cómo se escribe sobre una acuarela.
+
+     Con la tinta bien elegida el lavado casi nunca hace falta, y
+     cuando hace falta —el crepúsculo, cuando el cielo está a medio
+     camino y ninguna de las dos tintas llega sola— sale pequeño y en
+     un momento en el que una veladura es exactamente lo que la
+     pintura estaría haciendo de todos modos. */
+  opacity: var(--lavado, 0);
+  /* Plano sobre el texto, desvanecido en el aire. Las paradas del 26 y
+     el 76 % encierran la franja donde vive el bloque; fuera de ellas el
+     degradado se apaga a lo largo de un quinto de la altura, que a esta
+     escala es un palmo de cielo. El desenfoque solo le quita el filo,
+     no hace el degradado — confundir las dos cosas fue lo que rompió
+     los dos intentos anteriores. */
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    var(--lavado-color, transparent) 26%,
+    var(--lavado-color, transparent) 76%,
+    transparent 100%);
+  filter: blur(clamp(10px, 1.2vw, 18px));
 }
 
 /* EL ROTULO. Es el elemento dominante del cuadro y el único sitio del
