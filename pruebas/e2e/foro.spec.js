@@ -9,7 +9,14 @@
 import { test, expect } from '@playwright/test';
 import { SIN_PRESENCIA } from './comun.js';
 
-const FORO = `comunidad?${SIN_PRESENCIA}`;
+/* CON BARRA FINAL, y no es cosmético. Sin ella GitHub Pages responde
+   301 hacia la versión con barra, y estas once pruebas se pasaron meses
+   pidiendo una dirección que en producción es un rodeo: contra el
+   servidor local daba igual y salían verdes. Lo descubrió `npm run
+   test:prod`, que es exactamente para lo que existe. Todos los enlaces
+   del sitio ya terminaban en barra —lo vigila semantica.spec.js—; la
+   única que no lo hacía era esta prueba. */
+const FORO = `comunidad/?${SIN_PRESENCIA}`;
 
 /* Cada prueba estrena pestaña, y `sessionStorage` es por pestaña, así
    que el almacén empieza vacío sin tener que limpiar nada. Lo que sí
