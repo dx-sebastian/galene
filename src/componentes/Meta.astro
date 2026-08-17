@@ -20,12 +20,16 @@
    etiqueta que no se ve al mirar la página es un fallo que dura meses.
    `new URL` además normaliza las barras.
 
-   ── EL FRENO SIGUE PUESTO ──────────────────────────────────────────
-   `noindex` viene de serie. No es descuido: mientras los plazos
-   clínicos no estén verificados por un profesional, este sitio no debe
-   ser encontrable. Lo que sí pasa hoy es que la gente comparte enlaces
-   por mensaje, y eso no pasa por ningún buscador.
+   ── EL FRENO NO SE DECIDE AQUÍ ─────────────────────────────────────
+   `noindex` sale de `VERIFICADO`, en datos/sitio.js, que es donde vive
+   la decisión y donde está escrito qué hace falta para levantarla. Este
+   componente no opina: la lee.
+
+   (Lo que sí pasa hoy, con el freno puesto, es que la gente comparte
+   enlaces por mensaje. Eso no pasa por ningún buscador, y por eso todo
+   lo de arriba importa ya.)
    ═══════════════════════════════════════════════════════════════════ */
+import { VERIFICADO } from '../datos/sitio.js';
 const {
   titulo,
   resumen,
@@ -35,8 +39,13 @@ const {
   /* Lámina que se ve al compartir. Relativa a la base. */
   imagen = 'arte/1024/manglar-enterrado-a.webp',
   imagenAlt = 'Un manglar al amanecer, pintado en acuarela.',
-  indexable = false,
+  /* Una página puede quedarse fuera aunque el sitio esté abierto —el
+     404, por ejemplo—. Al revés no: ninguna se publica por su cuenta
+     mientras el sitio no lo esté. */
+  publicable = true,
 } = Astro.props;
+
+const indexable = VERIFICADO && publicable;
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const absoluta = (r) => new URL(base + r, Astro.site).href;

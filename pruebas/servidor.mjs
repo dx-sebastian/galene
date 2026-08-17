@@ -40,6 +40,11 @@ const TIPOS = {
   '.woff2':'font/woff2',
   '.txt':  'text/plain; charset=utf-8',
   '.md':   'text/markdown; charset=utf-8',
+  /* El sitemap. Sin esta línea salía como `application/octet-stream` y
+     la prueba que comprueba su tipo fallaba contra un servidor que no
+     se parece al de verdad: GitHub Pages lo sirve como XML. Un servidor
+     de pruebas que miente sobre las cabeceras hace medir otra cosa. */
+  '.xml':  'application/xml; charset=utf-8',
 };
 
 createServer(async (pet, res) => {
