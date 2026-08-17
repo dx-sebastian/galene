@@ -25,6 +25,9 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  {/* Este `noindex` no depende del interruptor y no debe: una página de
+      error no es contenido, y con el sitio abierto de par en par sigue
+      sin tener nada que hacer en un buscador. */}
   <meta name="robots" content="noindex" />
   <title>Esta página no está — Galene</title>
   <link rel="icon" href={base + 'favicon.svg'} type="image/svg+xml" />

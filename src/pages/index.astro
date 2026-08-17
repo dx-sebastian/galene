@@ -31,6 +31,7 @@ import { TERMINOS } from '../datos/glosario.js';
 /* Cuántas fichas de expertos caben en la portada. Vive con los datos,
    no aquí: quien añada una entrada al panel ve el corte al lado. */
 import { LIMITE_PORTADA } from '../datos/expertos.js';
+import { VERIFICADO } from '../datos/sitio.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
@@ -173,18 +174,23 @@ const DATOS = {
 
   {/* ── Y AQUÍ ESTÁ EL FRENO, QUE NO ES UN DESCUIDO ─────────────────
       Todo lo de arriba está bien puesto y no va a servir de nada
-      mientras esta línea siga aquí: `noindex` le dice a un buscador que
+      mientras el freno siga echado: `noindex` le dice a un buscador que
       no incluya la página, y ninguna otra etiqueta discute con eso.
 
       Y tiene que seguir. Los plazos médicos del reloj todavía no los ha
       verificado nadie con criterio clínico —lo dice la propia página, en
       el bloque de fuentes—, y una página sobre qué hacer después de una
-      agresión no puede ser encontrable con datos sin confirmar. Cuando
-      esa verificación exista, se borra esta línea y el trabajo de
-      encontrabilidad ya está hecho: por eso se hace ahora y no después.
-      Ver la nota de BORRADOR en el bloque de fuentes de
-      Herramientas.astro. */}
-  <meta name="robots" content="noindex, nofollow" />
+      agresión no puede ser encontrable con datos sin confirmar.
+
+      LO QUE CAMBIA es dónde está escrita esa decisión. Estaba aquí, y
+      otras cinco veces en las otras cinco páginas: seis copias de una
+      misma frase que un día se quedan a medias. Ahora sale de
+      `VERIFICADO`, en datos/sitio.js, con lo que hace falta para
+      levantarla escrito al lado. Una palabra mueve las seis páginas, el
+      robots.txt y el sitemap a la vez, y
+      `scripts/comprobar-interruptor.mjs` compila las dos versiones para
+      comprobar que de verdad las mueve. */}
+  {!VERIFICADO && <meta name="robots" content="noindex, nofollow" />}
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
