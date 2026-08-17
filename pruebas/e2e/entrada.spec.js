@@ -39,23 +39,46 @@ for (const [vista, opciones] of VISTAS) {
     test.use(opciones);
 
     test('la pintura y el texto entran, y se les nota', async ({ page }) => {
-      /* Se mira DURANTE la secuencia: hay que enganchar la clase
-         `entrando` en cuanto aparece, no después de que se haya ido. */
-      await page.goto('?auditar-mar=1', { waitUntil: 'commit' });
-      await page.waitForFunction(
-        () => document.documentElement.classList.contains('entrando'),
-        null, { timeout: 60_000 });
+      /* ── SE MIRA DESDE DENTRO, Y NO ASOMÁNDOSE ────────────────────
+         Esto era un `waitForFunction` que esperaba a ver la clase
+         `entrando` y después preguntaba, desde fuera, qué animación
+         tenía cada pieza. Y era una carrera perdida a medias: la clase
+         solo vive dos segundos —`entrada.js` la quita por tiempo o al
+         primer gesto— y entre que el sondeo la ve y llega la siguiente
+         orden hay un viaje de ida y vuelta. Con el mar por software un
+         fotograma puede tardar medio segundo, así que la ventana se
+         cerraba: dos de cada tres ejecuciones en escritorio decían que
+         la pintura no entraba, y entraba.
 
-      const puestas = await page.evaluate((piezas) => {
+         Ahora el testigo se instala ANTES de cargar y anota las
+         animaciones en el mismo turno en que la clase aparece. No hay
+         ventana que perder: si la entrada ocurrió, quedó escrita. */
+      await page.addInitScript((piezas) => {
+        window.__entrada = null;
         const nombre = (sel) => {
           const el = document.querySelector(sel);
           return el ? getComputedStyle(el).animationName : '(no existe)';
         };
-        return {
-          mundo: nombre('.mundo'),
-          piezas: Object.fromEntries(piezas.map((s) => [s, nombre(s)])),
-        };
+        const mira = new MutationObserver(() => {
+          if (!document.documentElement.classList.contains('entrando')) return;
+          window.__entrada = {
+            mundo: nombre('.mundo'),
+            piezas: Object.fromEntries(piezas.map((s) => [s, nombre(s)])),
+          };
+          mira.disconnect();
+        });
+        /* Se vigila `document` con `subtree`, NO `document.documentElement`:
+           este guion corre antes que cualquier otro de la página, y ahí
+           `<html>` puede no existir todavía. Observar null lanza, el
+           testigo nunca se instalaba y la espera se iba a los 60 s. */
+        mira.observe(document,
+          { attributes: true, attributeFilter: ['class'], subtree: true });
       }, PIEZAS);
+
+      await page.goto('?auditar-mar=1', { waitUntil: 'commit' });
+      await page.waitForFunction(() => window.__entrada !== null,
+        null, { timeout: 60_000 });
+      const puestas = await page.evaluate(() => window.__entrada);
 
       console.log(`  ${vista}: mundo → ${puestas.mundo}`);
       console.log('  ' + Object.entries(puestas.piezas)
