@@ -1,0 +1,63 @@
+---
+/* ═══════════════════════════════════════════════════════════════════
+   LAS ETIQUETAS DE LA CABECERA, EN UN SOLO SITIO.
+
+   Estaban escritas a mano en cada página y por eso estaban a medias:
+   la portada tenía canonical, og:url, og:site_name y twitter, y las
+   otras cuatro no. La ficha de producto además declaraba su og:image
+   como ruta relativa —`/galene/productos/x.webp`—, que Open Graph no
+   resuelve: un enlace pegado en WhatsApp salía sin imagen.
+
+   Es el mismo argumento de datos/navegacion.js: un dato que vive en
+   cinco plantillas es un dato que un día diverge, y el que miente en
+   silencio es el de la página en la que uno no está trabajando. Aquí
+   se declara una vez.
+
+   ── LAS URLS SE COMPONEN, NO SE ESCRIBEN ───────────────────────────
+   `Astro.site` sale de astro.config.mjs y `base` es el prefijo de
+   GitHub Pages. Un canonical escrito a mano se queda apuntando a
+   localhost el día que alguien pruebe en local y copie, y eso en una
+   etiqueta que no se ve al mirar la página es un fallo que dura meses.
+   `new URL` además normaliza las barras.
+
+   ── EL FRENO SIGUE PUESTO ──────────────────────────────────────────
+   `noindex` viene de serie. No es descuido: mientras los plazos
+   clínicos no estén verificados por un profesional, este sitio no debe
+   ser encontrable. Lo que sí pasa hoy es que la gente comparte enlaces
+   por mensaje, y eso no pasa por ningún buscador.
+   ═══════════════════════════════════════════════════════════════════ */
+const {
+  titulo,
+  resumen,
+  /* Ruta de ESTA página respecto a la base, con barra final:
+     '' para la portada, 'comunidad/' para la comunidad. */
+  ruta = '',
+  /* Lámina que se ve al compartir. Relativa a la base. */
+  imagen = 'arte/1024/manglar-enterrado-a.webp',
+  imagenAlt = 'Un manglar al amanecer, pintado en acuarela.',
+  indexable = false,
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const absoluta = (r) => new URL(base + r, Astro.site).href;
+const canonica = absoluta(ruta);
+---
+
+<title>{titulo}</title>
+<meta name="description" content={resumen} />
+<link rel="canonical" href={canonica} />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Galene" />
+<meta property="og:locale" content="es_CO" />
+<meta property="og:title" content={titulo} />
+<meta property="og:description" content={resumen} />
+<meta property="og:url" content={canonica} />
+<meta property="og:image" content={absoluta(imagen)} />
+<meta property="og:image:alt" content={imagenAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+
+<meta name="theme-color" content="#2E4256" />
+<link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
+
+{!indexable && <meta name="robots" content="noindex, nofollow" />}

@@ -31,6 +31,7 @@ import '../estilos/responsive.css';
 import Comunidad from '../componentes/Comunidad.astro';
 import Barra from '../componentes/Barra.astro';
 import Pie from '../componentes/Pie.astro';
+import Meta from '../componentes/Meta.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 import { enlaces } from '../datos/navegacion.js';
@@ -44,17 +45,14 @@ const ACTUAL = 'comunidad';
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <title>Comunidad — Galene</title>
-  <meta name="description" content="Lo que aprendimos después, contado por quienes ya pasaron por ahí." />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Comunidad — Galene" />
-  <meta property="og:description" content="Lo que aprendimos después, contado por quienes ya pasaron por ahí." />
-  <meta name="theme-color" content="#2E4256" />
-  <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
-
   {/* BORRADOR, y aquí con más razón que en la portada: los hilos son
-      datos de ejemplo. Nada de esto puede ser encontrable. */}
-  <meta name="robots" content="noindex, nofollow" />
+      datos de ejemplo. Nada de esto puede ser encontrable — de eso se
+      encarga el `indexable` de Meta.astro, que por defecto es falso. */}
+  <Meta
+    titulo="Comunidad — Galene"
+    resumen="Lo que aprendimos después, contado por quienes ya pasaron por ahí: la ventanilla, la mochila del día siguiente, volver a salir."
+    ruta="comunidad/"
+  />
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />

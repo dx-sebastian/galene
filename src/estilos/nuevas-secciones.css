@@ -1069,22 +1069,64 @@
   outline-offset: -3px;
 }
 
+/* ── LA PIEZA SE APOYA EN EL PAPEL, NO EN UN RECUADRO BLANCO ────────
+   Aquí había un disco blanco al 85 % detrás de la foto. Tenía sentido
+   mientras las fotos venían con su propio fondo de estudio: el disco
+   disimulaba el corte entre el blanco de la foto y el papel de la
+   página. Ahora las piezas vienen recortadas —ver
+   scripts/recortar-productos.mjs— y ese disco es justo lo que sobra:
+   una mancha blanca sobre un papel que no es blanco.
+
+   Lo que queda es lo que hace una acuarela con un objeto: el papel se
+   ve entero por detrás y debajo hay una SOMBRA DE AGUADA, una elipse
+   difusa y descentrada, como la que ya llevan las garzas del héroe. Es
+   lo que hace que algo se apoye en una hoja en vez de flotar sobre
+   ella.
+
+   Sin `overflow: hidden`: no hay nada que recortar y la sombra necesita
+   salirse un poco. */
 .producto__marco {
   position: relative;
   display: block;
   aspect-ratio: 1;
   border-bottom: 1px solid rgb(var(--letra-rgb) / 10%);
-  background:
-    radial-gradient(circle at 50% 42%, rgb(255 253 250 / 85%), transparent 70%),
-    transparent;
-  overflow: hidden;
+}
+/* La aguada. Descentrada y aplastada, porque una sombra sobre papel se
+   ve desde arriba y la luz de este sitio entra por la izquierda. */
+.producto__marco::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 20%; right: 16%;
+  bottom: 4.5%;
+  height: 6%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%,
+    rgb(var(--letra-rgb) / 26%) 0%,
+    rgb(var(--letra-rgb) / 13%) 52%,
+    transparent 78%);
+  filter: blur(6px);
+  transition: opacity 220ms linear, scale 420ms cubic-bezier(.25,.8,.3,1);
 }
 .producto__marco img {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  /* Sin relleno: la lámina ya viene montada sobre un cuadrado con su
+     aire y apoyada abajo (ver scripts/recortar-productos.mjs). Añadir
+     relleno aquí encogería la pieza dos veces. */
   transition: transform 420ms cubic-bezier(.25,.8,.3,1);
+}
+@media (min-width: 700px) {
+  /* Al pasar por encima la pieza se levanta y la sombra se abre, que es
+     lo que hace una sombra cuando algo se separa del papel. */
+  .producto__enlace:hover .producto__marco::after {
+    scale: 1.12 0.86;
+    opacity: 0.8;
+  }
 }
 @media (min-width: 700px) {
   .producto__enlace:hover .producto__marco img { transform: scale(1.06); }
@@ -1123,6 +1165,14 @@
 }
 /* En el pedido: el mismo verde, pero ya no llama — confirma. */
 .producto__comprar--dentro { --acuarela-tinte: #1F4A36; }
+/* Y el sobrio del mostrador confirma llenándose: hasta que se pulsa es
+   un contorno, y una vez dentro del pedido pasa a tinta plena. Es el
+   único momento en que este botón pesa, y entonces sí toca. */
+.producto__comprar--sobrio.producto__comprar--dentro {
+  color: var(--papel);
+  background: #1F4A36;
+  border-color: #1F4A36;
+}
 
 .productos__nota {
   margin: var(--e-4) 0 0;
@@ -1148,6 +1198,38 @@
   justify-content: center;
 }
 .producto__comprar::before { display: none; }
+
+/* ── EL BOTÓN SOBRIO DEL MOSTRADOR ─────────────────────────────────
+   Contorno de tinta sobre papel, no pigmento macizo. Al tocarlo se
+   llena, que es cuando la acción está a punto de ocurrir y merece el
+   peso. Mantiene la altura de la lámina que sustituye para que la
+   retícula de fichas no se descuadre. */
+.producto__comprar--sobrio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  margin: 0 1.15rem;
+  padding: 0 1.4rem;
+  font-family: inherit;
+  font-size: var(--t-sm);
+  letter-spacing: 0.06em;
+  color: var(--letra);
+  background: transparent;
+  border: 1px solid rgb(var(--letra-rgb) / 34%);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 160ms linear, border-color 160ms linear;
+}
+.producto__comprar--sobrio:hover,
+.producto__comprar--sobrio:focus-visible {
+  background: rgb(var(--letra-rgb) / 7%);
+  border-color: rgb(var(--letra-rgb) / 58%);
+}
+.producto__comprar--sobrio:focus-visible {
+  outline: 3px solid var(--letra);
+  outline-offset: 2px;
+}
 
 /* ═══ EN EL TELÉFONO, UN RESULTADO DE BÚSQUEDA ══════════════════════
    «En mobile deberían verse como productos de amazon» — y así se ven
@@ -1239,18 +1321,38 @@
 /* El zoom se hace DENTRO del marco: un grabado acercado a la lupa, no
    una lámina volando por la página. */
 .ficha__zoom {
+  position: relative;
   display: block;
   width: 100%;
   aspect-ratio: 1;
   padding: 0;
   border: 0;
-  background:
-    radial-gradient(circle at 50% 42%, rgb(255 253 250 / 85%), transparent 70%),
-    transparent;
+  /* Sin el disco blanco: la pieza viene recortada y se apoya en el
+     papel, igual que en el mostrador. Ver `.producto__marco`. */
+  background: transparent;
   cursor: zoom-in;
   overflow: hidden;
 }
+.ficha__zoom::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 22%; right: 18%;
+  bottom: 4.5%;
+  height: 5.5%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%,
+    rgb(var(--letra-rgb) / 26%) 0%,
+    rgb(var(--letra-rgb) / 13%) 52%,
+    transparent 78%);
+  filter: blur(7px);
+}
+/* Al ampliar, la sombra se va: lo que se está mirando es la pieza de
+   cerca, y una sombra que no cabe en el encuadre es una mancha. */
+.ficha__zoom[aria-pressed="true"]::after { opacity: 0; }
 .ficha__zoom img {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
