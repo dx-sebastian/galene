@@ -403,8 +403,29 @@ import { TERMINOS } from '../datos/glosario.js';
         <li><a href="https://salvia.minigualdadyequidad.gov.co" rel="noopener">
           SALVIA — reportar un caso por internet</a>
           <span>Ministerio de Igualdad y Equidad. Orienta y activa rutas.</span></li>
-        <li><a href="https://www.fiscalia.gov.co/colombia/servicios-de-informacion-al-ciudadano/denuncia-facil/" rel="noopener">
-          Denuncia Fácil — Fiscalía</a>
+        {/* ── EL ENLACE QUE SE ROMPIÓ ────────────────────────────────
+            Apuntaba a
+            `fiscalia.gov.co/colombia/servicios-de-informacion-al-ciudadano/denuncia-facil/`
+            y el dueño lo encontró roto. «Denuncia Fácil» era el nombre
+            del servicio antes de que la denuncia virtual se unificara
+            en A DENUNCIAR, el portal conjunto de Fiscalía y Policía
+            Nacional; la ruta profunda de la casa vieja se cayó con la
+            mudanza.
+
+            Y la lección es la ruta, no el dominio: seis segmentos de
+            URL en el sitio de una entidad pública son seis
+            oportunidades de que una reorganización interna deje a
+            alguien mirando un 404 en el peor momento posible. Se apunta
+            al portal, que es una dirección corta y es la que esa
+            entidad publica en todas partes.
+
+            NO SE HA PODIDO COMPROBAR DESDE AQUÍ: este entorno no
+            alcanza los dominios .gov.co colombianos —fiscalia.gov.co
+            cierra la conexión y adenunciar responde 500—, y eso puede
+            ser tanto la máquina como el sitio. Queda en la lista de
+            «antes de publicar»: hay que abrirlo desde Colombia. */}
+        <li><a href="https://adenunciar.policia.gov.co/" rel="noopener">
+          A Denunciar — Fiscalía y Policía Nacional</a>
           <span>Denuncia virtual, si decides denunciar. No es obligatorio.</span></li>
       </ul>
       <p class="bloque__intro">Denunciar nunca es requisito para que te

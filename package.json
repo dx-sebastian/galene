@@ -12,7 +12,8 @@
     "test": "playwright test",
     "test:prod": "GALENE_PROD=1 playwright test",
     "interruptor": "node scripts/comprobar-interruptor.mjs",
-    "dossier": "node scripts/dossier-clinico.mjs"
+    "dossier": "node scripts/dossier-clinico.mjs",
+    "enlaces": "node scripts/comprobar-enlaces.mjs"
   },
   "dependencies": {
     "astro": "^7.2.0",

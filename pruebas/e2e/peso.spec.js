@@ -94,6 +94,65 @@ for (const caso of CASOS) {
   });
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Y LAS OTRAS PÁGINAS, QUE HASTA AHORA NO PESABAN NADA PORQUE NO
+   PINTABAN NADA.
+
+   Cuando se descubrió que `/expertos`, `/comunidad` y `/acerca`
+   renderizaban cero elementos pintados —la compuerta `lectura-cerca`
+   solo la abría `entrada.js`, y ese guion vive únicamente en la
+   portada— la reparación fue abrirla en el marcado de esas páginas. Y
+   eso tiene un precio: el papel, las aguadas y los filetes empiezan a
+   descargarse.
+
+   Es un precio pequeño y en su mayor parte ya pagado: son las mismas
+   láminas que la portada, así que quien llega desde ella no descarga
+   nada. Pero «pequeño» no es una medida, y una reparación que añade
+   megas sin que nadie los cuente es la próxima cosa a arreglar. Aquí
+   están contados, con el techo puesto donde están hoy más un margen
+   para que la comunidad crezca en hilos.
+   ═══════════════════════════════════════════════════════════════════ */
+const OTRAS = [
+  ['expertos', 'expertos/', 0.75 * MB],
+  ['comunidad', 'comunidad/', 1.25 * MB],
+  ['acerca', 'acerca/', 0.75 * MB],
+  ['productos', 'productos/', 0.85 * MB],
+  ['ficha', 'productos/funda-coletero/', 0.7 * MB],
+];
+
+test.describe('peso · las otras páginas', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+
+  for (const [nombre, ruta, techo] of OTRAS) {
+    test(`peso · ${nombre} cabe en su presupuesto`, async ({ page }) => {
+      await page.goto(ruta, { waitUntil: 'load', timeout: 90_000 });
+      await page.evaluate(async () => {
+        for (let y = 0; y < document.body.scrollHeight; y += 500) {
+          window.scrollTo(0, y);
+          await new Promise((r) => requestAnimationFrame(r));
+        }
+      });
+      await page.waitForTimeout(2500);
+
+      const r = await page.evaluate(() => {
+        const vistos = new Map();
+        for (const x of performance.getEntriesByType('resource')) {
+          const bytes = x.transferSize || x.encodedBodySize || 0;
+          const url = x.name.split('?')[0];
+          if (!vistos.has(url) || vistos.get(url) < bytes) vistos.set(url, bytes);
+        }
+        let total = 0;
+        for (const b of vistos.values()) total += b;
+        return { total, n: vistos.size };
+      });
+
+      console.log(`  ${nombre}: ${(r.total / MB).toFixed(2)} MB`
+        + ` en ${r.n} archivos (techo ${(techo / MB).toFixed(2)} MB)`);
+      expect(r.total, `peso de /${ruta}`).toBeLessThanOrEqual(techo);
+    });
+  }
+});
+
 /* ── Y QUE BAJAR DE RESOLUCIÓN NO SE NOTE ─────────────────────────
    El presupuesto se cumple sirviendo al escritorio las láminas de
    1024 px que el teléfono ya usa. Eso solo vale si la pintura no

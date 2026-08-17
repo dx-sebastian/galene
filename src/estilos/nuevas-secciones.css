@@ -771,6 +771,88 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   EL DÍA DE LAS SECCIONES DE ABAJO — Y ES EL QUE VE TODO EL MUNDO
+
+   Debajo de este bloque hay otro, largo y bien argumentado, que hace
+   exactamente esto mismo: grano de papel, una aguada escaneada
+   entrando por el margen, máscara elíptica para que ninguna lámina
+   enseñe su canto. Está escrito con sus números medidos y termina con
+   una frase que hoy se lee de otra manera: «de día estos dos
+   pseudoelementos no existen».
+
+   Y de día es SIEMPRE. `js/hora.js` fija `data-tinta` en 'oscura' —la
+   pintura vive con la hora, la página es siempre papel— así que todo
+   ese trabajo lleva meses apagado y no lo ha visto nadie. Medido: la
+   página /acerca renderiza CERO elementos pintados. No le faltaba
+   diseño; le faltaba estar encendido.
+
+   Aquí va la versión de día, que no es la misma con otro color:
+
+     · `multiply` y no `screen`. Sobre papel claro el pigmento solo
+       puede oscurecer; `screen` sobre crema no hace nada.
+     · Tintes PÁLIDOS. Con multiply, un tinte profundo no da una
+       acuarela: da una mancha sucia. Los de la noche son hondos
+       porque allí suman luz sobre añil.
+     · El mismo recorte. Las aguadas se salen por el margen a
+       propósito, y una caja absoluta que asoma por la derecha alarga
+       el documento — está contado abajo, con las medidas.
+
+   `.comunidad-panel` NO entra: sus dos pseudoelementos ya están
+   ocupados por el recuerdo del mar. Aquí van las dos que estaban
+   desnudas.
+   ═══════════════════════════════════════════════════════════════════ */
+:is(.expertos, .acerca) {
+  overflow: hidden;
+  overflow: clip;
+}
+:is(.expertos, .acerca)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--arte-papel);
+  background-size: 820px;
+  background-repeat: repeat;
+  /* El grano muerde, nunca destiñe: es la misma regla que gobierna el
+     botón de acuarela y por la misma razón física. */
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+:is(.expertos, .acerca)::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(150deg, var(--tinta-a) 0%, var(--tinta-b) 100%),
+    var(--arte-aguadas);
+  background-blend-mode: color;
+  background-size: cover, cover;
+  background-position: center, center;
+  -webkit-mask-image: radial-gradient(ellipse 58% 52% at 50% 50%,
+    #000 0%, #000 26%, #0008 52%, #0000 72%);
+  mask-image: radial-gradient(ellipse 58% 52% at 50% 50%,
+    #000 0%, #000 26%, #0008 52%, #0000 72%);
+  filter: blur(clamp(10px, 1.2vw, 18px));
+  mix-blend-mode: multiply;
+}
+/* Cada una con su pigmento y su sitio, y ninguna centrada: una aguada
+   centrada en su caja delata la caja. */
+.expertos::after {
+  top: 10%; left: -16%;
+  width: min(40rem, 52%); height: 62%;
+  --tinta-a: #BFD3CE; --tinta-b: #CDC2DC;
+  opacity: 0.5;
+}
+.acerca::after {
+  bottom: -10%; right: -18%;
+  width: min(42rem, 54%); height: 70%;
+  --tinta-a: #E7C8B7; --tinta-b: #C2CBDD;
+  opacity: 0.55;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    LA NOCHE DE LAS SECCIONES DE ABAJO — QUE SE SIENTA ACUARELA
 
    Capturado y comparado: `#herramientas` de noche es papel con aguadas

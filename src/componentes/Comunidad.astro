@@ -72,17 +72,32 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 <section class="comunidad" id="comunidad" data-seccion-hoja>
 
-  {/* EL FONDO. Las mismas cuatro capas de la sección de herramientas y
-      con los mismos nombres de clase, así que hereda entero su
-      tratamiento: papel en multiply de día y screen de noche, aguadas
-      pintadas con la máscara elíptica que les come el canto, y el rojo
-      solo en el flanco derecho, fuera del ancho de lectura. Decorativo
-      entero: aria-hidden y sin un dato dentro. */}
+  {/* EL FONDO. Las mismas capas de la sección de herramientas, así que
+      hereda entero su tratamiento: papel con grano y dos aguadas
+      pintadas con la máscara elíptica que les come el canto.
+      Decorativo entero: aria-hidden y sin un dato dentro.
+
+      ── TRES DIVS QUE NO PINTABAN NADA ──────────────────────────────
+      Aquí había `.fondo__capa--alta`, `--media` y `--cercana` con sus
+      `data-hondo` altos. Herramientas.astro dejó de usar esos nombres
+      cuando las aguadas volvieron al paralaje por el extremo contrario
+      —pasaron a ser `.aguada--1` y `.aguada--2` con `hondo` bajo— y
+      esta página se quedó con los viejos.
+
+      Nadie se enteró porque el fallo no rompe nada: los tres divs
+      seguían ahí, y en comunidad.css seguían sus tres reglas de
+      opacidad, afinadas con un párrafo entero de argumentación sobre
+      por qué 0.40 y no 0.58. Medido en el navegador: cero por cero
+      píxeles, `background-image: none`. La página llevaba meses sin una
+      sola pieza pintada mientras su hoja de estilos discutía el matiz
+      exacto de un pigmento que no existía.
+
+      `data-tope` va igual que en herramientas: sin él la mancha
+      acompaña al lector hasta lavar el texto. */}
   <div class="herramientas__fondo" aria-hidden="true">
     <div class="fondo__papel"></div>
-    <div class="fondo__capa fondo__capa--alta"    data-hondo="0.94"></div>
-    <div class="fondo__capa fondo__capa--media"   data-hondo="0.86"></div>
-    <div class="fondo__capa fondo__capa--cercana" data-hondo="0.66"></div>
+    <div class="aguada aguada--1" data-hondo="0.26" data-tope="1.1"></div>
+    <div class="aguada aguada--2" data-hondo="0.12" data-tope="1.1"></div>
   </div>
 
   {/* ── SIN CABECERA ─────────────────────────────────────────────────

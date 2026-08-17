@@ -382,13 +382,42 @@
 
    0.40 es el punto donde el color todavía se ve moverse al bajar y
    todavía se puede llamar blanco a la hoja. El pigmento aquí no es el
-   tema: es lo que impide que el blanco sea vacío. */
-.comunidad .fondo__capa--alta    { opacity: 0.40; }
-.comunidad .fondo__capa--media   { opacity: 0.42; }
-.comunidad .fondo__capa--cercana { opacity: 0.30; }
-:root[data-tinta="clara"] .comunidad .fondo__capa--alta    { opacity: 0.28; }
-:root[data-tinta="clara"] .comunidad .fondo__capa--media   { opacity: 0.32; }
-:root[data-tinta="clara"] .comunidad .fondo__capa--cercana { opacity: 0.22; }
+   tema: es lo que impide que el blanco sea vacío.
+
+   Y ESTAS REGLAS APUNTABAN A CAPAS QUE YA NO EXISTÍAN.
+   Apuntaban a `.fondo__capa--alta/media/cercana`,
+   que es como se llamaban las capas ANTES de que herramientas volviera
+   a meterlas en el paralaje. Desde entonces son `.aguada--1` y
+   `.aguada--2`, esta hoja siguió afinando la opacidad de tres
+   selectores que no casaban con nada, y la página se quedó sin
+   pigmento — con el argumento de por qué 0.40 y no 0.58 intacto encima
+   de un fondo que no existía. El argumento vale igual; ahora se aplica
+   a las capas que sí están. */
+.comunidad .aguada--1 { opacity: 0.40; }
+.comunidad .aguada--2 { opacity: 0.30; }
+:root[data-tinta="clara"] .comunidad .aguada--1 { opacity: 0.28; }
+:root[data-tinta="clara"] .comunidad .aguada--2 { opacity: 0.22; }
+
+/* ── Y REPARTIDAS POR LA HOJA, NO AMONTONADAS ARRIBA ───────────────
+   Las dos aguadas se colocan en `vh` porque en la portada viven en una
+   sección que mide más o menos una ventana. Esta hoja mide cuatro y
+   media: con las medidas de allí, las dos manchas caben en la primera
+   pantalla y media y las tres siguientes son blanco liso — medido,
+   3,2 pantallas seguidas sin nada, el 69 % de la página.
+
+   Aquí se colocan en PORCENTAJE DE LA HOJA, que es lo que hay que
+   medir cuando el contenedor no es la ventana: la hoja crece con los
+   hilos y las manchas crecen con ella. Y siguen sin estar centradas ni
+   enfrentadas — una arriba a la derecha, otra a media altura por la
+   izquierda—, porque dos aguadas simétricas se leen como un adorno. */
+.comunidad .aguada--1 {
+  top: 5%; right: -16%;
+  width: min(46rem, 62%); height: 30%;
+}
+.comunidad .aguada--2 {
+  top: 44%; left: -18%;
+  width: min(42rem, 58%); height: 34%;
+}
 
 /* (AQUÍ VIVÍA LA CABECERA: rótulo, título, filete y declaración —una
    pantalla entera antes del primer hilo. El dueño la mandó quitar del
