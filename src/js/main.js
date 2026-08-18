@@ -58,12 +58,18 @@ const reloj = () => (HORA_FORZADA !== null && !Number.isNaN(HORA_FORZADA))
 
 let L = luz(reloj());
 let lavadoAdaptativo = false;   // lo enciende arrancar() si hay lienzo
+/* La calibración del lavado mide cada 10 s, y eso es el SUELO: cuando
+   la luz cambia de verdad —cada 30 s, o de golpe con `?hora=`— esta
+   bandera pide una medida para el cuadro siguiente sin esperar turno.
+   Así medir menos no cuesta contraste. Ver `calibrarTinta`. */
+let luzCambio = true;
 aplicar(L);
 
 const nota = document.getElementById('nota-hora');
 function refrescarHora() {
   const h = reloj();
   L = luz(h);
+  luzCambio = true;
   aplicar(L, !lavadoAdaptativo);
   if (nota) nota.textContent = notaAmanecer(h);
 }
@@ -463,6 +469,12 @@ function arrancar(mar) {
   sondear();
   medidas();
   addEventListener('resize', medidas, { passive: true });
+  /* Al cambiar de tamaño, las cuatro cajas del texto se mueven y lo que
+     hay pintado detrás es otro. Con la calibración cada 10 s eso serían
+     hasta diez segundos con el lavado de la anchura anterior — antes no
+     se notaba porque medía dos veces por segundo. Se pide una medida
+     para el cuadro siguiente, igual que hace un cambio de luz. */
+  addEventListener('resize', () => { luzCambio = true; }, { passive: true });
   addEventListener('galene:viewportresize', medidas, { passive: true });
 
   /* Paralaje de puntero: solo en escritorio, solo con puntero fino. */
@@ -1018,12 +1030,27 @@ function arrancar(mar) {
     { sel: '.hero__declaracion' }, { sel: '.hero__enlace' },
   ];
   let alfaLavado = 0;
-  /* `readPixels` sincroniza CPU y GPU. Dos lecturas por segundo eran un
-     microtirón periódico en móvil aunque el shader cupiera en el cuadro.
-     La luz real solo se actualiza cada 30 s: una medida cada 10 s mantiene
-     el contraste protegido sin serruchar la animación. */
-  const cadaLavado = MOVIL ? 300 : 15;
-  let contadorLavado = cadaLavado - 1, primeraCalibracion = true;
+  /* ── CADA CUÁNTO SE MIDE, Y POR QUÉ ESTABA MAL EN ESCRITORIO ──────
+     `readPixels` sincroniza CPU y GPU: vacía la tubería y bloquea hasta
+     que la GPU termina el cuadro. Dos lecturas por segundo eran un
+     microtirón periódico, y eso ya estaba escrito aquí — pero el
+     arreglo se aplicó SOLO al teléfono. `MOVIL ? 300 : 15` a 30 fps son
+     10 s en móvil y MEDIO SEGUNDO en escritorio: exactamente las dos
+     lecturas por segundo que el comentario decía haber quitado, ×4
+     piezas, o sea ocho paradas de tubería por segundo.
+
+     Ahora se cuenta en TIEMPO y no en cuadros —un contador de cuadros
+     dice cosas distintas según a qué cadencia vaya el mar, que es justo
+     lo que se adapta solo— y es el mismo número en los dos sitios: la
+     luz se recalcula cada 30 s (`setInterval(refrescarHora, 30_000)`),
+     así que medir cada 10 cubre cualquier cambio con dos veces de
+     margen.
+
+     Y NO SE PIERDE NADA por medir menos: si la luz cambió de verdad,
+     `refrescarHora` pide una calibración para el cuadro siguiente. La
+     cadencia es el suelo, no el techo. */
+  const MS_LAVADO = 10_000;
+  let proximoLavado = 0, primeraCalibracion = true;
   /* ── Y UNA TANDA DE ARRANQUE, QUE FALTABA ────────────────────────
      La primera calibración caía en el primer cuadro, cuando aún no han
      llegado todas las láminas: se medía un cielo liso y se daba por
@@ -1091,7 +1118,10 @@ function arrancar(mar) {
   function calibrarTinta() {
     dibujos++;
     const arranque = enArranque();
-    if (++contadorLavado % cadaLavado !== 0 && !arranque) return;
+    const ahora = performance.now();
+    if (ahora < proximoLavado && !arranque && !luzCambio) return;
+    proximoLavado = ahora + MS_LAVADO;
+    luzCambio = false;
     const caja = hero.getBoundingClientRect();
     const k = lienzo.width / Math.max(1, caja.width);
 
@@ -1116,18 +1146,31 @@ function arrancar(mar) {
        2.12:1 y el lavado se iba a 0.48 — medio velo negro sobre la
        pintura por el 0.372 % de los píxeles. */
     let fondoClaro = 0, fondoOscuro = 1, alguna = false;
-    for (const z of ZONAS) {
+    /* ── UNA SOLA PARADA PARA LAS CUATRO PIEZAS ──────────────────────
+       Las cuatro cajas están dentro del mismo bloque de texto, así que
+       su unión cabe en una lectura. Antes eran cuatro `readPixels`, y
+       el precio de esa llamada no está en los bytes que copia sino en
+       que SINCRONIZA: cuatro cajas pequeñas costaban cuatro paradas de
+       tubería, no una cuarta parte de una. Ver `medirZonas` en mar.js.
+
+       Las cajas se calculan todas ANTES de leer nada, y por eso van en
+       dos bucles y no en uno: `getBoundingClientRect` es una lectura de
+       maquetación, y entremezclarlas con las medidas del lienzo mete
+       trabajo de layout en medio de una espera de GPU. */
+    const cajas = ZONAS.map((z) => {
       const el = document.querySelector(z.sel);
-      if (!el) continue;
+      if (!el) return null;
       const r = el.getBoundingClientRect();
-      if (r.width < 1 || r.height < 1) continue;
+      if (r.width < 1 || r.height < 1) return null;
       // readPixels tiene el origen abajo-izquierda.
-      const zona = mar.medirZona(
-        Math.round(r.left * k),
-        Math.round(lienzo.height - (r.bottom - caja.top) * k),
-        Math.round(r.width * k),
-        Math.round(r.height * k),
-        baldosa);
+      return {
+        x: Math.round(r.left * k),
+        y: Math.round(lienzo.height - (r.bottom - caja.top) * k),
+        w: Math.round(r.width * k),
+        h: Math.round(r.height * k),
+      };
+    });
+    for (const zona of mar.medirZonas(cajas.filter(Boolean), baldosa)) {
       if (!zona) continue;
       alguna = true;
       fondoClaro = Math.max(fondoClaro, aGamma(zona.p995));

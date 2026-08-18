@@ -185,6 +185,13 @@ aparece al compilar es el que nadie descubre hasta que está publicado.
 
 Lo que vigila, por archivo:
 
+- `fluidez.spec.js` — las dos invariantes del pase de rendimiento del
+  héroe, contadas y no cronometradas (un techo en milisegundos no vale
+  nada en una máquina sin GPU): como mucho **una lectura de píxeles por
+  cuadro** —el calibrador del lavado medía cuatro piezas con cuatro
+  `readPixels`, y esa llamada es cara porque sincroniza, no por los
+  bytes— y como mucho **una subida de textura por cuadro**. Falla
+  contra la edición anterior, que es como se sabe que mide algo.
 - `consola.spec.js` — que ninguna página lance una excepción, y que la
   portada monte sus módulos hasta el final. Existe por un fallo
   concreto: una fusión se llevó tres `import` de `main.js` y dejó las

@@ -3055,6 +3055,47 @@ export function crear(lienzo) {
     return c;
   }
 
+  /* ── LAS SUBIDAS VAN DE UNA EN UNA, UN CUADRO CADA UNA ────────────
+     Las DESCARGAS siguen en paralelo: eso es red, y la red se aprovecha
+     pidiendo todo a la vez. Lo que se pone en fila es la SUBIDA a la
+     GPU, que es otra cosa — `texImage2D` de una lámina de 2048 px son
+     16 MB que el hilo principal empuja de golpe, más el `drawImage` de
+     reducirla si venía más grande.
+
+     Nueve láminas terminando de descargarse casi a la vez metían varias
+     de esas subidas en el mismo cuadro, y eso cae justo cuando alguien
+     acaba de llegar y el ave está cayendo. Con una por cuadro, el coste
+     es el mismo pero repartido, y la escena se va completando lámina a
+     lámina en vez de dar un tirón.
+
+     El `await img.decode()` va por lo mismo: sin él, la descompresión
+     del PNG ocurre DENTRO de `texImage2D`, en medio del cuadro.
+     `decoding = 'async'` es solo una pista; `decode()` es la promesa.
+
+     MEDIDO, y esto sí en esta máquina, porque no depende de la GPU:
+     cinco tomas alternando las dos versiones en el mismo navegador,
+     tiempo desde `goto` hasta el primer cuadro del héroe, mediana
+     1599 ms → 962 ms. El peor cuadro del arranque pasaba de SEIS
+     subidas a una; lo vigila `fluidez.spec.js`, que falla contra la
+     versión de antes. */
+  let colaSubida = Promise.resolve();
+  const enSuTurno = (fn) => {
+    const turno = colaSubida.then(() => new Promise((sigue) => {
+      /* DESPUÉS de pintar, no antes. Un `requestAnimationFrame` corre
+         justo ANTES del pintado: meter ahí dieciséis megas de subida
+         retrasa el cuadro que estaba a punto de salir. El par
+         rAF + setTimeout(0) es el idioma de «al terminar este cuadro»:
+         el rAF sitúa el turno en el cuadro correcto y el timeout deja
+         que el cuadro se pinte primero.
+
+         Y así se conserva lo que se buscaba —una subida por cuadro—
+         sin pagar el retraso de la que le toca. */
+      requestAnimationFrame(() => setTimeout(() => { fn(); sigue(); }, 0));
+    }));
+    colaSubida = turno.catch(() => {});
+    return turno;
+  };
+
   async function cargar(mapa, anchoMax = 2048) {
     /* Lo que no cabe no se descarga siquiera: en un aparato con las
        dieciséis unidades justas, bajarse una lámina que nunca se va a
@@ -3073,7 +3114,12 @@ export function crear(lienzo) {
         img.onerror = () => mal(new Error('lámina ausente: ' + mapa[n]));
         img.src = mapa[n];
       });
+      /* Descomprimir AQUÍ y no dentro de texImage2D. Si el navegador no
+         trae `decode()` o lo rechaza, se sigue igual: el peor caso es
+         volver al comportamiento de antes, no quedarse sin lámina. */
+      try { await img.decode(); } catch { /* se sube tal cual */ }
 
+      await enSuTurno(() => {
       /* Bajar de tamaño antes de subir: el cuello medido en gama media
          es el ancho de banda de subida de textura, no el decodificador. */
       let fuente = img;
@@ -3173,6 +3219,7 @@ export function crear(lienzo) {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       cargadas.add(n);
+      });   // ← cierra enSuTurno: una subida por cuadro
     }));
     gl.useProgram(p);
     if (['lejano', 'medio', 'cercano'].every((n) => cargadas.has(n)))
@@ -3261,6 +3308,62 @@ export function crear(lienzo) {
     gl.bindTexture(gl.TEXTURE_2D, tex[n]);
   }
 
+  /* ── LAS ESTADÍSTICAS DE UN RECTÁNGULO, UNA SOLA VEZ ─────────────
+     Las usan `medirZona` (un rectángulo, una lectura) y `medirZonas`
+     (varios rectángulos dentro de UNA lectura). Estaban escritas dos
+     veces —una por cada rama de `baldosa`— y ahora están aquí, porque
+     dos copias de un percentil son dos percentiles que pueden
+     separarse el día que alguien toque una.
+
+     `px` es RGBA de `anchoBuf` píxeles de ancho; (x, y, w, h) es el
+     recorte dentro de ese búfer. `baldosa` promedia antes en cuadros
+     de N×N: se mide a la escala del TRAZO de la letra, que es lo que
+     el ojo integra, y así el polvo de estrellas deja de mandar sobre
+     el percentil (ver la nota larga en `medirZona`). */
+  const aLineal = (v) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+
+  function estadisticas(px, anchoBuf, x, y, w, h, baldosa = 1) {
+    const cubetas = new Uint32Array(1024);
+    let max = 0, min = 1, suma = 0, n = 0;
+    const paso = Math.max(1, baldosa | 0);
+
+    for (let by = 0; by < h; by += paso) {
+      for (let bx = 0; bx < w; bx += paso) {
+        let s = 0, m = 0;
+        for (let dy = 0; dy < paso && by + dy < h; dy++) {
+          const fila = ((y + by + dy) * anchoBuf + (x + bx)) * 4;
+          for (let dx = 0; dx < paso && bx + dx < w; dx++) {
+            const i = fila + dx * 4;
+            s += 0.2126 * aLineal(px[i] / 255)
+               + 0.7152 * aLineal(px[i + 1] / 255)
+               + 0.0722 * aLineal(px[i + 2] / 255);
+            m++;
+          }
+        }
+        if (!m) continue;
+        const l = s / m;
+        if (l > max) max = l;
+        if (l < min) min = l;
+        suma += l; n++;
+        cubetas[Math.min(1023, Math.round(l * 1023))]++;
+      }
+    }
+    if (!n) return null;
+
+    /* Histograma de 1024 cubetas y no un `sort`: ordenar sesenta mil
+       flotantes dos veces por segundo cuesta más que todo lo demás
+       junto, y la resolución de mil cubetas sobra para un percentil. */
+    const percentil = (pp) => {
+      const objetivo = pp * n;
+      let acum = 0;
+      for (let i = 0; i < 1024; i++) {
+        acum += cubetas[i];
+        if (acum >= objetivo) return i / 1023;
+      }
+      return 1;
+    };
+    return { max, min, prom: suma / n, p995: percentil(0.995), p005: percentil(0.005) };
+  }
   return {
     cargar, ventana, colocarManglar, colocarCerca, pincelada, ajustarGrafito,
     toques,
@@ -3372,93 +3475,75 @@ export function crear(lienzo) {
        lo que el ojo integra: el disco de la luna sigue contando entero
        porque es una mancha grande, y el polvo de estrellas deja de
        mandar porque no llena una baldosa. */
+    /* ── VARIAS ZONAS, UNA SOLA LECTURA ────────────────────────────
+       `readPixels` no es caro por los bytes que copia: es caro porque
+       SINCRONIZA. Vacía la tubería y bloquea la CPU hasta que la GPU
+       termina el cuadro, así que su precio no baja midiendo cajas más
+       pequeñas — lo paga entero cada llamada.
+
+       El calibrador del héroe mide CUATRO piezas (rótulo, lockup,
+       declaración y enlace) que están todas dentro del mismo bloque de
+       texto. Cuatro llamadas eran cuatro paradas para leer un
+       rectángulo que cabe en uno solo. Aquí se lee la unión una vez y
+       cada zona saca sus estadísticas del mismo búfer: mismos números,
+       una cuarta parte de las paradas.
+
+       LO QUE SE MIDIÓ Y LO QUE NO, dicho como toca. La unión de las
+       cuatro cajas es 1.81× la suma de sus áreas en escritorio y 1.61×
+       en teléfono (medido en 1440×900 y 390×844), o sea que esto lee
+       un 70 % más de bytes. Lo que gana son tres paradas de cuatro.
+
+       En ESTA máquina el cambio no se nota —el perfilador da 363 ms
+       antes y 366 ms después— y eso es exactamente lo que tiene que
+       pasar: aquí el renderizado es SwiftShader, por software, y un
+       renderizador por software no tiene tubería que vaciar. Su coste
+       de `readPixels` es proporcional a los bytes, así que leer un
+       70 % más cuesta un 70 % más y ahorrarse tres sincronizaciones no
+       ahorra nada.
+
+       En una GPU de verdad el reparto es el contrario: la copia de
+       620 kB va por un bus que la hace en fracciones de milisegundo, y
+       lo que duele es la parada. NO ESTÁ MEDIDO EN HARDWARE REAL, y no
+       se puede medir desde aquí; queda escrito para que quien tenga el
+       aparato delante lo compruebe en vez de creérselo.
+
+       Devuelve un array alineado con `zonas`, con `null` donde la caja
+       no se pudiera leer — igual que `medirZona`. */
+    medirZonas(zonas, baldosa = 1) {
+      if (!zonas || !zonas.length) return [];
+      /* La unión, recortada al lienzo. Si algo se sale, se recorta
+         aquí una vez en vez de que cada zona lo descubra por su
+         cuenta. */
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const z of zonas) {
+        if (!z || z.w < 1 || z.h < 1) continue;
+        x0 = Math.min(x0, z.x); y0 = Math.min(y0, z.y);
+        x1 = Math.max(x1, z.x + z.w); y1 = Math.max(y1, z.y + z.h);
+      }
+      x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0));
+      x1 = Math.min(ancho, Math.ceil(x1)); y1 = Math.min(alto, Math.ceil(y1));
+      const W = x1 - x0, H = y1 - y0;
+      if (!(W > 0 && H > 0)) return zonas.map(() => null);
+
+      const px = new Uint8Array(W * H * 4);
+      gl.readPixels(x0, y0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      return zonas.map((z) => {
+        if (!z || z.w < 1 || z.h < 1) return null;
+        const zx = Math.max(x0, Math.floor(z.x)), zy = Math.max(y0, Math.floor(z.y));
+        const zw = Math.min(x1, Math.ceil(z.x + z.w)) - zx;
+        const zh = Math.min(y1, Math.ceil(z.y + z.h)) - zy;
+        if (zw < 1 || zh < 1) return null;
+        return estadisticas(px, W, zx - x0, zy - y0, zw, zh, baldosa);
+      });
+    },
+
     medirZona(x, y, w, h, baldosa = 1) {
       w = Math.max(1, Math.min(w, ancho - x));
       h = Math.max(1, Math.min(h, alto - y));
       if (x < 0 || y < 0 || w < 1 || h < 1) return null;
       const px = new Uint8Array(w * h * 4);
       gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      const linz = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-      if (baldosa > 1) {
-        const cubetas = new Uint32Array(1024);
-        let max = 0, min = 1, suma = 0, n = 0;
-        for (let by = 0; by < h; by += baldosa) {
-          for (let bx = 0; bx < w; bx += baldosa) {
-            let s = 0, m = 0;
-            for (let dy = 0; dy < baldosa && by + dy < h; dy++) {
-              for (let dx = 0; dx < baldosa && bx + dx < w; dx++) {
-                const i = ((by + dy) * w + (bx + dx)) * 4;
-                s += 0.2126 * linz(px[i] / 255)
-                   + 0.7152 * linz(px[i + 1] / 255)
-                   + 0.0722 * linz(px[i + 2] / 255);
-                m++;
-              }
-            }
-            if (!m) continue;
-            const l = s / m;
-            if (l > max) max = l;
-            if (l < min) min = l;
-            suma += l; n++;
-            cubetas[Math.min(1023, Math.round(l * 1023))]++;
-          }
-        }
-        if (!n) return null;
-        const pc = (p) => {
-          let acum = 0;
-          for (let i = 0; i < 1024; i++) {
-            acum += cubetas[i];
-            if (acum >= p * n) return i / 1023;
-          }
-          return 1;
-        };
-        return { max, min, prom: suma / n, p995: pc(0.995), p005: pc(0.005) };
-      }
-      /* ── Y TAMBIEN PERCENTILES, NO SOLO EL EXTREMO ─────────────────
-         Esto devolvia el pixel mas claro y el mas oscuro, y el
-         calibrador del lavado se protegia del PEOR de los dos. Es lo
-         correcto cuando lo que hay detras del texto es una aguada —el
-         disco de la luna cruzando por ahi es una mancha grande y ahi el
-         extremo ES el fondo—, y es un desastre cuando lo que hay son
-         puntos sueltos.
-
-         MEDIDO en un movil de 375x812 a las 21:00, sobre la caja del
-         rotulo: luminancia media 0.0582 —o sea texto blanco a 13.4:1,
-         de sobra—, pero el pixel mas claro valia 0.412 y bajaba el
-         contraste nominal a 2.12:1. El calibrador respondia velando el
-         bloque entero al 48 %: medio panel negro sobre la pintura.
-
-         Ese pixel era una ESTRELLA. Solo el 0.372 % de la zona pasaba
-         de 0.10 de luminancia. Se estaba tapando el cuadro por tres de
-         cada mil pixeles, y ademas sin ganar nada: el trazo de una
-         letra mide varios pixeles de ancho y una estrella de uno o dos
-         no lo borra — el ojo integra a lo largo del trazo.
-
-         Con el percentil 99.5 el disco de la luna sigue contando
-         entero (es una mancha, no un punto) y el campo de estrellas
-         deja de mandar. El histograma es de 1024 cubetas para no tener
-         que ordenar sesenta mil flotantes dos veces por segundo. */
-      const cubetas = new Uint32Array(1024);
-      let max = 0, min = 1, suma = 0, n = 0;
-      for (let i = 0; i < px.length; i += 4) {
-        const l = 0.2126 * linz(px[i] / 255)
-                + 0.7152 * linz(px[i + 1] / 255)
-                + 0.0722 * linz(px[i + 2] / 255);
-        if (l > max) max = l;
-        if (l < min) min = l;
-        suma += l; n++;
-        cubetas[Math.min(1023, Math.round(l * 1023))]++;
-      }
-      const percentil = (p) => {
-        const objetivo = p * n;
-        let acum = 0;
-        for (let i = 0; i < 1024; i++) {
-          acum += cubetas[i];
-          if (acum >= objetivo) return i / 1023;
-        }
-        return 1;
-      };
-      return { max, min, prom: suma / n,
-               p995: percentil(0.995), p005: percentil(0.005) };
+      return estadisticas(px, w, 0, 0, w, h, baldosa);
     },
 
     /* Muestreo completo del cuadro, para auditar la pintura sobre los
