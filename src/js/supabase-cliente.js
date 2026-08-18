@@ -192,11 +192,38 @@ async function conMisVotos(objeto, filas, idDe) {
 }
 
 export async function listar({ orden = 'recientes', etiqueta = '', cursor = '', instantanea, limite = 12 } = {}) {
-  await entrar();
+  /* ── LEER NO DEPENDE DE ENTRAR ────────────────────────────────────
+     Antes esto era `await entrar()` a secas, y ahí estaba la avería que
+     dejaba el foro en blanco: la política de lectura de `hilos` deja
+     ver lo visible a `anon`, o sea SIN sesión ninguna —comprobado
+     contra la base real, `GET /rest/v1/hilos_publico` con la llave
+     anónima y nada más devuelve 200—, pero este `await` hacía que
+     cualquier tropiezo al abrir la sesión anónima —el tope por hora de
+     Supabase, un almacenamiento bloqueado en modo privado, un reloj
+     desviado— se llevara por delante también la lectura. El resultado
+     era el peor posible: la comunidad entera vacía, y sin decir por
+     qué.
+
+     La sesión sigue haciendo falta para SABER QUÉ VOTÉ y para publicar.
+     Ninguna de las dos cosas es motivo para no dejar leer. */
+  let hayQuien = true;
+  try { await entrar(); } catch (err) { hayQuien = false; console.warn('[foro] se lee sin sesión:', err?.message || err); }
+
   const inst = instantanea || Date.now();
   const c = deCursor(cursor);
 
-  let q = supabase.from('hilos_publico').select('*').lte('creado', inst);
+  let q = supabase.from('hilos_publico').select('*');
+  /* ── EL RELOJ DE QUIEN MIRA NO PUEDE ESCONDER LO RECIÉN ESCRITO ───
+     `creado` lo pone el servidor con su propio reloj. Filtrar la
+     PRIMERA página por `Date.now()` del navegador significa que un
+     equipo atrasado unos minutos no ve nada de lo último —incluido lo
+     que acaba de escribir—, y no hay ningún aviso: sale la lista vacía,
+     que es indistinguible de un foro sin hilos.
+
+     La instantánea existe para que al pedir «más» no se repitan ni se
+     salten filas mientras alguien publica. Eso solo importa a partir de
+     la segunda página. En la primera no hay nada que estabilizar. */
+  if (instantanea || cursor) q = q.lte('creado', inst);
   if (etiqueta) q = q.eq('etiqueta', etiqueta);
 
   if (orden === 'votados') {
@@ -216,7 +243,7 @@ export async function listar({ orden = 'recientes', etiqueta = '', cursor = '', 
 
   const ahora = Date.now();
   const hay = data.length > limite;
-  await conMisVotos('hilo', data.slice(0, limite), (f) => f.id);
+  if (hayQuien) await conMisVotos('hilo', data.slice(0, limite), (f) => f.id);
   const pagina = data.slice(0, limite).map((f) => hiloAFuera(f, ahora));
 
   let siguiente = null;
@@ -288,8 +315,26 @@ export async function crearHilo({ titulo, cuerpo, etiqueta, nombre, anonima }) {
   if (error) throw error;
   recordarMio(id);
 
+  /* ── SI EL INSERT PASÓ, ESTÁ PUBLICADO ───────────────────────────
+     Esta relectura es una comodidad: sirve para pintar la tarjeta en el
+     sitio sin esperar a recargar. NO es parte de publicar —eso ya
+     ocurrió en la línea de arriba, y el `if (error) throw` de antes es
+     el único juez de si salió bien.
+
+     Tal como estaba, un fallo AQUÍ —un tope de peticiones, la red que
+     se cae justo después, una política que no deja releer— hacía saltar
+     el `catch` de `comunidad.js` y salía «No se pudo publicar», con el
+     hilo ya escrito en la base. Decirle a alguien que su mensaje se
+     perdió cuando está guardado es la peor de las dos mentiras
+     posibles: lo escribe otra vez, y quedan dos.
+
+     Si no se puede releer, se devuelve lo que sí se sabe con certeza y
+     la tarjeta se pintará en la siguiente carga. */
   const { data, error: e2 } = await supabase.from('hilos_publico').select('*').eq('id', id).single();
-  if (e2) throw e2;
+  if (e2) {
+    console.warn('[foro] publicado, pero no se pudo releer para pintarlo:', e2?.message || e2);
+    return { id, estado: 'visible', llave, hilo: null };
+  }
   return { id, estado: data.estado, llave, hilo: data.estado === 'visible' ? hiloAFuera(data) : null };
 }
 
@@ -308,7 +353,11 @@ export async function crearComentario({ hilo, padre, texto, nombre, anonima }) {
   recordarMio(id);
 
   const { data, error: e2 } = await supabase.from('comentarios_publico').select('*').eq('id', id).single();
-  if (e2) throw e2;
+  /* Igual que en `crearHilo`: el comentario ya está escrito. */
+  if (e2) {
+    console.warn('[foro] comentado, pero no se pudo releer para pintarlo:', e2?.message || e2);
+    return { id, estado: 'visible', llave, padre: padre || null };
+  }
   return { id, estado: data.estado, llave, padre: data.padre };
 }
 

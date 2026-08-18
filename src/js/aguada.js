@@ -42,6 +42,17 @@
    ocurre cuando el puntero está encima de una superficie de la lista.
    Fuera de ellas el bucle ni se enciende.
 
+   ── DOS GESTOS, NO UNO ────────────────────────────────────────────
+   Lo de arriba es el CHARCO: se posa dentro de una pieza concreta y se
+   queda ahí. Sirve para decir «esto se puede tocar», y por eso solo
+   existe encima de cinco cosas.
+
+   Debajo, en `luzDelAgua()`, está la LUZ: una sola mancha del tamaño
+   de la mano que acompaña al puntero por toda la hoja, haya o no algo
+   debajo. No dice «esto se puede tocar» —dice que la página está
+   mojada—. Las dos se suman donde coinciden, que es lo que hace el
+   agua cuando cae dos veces en el mismo sitio.
+
    ── DÓNDE NO SE ENCIENDE ──────────────────────────────────────────
    · `prefers-reduced-motion`. Regla 7 del proyecto: APAGA, no reduce.
    · Sin ratón fino (`hover: hover` y `pointer: fine`). En un teléfono
@@ -70,7 +81,7 @@ const SUPERFICIES = [
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
 const conRaton = matchMedia('(hover: hover) and (pointer: fine)');
 
-if (!quieto.matches && conRaton.matches) arrancar();
+if (!quieto.matches && conRaton.matches) { arrancar(); luzDelAgua(); }
 
 function arrancar() {
   let encima = null;      // la superficie bajo el puntero, o null
@@ -128,5 +139,98 @@ function arrancar() {
     if (!e.matches) return;
     encima?.classList.remove('mojado');
     encima = null;
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA LUZ DEL AGUA — la mancha que acompaña al puntero por toda la hoja.
+
+   El charco de arriba necesita una pieza debajo. Esta no: es una caja
+   fija de 34 rem que solo cambia de `transform`, con dos capas mezcladas
+   —multiplicar para el papel, `screen` para la noche— que se turnan
+   solas según lo que haya detrás. Toda la explicación del porqué está
+   en `estilos.css`, junto a las reglas.
+
+   Aquí no hay ninguna animación escrita: el retraso es la transición
+   del `transform`, y lo único que hace este código es decirle a la caja
+   a dónde tiene que llegar.
+   ═══════════════════════════════════════════════════════════════════ */
+function luzDelAgua() {
+  if (!document.body) return;
+
+  /* DOS ELEMENTOS HERMANOS, no un envoltorio con dos hijos: metidos
+     dentro de una caja con `z-index` se mezclarían con el vacío de esa
+     caja y no con la página, y saldría un cuadrado blanco tapando
+     media pantalla. Está contado entero en `estilos.css`. */
+  const capas = ['poso', 'brillo'].map((cual) => {
+    const c = document.createElement('div');
+    c.className = 'aguada-luz aguada-luz--' + cual;
+    /* No es contenido: es agua. Que ningún lector de pantalla la anuncie. */
+    c.setAttribute('aria-hidden', 'true');
+    document.body.append(c);
+    return c;
+  });
+
+  let lx = 0, ly = 0;
+  let pedido = false;
+  let colocada = false;   // ¿ya ha estado en algún sitio?
+  let ultimo = null;      // el último elemento del que se leyó el tinte
+
+  const mover = () => {
+    pedido = false;
+    const t = `translate3d(${lx}px, ${ly}px, 0)`;
+    for (const c of capas) c.style.transform = t;
+  };
+
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    lx = e.clientX; ly = e.clientY;
+
+    /* EL TINTE. `--luz-tinta` se hereda, así que preguntárselo al
+       elemento que está justo debajo del puntero devuelve el de la
+       sección en la que esté sin tener que subir por el árbol a mano.
+       Se lee solo cuando cambia el elemento: `getComputedStyle` fuerza
+       un recálculo de estilo, y uno por cuadro mientras se mueve el
+       ratón es un coste que no hace falta pagar. */
+    if (e.target !== ultimo && e.target instanceof Element) {
+      ultimo = e.target;
+      const tinte = getComputedStyle(e.target).getPropertyValue('--luz-tinta').trim();
+      if (tinte) for (const c of capas) c.style.setProperty('--luz', tinte);
+    }
+
+    /* La primera vez aparece DONDE ESTÁ EL RATÓN. Sin esto la caja
+       empieza en la esquina superior izquierda y se la ve cruzar la
+       pantalla en diagonal la primera vez que alguien mueve el ratón:
+       un charco no entra volando desde una esquina. */
+    if (!colocada) {
+      colocada = true;
+      for (const c of capas) c.style.transition = 'none';
+      mover();
+      /* Dos cuadros: uno para que el navegador se quede con la
+         posición sin transición, otro para devolverla antes de que
+         llegue el movimiento siguiente. */
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        for (const c of capas) { c.style.transition = ''; c.classList.add('aguada-luz--dentro'); }
+      }));
+      return;
+    }
+    if (!pedido) { pedido = true; requestAnimationFrame(mover); }
+  }, { passive: true, capture: true });
+
+  /* Fuera de la ventana no hay puntero al que seguir. Se seca donde
+     estaba, no vuelve a ninguna parte. */
+  addEventListener('pointerleave', () => {
+    for (const c of capas) c.classList.remove('aguada-luz--dentro');
+  });
+  addEventListener('pointerenter', () => {
+    if (colocada) for (const c of capas) c.classList.add('aguada-luz--dentro');
+  });
+
+  /* Regla 7: si la preferencia se enciende con la página abierta, se
+     va del documento. La regla de CSS ya la esconde; esto además deja
+     de escuchar el ratón. */
+  quieto.addEventListener('change', (e) => {
+    if (e.matches) for (const c of capas) c.remove();
   });
 }
