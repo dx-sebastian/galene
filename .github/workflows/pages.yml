@@ -17,6 +17,19 @@ concurrency:
 jobs:
   construir:
     runs-on: ubuntu-latest
+    # ── POR QUÉ ESTE TRABAJO TAMBIÉN DECLARA EL ENTORNO ──────────────
+    # Porque «Settings → Secrets and variables → Actions» y «Settings →
+    # Environments → github-pages» son dos sitios distintos donde poner
+    # lo mismo, y solo uno de los dos lo ve un trabajo que no declara
+    # `environment`. MEDIDO el 18 ago 2026: tres despliegues seguidos
+    # publicaron el sitio sin foro, y el diagnóstico de abajo dijo que
+    # este trabajo veía CERO variables de repositorio — o sea que las
+    # que había estaban en el otro sitio.
+    #
+    # Declararlo aquí hace que las dos fuentes valgan. No añade riesgo:
+    # el trabajo `publicar` ya usa este mismo entorno y pasa, así que no
+    # hay revisores ni esperas que puedan bloquear a nadie.
+    environment: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
