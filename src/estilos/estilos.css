@@ -6736,3 +6736,157 @@ main:focus { outline: none; }
   filter: drop-shadow(0 -3px 5px rgb(28 42 48 / 22%));
   pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA AGUADA DEL PUNTERO — un charco que llega tarde
+
+   Ver `js/aguada.js` para el porqué y para lo que cuesta. Aquí está
+   TODO el comportamiento visual, incluido el retraso: el módulo solo
+   escribe dos números.
+
+   ── EL RETRASO, SIN UNA SOLA ANIMACIÓN ESCRITA ────────────────────
+   `--ax` y `--ay` van registrados con `@property`, y esa es la pieza
+   clave: una variable declarada a secas es una cadena de texto y el
+   navegador no sabe interpolarla, así que el charco saltaría de una
+   posición a otra. Registrada como `<percentage>`, se puede poner en
+   `transition` como cualquier otra propiedad — y entonces el charco
+   PERSIGUE al puntero en vez de ir pegado a él.
+
+   400 ms. Menos y va pegado, o sea que es un foco; más y se despega
+   tanto que parece que va a otra cosa. */
+/* `inherits: true`, y no es un detalle: la mancha vive en un
+   `::after`, y un pseudoelemento solo recibe una propiedad
+   personalizada de su elemento si esa propiedad HEREDA. Con
+   `inherits: false` el `::after` se quedaba con el valor inicial —50 %,
+   el centro— y el charco no se movía nunca del medio de la tarjeta,
+   por mucho que el módulo escribiera los números correctos fuera.
+   Costó una medición: opacidad subiendo bien, `--ax` clavado en 50 %. */
+@property --ax { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
+@property --ay { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
+
+/* ── DÓNDE, Y CON QUÉ PSEUDOELEMENTO ──────────────────────────────
+   Solo con ratón fino. En un teléfono no hay puntero que seguir, y el
+   `:hover` se queda pegado después de tocar; ahí las superficies se
+   comportan como siempre.
+
+   Y hay que elegir pseudo POR SUPERFICIE, porque no siempre está el
+   mismo libre. Esto se escribió primero con un `:where(...)::after`
+   para todas, y estaba mal por partida doble:
+
+     · `.hilo::after` YA EXISTE — es la aguada del pigmento de la
+       etiqueta en la esquina — y `.experto::after` también: es la
+       comilla de apertura de la cita. Un `:where()` no suma
+       especificidad, así que mi regla perdía contra las dos y lo que
+       salía era una mezcla: la comilla de ellos con mi degradado
+       detrás, colocada por su `top/left` y por mi `inset` a la vez.
+     · Y no se veía como un fallo, se veía como una mancha. Solo lo
+       delató mirar qué otras reglas tocaban esos pseudos.
+
+   `.experto` se queda FUERA: tiene los dos pseudos con dueño —el
+   ::before es el grano de papel del bloque nocturno— y desalojar una
+   comilla de 4.6 rem para meter un charco no es un cambio, es otro
+   diseño. Ya tiene su propio gesto al pasar por encima.
+
+   Y en los tramos del reloj va el ::before, porque el ::after es la
+   marca del que está elegido (`.rr__radio:checked + .rr__chip::after`).
+   Aquí antes ponía `.tramo`, que NO EXISTE en ninguna página: era un
+   nombre que supuse en vez de mirar. Los tramos se llaman `rr__chip` y
+   miden 234×61, que da de sobra para un charco. */
+@media (hover: hover) and (pointer: fine) {
+  .hilo, .producto, .ayuda__canal, .escribir, .rr__chip {
+    position: relative;
+    isolation: isolate;
+    --ax: 50%;
+    --ay: 50%;
+  }
+
+  /* ── LA MANCHA ──────────────────────────────────────────────────
+     `z-index: -1` sobre un elemento aislado: queda ENCIMA del fondo de
+     la pieza y DEBAJO de su texto, sin tocar el orden de pintado de
+     nada más.
+
+     Y va en `background`, nunca en `box-shadow`. No es preferencia:
+     `controles.spec.js` cuenta las familias de sombra de cada página y
+     el sitio entero está en una. Un resplandor hecho con sombra sería
+     una segunda, en cinco páginas a la vez. Además sería mentira: la
+     acuarela no proyecta, tiñe.
+
+     DOS radiales y no uno, de radios distintos y descentrados entre
+     sí. Uno solo, por suave que caiga, sigue siendo un círculo; dos
+     que se pisan tienen la silueta desigual de un charco. El grande es
+     el borde extendido; el pequeño es el poso, donde el pigmento se
+     acumula.
+
+     El grano del papel come el borde. Sin él los dos radiales se leen
+     limpios, y un degradado limpio sobre un sitio hecho de papel
+     escaneado se nota enseguida. Si la compuerta del arte no está
+     abierta, `--arte-papel` vale `none`, no enmascara, y la mancha
+     sale igual pero más lisa. */
+  .hilo::before,
+  .producto::after,
+  .ayuda__canal::after,
+  .escribir::after,
+  .rr__chip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(42% 52% at var(--ax) var(--ay),
+                      rgb(var(--aguada-rgb, var(--letra-rgb)) / 9%),
+                      rgb(var(--aguada-rgb, var(--letra-rgb)) / 3%) 46%,
+                      transparent 72%),
+      radial-gradient(19% 26% at calc(var(--ax) + 3.5%) calc(var(--ay) - 2.5%),
+                      rgb(var(--aguada-rgb, var(--letra-rgb)) / 7%),
+                      transparent 78%);
+    -webkit-mask-image: var(--arte-papel);
+            mask-image: var(--arte-papel);
+    -webkit-mask-size: 340px;
+            mask-size: 340px;
+    transition: opacity 520ms var(--paso),
+                --ax 400ms var(--paso),
+                --ay 400ms var(--paso);
+  }
+
+  /* Al entrar se moja; al salir NO se le quitan las coordenadas —ver
+     la nota en aguada.js— así que se seca donde estaba en vez de
+     volverse al centro mientras se va. Y se seca más despacio de lo
+     que se moja, como el agua. */
+  .hilo.mojado::before,
+  .producto.mojado::after,
+  .ayuda__canal.mojado::after,
+  .escribir.mojado::after,
+  .rr__chip.mojado::before {
+    opacity: 1;
+    transition: opacity 260ms var(--paso),
+                --ax 400ms var(--paso),
+                --ay 400ms var(--paso);
+  }
+
+  /* ── SOBRE TINTA MACIZA SE INVIERTE ─────────────────────────────
+     En el botón relleno de la ayuda, un charco de tinta sobre tinta no
+     existe. Lo que aclara ahí es el agua, así que la mancha se hace de
+     papel. Mismo gesto físico, pigmento al revés. */
+  .ayuda__canal--primero { --aguada-rgb: 255 255 255; }
+  /* El segundo botón también se rellena de tinta, pero solo AL PASAR
+     el ratón por encima —ver `.ayuda__canal--segundo:hover` en
+     nuevas-secciones.css—, no siempre. La mancha necesita la misma
+     inversión justo en ese momento: sin ella, un charco pensado para
+     papel claro se queda invisible sobre el mismo fondo oscuro que
+     acaba de aparecer debajo. */
+  .ayuda__canal--segundo:hover { --aguada-rgb: 255 255 255; }
+}
+
+/* Regla 7: APAGA, no reduce. Y se apaga aquí además de en el módulo,
+   porque quien llegue con el JavaScript ya cargado y encienda la
+   preferencia después tiene que dejar de ver charcos sin recargar. */
+@media (prefers-reduced-motion: reduce) {
+  .hilo.mojado::before,
+  .producto.mojado::after,
+  .ayuda__canal.mojado::after,
+  .escribir.mojado::after,
+  .rr__chip.mojado::before { opacity: 0; }
+}
