@@ -6834,13 +6834,31 @@ main:focus { outline: none; }
     pointer-events: none;
     opacity: 0;
     border-radius: inherit;
+    /* ── Y ES PIGMENTO DE COLOR, NO TINTA GRIS ────────────────────
+       La primera versión pintaba el charco con `--letra`, o sea con la
+       misma tinta gris azulada de todo el texto. Era honesto —una
+       acuarela oscurece— y era invisible: sobre papel casi blanco, un
+       gris al 9 % no se ve, y subirle la opacidad hasta que se viera
+       lo convertía en una sombra sucia.
+
+       Un charco de acuarela TIENE COLOR. Y este sitio ya tiene su
+       paleta: los cinco pigmentos de las etiquetas del foro, el
+       terracota del acento y el verde de «ventana abierta» del reloj.
+       Cada superficie moja con el suyo, así que el color no es un
+       adorno puesto encima — es el mismo dato que ya estaba ahí,
+       diluido en agua.
+
+       `color-mix` en oklab y no `rgb(… / %)`: los pigmentos están en
+       hexadecimal y oklab mezcla sin la sequedad que tiene sRGB al
+       bajar la saturación. Es la misma función que usa el resto de
+       esta hoja. */
     background:
       radial-gradient(42% 52% at var(--ax) var(--ay),
-                      rgb(var(--aguada-rgb, var(--letra-rgb)) / 9%),
-                      rgb(var(--aguada-rgb, var(--letra-rgb)) / 3%) 46%,
+                      color-mix(in oklab, var(--aguada, var(--letra)) 20%, transparent),
+                      color-mix(in oklab, var(--aguada, var(--letra)) 7%, transparent) 46%,
                       transparent 72%),
       radial-gradient(19% 26% at calc(var(--ax) + 3.5%) calc(var(--ay) - 2.5%),
-                      rgb(var(--aguada-rgb, var(--letra-rgb)) / 7%),
+                      color-mix(in oklab, var(--aguada, var(--letra)) 15%, transparent),
                       transparent 78%);
     -webkit-mask-image: var(--arte-papel);
             mask-image: var(--arte-papel);
@@ -6866,18 +6884,40 @@ main:focus { outline: none; }
                 --ay 400ms var(--paso);
   }
 
+  /* ── EL PIGMENTO DE CADA SUPERFICIE ─────────────────────────────
+     Ninguno es nuevo: los cinco de las etiquetas del foro, el terracota
+     del acento y el verde de «ventana abierta» del reloj ya estaban en
+     la paleta. La aguada solo los diluye. */
+
+  /* Cada hilo moja del color de SU etiqueta — `--pigmento` ya viene
+     puesto en la tarjeta desde `comunidad.js`. Un hilo sin etiqueta se
+     queda con el azul de la casa, que es el del mar. */
+  .hilo { --aguada: var(--pigmento, #3E6E8E); }
+
+  /* El panel de escribir, verde «acompañar»: es la puerta por la que
+     alguien decide contar algo. */
+  .escribir { --aguada: #2F6B4F; }
+
+  /* Los tramos del reloj, el mismo verde que ya usan sus arcos cuando
+     la ventana está abierta. */
+  .rr__chip { --aguada: #2F6B4F; }
+
+  /* Los productos, el terracota del acento. */
+  .producto { --aguada: var(--acento); }
+
+  /* La ayuda va en terracota, que es el color con el que este sitio
+     dice «esto es ahora». */
+  .ayuda__canal { --aguada: var(--acento); }
+
   /* ── SOBRE TINTA MACIZA SE INVIERTE ─────────────────────────────
-     En el botón relleno de la ayuda, un charco de tinta sobre tinta no
-     existe. Lo que aclara ahí es el agua, así que la mancha se hace de
-     papel. Mismo gesto físico, pigmento al revés. */
-  .ayuda__canal--primero { --aguada-rgb: 255 255 255; }
-  /* El segundo botón también se rellena de tinta, pero solo AL PASAR
-     el ratón por encima —ver `.ayuda__canal--segundo:hover` en
-     nuevas-secciones.css—, no siempre. La mancha necesita la misma
-     inversión justo en ese momento: sin ella, un charco pensado para
-     papel claro se queda invisible sobre el mismo fondo oscuro que
-     acaba de aparecer debajo. */
-  .ayuda__canal--segundo:hover { --aguada-rgb: 255 255 255; }
+     En el botón relleno, un charco de pigmento sobre tinta no existe:
+     lo que aclara ahí es el agua. Mismo gesto físico, al revés.
+
+     El segundo se rellena solo AL PASAR el ratón —ver
+     `.ayuda__canal--segundo:hover` en nuevas-secciones.css—, así que
+     necesita la inversión justo en ese momento. */
+  .ayuda__canal--primero,
+  .ayuda__canal--segundo:hover { --aguada: #FFFFFF; }
 }
 
 /* Regla 7: APAGA, no reduce. Y se apaga aquí además de en el módulo,
@@ -6890,3 +6930,146 @@ main:focus { outline: none; }
   .escribir.mojado::after,
   .rr__chip.mojado::before { opacity: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA LUZ DEL AGUA — LA MANCHA QUE ACOMPAÑA AL RATÓN POR TODA LA HOJA
+
+   Los charcos de arriba solo existen encima de cinco piezas: una
+   tarjeta de hilo, una de producto, los dos botones de la ayuda, el
+   panel de escribir y los tramos del reloj. Entre pieza y pieza —que
+   es donde está la mayor parte de cualquier página— no pasaba nada, y
+   por eso el dueño movió el ratón por la portada y no vio nada: no
+   estaba roto, es que casi no había dónde encenderse.
+
+   Esto es lo otro: una sola mancha, del tamaño de la mano, que sigue
+   al puntero POR ENCIMA DE TODO y no depende de que haya algo debajo.
+
+   ── POR QUÉ DOS CAPAS Y NO UNA ────────────────────────────────────
+   Este sitio tiene papel casi blanco y tiene noche añil, a veces en la
+   misma pantalla. Una sola mancha no puede verse en los dos:
+
+     · Sobre papel, lo que se ve es el PIGMENTO: multiplicar. Un color
+       casi blanco multiplicado tiñe el papel sin ensuciarlo, y —esto
+       importa— multiplicar escala fondo y letra por el mismo factor,
+       así que la razón de contraste entre los dos apenas se mueve. La
+       misma capa sobre la noche no hace nada: multiplicar un añil ya
+       oscuro por casi blanco lo deja donde estaba.
+
+     · Sobre la noche, lo que se ve es la LUZ: pantalla (`screen`). Un
+       color casi negro en `screen` levanta el añil un paso y no toca
+       el papel claro, porque `screen` sobre un fondo que ya está a 0.95
+       no tiene recorrido.
+
+   Cada capa trabaja donde la otra es inerte. No hay que preguntarle a
+   nadie si esta sección es de día o de noche: la fórmula del
+   compositor ya lo sabe.
+
+   ── QUE NO SEA UN FOCO ────────────────────────────────────────────
+   Las tres reglas de siempre: llega tarde (la transición del
+   `transform`, no la del puntero), no tiene borde limpio (dos radiales
+   descentrados por capa, con el grano del papel comiéndose el canto), y
+   es agua, no una linterna.
+
+   ── LO QUE CUESTA ─────────────────────────────────────────────────
+   La caja es de tamaño fijo y lo único que cambia es su `transform`,
+   así que el navegador no repinta el degradado: lo compone. Las mezclas
+   obligan a leer el fondo, pero solo el de esos 34 rem, no el de la
+   ventana entera.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (hover: hover) and (pointer: fine) {
+  /* ── POR QUÉ SON DOS ELEMENTOS HERMANOS Y NO UNO CON DOS HIJOS ───
+     Primer intento: un envoltorio con `z-index` y dos `<i>` dentro,
+     cada uno con su mezcla. Salió un CUADRADO BLANCO OPACO tapando
+     media portada, y la razón es la regla, no un descuido:
+     `mix-blend-mode` mezcla con el FONDO DENTRO DEL MISMO CONTEXTO DE
+     APILADO. El envoltorio, por tener `z-index` y `transform`, creaba
+     uno; los dos hijos quedaban encerrados ahí dentro y se mezclaban
+     con el vacío del envoltorio —no con la página—, así que el
+     resultado se pintaba encima, tal cual, blanco y con esquinas.
+
+     Sin envoltorio, cada capa se mezcla con lo que tiene debajo de
+     verdad. El precio es mover dos elementos en vez de uno: dos
+     escrituras de `transform` por cuadro, las dos compuestas. */
+  .aguada-luz {
+    position: fixed;
+    /* La caja se centra en el origen y el origen es el puntero. */
+    left: -17rem;
+    top: -17rem;
+    width: 34rem;
+    height: 34rem;
+    /* Debajo de la barra (700) y de cualquier diálogo: la luz está
+       sobre el papel, no sobre los mandos. */
+    z-index: 640;
+    pointer-events: none;
+    opacity: 0;
+    /* El retraso vive aquí. El módulo solo escribe la posición. */
+    transition: opacity 620ms var(--paso), transform 560ms var(--paso);
+    will-change: transform;
+    /* El azul del mar mientras nadie diga otra cosa. */
+    --luz: #3E6E8E;
+    /* El grano del papel se come el canto de las dos. */
+    -webkit-mask-image: var(--arte-papel);
+            mask-image: var(--arte-papel);
+    -webkit-mask-size: 300px;
+            mask-size: 300px;
+  }
+
+  .aguada-luz--dentro { opacity: 1; }
+
+  /* EL POSO — se ve sobre papel, es inerte sobre la noche.
+     Los degradados terminan en blanco PURO antes del borde de la caja,
+     y multiplicar por blanco no hace nada: por eso la caja no tiene
+     esquinas aunque la compuerta del arte esté cerrada y no haya grano
+     que la enmascare. */
+  .aguada-luz--poso {
+    mix-blend-mode: multiply;
+    background:
+      radial-gradient(closest-side at 50% 50%,
+                      color-mix(in oklab, var(--luz) 13%, #FFFFFF),
+                      color-mix(in oklab, var(--luz) 5%, #FFFFFF) 52%,
+                      #FFFFFF 78%),
+      radial-gradient(38% 44% at 56% 44%,
+                      color-mix(in oklab, var(--luz) 9%, #FFFFFF),
+                      #FFFFFF 80%);
+  }
+
+  /* EL BRILLO — se ve sobre la noche, es inerte sobre el papel.
+     Mismo truco al revés: acaba en negro puro, y `screen` con negro
+     tampoco hace nada. */
+  .aguada-luz--brillo {
+    mix-blend-mode: screen;
+    background:
+      radial-gradient(closest-side at 50% 50%,
+                      color-mix(in oklab, var(--luz) 26%, #000000),
+                      color-mix(in oklab, var(--luz) 9%, #000000) 52%,
+                      #000000 78%),
+      radial-gradient(38% 44% at 44% 56%,
+                      color-mix(in oklab, var(--luz) 16%, #000000),
+                      #000000 80%);
+  }
+}
+
+/* Regla 7 otra vez: si la preferencia se enciende con la página
+   abierta, la luz se apaga sin recargar. */
+@media (prefers-reduced-motion: reduce) {
+  .aguada-luz { display: none; }
+}
+
+/* ── DE QUÉ COLOR VA LA LUZ EN CADA SITIO ────────────────────────────
+   `--luz-tinta` se HEREDA, así que basta con declararla en el bloque y
+   el módulo la encuentra preguntándole al elemento que tenga debajo el
+   puntero, sin subir por el árbol a mano.
+
+   Ninguno de estos colores es nuevo: son los mismos pigmentos que ya
+   usan las etiquetas del foro, el acento y los arcos del reloj. La luz
+   no añade una paleta — dice en qué parte del sitio está uno.
+
+   Y NO se usa `--aguada` para esto, aunque se le parezca: sobre los
+   botones rellenos `--aguada` vale blanco a propósito, porque ahí el
+   charco va invertido. Un blanco multiplicado sobre papel blanco no
+   existe, y la luz se apagaría justo encima de los dos botones más
+   importantes de la portada. */
+:root { --luz-tinta: #3E6E8E; }            /* el azul del mar */
+.ayuda, .productos { --luz-tinta: var(--acento); }
+.rr, .comunidad    { --luz-tinta: #2F6B4F; }
+.hilo              { --luz-tinta: var(--pigmento, #2F6B4F); }

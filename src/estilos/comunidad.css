@@ -1089,6 +1089,18 @@
   font-size: var(--t-sm);
   color: rgb(var(--letra-rgb) / 78%);
 }
+/* LA CAUSA, EN LETRA MÁS PEQUEÑA Y EN SU PROPIA LÍNEA. Va detrás de la
+   frase de siempre y delante del botón: primero qué pasó, luego por
+   qué, luego qué se puede hacer. En bloque y no en línea porque el
+   mensaje que viene de la base puede ser largo y con paréntesis, y
+   metido en el mismo párrafo se leía como parte de la frase. */
+.hilos__error-detalle {
+  display: block;
+  margin: var(--e-2) 0;
+  font-size: var(--t-xs, 0.82rem);
+  color: rgb(var(--letra-rgb) / 62%);
+}
+
 .hilos__carga { animation: hilos-mojar 900ms ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .hilos__carga { animation: none; } }
 

@@ -472,6 +472,12 @@ async function arrancar() {
         pintarHilo(r.hilo);
         lista.prepend(lista.lastElementChild);
         dispatchEvent(new Event('resize'));
+      } else if (!objetivo) {
+        /* Si no se pudo pintar en el sitio —porque la relectura falló,
+           o porque la vista está en otro orden o en otra etiqueta—, se
+           recarga la lista. Publicar y no ver nada aparecer es lo que
+           hace pensar que no se publicó, y ya pasó una vez. */
+        cargarPagina(true);
       }
 
       campoCuerpo.value = '';
@@ -494,14 +500,63 @@ async function arrancar() {
   form.append(cancelarRespuesta);
   const prepararRespuestaOriginal = prepararRespuesta;
 
-  function mensajeDeError(err) {
+  /* ═══ CUANDO ALGO FALLA, SE DICE QUÉ ═════════════════════════════
+     Esto acababa en «No se pudo publicar. El texto sigue aquí — puedes
+     reintentar» para TODO lo que no reconocía, y esa frase no ayuda a
+     nadie: no dice si hay que esperar, cambiar lo escrito, revisar la
+     conexión o volver mañana. Quien está escribiendo aquí no está para
+     adivinar.
+
+     Y hacia dentro era peor: el error real se perdía, así que ni quien
+     escribe ni quien mantiene el sitio podían ver la causa. Ahora cada
+     familia tiene su frase, y lo que no encaje en ninguna sale con su
+     mensaje literal detrás — feo, sí, pero cierto. Un mensaje feo que
+     dice la verdad se arregla; uno bonito que no dice nada, no.
+
+     El objeto entero va además a la consola: es lo único que permite
+     mirar desde fuera qué contestó la base. */
+  function mensajeDeError(err, verbo = 'publicar') {
     const msg = String(err?.message || '');
+    const codigo = err?.code || err?.status || '';
+    console.error(`[comunidad] no se pudo ${verbo}`, { codigo, mensaje: msg, err });
+
+    /* Lo que la propia casa decide, y ya viene redactado. */
     if (/demasiado rápido|no se puede publicar aquí/i.test(msg)) return msg;
-    if (/titulo|char_length\(titulo\)/i.test(msg) && /check/i.test(msg))
+
+    /* Lo que no cabe. */
+    if (/char_length\(titulo\)|titulos?_check/i.test(msg))
       return `El título tiene que medir entre ${limites.titulo[0]} y ${limites.titulo[1]} caracteres.`;
-    if (/violates check constraint|char_length/i.test(msg)) return 'Eso no cabe en el tamaño permitido — revisa el título o el texto.';
+    if (/violates check constraint|char_length/i.test(msg))
+      return 'Eso no cabe en el tamaño permitido — revisa el título o el texto.';
     if (/hilo ya no está/i.test(msg)) return 'Ese hilo ya no está disponible.';
-    return 'No se pudo publicar. El texto sigue aquí — puedes reintentar.';
+
+    /* No hay red, o la hay y no llega. `Failed to fetch` es lo que dice
+       el navegador cuando la petición ni sale ni vuelve. */
+    if (/failed to fetch|networkerror|load failed|fetch/i.test(msg))
+      return verbo === 'publicar'
+        ? 'No hay conexión con la comunidad. Lo que escribiste sigue aquí; inténtalo otra vez en un momento.'
+        : 'No hay conexión con la comunidad. Inténtalo otra vez en un momento.';
+
+    /* La sesión anónima. Supabase limita cuántas se pueden abrir por
+       hora desde una misma conexión, y cuando se pasa lo dice así. */
+    if (/anonymous|sign.?in|refresh token|jwt|401|unauthorized/i.test(msg))
+      return 'No se pudo abrir una sesión anónima para publicar. '
+           + 'Si acabas de recargar muchas veces, espera unos minutos. '
+           + `(${msg})`;
+    if (/429|rate limit|too many/i.test(msg))
+      return 'La comunidad está recibiendo demasiadas peticiones ahora mismo. '
+           + 'Espera un momento y vuelve a intentarlo.';
+
+    /* Permisos: es lo que sale si una política o un GRANT no está donde
+       tiene que estar. Le pasó a este proyecto con `garzas_publico`. */
+    if (/permission denied|row-level security|violates row/i.test(msg))
+      return `La base rechazó el mensaje por permisos. Esto es un fallo del sitio, no tuyo. (${msg})`;
+
+    /* Y lo que no sea nada de lo anterior, con su texto detrás. */
+    if (msg) return `No se pudo ${verbo}: ${msg}`;
+    return verbo === 'publicar'
+      ? 'No se pudo publicar. El texto sigue aquí — puedes reintentar.'
+      : 'No se pudo cargar la comunidad.';
   }
 
   /* ═══ 7 · ORDENAR Y FILTRAR ═══════════════════════════════════════
@@ -543,8 +598,21 @@ async function arrancar() {
       dispatchEvent(new Event('resize'));
     } catch (err) {
       carga.hidden = true;
-      if (lista.children.length === 0) errorEl.hidden = false;
-      console.error(err);
+      /* El aviso decía «No se pudo llegar a la comunidad ahora mismo» y
+         nada más, viniera de donde viniera. Ahora dice de qué murió:
+         sin eso, ni quien mira sabe si esperar o recargar, ni quien
+         mantiene el sitio puede saber qué preguntar. */
+      if (lista.children.length === 0) {
+        errorEl.hidden = false;
+        const detalle = errorEl.querySelector('[data-detalle]')
+          || Object.assign(document.createElement('span'), { className: 'hilos__error-detalle' });
+        detalle.dataset.detalle = '';
+        detalle.textContent = ' ' + mensajeDeError(err, 'cargar');
+        /* Detrás de la frase de siempre y DELANTE del botón: así se lee
+           «no se pudo llegar · por esto · reintentar», en ese orden. */
+        const boton = errorEl.querySelector('[data-reintentar]');
+        if (boton) errorEl.insertBefore(detalle, boton); else errorEl.append(detalle);
+      }
     } finally {
       cargando = false;
       botonMas.disabled = false;
@@ -621,5 +689,48 @@ async function arrancar() {
   window.__com = {
     estado: () => ({ orden: estado.orden, etiqueta: estado.etiqueta, hilos: lista.children.length, hayMas }),
     recargar: () => cargarPagina(true),
+
+    /* ── UN DIAGNÓSTICO QUE SE PUEDE PEGAR ────────────────────────
+       Recorre la cadena entera —entrar, leer, escribir, borrar— y
+       devuelve qué paso falló y con qué mensaje. Existe porque un
+       fallo del foro solo se ve desde el navegador de quien lo sufre:
+       desde fuera, y desde Node, todo contesta bien.
+
+       Escribe y borra un hilo de prueba con su propia llave. Si algo
+       revienta a mitad, lo dice en vez de dejar basura en silencio. */
+    async diagnostico() {
+      const pasos = [];
+      const anota = (paso, err, extra) => {
+        pasos.push({ paso, ok: !err, error: err ? String(err.message || err) : null, ...extra });
+        return !err;
+      };
+      const m = await import('./supabase-cliente.js');
+      try {
+        const sesion = await m.entrar();
+        anota('entrar sin cuenta', null, { uid: sesion?.user?.id?.slice(0, 8) + '…' });
+      } catch (e) { anota('entrar sin cuenta', e); return pasos; }
+
+      try {
+        const r = await m.listar({ limite: 3 });
+        anota('leer los hilos', null, { hilos: r.hilos.length });
+      } catch (e) { anota('leer los hilos', e); }
+
+      let creado = null;
+      try {
+        creado = await m.crearHilo({
+          titulo: 'Diagnóstico automático del foro',
+          cuerpo: 'Escrito por window.__com.diagnostico(). Se borra solo.',
+          etiqueta: '', nombre: '', anonima: true,
+        });
+        anota('publicar', null, { estado: creado.estado });
+      } catch (e) { anota('publicar', e); }
+
+      if (creado) {
+        try { anota('borrar lo escrito', null, { borrado: await m.borrarConLlave('hilo', creado.id, creado.llave) }); }
+        catch (e) { anota('borrar lo escrito', e, { id: creado.id, llave: creado.llave }); }
+      }
+      console.table(pasos);
+      return pasos;
+    },
   };
 }
