@@ -17,19 +17,6 @@ concurrency:
 jobs:
   construir:
     runs-on: ubuntu-latest
-    # ── POR QUÉ ESTE TRABAJO TAMBIÉN DECLARA EL ENTORNO ──────────────
-    # Porque «Settings → Secrets and variables → Actions» y «Settings →
-    # Environments → github-pages» son dos sitios distintos donde poner
-    # lo mismo, y solo uno de los dos lo ve un trabajo que no declara
-    # `environment`. MEDIDO el 18 ago 2026: tres despliegues seguidos
-    # publicaron el sitio sin foro, y el diagnóstico de abajo dijo que
-    # este trabajo veía CERO variables de repositorio — o sea que las
-    # que había estaban en el otro sitio.
-    #
-    # Declararlo aquí hace que las dos fuentes valgan. No añade riesgo:
-    # el trabajo `publicar` ya usa este mismo entorno y pasa, así que no
-    # hay revisores ni esperas que puedan bloquear a nadie.
-    environment: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -92,10 +79,15 @@ jobs:
             echo '${{ toJSON(vars) }}' | jq -r 'if length == 0 then "  (ninguna)" else keys[] | "  " + . end'
             echo ""
             echo "::warning::El sitio se va a publicar SIN foro."
-            echo "::warning::Tienen que estar en Settings → Secrets and variables → Actions,"
-            echo "::warning::pestaña Variables, a nivel de REPOSITORIO. Unas puestas en"
-            echo "::warning::Settings → Environments → github-pages no las ve este trabajo,"
-            echo "::warning::porque no declara \`environment\`."
+            echo "::warning::Tienen que ser de REPOSITORIO: Settings → Secrets and variables"
+            echo "::warning::→ Actions → «New repository variable» (o «New repository secret»)."
+            echo "::warning::"
+            echo "::warning::La trampa, vista en vivo el 18 ago 2026: si al crearlas se pasa"
+            echo "::warning::por «Manage environment secrets», GitHub pide primero un nombre"
+            echo "::warning::de ENTORNO — y es fácil escribir ahí el nombre de la variable."
+            echo "::warning::Quedan como secretos de un entorno llamado PUBLIC_SUPABASE_URL,"
+            echo "::warning::que ningún trabajo declara, así que no las ve nadie. En la lista"
+            echo "::warning::salen con su nombre correcto y por eso no canta."
           fi
 
       - run: npm run build
