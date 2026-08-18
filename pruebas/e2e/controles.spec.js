@@ -53,19 +53,25 @@ const RADIOS = 3;
    es la barra fija, que sí se despega de verdad al desplazarse. */
 const SOMBRAS = 2;
 
-/* ── LA DEUDA, ESCRITA Y NO ESCONDIDA ──────────────────────────────
-   El foro no cumple, y no por descuido: se diseñó aparte y tiene su
-   propio sistema —cristal, sombras suaves, esquinas de 26 px—. Traerlo
-   al cuaderno no es cambiar tres declaraciones, es rehacer la
-   identidad de la página, y eso es la fase 4.
+/* ── LA DEUDA, PAGADA EL 18 AGO 2026 ───────────────────────────────
+   Aquí vivía una excepción para `/comunidad`: 4 radios y 7 sombras,
+   con su fecha de pago escrita — «fase 4 · el foro vuelve al cuaderno».
+   El foro se había diseñado aparte, con su propio sistema de cristal:
+   `--vidrio`, `backdrop-filter`, dos familias de sombra y esquinas de
+   26, 18 y 12 px.
 
-   Bajar el listón general para que pase sería mentir; excluirlo del
-   inventario, también. Así que aquí está su número de hoy, con fecha,
-   y la prueba exige que NO EMPEORE. El día que la fase 4 lo repinte,
-   estas dos líneas se borran y el foro entra por la puerta normal. */
-const DEUDA = {
-  comunidad: { radios: 4, sombras: 7, paga: 'fase 4 · el foro vuelve al cuaderno' },
-};
+   Ya no. Las fichas, los tres órdenes, el botón de filtros, el panel de
+   escribir, las tarjetas de hilo y la franja entera hablan el idioma de
+   las otras cinco páginas: `--canto` para lo recto, `--canto-pildora`
+   para lo que de verdad es una píldora, y ninguna sombra de caja —lo
+   que separa una pieza del papel es estar pintada encima, no flotar
+   sobre él—.
+
+   El objeto se queda vacío a propósito, y no se borra: es el sitio
+   donde tendría que apuntarse la próxima deuda, con su fecha, si
+   alguna vez hace falta otra. Una excepción sin fecha es una excepción
+   para siempre. */
+const DEUDA = {};
 
 /** Una forma orgánica es la que tiene más de dos valores por eje: son
     las esquinas dibujadas a mano de las aguadas. Todas cuentan como

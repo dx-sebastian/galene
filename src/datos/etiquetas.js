@@ -25,4 +25,12 @@ export const ETIQUETAS = [
     pie: 'Dudas sobre el sitio y sobre lo que sigue.' },
 ];
 
-export const deEtiqueta = (id) => ETIQUETAS.find((e) => e.id === id) || ETIQUETAS[0];
+/* DEVUELVE `null` CUANDO NO HAY ETIQUETA, y eso importa.
+
+   Antes caía a `ETIQUETAS[0]`, o sea que un hilo sin etiqueta —o con
+   una que no está en la lista— salía en pantalla marcado como
+   «Acompañar». Un valor por defecto silencioso en un sitio donde la
+   etiqueta la elige quien escribe es ponerle a alguien una palabra que
+   no dijo. Desde que etiquetar es opcional, «ninguna» es una respuesta
+   posible y hay que poder pintarla: no pintando nada. */
+export const deEtiqueta = (id) => ETIQUETAS.find((e) => e.id === id) || null;
