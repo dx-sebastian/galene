@@ -73,6 +73,49 @@ test.beforeAll(async ({ browser }) => {
 });
 
 /* ═══════════════════════════════════════════════════════════════════
+   0 · SI HAY LLAVES, EL SITIO COMPILADO TIENE QUE LLEVARLAS DENTRO
+
+   Esta prueba existe por una tarde entera. Las variables estaban
+   puestas, el flujo salía en verde, el sitio se publicaba… y el foro
+   decía que no se pudo llegar a la comunidad. Cuatro despliegues así.
+
+   La causa fue que estaban guardadas como secretos de un ENTORNO
+   llamado `PUBLIC_SUPABASE_URL` —en «Manage environment secrets»,
+   GitHub pide primero un nombre de entorno y ahí se escribió el nombre
+   de la variable—, y ningún trabajo declara ese entorno.
+
+   Nada de eso se veía desde fuera: un despliegue que TERMINA BIEN no
+   es lo mismo que un despliegue que hizo lo que se esperaba. Astro
+   inserta las `PUBLIC_*` AL COMPILAR, así que la única forma de saber
+   si llegaron es preguntárselo a los bytes.
+
+   Se compara con lo que ve quien lanza las pruebas —el entorno del
+   shell Y el fichero `.env`, que es lo que lee Astro—: si aquí hay
+   llaves y ahí fuera el sitio no las lleva, algo se las comió por el
+   camino. Contra `npm run test:prod` eso significa exactamente que el
+   despliegue no las tuvo.
+   ═══════════════════════════════════════════════════════════════════ */
+test('el sitio compilado lleva dentro las llaves que hay configuradas', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const deFichero = {};
+  if (existsSync('.env')) {
+    for (const linea of readFileSync('.env', 'utf8').split('\n')) {
+      const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (m) deFichero[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    }
+  }
+  const hay = (n) => Boolean(process.env[n] || deFichero[n]);
+  test.skip(!(hay('PUBLIC_SUPABASE_URL') && hay('PUBLIC_SUPABASE_ANON_KEY')),
+    'no hay llaves de este lado con las que comparar');
+
+  expect(CONFIGURADO,
+    'hay llaves configuradas aquí y el sitio medido NO las lleva dentro. '
+    + 'Contra producción eso significa que el despliegue no las tuvo: mira el paso '
+    + '«Ver si las llaves de Supabase llegaron al build» en Actions, y que estén como '
+    + 'variables de REPOSITORIO y no dentro de un entorno.').toBe(true);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
    1 · SIN CREDENCIALES: SE DICE, Y NO SE ROMPE NADA MÁS
    ═══════════════════════════════════════════════════════════════════ */
 test.describe('el foro sin base configurada', () => {
