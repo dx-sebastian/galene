@@ -128,7 +128,19 @@ addEventListener('galene:contenido-listo', () => {
     return;
   }
   const conectar = () => {
-    for (const [img, src] of IMAGENES_DIFERIDAS) img.src = src;
+    for (const [img, src] of IMAGENES_DIFERIDAS) {
+      /* LA PRIORIDAD BAJA ERA PARA LA COLA, NO PARA LA DESCARGA. Se
+         marcan `low` al crearlas para que no le disputen el ancho de
+         banda a las láminas del primer cuadro. Pero al llegar aquí ese
+         momento ya pasó: el contenido está listo y estas imágenes son
+         lo siguiente que hay que ver — el ave que se posa. Dejarlas en
+         `low` las manda al final de una cola que en Safari de iOS,
+         con el mar compilando, tarda en vaciarse. Es parte de «tarda
+         el ave en aparecer». */
+      img.fetchPriority = 'auto';
+      img.decoding = 'async';
+      img.src = src;
+    }
     IMAGENES_DIFERIDAS.length = 0;
   };
   (window.requestIdleCallback || ((fn) => setTimeout(fn, 80)))(conectar, { timeout: 700 });

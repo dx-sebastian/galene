@@ -33,6 +33,39 @@
   font-display: swap;
 }
 
+/* ── LA SERIF DEL RÓTULO, YA NO PRESTADA ────────────────────────────
+   Esto cierra la decisión que estaba pendiente unas líneas más abajo,
+   y la cerró el dueño mirando su iPhone: «el logo incluso está más
+   estirado».
+
+   No era un fallo de Safari. `--tipo-marca` empezaba por «Cormorant
+   Garamond» sin que este sitio sirviera ese archivo, así que la marca
+   la dibujaba lo que hubiera instalado en el aparato: Didot en un Mac
+   o un iPhone, Bodoni MT o Georgia en Windows, Noto Serif en Android.
+   Tres tipografías distintas con anchos distintos — y como la olita de
+   debajo se estira al ancho de la palabra (`preserveAspectRatio="none"`
+   en Barra.astro), cada ancho distinto daba una olita distinta. El
+   logotipo no se veía «más estirado en Safari»: se veía OTRO en cada
+   navegador, y este es el que lo hace uno solo.
+
+   El archivo es un subconjunto de A–Z, a–z y el espacio: 5.4 kB, sin
+   tablas de layout ni hinting, frente a los 23 kB del corte latino
+   entero. Se descargó una vez y se sirve desde aquí — el sitio no
+   enlaza a Google Fonts en tiempo de ejecución a propósito, y esa razón
+   sigue escrita abajo.
+
+   `swap` y no `block`: la marca en Georgia durante 40 ms es mejor que
+   un hueco donde tiene que haber un logotipo, sobre todo en la página
+   que alguien abre con prisa. El archivo va precargado en las seis
+   páginas, así que esa ventana casi no existe. */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/galene/fuentes/CormorantGaramond-Rotulo.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Valores de arranque = 09:00. JS los sobreescribe al cargar, así que
      si JS no corre el sitio se ve como una mañana y sigue legible. */
@@ -304,25 +337,23 @@ input, select, textarea { margin: 0; }
   --tipo-texto:  "Atkinson Hyperlegible Next", system-ui, -apple-system,
                  "Segoe UI", sans-serif;
 
-  /* ── LA SERIF DEL ROTULO, Y LO QUE ESTA PENDIENTE ────────────────
+  /* ── LA SERIF DEL RÓTULO, YA DECIDIDA ────────────────────────────
      La referencia del hero pide una serif de alto contraste tipo
      Didone —remates finísimos, ejes verticales, mucha diferencia entre
-     grueso y fino—. Eso NO se puede resolver con lo que hay: el único
-     archivo de fuente del sitio es Atkinson Hyperlegible, y este pack
-     no descarga ninguno ni enlaza a Google Fonts (ver la cabecera de
-     tipografía: no se le cuenta a un tercero que alguien visitó un
-     sitio sobre sumisión química).
+     grueso y fino—.
 
-     Así que esta pila es una APROXIMACIÓN CON LO QUE YA ESTÁ INSTALADO
-     en la máquina de quien mira, y por eso el rótulo se verá distinto
-     en un Mac (Didot), en Windows (Bodoni MT o Georgia) y en Android
-     (el `serif` del sistema, que suele ser Noto Serif y no tiene nada
-     de Didone). PENDIENTE DE DECISIÓN: si el rótulo tiene que verse
-     igual en todas partes hay que subir un .woff2 propio a
-     public/fuentes/ —subconjunto de seis letras, unos pocos KB— y
-     apuntar aquí. Mientras no se decida, el rótulo degrada a Georgia y
-     sigue siendo una serif con remates, que es lo mínimo que la
-     referencia exige.
+     Aquí decía PENDIENTE DE DECISIÓN, y lo estuvo hasta que el dueño
+     abrió el sitio en su iPhone: la pila empezaba por una familia que
+     este sitio NO servía, así que cada aparato dibujaba la marca con lo
+     que tuviera —Didot, Bodoni MT, Georgia, Noto Serif—, cada una con
+     su ancho, y la olita de debajo se estiraba a un ancho distinto en
+     cada navegador.
+
+     Ahora «Cormorant Garamond» viene de `public/fuentes/`, en un
+     subconjunto de 5.4 kB (ver el @font-face arriba). Los nombres que
+     siguen se quedan como segunda línea: si el archivo no llega, la
+     marca sigue siendo una serif con remates y no una grotesca, que es
+     lo mínimo que la referencia exige.
 
      Y SE USA SOLO EN «GALENE», en la barra y en el título. Todo lo que
      alguien tiene que LEER de verdad sigue en Atkinson, que se eligió
@@ -7073,3 +7104,65 @@ main:focus { outline: none; }
 .ayuda, .productos { --luz-tinta: var(--acento); }
 .rr, .comunidad    { --luz-tinta: #2F6B4F; }
 .hilo              { --luz-tinta: var(--pigmento, #2F6B4F); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EN EL TELÉFONO, LAS AGUADAS DE LAS AVES SE APAGAN
+
+   El dueño abrió el sitio en Safari de iOS: carga lenta, parpadeos
+   negros, el ave tardando en aparecer y la animación cortándose. Esto
+   es la parte grande de esa lista, y no es un fallo de Safari — es una
+   factura que Chrome disimula y WebKit no.
+
+   Cada ave lleva una cadena de filtros que termina en `url(#aguada-…)`,
+   y esos tres filtros SVG llevan `feTurbulence` de dos y tres octavas,
+   `feGaussianBlur`, y entre seis y catorce primitivas encadenadas. En
+   WebKit `feTurbulence` se calcula EN CPU, para cada elemento, a su
+   tamaño, y se vuelve a calcular cada vez que la capa se tiene que
+   rasterizar otra vez — que en iOS pasa al desplazarse, al cambiar de
+   escala y bajo presión de memoria. En la portada hay hasta seis aves
+   en el teléfono, más la visitante. Seis turbulencias de CPU en cada
+   re-rasterizado es exactamente «se corta la animación».
+
+   Y un `url()` dentro de una cadena de `filter` arrastra a TODA la
+   cadena por el camino lento del SVG: los `saturate`, los `contrast` y
+   los dos `drop-shadow` dejan de ir por GPU por estar al lado.
+
+   ── QUÉ SE PIERDE, EXACTAMENTE ────────────────────────────────────
+   El grano del papel y la veladura de la hora sobre la lámina. En un
+   teléfono el ave de la bandada mide unos 50 px de alto: el grano se
+   calculó para que no se lea como calcomanía A ESE TAMAÑO, y a ese
+   tamaño no llega ni a un píxel por grano.
+
+   Lo que NO se pierde: el aire de la distancia (`saturate`,
+   `contrast`, `brightness` siguen, y son los que quitan el gris pardo
+   del archivo), las sombras de contacto, el charco y el reflejo. Todo
+   eso son funciones nativas y van por GPU.
+
+   ── POR QUÉ POR `pointer: coarse` Y NO POR ANCHO ──────────────────
+   Un iPad en horizontal mide 1024 px y es exactamente el aparato que
+   sufre esto. Lo que decide no es el tamaño de la ventana: es que sea
+   un aparato táctil, que es donde vive el WebKit que paga la factura.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (pointer: coarse), (max-width: 700px) {
+  .vuelo {
+    filter: saturate(var(--vuelo-sat, 0.3))
+            contrast(var(--vuelo-contraste, 0.72))
+            brightness(var(--vuelo-brillo, 1));
+  }
+
+  .vuelo--bandada {
+    filter: saturate(var(--vuelo-sat, 0.3))
+            contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
+            brightness(calc(var(--vuelo-brillo, 1) * 0.93))
+            drop-shadow(0 1px 1.5px color-mix(in srgb, var(--sombra-ave) 30%, transparent))
+            drop-shadow(0 0 5px color-mix(in srgb, var(--sombra-ave) 16%, transparent));
+  }
+
+  .vuelo--visita {
+    filter: saturate(var(--vuelo-sat-cerca, 0.94))
+            contrast(var(--vuelo-contraste-cerca, 0.98))
+            brightness(var(--vuelo-brillo-cerca, 1))
+            drop-shadow(0 3px 2px color-mix(in srgb, var(--sombra-ave) 78%, transparent))
+            drop-shadow(2px 5px 5px color-mix(in srgb, var(--sombra-ave) 45%, transparent));
+  }
+}

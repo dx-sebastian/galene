@@ -60,6 +60,11 @@ const RESUMEN = 'Fundas, sellos y tapas que cierran una copa, una lata ' +
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+  {/* El rótulo. 5.4 kB de subconjunto: sin esto la marca la dibujaba
+      la serif que hubiera instalada en cada aparato, y se veía
+      distinta en cada navegador. Ver estilos.css. */}
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/CormorantGaramond-Rotulo.woff2'} />
 </head>
 
 <body class="pagina-papel">

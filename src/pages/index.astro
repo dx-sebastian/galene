@@ -193,6 +193,11 @@ const DATOS = {
 
   <link rel="preload" as="font" type="font/woff2" crossorigin
         href={base + 'fuentes/Atkinson-Hyperlegible-Regular.woff2'} />
+  {/* El rótulo. 5.4 kB de subconjunto: sin esto la marca la dibujaba
+      la serif que hubiera instalada en cada aparato, y se veía
+      distinta en cada navegador. Ver estilos.css. */}
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href={base + 'fuentes/CormorantGaramond-Rotulo.woff2'} />
   <link rel="icon" type="image/svg+xml" href={base + 'favicon.svg'} />
 
   {/* El móvil usa la misma escena WebGL que el escritorio. Estas cuatro
