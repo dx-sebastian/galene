@@ -131,6 +131,51 @@ DECLARE
   v_id TEXT;
   intentos INT := 0;
 BEGIN
+  -- ── PRIMERO SE RETIRAN LAS QUE YA NO CUENTAN ─────────────────────
+  -- La ventana de dos horas estaba SOLO en `garzas_publico`, y eso
+  -- dejaba el árbol en un estado imposible: una garza vieja no se veía
+  -- —la vista la ocultaba— pero seguía `viva = 1`, así que seguía
+  -- ocupando su rama en el índice único y contando para el tope de
+  -- ocho. El manglar se veía vacío y estaba lleno.
+  --
+  -- MEDIDO el 18 ago 2026: `garzas_publico` devolvía 0 filas y
+  -- `dejar_garza()` contestaba «El manglar está lleno ahora mismo».
+  --
+  -- La edad tiene que decidir en UN solo sitio, y este barrido es ese
+  -- sitio: lo que la vista esconde, aquí se retira de verdad. Va antes
+  -- del límite de frecuencia a propósito — quien llega y se encuentra
+  -- el árbol lleno de fantasmas no debería tener que esperar además su
+  -- turno para limpiarlos.
+  --
+  -- El aviso por el canal va con ellas: una pestaña abierta desde hace
+  -- rato tiene que ver cómo se van, no encontrárselas desaparecidas al
+  -- recargar.
+  -- Dos cosas que este barrido tuvo que aprender, y la segunda estaba
+  -- ya escrita treinta líneas más abajo:
+  --
+  --   · El `UPDATE` va dentro de un CTE y no suelto en el `FOR`:
+  --     PL/pgSQL solo acepta ahí una consulta que devuelva filas, y una
+  --     sentencia que modifica datos —aunque lleve RETURNING— no
+  --     cuenta.
+  --   · `garzas.llegada` CALIFICADO. `RETURNS TABLE(… llegada …)`
+  --     declara una variable plpgsql con ese nombre, así que un
+  --     `llegada` a secas es ambiguo y Postgres lo dice en tiempo de
+  --     ejecución: «column reference "llegada" is ambiguous». Es la
+  --     misma trampa que ya cazó a `percha` en su día y que está
+  --     avisada más abajo — y aun así caí en ella.
+  FOR antigua IN
+    WITH retiradas AS (
+      UPDATE garzas SET viva = 0,
+             partida = (extract(epoch FROM clock_timestamp()) * 1000)::bigint
+       WHERE garzas.viva = 1
+         AND garzas.llegada <= (extract(epoch FROM clock_timestamp()) * 1000)::bigint - 7200000
+      RETURNING *
+    )
+    SELECT * FROM retiradas
+  LOOP
+    PERFORM realtime.send(jsonb_build_object('id', antigua.id), 'garza-vuela', 'manglar', true);
+  END LOOP;
+
   IF NOT permitir_ficha('garza', v_sesion, 4, 1.0/300) THEN
     RAISE EXCEPTION 'Vas demasiado rápido.';
   END IF;
