@@ -901,6 +901,70 @@
 }
 .comunidad__vaciar:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
 
+/* ── Y LO QUE ESTRENA EL FORO CON DATOS DE VERDAD ────────────────
+   Lo de arriba es el compositor tal y como quedó tras las vueltas
+   del dueño; lo de aquí abajo son los estados que solo existen
+   cuando el foro habla con una base: el botón fantasma de
+   reintentar, el contador de caracteres, el aviso de envío y la
+   llave de borrado. Aditivo, sin pisar un selector del bloque
+   anterior — comprobado uno a uno. */
+/* Botón sin relleno, para acciones secundarias (copiar, reintentar,
+   traer más): mismo tamaño de toque que `.boton`, sin competir con él
+   por atención. */
+.boton--fantasma {
+  border-color: rgb(var(--letra-rgb) / 30%);
+  background: transparent;
+}
+.boton--fantasma:hover { background: rgb(var(--letra-rgb) / 6%); }
+
+.escribir__entrada {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgb(var(--letra-rgb) / 16%);
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: var(--letra);
+  font: inherit;
+  font-size: var(--t-md);
+}
+.escribir__entrada:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.escribir__entrada:disabled { opacity: 0.5; }
+.escribir__nombre { max-width: 18rem; }
+
+.escribir__contador {
+  margin: -0.4rem 0 0;
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / 62%);
+  text-align: right;
+}
+.escribir__contador--cerca { color: #C4553F; }
+
+.escribir__estado {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 6%);
+  font-size: var(--t-sm);
+}
+
+.escribir__llave {
+  display: grid;
+  gap: 0.5rem;
+  padding: var(--e-3) 1rem;
+  border: 1px dashed rgb(var(--letra-rgb) / 30%);
+  border-radius: var(--redondo-medio);
+  font-size: var(--t-sm);
+}
+.escribir__llave p { margin: 0; }
+.escribir__llave code {
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--redondo-chico);
+  background: rgb(var(--letra-rgb) / 8%);
+  font-size: var(--t-md);
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    LOS HILOS
    ═══════════════════════════════════════════════════════════════════ */
@@ -930,6 +994,78 @@
   margin: var(--e-5) 0 0;
   font-size: var(--t-sm);
   color: rgb(var(--letra-rgb) / 72%);
+}
+
+.comunidad__aviso-js {
+  max-width: 58ch;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 80%);
+}
+
+/* Carga y error comparten sitio con la lista: nunca los dos a la vez,
+   y ninguno de los dos es un esqueleto gris. El error no lleva rojo —
+   el rojo de este sitio es del daño, no de una petición fallida. */
+.hilos__carga, .hilos__error {
+  max-width: 62rem;
+  margin: 0 0 var(--e-4);
+  padding: var(--e-3) 1rem;
+  border-radius: var(--redondo-medio);
+  background: rgb(var(--letra-rgb) / 5%);
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 78%);
+}
+.hilos__carga { animation: hilos-mojar 900ms ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .hilos__carga { animation: none; } }
+
+.hilos__nuevos {
+  display: inline-block;
+  margin: 0 0 var(--e-4);
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--vidrio-canto);
+  background: var(--vidrio);
+  backdrop-filter: var(--difuminado);
+  font-size: var(--t-sm);
+  cursor: pointer;
+}
+
+.hilos__paginacion {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  margin-top: var(--e-4);
+  max-width: 62rem;
+  font-size: var(--t-sm);
+  color: rgb(var(--letra-rgb) / 68%);
+}
+
+.hilo__revision {
+  margin: -0.3rem 0 0;
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / 62%);
+}
+
+/* Las acciones discretas del pie: reportar, borrar, y el pequeño
+   formulario en el que «reportar» se convierte al pulsarlo. Mismo
+   tratamiento que `.hebra__responder`, para no añadir un cuarto estilo
+   de enlace a la fila. */
+.hilo__accion, .hilo__accion-campo, .hilo__accion-gracias {
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / 60%);
+}
+.hilo__accion {
+  background: none; border: none; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+  font: inherit; font-size: var(--t-xs);
+}
+.hilo__accion:hover { color: var(--letra); }
+.hilo__accion-campo {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgb(var(--letra-rgb) / 20%);
+  border-radius: var(--redondo-chico);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: var(--letra);
+  font: inherit;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

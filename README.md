@@ -58,15 +58,34 @@ multiplica encima un escaneo real de papel de algodón fijo a la pantalla.
 
 ## Privacidad
 
-**No hay servidor.** Ni analítica, ni cookies, ni base de datos.
+Hay dos piezas con servidor, y las dos guardan lo mínimo que hace falta
+para que funcionen — nunca quién eres.
+
+- **La bandada del manglar y la calma del mar** (`servidor/`, propio,
+  opcional): un proceso de Node con SQLite al lado. Sin cuentas, sin
+  cookies, sin IP guardada — un token que vive en la pestaña y se va al
+  cerrarla es lo único que ata dos visitas a la misma persona. Ver
+  `servidor/LEEME.md`.
+- **El foro** (`Comunidad`): vive en Postgres gestionado por Supabase,
+  en su capa gratuita — el único servicio de terceros del proyecto, y
+  una decisión consciente, no un descuido. Sin cuentas ni correo
+  tampoco ahí (Auth Anónima da un identificador opaco), sin guardar
+  quién escribió qué más allá de ese identificador, con llave de
+  borrado que solo su dueño puede usar. El razonamiento completo está
+  en `servidor/src/base/esquema-foro.sql`.
+
+Ninguna de las dos cosas hace falta para usar la ayuda: sin
+`servidor/` corriendo y sin Supabase configurado, el hero sigue en
+pie, el reloj, el mapa y «guardar lo que recuerdo» funcionan igual —
+son enhancements, no la base del sitio.
 
 - La ubicación se pide solo al pulsar «que alguien venga por mí», se usa
   para armar un mensaje y se descarta. No se envía a ningún sitio.
 - Lo que se escribe en «guardar lo que recuerdo» se queda en el
   dispositivo: se descarga como archivo o se comparte con quien la usuaria
   elija.
-- Información sobre salud o vida sexual es dato sensible. Este proyecto
-  no la almacena, y esa decisión es deliberada.
+- Información sobre salud o vida sexual es dato sensible. Fuera del foro,
+  este proyecto no la almacena, y esa decisión sigue siendo deliberada.
 
 ### Hasta dónde llega «los demás»
 
