@@ -67,10 +67,22 @@ jobs:
           medir "secrets.PUBLIC_SUPABASE_ANON_KEY" "$S_KEY"
           if [ -z "$V_URL$S_URL" ] || [ -z "$V_KEY$S_KEY" ]; then
             echo ""
-            echo "::warning::El sitio se va a publicar SIN foro. Si las pusiste en"
-            echo "::warning::Settings → Environments → github-pages, ese sitio no lo ve este"
-            echo "::warning::paso: tienen que estar en Secrets and variables → Actions,"
-            echo "::warning::pestaña Variables, a nivel de repositorio."
+            echo "Variables que este trabajo SÍ ve, por nombre:"
+            # Solo los NOMBRES. `vars` no es secreto —GitHub ni siquiera lo
+            # enmascara— pero los valores no hacen falta para diagnosticar y
+            # un registro de Actions es público en un repo público.
+            #
+            # Esto es lo que distingue las tres causas de un tirón: la lista
+            # vacía significa que no hay ninguna variable de repositorio (o
+            # que están en Environments, que este trabajo no mira); una lista
+            # con otros nombres significa que el nombre lleva una errata.
+            echo '${{ toJSON(vars) }}' | jq -r 'if length == 0 then "  (ninguna)" else keys[] | "  " + . end'
+            echo ""
+            echo "::warning::El sitio se va a publicar SIN foro."
+            echo "::warning::Tienen que estar en Settings → Secrets and variables → Actions,"
+            echo "::warning::pestaña Variables, a nivel de REPOSITORIO. Unas puestas en"
+            echo "::warning::Settings → Environments → github-pages no las ve este trabajo,"
+            echo "::warning::porque no declara \`environment\`."
           fi
 
       - run: npm run build
