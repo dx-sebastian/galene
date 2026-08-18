@@ -11,18 +11,7 @@
 import { luz, aplicar, horaAhora, notaAmanecer } from './hora.js';
 import { crear, viento, encogeCerca, VIENTO_COPA, VIENTO_RAMA } from './mar.js';
 import { viewportHeight, viewportWidth } from './viewport.js';
-/* Quién más está, ahora mismo, en este mismo navegador. Ver la cabecera
-   de presencia.js: no hay servidor y no se inventa a nadie. */
-import * as presencia from './presencia.js';
-/* La garza de quien mira: su pico y su frase. El panel lo monta
-   garza.js sobre el marcado de Garza.astro. */
-/* Solo `perfil`: el panel de personalizar (montarPanel) quedó fuera
-   del MVP junto con su disparador en index.astro. Sin panel, `perfil()`
-   devuelve siempre el ave sin elegir y `sena` queda vacía — el circuito
-   sigue entero para cuando vuelva. */
-import { perfil as miPerfil, alCambiar as alCambiarGarza } from './garza.js';
-import { colorDePico, fraseDe } from '../datos/garza.js';
-import * as pico from './pico.js';
+import { dejarGarza, garzasVivas, suscribirManglar, calmaActual, acreditarGesto, POSE_A_CAPA } from './bandada-cliente.js';
 
 /* La barra de reflejos —salida rápida y línea de atención— salió del
    sitio: la urgencia se traslada a una app móvil, y aquí volverá más
@@ -133,10 +122,25 @@ const despegue = { ave: null, t0: 0, gastado: false, previa: 'posada' };
 /* calma ∈ [0.35, 0.85] · 0.35 = revuelto (no picado: nadie es el
    capítulo uno de nadie) · 0.85 = casi espejo, nunca espejo.
    calma = 0.35 + 0.50·(1 − e^(−n/τ)), n = raíces, τ ≈ 500.
-   Sin servidor todavía: se fija en el arranque de la curva.  */
-const raices = 0;
-const TAU_CALMA = 500;
-const calma = 0.35 + 0.50 * (1 - Math.exp(-raices / TAU_CALMA));
+
+   Las raíces ya no se calculan aquí — viven en Supabase, y el número
+   crudo no sale de ahí a propósito (regla 9: el sitio no cuenta). Lo
+   que llega es `calma_actual()`, la curva YA aplicada. Se arranca en
+   0.35 —el piso, «sin comunidad todavía»— y `actualizarCalmaComunidad`
+   la refresca cada pocos segundos una vez hay red. */
+let calmaComunidad = 0.35;
+const calma = calmaComunidad;
+
+async function actualizarCalmaComunidad() {
+  try { calmaComunidad = await calmaActual(); }
+  catch { /* sin red: se queda en el último valor bueno, o en el piso */ }
+}
+actualizarCalmaComunidad();
+/* `.unref()` no existe en el navegador —eso es cosa de Node, y ya
+   escribí bastante código de servidor esta noche como para que se me
+   pegue por reflejo—: aquí un intervalo vive lo que vive la pestaña,
+   sin más que hacer. */
+setInterval(actualizarCalmaComunidad, 6000);
 /* Cursor: sobre el agua se puede sostener, y hay que verlo. */
 document.getElementById('mar')?.style.setProperty('cursor', 'grab');
 
@@ -484,6 +488,10 @@ function arrancar(mar) {
   const TOQUES = [];
   const TOPE_SESION = 240;          // 4 minutos, como el resto del sistema
   let sostenido = 0, sosteniendo = null;
+  /* Cuánto de `sostenido` ya se le mandó a la comunidad, y cuándo fue
+     la última vez — para reportar cada pocos segundos y no cuadro a
+     cuadro. Ver `avanzarToques`. */
+  let reportadoHasta = 0, ultimoReporte = 0;
   /* DOS CALMAS, y hacen falta las dos.
 
      La PERMANENTE es la del README: sube con lo sostenido de toda la
@@ -626,23 +634,33 @@ function arrancar(mar) {
     /* DOS VELOS, no dos curvas rivales. El de las raices es el del
        README —comunidad, tau = 500— y el de la sesion es el de esta
        mano. Se componen como se componen dos aguadas: 1 - (1-a)(1-b).
-       Asi ninguno tapa al otro cuando lleguen las raices de verdad, y
-       la suma sigue siendo MONOTONA: ninguno baja nunca. Lo que dejas,
-       queda — al soltar, lo calmado se queda calmado. */
-    /* ── Y LAS OTRAS MANOS ENTRAN POR LOS DOS SITIOS ────────────────
-       Por las RAÍCES, porque eso es lo que son: comunidad, el velo lento
-       del README, gente que no eres tú calmando el mismo mar.
+       Asi ninguno tapa al otro, y la suma sigue siendo MONOTONA: ninguno
+       baja nunca. Lo que dejas, queda — al soltar, lo calmado se queda
+       calmado.
 
-       Y TAMBIÉN POR LA SESIÓN, con menos peso. Solo por las raíces no se
-       veía: MEDIDO con dos pestañas, tres segundos de mano ajena movían
-       la calma de 0.3500 a 0.3506 — o sea nada, y el encargo era
-       justamente que se notara cuando varios sostienen. Con 0.6 de peso,
-       dos manos calman el mar visiblemente más rápido que una y la
-       propia sigue mandando: tu gesto se ve como tuyo, y el de al lado
-       se ve como ayuda. Que es lo que es. */
-    const cRaices = 1 - Math.exp(-(raices + (sostenido + ajeno) * 1.5) / TAU_CALMA);
-    const cSesion = TECHO_SESION * (1 - Math.exp(-(sostenido + ajeno * 0.6) / TAU_SESION));
+       `calmaComunidad` ya trae la curva de las raíces APLICADA —viene
+       de `calma_actual()`, en Supabase, refrescada cada pocos segundos—
+       así que aquí se deshace el `0.35 + 0.50·(…)` para sacar de vuelta
+       la fracción 0..1 y componerla con la de esta sesión exactamente
+       como antes. */
+    const cRaices = Math.min(1, Math.max(0, (calmaComunidad - 0.35) / 0.50));
+    const cSesion = TECHO_SESION * (1 - Math.exp(-sostenido / TAU_SESION));
     estado.calma = 0.35 + 0.50 * (1 - (1 - cRaices) * (1 - cSesion));
+
+    /* Lo sostenido se reporta a la comunidad cada pocos segundos, no
+       cuadro a cuadro — cuadro a cuadro serían decenas de llamadas por
+       segundo por cada mano en la pantalla, y esto no necesita esa
+       precisión: es una acumulación de minutos, no un dato en vivo. */
+    if (sostenido > reportadoHasta && estado.t - ultimoReporte >= 3) {
+      const pendiente = sostenido - reportadoHasta;
+      reportadoHasta = sostenido;
+      ultimoReporte = estado.t;
+      acreditarGesto(pendiente).catch(() => {
+        /* Sin red, se pierde ese trocito de aporte a la comunidad —no
+           el gesto local, que ya se vio en pantalla. El mar es un
+           enhancement, y esto también. */
+      });
+    }
     /* El roce decae solo: si la mano se para, el agua se vuelve a
        aquietar en algo mas de un segundo. */
     rocef.z = Math.max(0, rocef.z - dt * 0.75);
@@ -2062,191 +2080,151 @@ function sincronizarPresencia() {
    aquí arriba las pilla en su zona muerta temporal. Se llama en cuanto
    existen. */
 const bandada = [];
-function poblarBandada() {
+
+/* Las diez láminas de una garza posada, montadas y ancladas por los
+   pies — antes era el cuerpo del bucle de `poblarBandada`, y ahora
+   también lo usa `agregarGarzaEnVivo` para la que llega en vivo por el
+   canal 'manglar'. Una sola vez, para que las dos no puedan divergir. */
+function crearCapasGarza() {
+  const capas = {};
+  for (const clave of LAMINAS_POSADA) {
+    const v = VUELO[clave];
+    const img = new Image();
+    diferirImagen(img, v.src);
+    img.alt = '';
+    /* SIN `will-change`. Las de la bandada se mueven despacio y poco, y
+       promover diez aves por diez láminas serían cien capas de
+       composición extra en la GPU — en un teléfono de gama baja eso se
+       paga en memoria de vídeo, que es justo lo que este sitio no
+       puede gastar. */
+    img.className = 'vuelo vuelo--bandada';
+    img.decoding = 'async';
+    /* Ancla por los PIES siempre: un ave posada gira, se encoge y
+       amaga sobre sus patas, que es lo único suyo que no se mueve. */
+    const ox = v.cx + (v.pies[0] - v.cx);
+    const oy = v.cy + (v.pies[1] - v.cy);
+    img.style.transformOrigin = (ox * 100).toFixed(1) + '% ' + (oy * 100).toFixed(1) + '%';
+    img.style.opacity = '0';
+    contenedor.appendChild(img);
+    capas[clave] = img;
+  }
+  return capas;
+}
+
+/* Una entrada de bandada a partir de una fila REAL de Supabase —ver
+   `servidor/src/base/esquema-bandada.sql`, tabla `garzas`—, no de
+   `Math.random()`. `percha`, `mira` y `escala` son del servidor y no se
+   tocan: son la garza de alguien. `asoma`/`hunde`/`balanceo`/`reposo`
+   siguen siendo variedad local, que nunca fue identidad de nadie. */
+function garzaDesdeFila(g, n, deCuantas) {
+  return {
+    id: g.id,
+    capas: crearCapasGarza(),
+    perchaIdx: g.percha,
+    asoma: n < (deCuantas >= 7 ? 2 : 1),
+    hunde: n < (deCuantas >= 7 ? 2 : 1) ? 0.58 + Math.random() * 0.14 : 0.11,
+    viva: false,
+    quieta: null,
+    /* La pose que mandó el servidor, YA TRADUCIDA al nombre de capa
+       (`config.garzas.poses` del backend no usa los mismos nombres que
+       `LAMINAS_POSADA` aquí — ver POSE_A_CAPA en bandada-cliente.js).
+       Se guarda aparte de `quieta` porque una garza puede tocarle el
+       turno de «viva» (gestos) y entonces esta pose fija no se usa.
+
+       EXCEPTO 'pAlas': las QUIETAS de este archivo la excluyen a
+       propósito («una pose de gesto congelada para siempre delata que
+       es una lámina»). El servidor no sabe eso —solo reparte las seis
+       con los mismos pesos de siempre—, así que si le tocó alas y esta
+       garza no queda viva, se congela en 'posada' en su lugar. */
+    poseServidor: (POSE_A_CAPA[g.pose] === 'pAlas' ? 'posada' : POSE_A_CAPA[g.pose]) || 'posada',
+    escala: g.escala,
+    mira: g.mira,
+    reposo: nuevoReposo([6.0 + Math.random() * 8, 16.0 + Math.random() * 12],
+                        [0.5 + Math.random() * 7, 4.0 + Math.random() * 9],
+                        caracter()),
+    balanceo: [0.22 + Math.random() * 0.20, Math.random() * 100,
+               0.09 + Math.random() * 0.10, Math.random() * 100],
+    ultimo: {}, anchos: {}, mascaras: {},
+    ida: false,
+  };
+}
+
+/* QUIÉNES SE MUEVEN, sobre la bandada YA POBLADA — igual que antes,
+   solo que ahora es su propia función porque hace falta también cuando
+   cambia quién está vivo (nadie se re-sortea al llegar o irse alguien:
+   eso encendería o apagaría gestos de aves que ya llevaban un rato
+   quietas, y se vería como un parpadeo sin motivo). */
+function repartirGestos() {
+  for (const ave of bandada) { if (!ave.viva) ave.quieta = ave.poseServidor; }
+  const candidatas = bandada.map((_, i) => i).filter((i) => !bandada[i].ida);
+  const vivas = candidatas.length >= 7 ? 3 : 2;
+  for (let i = candidatas.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidatas[i], candidatas[j]] = [candidatas[j], candidatas[i]];
+  }
+  candidatas.slice(0, vivas).forEach((i) => { bandada[i].viva = true; bandada[i].quieta = null; });
+}
+
+/* Población inicial, a partir de las filas que ya trajo `garzasVivas()`
+   — ver `poblarBandadaReal()`, que es quien la llama. En pantallas
+   pequeñas se recorta a seis, como antes: diez láminas por ave son
+   sesenta capas de más en un teléfono de gama baja. */
+function poblarBandada(reales) {
   if (!contenedor) return;
-  /* El censo, y por qué no es fijo. En un teléfono el árbol se ve la
-     mitad de grande y muchas aves serían una mancha, además de láminas
-     de más en el DOM de un aparato que puede ser de gama baja. El tramo
-     es aleatorio porque el manglar no tiene el mismo censo cada tarde.
+  const tope = viewportWidth() < 700 ? 6 : BANDADA_MAX;
+  const lista = reales.slice(0, tope);
+  lista.forEach((g, n) => bandada.push(garzaDesdeFila(g, n, lista.length)));
+  repartirGestos();
+}
 
-     Y NUNCA LLENA EL ÁRBOL: dos perchas quedan libres SIEMPRE. En esas
-     se posan las garzas de quien más está (`colocarPresentes` reparte
-     sobre las que la bandada no usa), y con la copa remedida solo hay
-     ocho — una bandada de ocho dejaba a la primera persona que llegara
-     sin rama, o sea invisible. El paisaje cede sitio a la gente. */
-  const chica = viewportWidth() < 700;
-  const techo = Math.max(2, PERCHAS.length - 2);
-  const cuantas = Math.min(techo, chica ? 3 + Math.floor(Math.random() * 2)
-                                        : 4 + Math.floor(Math.random() * 3));
-  /* Barajado de Fisher-Yates sobre los índices: las perchas se reparten
-     sin repetir, así que dos aves nunca caen en el mismo sitio. */
-  const orden = PERCHAS.map((_, i) => i);
-  for (let i = orden.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [orden[i], orden[j]] = [orden[j], orden[i]];
+/* Una garza más, en vivo, sin re-sortear las que ya estaban quietas —
+   ver la nota en `repartirGestos`. Reutiliza `dispatchEvent(resize)`
+   para que `colocarGarzas` —que ya sabe recorrer TODA la bandada y
+   encontrarle sitio a cada una— la coloque, en vez de duplicar esa
+   lógica aquí. Mismo patrón que ya usa este repo para el foro. */
+function agregarGarzaEnVivo(fila) {
+  if (!contenedor || bandada.some((a) => a.id === fila.id)) return;
+  const tope = viewportWidth() < 700 ? 6 : BANDADA_MAX;
+  if (bandada.filter((a) => !a.ida).length >= tope) return;   // mismo tope que la carga inicial
+  bandada.push(garzaDesdeFila(fila, bandada.length, bandada.length + 1));
+  repartirGestos();
+  dispatchEvent(new Event('resize'));
+}
+
+/* La que se va. `ida = true` hace que `animarBandada` deje de tocarla
+   —para siempre, no solo esta vez—, así que hay que dejarla ya en el
+   estado visual correcto ANTES de poner la bandera: nadie más la va a
+   apagar por mí. */
+function quitarGarzaEnVivo(id) {
+  const ave = bandada.find((a) => a.id === id && !a.ida);
+  if (!ave) return;
+  for (const img of Object.values(ave.capas)) {
+    img.style.transition = 'opacity 1.1s ease';
+    img.style.opacity = '0';
   }
+  ave.ida = true;
+}
 
-  for (let n = 0; n < cuantas; n++) {
-    const capas = {};
-    for (const clave of LAMINAS_POSADA) {
-      const v = VUELO[clave];
-      const img = new Image();
-      diferirImagen(img, v.src);
-      img.alt = '';
-      /* SIN `will-change`. Las de la bandada se mueven despacio y poco, y
-         promover diez aves por diez láminas serían cien capas de
-         composición extra en la GPU — en un teléfono de gama baja eso se
-         paga en memoria de vídeo, que es justo lo que este sitio no
-         puede gastar. */
-      img.className = 'vuelo vuelo--bandada';
-      img.decoding = 'async';
-      /* Ancla por los PIES siempre: un ave posada gira, se encoge y
-         amaga sobre sus patas, que es lo único suyo que no se mueve. */
-      const ox = v.cx + (v.pies[0] - v.cx);
-      const oy = v.cy + (v.pies[1] - v.cy);
-      img.style.transformOrigin = (ox * 100).toFixed(1) + '% ' + (oy * 100).toFixed(1) + '%';
-      img.style.opacity = '0';
-      contenedor.appendChild(img);
-      capas[clave] = img;
-    }
-    bandada.push({
-      capas,
-      perchaIdx: orden[n],
-      /* LA QUE SE ASOMA. Una o dos de la bandada no se posan SOBRE la
-         copa sino DENTRO, y de ellas solo sobresale lo que sobresale:
-         la cabeza y parte del cuello. Es lo que hace que el árbol tenga
-         fondo — mientras todas estén encima de la silueta, la copa es
-         una línea; en cuanto una asoma por detrás, es un volumen.
-
-         No se puede poner una DETRÁS del árbol y esa es la razón: el
-         manglar no es un elemento aparte, está pintado dentro del
-         lienzo junto con el cielo y el agua, así que lo que se ponga
-         por debajo del lienzo queda debajo del cielo también, o sea
-         invisible. Lo que sí se puede es meterla dentro y BORRARLE lo
-         que queda por debajo del canto de la copa, que visualmente es
-         lo mismo y además es medible: se le borra exactamente hasta la
-         altura de silueta que midió el script, ni un píxel más.
-
-         Y se borra con un degradado, no con un corte: un corte recto
-         a través de un ave deja un canto de cuchillo, y en esta lámina
-         no hay un solo borde duro. Con la banda suave, el cuerpo se
-         pierde entre las hojas. */
-      /* Se deriva del hundimiento, más abajo: asoma toda la que tenga
-         cuerpo por debajo del canto de la copa, no solo las elegidas. */
-      asoma: false,
-      /* Cuánto se hunde bajo el canto de la copa, EN ALTURAS DE AVE.
-
-         La primera versión lo puso en unidades de la lámina y era un
-         disparate de escala: el manglar mide diez aves de alto, así que
-         hundirla «un 10 % de la lámina» la enterraba entera y del ave
-         no quedaba ni la cabeza. Lo que se quiere decir es «que se vea
-         un tercio», y eso solo se puede decir en alturas de ave.
-         La conversión a lámina es exacta y se hace al colocarla, donde
-         se sabe cuánto mide el árbol. */
-      /* ── Y NO SON DOS ALTURAS, SON TRES ──────────────────────────
-         Estaba en dos: una o dos aves hundidas hasta el cuello y TODAS
-         las demás apoyadas en el canto de la copa. Mirado en el sitio
-         publicado con la bandada ampliada, eso es exactamente lo que
-         las delataba: ocho siluetas pálidas de pie sobre una línea, con
-         cielo entero detrás de cada una y ni una hoja por delante. Un
-         dormidero no se posa SOBRE un árbol; se posa DENTRO.
-
-         Tres profundidades, entonces. Dos hasta el cuello —las que le
-         dan fondo a la copa—, tres metidas hasta la panza —las que
-         tienen hoja por delante de las patas— y el resto apoyadas
-         arriba, que también las hay. La variación importa tanto como
-         el hundimiento: diez aves a la misma altura vuelven a ser una
-         calcomanía repetida, aunque estén todas medio enterradas. */
-      hunde: (() => {
-        /* EN FRACCIONES DEL CENSO, no en números fijos. La primera
-           versión de esto decía «dos hondas y tres medias si hay siete
-           o más», y la bandada de esta portada son cuatro a seis: la
-           condición no se cumplía nunca y el reparto se quedaba en una
-           y una, o sea casi el de antes. Medido en el compilado: de
-           seis aves visibles solo dos llevaban máscara de copa. */
-        const hondas = Math.max(1, Math.round(cuantas * 0.22));
-        const medias = Math.max(1, Math.round(cuantas * 0.34));
-        if (n < hondas) return 0.58 + Math.random() * 0.14;
-        if (n < hondas + medias) return 0.26 + Math.random() * 0.14;
-        return 0.10 + Math.random() * 0.07;
-      })(),
-
-      /* ── QUIETAS CASI TODAS ───────────────────────────────────────
-         Diez aves haciendo gestos a la vez es un gallinero: el ojo no
-         sabe dónde mirar y el conjunto se lee agitado, que es justo lo
-         contrario de lo que este sitio es. Un dormidero de verdad está
-         QUIETO — y lo que lo hace vivo no es que todos se muevan, sino
-         que uno se mueva mientras los demás no.
-
-         Así que solo dos o tres del árbol tienen vida de gestos. El
-         resto elige UNA pose al cargar y se queda en ella: siguen
-         siendo distintas entre sí —cada una su pose, su tamaño y hacia
-         dónde mira— pero no se remueven. La protagonista, la que llega
-         volando, sí: es el acontecimiento y tiene que seguir siéndolo. */
-      viva: false,
-      /* Su pose fija, si no está viva. Ponderada como los gestos, así
-         que el dormidero sale con la mezcla que sale de verdad: muchas
-         ahuecadas y a la pata coja, alguna alerta. */
-      quieta: null,
-      /* Tamaño propio. La copa tiene fondo: un ave posada dos ramas más
-         atrás se ve más pequeña, y esa variación es la que impide que
-         diez siluetas del mismo alto se lean como calcomanías. */
-      escala: 0.86 + Math.random() * 0.24,
-      /* Hacia dónde mira. Las láminas están pintadas mirando a la
-         izquierda; espejar la mitad, más o menos, es lo que hace que el
-         dormidero no parezca un desfile. El espejo gira sobre los pies,
-         así que el ave no se mueve de la rama al voltearse. */
-      mira: Math.random() < 0.45 ? -1 : 1,
-      reposo: nuevoReposo([6.0 + Math.random() * 8, 16.0 + Math.random() * 12],
-                          [0.5 + Math.random() * 7, 4.0 + Math.random() * 9],
-                          caracter()),
-      /* Cada una se balancea a su ritmo y en su fase. */
-      balanceo: [0.22 + Math.random() * 0.20, Math.random() * 100,
-                 0.09 + Math.random() * 0.10, Math.random() * 100],
-      /* Lo último que se le escribió a cada lámina, para no reescribir
-         lo que no ha cambiado. */
-      ultimo: {}, anchos: {}, mascaras: {},
-    });
+/* El punto de entrada real: pide la propia garza (deja constancia de
+   esta visita) y luego la bandada entera —la propia incluida, ya no
+   hay que distinguirla— y recién ahí puebla el árbol. Si Supabase no
+   está configurado o la red falla, el árbol se queda vacío: el mar es
+   un enhancement, y esto también — el resto del sitio sigue en pie. */
+async function poblarBandadaReal() {
+  if (!contenedor) return;
+  try {
+    await dejarGarza();
+    const reales = await garzasVivas();
+    poblarBandada(reales);
+    dispatchEvent(new Event('resize'));
+  } catch (e) {
+    console.warn('No se pudo conectar con la bandada compartida:', e);
+    return;
   }
-
-  /* QUIÉNES SE MUEVEN. Dos, o tres si la bandada es grande, elegidas al
-     azar — no las primeras de la lista, que serían siempre las mismas
-     perchas. A las demás se les reparte una pose fija con los mismos
-     pesos que rigen los gestos, así que el dormidero sale con la mezcla
-     que sale de verdad: la mayoría ahuecadas o a la pata coja, alguna
-     mirando abajo, ninguna con las alas abiertas para siempre —eso sí
-     sería una estatua. */
-  const vivas = bandada.length >= 7 ? 3 : 2;
-  const sorteo = bandada.map((_, i) => i);
-  for (let i = sorteo.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [sorteo[i], sorteo[j]] = [sorteo[j], sorteo[i]];
-  }
-  sorteo.slice(0, vivas).forEach((i) => { bandada[i].viva = true; });
-
-  /* QUIÉN SE PIERDE ENTRE LAS HOJAS. Sale del hundimiento y no de un
-     sorteo aparte: si un ave tiene cuerpo por debajo del canto de la
-     copa, la copa se lo tapa — eso no es una decisión de reparto, es
-     una consecuencia de dónde está posada. El umbral son dos décimas
-     de altura de ave: por debajo, lo que taparía la hoja son los dedos
-     y no vale la pena pintar una máscara para eso. */
-  for (const ave of bandada) ave.asoma = ave.hunde > 0.2;
-
-  /* Las poses que valen para quedarse quieta: las de descanso y las de
-     mirar. Ni `pAlas` ni los cuadros del amago — una pose de gesto
-     congelada para siempre delata que es una lámina. */
-  const QUIETAS = [['pEncoge', 4], ['pUnaPata', 4], ['posada', 3],
-                   ['pMira', 1], ['pAlerta', 1]];
-  const totalQ = QUIETAS.reduce((s, q) => s + q[1], 0);
-  for (const ave of bandada) {
-    if (ave.viva) continue;
-    let r = Math.random() * totalQ;
-    for (const [clave, peso] of QUIETAS) {
-      r -= peso;
-      if (r <= 0) { ave.quieta = clave; break; }
-    }
-    ave.quieta = ave.quieta || 'posada';
-  }
+  suscribirManglar({
+    onLlega: (fila) => agregarGarzaEnVivo(fila),
+    onVuela: ({ id }) => quitarGarzaEnVivo(id),
+  });
 }
 
 
@@ -2530,7 +2508,7 @@ const PERCHAS = [
    aves en el mismo sitio se solapan. El acontecimiento de la portada
    tiene preferencia sobre la bandada. */
 
-poblarBandada();
+poblarBandadaReal();
 
 export function calcularPosadero(caja, w, h, lineaPx, rel) {
   const [cxRel, altoRel, hundir, aspLam] = caja;

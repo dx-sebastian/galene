@@ -15,11 +15,10 @@ import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { config, SECRETO_EFIMERO } from './config.js';
 import { abrirBase, crearAcceso } from './base/base.js';
-import { purgar } from './base/purga.js';
+import { purgarLocal } from './base/purga.js';
 import { crearEnrutador, ponerCors, responder, fallo } from './nucleo/http.js';
 import { crearMar } from './dominio/mar.js';
 import { crearGarzas } from './dominio/garzas.js';
-import { crearForo } from './dominio/foro.js';
 import { crearCanal } from './tiempo-real/canal.js';
 import { montarApi } from './rutas/api.js';
 
@@ -38,11 +37,14 @@ export function crearServidor({ base = config.base, registrar = true } = {}) {
   const avisar = (m) => canal?.difundir(m);
 
   const garzas = crearGarzas(acceso, avisar);
-  const foro = crearForo(acceso, avisar);
 
+  /* El foro YA NO SE MONTA AQUÍ: vive en Supabase y el navegador le
+     habla directo (RLS, no este servidor, decide qué puede hacer cada
+     quien — ver servidor/src/base/esquema-foro.sql). Este proceso se
+     quedó solo con la bandada y el mar, que siguen siendo locales. */
   const r = crearEnrutador();
   montarApi(r, {
-    mar, garzas, foro, version: VERSION,
+    mar, garzas, version: VERSION,
     canal: { cuantos: () => canal?.cuantos() ?? 0 },
   });
 
@@ -85,9 +87,12 @@ export function crearServidor({ base = config.base, registrar = true } = {}) {
 
   canal = crearCanal({ servidor, mar });
 
-  /* Retención: al arrancar y una vez al día. */
-  purgar(acceso);
-  const relojPurga = setInterval(() => purgar(acceso), 24 * 60 * 60 * 1000);
+  /* Retención de lo LOCAL (garzas, gestos): al arrancar y una vez al
+     día. El foro ya no se sirve desde aquí —vive en Supabase, y el
+     navegador le habla directo—, así que su retención no corre sola:
+     `npm run purgar` la dispara a mano. Ver base/purga.js. */
+  purgarLocal(acceso);
+  const relojPurga = setInterval(() => purgarLocal(acceso), 24 * 60 * 60 * 1000);
   relojPurga.unref?.();
 
   let cerrando = false;
@@ -104,7 +109,7 @@ export function crearServidor({ base = config.base, registrar = true } = {}) {
   const escuchar = (puerto = config.puerto, host = config.host) =>
     new Promise((listo) => servidor.listen(puerto, host, () => listo(servidor.address())));
 
-  return { servidor, acceso, mar, garzas, foro, canal: () => canal, escuchar, cerrar };
+  return { servidor, acceso, mar, garzas, canal: () => canal, escuchar, cerrar };
 }
 
 /* ── Arranque directo ──────────────────────────────────────────────
@@ -120,10 +125,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
   console.log(`  orígenes: ${config.origenes.join(', ')}`);
   if (SECRETO_EFIMERO) {
     console.warn('\n  ⚠ GALENE_SECRETO sin poner: se usó uno aleatorio de este arranque.');
-    console.warn('    Al reiniciar caducan todas las sesiones y todas las llaves de borrado.');
-  }
-  if (!config.llaveModeracion) {
-    console.warn('  ⚠ GALENE_LLAVE_MODERACION sin poner: la cola de moderación no existe.');
+    console.warn('    Al reiniciar caducan todas las sesiones de la bandada.');
   }
   console.log('');
 
