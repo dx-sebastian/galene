@@ -28,12 +28,11 @@
    filtran la columna `sesion` de otra persona.
    ═══════════════════════════════════════════════════════════════════ */
 import { createClient } from '@supabase/supabase-js';
-
-const URL_SUPABASE = import.meta.env.PUBLIC_SUPABASE_URL;
-const LLAVE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
-export const listo = typeof URL_SUPABASE === 'string' && typeof LLAVE_ANON === 'string'
-  && URL_SUPABASE.length > 0 && LLAVE_ANON.length > 0;
+/* `listo` y las dos variables viven aparte, en un archivo que no
+   arrastra la biblioteca: así la portada puede preguntar «¿hay base?»
+   sin descargarse 215 kB para oír que no. Ver su cabecera. */
+import { URL_SUPABASE, LLAVE_ANON, listo } from './supabase-config.js';
+export { listo };
 
 export const supabase = listo ? createClient(URL_SUPABASE, LLAVE_ANON, {
   auth: {

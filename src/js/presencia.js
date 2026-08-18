@@ -40,8 +40,21 @@
    una palabra escrita por nadie, ni una ubicación, ni una hora, ni nada
    que sobreviva a cerrar.
 
-   Los hilos del foro viajan por otro canal y con sus propias reglas:
-   ver js/foro.js.
+   ── LO QUE YA NO ES DE AQUÍ ───────────────────────────────────────
+   El foro se fue a Supabase (`js/supabase-cliente.js`) y la BANDADA
+   del manglar también (`js/bandada-cliente.js`): las garzas del árbol
+   son filas reales de `garzas_publico` cuando hay red, no pestañas.
+   Este módulo se quedó con las dos cosas que en una base no caben sin
+   escribir en disco el rastro de que alguien estuvo aquí:
+
+     · las MANOS puestas en el agua ahora mismo —un gesto de tres
+       segundos no es un dato acumulado—, y
+     · el pico y la frase de quien mira.
+
+   Y hace de bandada de repuesto: sin Supabase configurado, `main.js`
+   vuelve a poner una garza por pestaña con lo que dice `vivas()`. Con
+   Supabase configurado NO lo hace, o la misma persona saldría dos
+   veces — ver la nota en `sincronizarPresencia`.
    ═══════════════════════════════════════════════════════════════════ */
 
 const CANAL = 'galene:presencia';

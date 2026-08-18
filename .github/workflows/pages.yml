@@ -24,7 +24,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      # ── LAS LLAVES DEL FORO, EN TIEMPO DE COMPILACIÓN ───────────────
+      # Astro INSERTA las `PUBLIC_*` en el paquete al compilar: no se
+      # leen en el navegador, se quedan escritas dentro. Así que tienen
+      # que estar aquí, en el paso de build, o no estarán nunca.
+      #
+      # Se leen de `vars` primero y de `secrets` después, para que
+      # funcione se hayan puesto donde se hayan puesto. La `anon` es
+      # PÚBLICA por diseño —viaja en el paquete que descarga cualquiera,
+      # y lo que decide qué puede hacer es RLS, no el secreto de la
+      # llave—, así que `vars` es su sitio natural. La `service_role`
+      # NUNCA va aquí: esa se salta todas las políticas.
+      #
+      # Si faltan, el sitio se publica igual y el foro sale diciendo que
+      # no se pudo llegar a la comunidad. Es un estado declarado y
+      # medido (foro.spec.js), no una página rota.
       - run: npm run build
+        env:
+          PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
