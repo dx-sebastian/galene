@@ -1607,3 +1607,61 @@
   .ficha__vecinos { grid-template-columns: 1fr; }
   .ficha__vecino--der { text-align: left; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA LLEGADA DE LOS BLOQUES
+
+   El héroe entra y el anillo se dibuja, pero de la mitad de la página
+   para abajo todo estaba ya puesto: se bajaba y aparecía contenido
+   colocado, no contenido que llega.
+
+   Aquí solo está el CÓMO. El CUÁNDO lo decide js/aparecer.js, y quién
+   se apunta también — incluido lo que nunca se apunta, que es la
+   sección de ayuda.
+
+   ── POR QUÉ TODO CUELGA DE `.con-llegada` ──────────────────────────
+   Esa clase la pone el guion. Sin JavaScript no existe, y entonces
+   NINGUNA de estas reglas aplica: el sitio se ve entero, como antes.
+   Esconder contenido con CSS y confiar en que un guion lo devuelva es
+   como se dejan páginas en blanco.
+
+   ── Y LO QUE SE MUEVE ──────────────────────────────────────────────
+   `opacity` y `translate`, nada más. Ni alto, ni margen, ni escala:
+   nada que reflúya. El desplazamiento acumulado tiene que seguir
+   valiendo cero y hay una prueba midiéndolo.
+
+   Nueve píxeles de subida, no cuarenta. Esto no es una presentación de
+   diapositivas: es papel al que le llega la luz. Si se nota el viaje,
+   está mal.
+   ═══════════════════════════════════════════════════════════════════ */
+.con-llegada .por-llegar {
+  opacity: 0;
+  translate: 0 9px;
+}
+.con-llegada .llegado {
+  opacity: 1;
+  translate: 0 0;
+  transition: opacity 620ms var(--paso), translate 620ms var(--paso);
+}
+
+/* EL ESCALONADO, y solo dentro de una fila. Tres tarjetas que llegan a
+   la vez son un bloque; tres que llegan seguidas son una mano
+   colocándolas. Pasado el sexto elemento el retraso se detiene: nadie
+   espera un segundo por la última tarjeta de una lista larga. */
+.con-llegada .llegado:nth-child(2)  { transition-delay: 70ms; }
+.con-llegada .llegado:nth-child(3)  { transition-delay: 140ms; }
+.con-llegada .llegado:nth-child(4)  { transition-delay: 190ms; }
+.con-llegada .llegado:nth-child(5)  { transition-delay: 230ms; }
+.con-llegada .llegado:nth-child(n+6) { transition-delay: 260ms; }
+
+/* Y con el movimiento apagado no existe nada de esto. El guion ni
+   siquiera pone la clase; esto es el cinturón sobre el tirante, que en
+   una página con rutas de atención se lleva siempre. */
+@media (prefers-reduced-motion: reduce) {
+  .con-llegada .por-llegar,
+  .con-llegada .llegado {
+    opacity: 1 !important;
+    translate: none !important;
+    transition: none !important;
+  }
+}

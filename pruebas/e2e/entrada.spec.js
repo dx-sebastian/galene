@@ -163,3 +163,102 @@ for (const [vista, opciones] of VISTAS) {
     });
   });
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LA LLEGADA DE LOS BLOQUES, y las cuatro cosas que no puede costar.
+
+   De la mitad de la página para abajo todo estaba ya puesto. Ahora los
+   bloques llegan al entrar en pantalla — y un efecto de aparición en un
+   sitio con rutas de atención es exactamente donde hay que ser
+   quisquilloso, porque el modo de fallar es dejar contenido invisible.
+
+   1 · La ayuda NO se apunta. `#ayuda` lleva el 155, SALVIA y el 123, y
+       está a una pantalla del héroe: entra en escena justo cuando un
+       observador podría no haberse disparado. Se comprueba que sus
+       enlaces son visibles sin haber bajado.
+   2 · Nada se esconde sin JavaScript. La clase que habilita el efecto
+       la pone el guion; sin él la hoja no oculta un píxel.
+   3 · Cero desplazamiento de maqueta.
+   4 · Con movimiento reducido no ocurre: ni clase, ni opacidades.
+   ═══════════════════════════════════════════════════════════════════ */
+test.describe('llegada', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('llegada · los bloques de abajo llegan, y los de arriba ya están', async ({ page }) => {
+    await page.goto('./', { waitUntil: 'load', timeout: 90_000 });
+    await page.waitForTimeout(1200);
+
+    const antes = await page.evaluate(() => ({
+      clase: document.documentElement.classList.contains('con-llegada'),
+      porLlegar: document.querySelectorAll('.por-llegar').length,
+      llegados: document.querySelectorAll('.llegado').length,
+      /* La ayuda, sin bajar: sus dos canales tienen que estar visibles. */
+      ayudaOculta: [...document.querySelectorAll('#ayuda a')]
+        .filter((a) => parseFloat(getComputedStyle(a).opacity) < 0.9).length,
+    }));
+    console.log(`  al cargar: con-llegada=${antes.clase}`
+      + ` · por llegar ${antes.porLlegar} · ayuda oculta ${antes.ayudaOculta}`);
+
+    expect(antes.clase, 'el guion tiene que habilitar el efecto').toBe(true);
+    expect(antes.porLlegar, 'algo tiene que quedar por llegar').toBeGreaterThan(3);
+    expect(antes.ayudaOculta,
+      'la ayuda no puede estar escondida esperando a un observador').toBe(0);
+
+    /* Y al bajar, llegan. */
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 500) {
+        window.scrollTo(0, y);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+    });
+    await page.waitForTimeout(1200);
+    const despues = await page.evaluate(() => ({
+      porLlegar: document.querySelectorAll('.por-llegar').length,
+      llegados: document.querySelectorAll('.llegado').length,
+    }));
+    console.log(`  tras bajar: llegados ${despues.llegados}`
+      + ` · siguen por llegar ${despues.porLlegar}`);
+    expect(despues.llegados, 'nada llegó').toBeGreaterThan(3);
+    expect(despues.porLlegar, 'algo se quedó sin llegar después de recorrer la página').toBe(0);
+  });
+
+  test('llegada · con movimiento reducido no ocurre', async ({ browser }) => {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce',
+    });
+    const page = await ctx.newPage();
+    await page.goto('./', { waitUntil: 'load', timeout: 90_000 });
+    await page.waitForTimeout(1000);
+    const r = await page.evaluate(() => ({
+      clase: document.documentElement.classList.contains('con-llegada'),
+      porLlegar: document.querySelectorAll('.por-llegar').length,
+      /* Y ni un bloque a media opacidad. */
+      atenuados: [...document.querySelectorAll('.bloque, .experto, .resonancia')]
+        .filter((el) => el.getClientRects().length
+          && parseFloat(getComputedStyle(el).opacity) < 0.99).length,
+    }));
+    console.log(`  reducido: con-llegada=${r.clase} · por llegar ${r.porLlegar}`
+      + ` · atenuados ${r.atenuados}`);
+    expect(r.clase, 'con movimiento reducido el efecto no se habilita').toBe(false);
+    expect(r.porLlegar).toBe(0);
+    expect(r.atenuados, 'con movimiento reducido no puede quedar nada a medias').toBe(0);
+    await ctx.close();
+  });
+
+  test('llegada · sin JavaScript no se esconde nada', async ({ browser }) => {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 }, javaScriptEnabled: false,
+    });
+    const page = await ctx.newPage();
+    await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    await page.waitForTimeout(600);
+    const invisibles = await page.evaluate(() =>
+      [...document.querySelectorAll('.bloque, .experto, .resonancia, #ayuda a')]
+        .filter((el) => el.getClientRects().length
+          && parseFloat(getComputedStyle(el).opacity) < 0.99).length);
+    console.log(`  sin JS: elementos por debajo de opacidad 1 → ${invisibles}`);
+    expect(invisibles,
+      'sin JavaScript la hoja no puede esconder contenido').toBe(0);
+    await ctx.close();
+  });
+});
