@@ -19,6 +19,10 @@ hasta cuándo.
 > deudas— está la [**Guía de Galene**](GUIA.md). Y la urgencia que
 > salió del sitio se especifica en
 > [la propuesta de la app](propuestas/app-rescate.md).
+>
+> Para **encender el foro y la bandada** —dos variables, un SQL y un
+> interruptor de Supabase— está
+> [Encender la comunidad](docs/DESPLIEGUE-COMUNIDAD.md).
 
 ## Qué es
 
@@ -51,6 +55,8 @@ multiplica encima un escaneo real de papel de algodón fijo a la pantalla.
 - `js/mar.js` — el shader: cielo, agua en tres bandas, manglar, grafito, papel
 - `js/hora.js` — un modelo de luz continuo, cuatro horas ancla
 - `js/main.js` — orquestación, física del ave, calibración del lavado
+- `js/bandada-cliente.js` — la bandada y la calma, contra Supabase
+- `js/presencia.js` — las manos en el agua, sin red, y bandada de repuesto
 - `js/reloj.js` — las ventanas de las 72 horas
 - `js/herramientas.js` — el desvío de emergencia
 - `arte/laminas.md` — la dirección de arte y los prompts
@@ -58,26 +64,33 @@ multiplica encima un escaneo real de papel de algodón fijo a la pantalla.
 
 ## Privacidad
 
-Hay dos piezas con servidor, y las dos guardan lo mínimo que hace falta
-para que funcionen — nunca quién eres.
+Hay dos piezas con servidor —el foro y la bandada— y desde agosto de
+2026 las dos viven en el mismo sitio: **Postgres gestionado por
+Supabase**, en su capa gratuita. Es el único servicio de terceros del
+proyecto, y es una decisión consciente, no un descuido: el `servidor/`
+propio de Node con SQLite que había antes exigía una máquina
+encendida, y una máquina encendida es una máquina con registros.
 
-- **La bandada del manglar y la calma del mar** (`servidor/`, propio,
-  opcional): un proceso de Node con SQLite al lado. Sin cuentas, sin
-  cookies, sin IP guardada — un token que vive en la pestaña y se va al
-  cerrarla es lo único que ata dos visitas a la misma persona. Ver
-  `servidor/LEEME.md`.
-- **El foro** (`Comunidad`): vive en Postgres gestionado por Supabase,
-  en su capa gratuita — el único servicio de terceros del proyecto, y
-  una decisión consciente, no un descuido. Sin cuentas ni correo
-  tampoco ahí (Auth Anónima da un identificador opaco), sin guardar
-  quién escribió qué más allá de ese identificador, con llave de
-  borrado que solo su dueño puede usar. El razonamiento completo está
-  en `servidor/src/base/esquema-foro.sql`.
+Sin cuentas y sin correo (Auth Anónima da un identificador opaco), y
+la sesión se guarda en `sessionStorage` **a propósito** —el SDK usa
+`localStorage` por defecto, que sobrevive a cerrar la pestaña, y qué
+hilos sobre sumisión química miró alguien no puede sobrevivir a nada—.
 
-Ninguna de las dos cosas hace falta para usar la ayuda: sin
-`servidor/` corriendo y sin Supabase configurado, el hero sigue en
-pie, el reloj, el mapa y «guardar lo que recuerdo» funcionan igual —
-son enhancements, no la base del sitio.
+- **El foro** (`Comunidad`): no se guarda quién escribió qué más allá
+  de ese identificador, y hay una llave de borrado que solo su dueño
+  puede usar. Las políticas de fila nunca dejan leer la columna
+  `sesion` de otra persona, ni siquiera para compararla. El
+  razonamiento completo está en `servidor/src/base/esquema-foro.sql`.
+- **La bandada del manglar y la calma del mar**: una fila por pestaña
+  abierta, que se va con ella, y una suma de segundos sostenidos de la
+  que solo sale una curva, nunca el número. Ver
+  `servidor/src/base/esquema-bandada.sql`.
+
+Nada de esto hace falta para usar la ayuda: sin Supabase configurado
+el hero sigue en pie, el manglar sigue con sus garzas, y el reloj, el
+mapa y «guardar lo que recuerdo» funcionan igual — son enhancements,
+no la base del sitio. Lo único que se queda sin arrancar es el foro, y
+lo dice en voz alta en vez de fingir que carga.
 
 - La ubicación se pide solo al pulsar «que alguien venga por mí», se usa
   para armar un mensaje y se descarta. No se envía a ningún sitio.
@@ -89,24 +102,45 @@ son enhancements, no la base del sitio.
 
 ### Hasta dónde llega «los demás»
 
-El foro y las garzas de presencia parecen necesitar un servidor y no lo
-tienen. Lo que hay es `BroadcastChannel`: **las otras pestañas de este
-mismo navegador**, en el mismo aparato, sin red por medio.
+Hay tres cosas en el sitio que dicen «no estás sola», y las tres son
+ciertas o no aparecen. Vienen de sitios distintos, y la diferencia no
+es un detalle de implementación: es dónde queda escrito qué.
 
-- Un hilo escrito en la comunidad aparece en la otra ventana de Galene
-  que tengas abierta. Se guarda en `sessionStorage`, o sea que **muere al
-  cerrar la pestaña**, y hay un botón para tirarlo antes.
-- Cada otra pestaña abierta pone **una garza** en el manglar del fondo, y
-  su mano en el agua abre un anillo en tu mar y ayuda a calmarlo.
-- Nunca se inventa a nadie. Si estás sola, no hay ninguna garza de más y
-  el aviso de manos no dice nada — la regla 3 no se cumple escondiendo
-  que son pocas, se cumple no fabricando ninguna.
+**La bandada del manglar** son sesiones reales, y viven en Supabase
+(`garzas_publico`). Una fila por pestaña abierta, con su percha, su
+escala y hacia dónde mira; se va cuando la pestaña se va. Es lo único
+de «los demás» que cruza la red, y no guarda quién es nadie.
 
-Esto **no** es «cuánta gente ha pasado por Galene». Para eso hace falta
-contar visitas a un sitio sobre sumisión química, que es exactamente el
-registro que la regla 9 prohíbe construir. La costura por donde entraría
-un relevo que no guarde nada está en `fuente()`, en `js/presencia.js`:
-todo lo demás ya funciona con lo que le llegue.
+**La calma del mar** también: lo que sostiene todo el mundo se suma en
+la base y vuelve como `calma_actual()`, la curva YA aplicada. El
+número crudo no sale de ahí a propósito — la regla 9 dice que el sitio
+no cuenta, y una curva no es un censo.
+
+**Las manos puestas en el agua ahora mismo** NO cruzan la red, y eso
+es deliberado. Un gesto de tres segundos no es un dato acumulado, y
+meterlo en Postgres sería escribir en disco que alguien estuvo tocando
+el mar a las 4 a.m. Eso sigue siendo `BroadcastChannel`: **las otras
+pestañas de este mismo navegador**, en el mismo aparato, sin red por
+medio. Cada mano ajena abre su anillo en tu mar y calma más deprisa —
+medido, y lo vigila `garzas.spec.js`.
+
+Nunca se inventa a nadie. Si estás sola, no hay ninguna garza de más y
+el aviso de manos no dice nada — la regla 3 no se cumple escondiendo
+que son pocas, se cumple no fabricando ninguna.
+
+#### Y cuando no hay red
+
+Sin `PUBLIC_SUPABASE_*` configurado, o con la red caída, el árbol **no
+se queda vacío**: la bandada cae a un dormidero de paisaje, que es lo
+que fue desde el primer día. Esas garzas no dicen ser nadie — un
+manglar tiene garzas porque es un manglar. Y las de presencia vuelven
+a aparecer, una por pestaña, sobre las dos perchas que la bandada deja
+libres siempre.
+
+Con Supabase configurado esas garzas de presencia **no** se ponen: la
+bandada ya son las sesiones vivas, y pintar además una por pestaña
+sería la misma persona dos veces. La costura está en
+`sincronizarPresencia`, en `js/main.js`.
 
 Lo que **sí** se personaliza —el color del pico de tu garza, o una de
 diez frases— vive en `sessionStorage` y se va al cerrar. Nunca es texto
@@ -151,12 +185,21 @@ aparece al compilar es el que nadie descubre hasta que está publicado.
 
 Lo que vigila, por archivo:
 
-- `foro.spec.js` — publicar, validar, contestar, votar, ordenar,
-  filtrar, borrar lo propio, y que lo escrito sobreviva a una recarga
-  pero no a otra pestaña.
-- `garzas.spec.js` — el panel opt-in, el pico teñido, el globo al pasar
-  el ratón, la garza que aparece cuando se abre otra pestaña y
-  desaparece al cerrarla, y el gesto de calma con una mano y con dos.
+- `consola.spec.js` — que ninguna página lance una excepción, y que la
+  portada monte sus módulos hasta el final. Existe por un fallo
+  concreto: una fusión se llevó tres `import` de `main.js` y dejó las
+  llamadas dentro. Compilaba, y se caía en el primer cuadro. Las ciento
+  treinta y seis pruebas de entonces miraban lo que hay en pantalla y
+  ninguna miraba lo que la consola gritaba.
+- `foro.spec.js` — dos grupos. **Sin credenciales** (corre siempre):
+  que `/comunidad` diga que no se pudo llegar, no ofrezca reintentar lo
+  imposible, no enseñe un compositor que no puede publicar, y que el
+  resto de la página siga en pie. **Con credenciales** (se salta sola
+  si no las hay): publicar, validar, contestar, votar, ordenar y borrar
+  lo propio, contra la base de verdad.
+- `garzas.spec.js` — el pico teñido, el globo al pasar el ratón, la
+  garza que aparece cuando se abre otra pestaña y desaparece al
+  cerrarla, y el gesto de calma con una mano y con dos.
 - `contraste.spec.js` — las cuatro piezas del héroe, a siete horas y en
   dos pantallas, midiendo **los píxeles pintados**: el fondo lo hace un
   shader y no hay hoja de estilos a la que preguntarle.
@@ -186,9 +229,10 @@ npm run interruptor    # compila las dos versiones y las compara
 npm run dossier        # reescribe docs/verificacion/DOSSIER.md
 ```
 
-Dos asideros hacen falta para esto y viajan al sitio publicado a
-propósito: `window.__hero.estado()`, `window.__garzas`, `window.__foro`
-y `window.__presencia`. Son de LECTURA de cosas que ya están en pantalla
+Unos asideros hacen falta para esto y viajan al sitio publicado a
+propósito: `window.__hero.estado()`, `window.__garzas`,
+`window.__presencia` y `window.__com`. Son de LECTURA de cosas que ya
+están en pantalla
 —cuánta calma tiene el agua, qué garzas hay posadas— y no permiten hacer
 nada que no se pueda hacer con el dedo. El asidero pesado de auditoría
 (`window.__mar`, que vuelve a dibujar y lee el búfer) sigue siendo solo

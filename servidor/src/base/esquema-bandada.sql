@@ -157,7 +157,14 @@ BEGIN
   -- distinto según en cuál tropiece primero. Cazado en vivo, con
   -- `percha` — se revisaron los otros dos que compartían el mismo
   -- riesgo antes de que tronaran por separado.
-  IF (SELECT count(*) FROM garzas WHERE viva = 1) >= 10 THEN
+  -- OCHO, Y NO DIEZ. El diez venía del servidor SQLite viejo, que
+  -- repartía perchas de una lista suya. Las perchas de verdad son las
+  -- de `PERCHAS` en `js/main.js`: OCHO columnas de la copa, medidas
+  -- sobre la lámina por solidez, pendiente y separación. Una fila con
+  -- percha 8, 9 o 10 no tiene dónde posarse — el cliente la descarta,
+  -- y quien la dejó no ve su propia garza. Los dos números tienen que
+  -- ser el mismo, y el que manda es el de la pintura.
+  IF (SELECT count(*) FROM garzas WHERE viva = 1) >= 8 THEN
     SELECT * INTO antigua FROM garzas WHERE viva = 1 ORDER BY garzas.llegada ASC, garzas.id ASC LIMIT 1;
     IF FOUND THEN
       UPDATE garzas SET viva = 0, partida = (extract(epoch FROM clock_timestamp()) * 1000)::bigint
@@ -178,7 +185,7 @@ BEGIN
   -- impide; aquí solo se reintenta una vez, igual que hacía garzas.js.
   LOOP
     intentos := intentos + 1;
-    SELECT p INTO v_percha FROM generate_series(0, 10) AS p
+    SELECT p INTO v_percha FROM generate_series(0, 7) AS p   -- ver la nota de las ocho, arriba
       WHERE p NOT IN (SELECT garzas.percha FROM garzas WHERE viva = 1)
       ORDER BY random() LIMIT 1;
     IF v_percha IS NULL THEN

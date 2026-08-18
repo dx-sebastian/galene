@@ -11,7 +11,36 @@
 import { luz, aplicar, horaAhora, notaAmanecer } from './hora.js';
 import { crear, viento, encogeCerca, VIENTO_COPA, VIENTO_RAMA } from './mar.js';
 import { viewportHeight, viewportWidth } from './viewport.js';
-import { dejarGarza, garzasVivas, suscribirManglar, calmaActual, acreditarGesto, POSE_A_CAPA } from './bandada-cliente.js';
+/* ── DE DÓNDE SALE «LOS DEMÁS», Y POR QUÉ SON DOS SITIOS ───────────
+   La migración a Supabase se llevó la BANDADA y la CALMA DEL MAR: las
+   garzas del manglar ya no son paisaje aleatorio, son sesiones reales,
+   y lo sostenido por todo el mundo se suma en la base. Eso entra por
+   `bandada-cliente.js`.
+
+   Lo que NO se llevó, porque en la base no existe: las MANOS en el
+   agua ahora mismo y el pico teñido de quien mira. Un gesto en curso
+   no es un dato acumulado —dura tres segundos y desaparece— y meterlo
+   en Postgres sería escribir en disco el rastro de que alguien estuvo
+   tocando el mar a las 4 a.m. Así que esas dos cosas siguen donde
+   estaban: `presencia.js`, BroadcastChannel, las otras pestañas de
+   ESTE navegador, sin red por medio. Ver su cabecera y README →
+   Privacidad.
+
+   La costura entre las dos: si Supabase está configurado, la bandada
+   ya muestra las sesiones vivas y `sincronizarPresencia` NO pone
+   además una garza por pestaña — sería la misma persona dos veces, y
+   eso es fabricar gente (regla 3). Las manos entran igual por los dos
+   caminos, porque una mano no es una garza. */
+import { dejarGarza, garzasVivas, suscribirManglar, calmaActual, acreditarGesto,
+         POSE_A_CAPA, listo as bandadaEnRed } from './bandada-cliente.js';
+import * as presencia from './presencia.js';
+/* Solo `perfil`: el panel de personalizar (montarPanel) quedó fuera
+   del MVP junto con su disparador en index.astro. Sin panel, `perfil()`
+   devuelve siempre el ave sin elegir y `sena` queda vacía — el circuito
+   sigue entero para cuando vuelva. */
+import { perfil as miPerfil, alCambiar as alCambiarGarza } from './garza.js';
+import { colorDePico, fraseDe } from '../datos/garza.js';
+import * as pico from './pico.js';
 
 /* La barra de reflejos —salida rápida y línea de atención— salió del
    sitio: la urgencia se traslada a una app móvil, y aquí volverá más
@@ -132,6 +161,7 @@ let calmaComunidad = 0.35;
 const calma = calmaComunidad;
 
 async function actualizarCalmaComunidad() {
+  if (!bandadaEnRed) return;   // sin variables de entorno no hay a quién preguntar
   try { calmaComunidad = await calmaActual(); }
   catch { /* sin red: se queda en el último valor bueno, o en el piso */ }
 }
@@ -644,14 +674,28 @@ function arrancar(mar) {
        la fracción 0..1 y componerla con la de esta sesión exactamente
        como antes. */
     const cRaices = Math.min(1, Math.max(0, (calmaComunidad - 0.35) / 0.50));
-    const cSesion = TECHO_SESION * (1 - Math.exp(-sostenido / TAU_SESION));
+    /* ── Y LAS OTRAS MANOS, QUE NO PUEDEN ESPERAR SEIS SEGUNDOS ─────
+       `calmaComunidad` ya trae lo que sostiene el mundo, pero llega por
+       la red y se refresca cada seis segundos: una mano que se pone al
+       lado AHORA no se nota ahí hasta el siguiente sondeo, si es que se
+       nota. Y sin Supabase configurado no llega nunca.
+
+       Así que la mano ajena entra también por la curva de esta sesión,
+       con menos peso que la propia. MEDIDO con dos pestañas antes de
+       que existiera la base: tres segundos de mano ajena solo por las
+       raíces movían la calma de 0.3500 a 0.3506 —o sea nada—, y el
+       encargo era justamente que se notara. Con 0.6, dos manos calman
+       visiblemente más rápido que una y la propia sigue mandando: tu
+       gesto se ve como tuyo, y el de al lado se ve como ayuda. Que es
+       lo que es. Lo vigila garzas.spec.js. */
+    const cSesion = TECHO_SESION * (1 - Math.exp(-(sostenido + ajeno * 0.6) / TAU_SESION));
     estado.calma = 0.35 + 0.50 * (1 - (1 - cRaices) * (1 - cSesion));
 
     /* Lo sostenido se reporta a la comunidad cada pocos segundos, no
        cuadro a cuadro — cuadro a cuadro serían decenas de llamadas por
        segundo por cada mano en la pantalla, y esto no necesita esa
        precisión: es una acumulación de minutos, no un dato en vivo. */
-    if (sostenido > reportadoHasta && estado.t - ultimoReporte >= 3) {
+    if (bandadaEnRed && sostenido > reportadoHasta && estado.t - ultimoReporte >= 3) {
       const pendiente = sostenido - reportadoHasta;
       reportadoHasta = sostenido;
       ultimoReporte = estado.t;
@@ -2043,7 +2087,12 @@ function quitarAvePresencia(ave) {
    se encarga `colocarGarzas`, que es quien sabe dónde está el árbol. */
 function sincronizarPresencia() {
   if (!contenedor) return;
-  const vivas = presencia.vivas().slice(0, PRESENTES_MAX);
+  /* Con Supabase configurado la bandada YA son las sesiones vivas —una
+     fila por pestaña abierta en el mundo, esta incluida—, así que poner
+     encima una garza por cada pestaña de este navegador sería pintar a
+     la misma persona dos veces. Las manos siguen entrando: ver la
+     cabecera de los imports. */
+  const vivas = bandadaEnRed ? [] : presencia.vivas().slice(0, PRESENTES_MAX);
   const ids = new Set(vivas.map((f) => f.id));
 
   for (const ave of [...presentes.values()]) {
@@ -2172,7 +2221,7 @@ function repartirGestos() {
 function poblarBandada(reales) {
   if (!contenedor) return;
   const tope = viewportWidth() < 700 ? 6 : BANDADA_MAX;
-  const lista = reales.slice(0, tope);
+  const lista = reales.filter(perchaPintable).slice(0, tope);
   lista.forEach((g, n) => bandada.push(garzaDesdeFila(g, n, lista.length)));
   repartirGestos();
 }
@@ -2182,8 +2231,19 @@ function poblarBandada(reales) {
    para que `colocarGarzas` —que ya sabe recorrer TODA la bandada y
    encontrarle sitio a cada una— la coloque, en vez de duplicar esa
    lógica aquí. Mismo patrón que ya usa este repo para el foro. */
+/* UNA FILA SOLO SE PINTA SI TIENE DÓNDE POSARSE.
+
+   `PERCHAS` son ocho columnas medidas sobre la lámina del manglar, y
+   la base reparte índices dentro de ese mismo rango (ver la nota de
+   las ocho en esquema-bandada.sql). Si los dos números se separan
+   alguna vez —una migración a medias, un despliegue viejo hablándole a
+   una base nueva—, esto es la diferencia entre no ver una garza y que
+   la portada entera se caiga con un TypeError en `PERCHAS[idx][0]`. */
+const perchaPintable = (g) => Number.isInteger(g?.percha)
+  && g.percha >= 0 && g.percha < PERCHAS.length;
+
 function agregarGarzaEnVivo(fila) {
-  if (!contenedor || bandada.some((a) => a.id === fila.id)) return;
+  if (!contenedor || !perchaPintable(fila) || bandada.some((a) => a.id === fila.id)) return;
   const tope = viewportWidth() < 700 ? 6 : BANDADA_MAX;
   if (bandada.filter((a) => !a.ida).length >= tope) return;   // mismo tope que la carga inicial
   bandada.push(garzaDesdeFila(fila, bandada.length, bandada.length + 1));
@@ -2205,20 +2265,67 @@ function quitarGarzaEnVivo(id) {
   ave.ida = true;
 }
 
+/* ── EL DORMIDERO CUANDO NO HAY RED ────────────────────────────────
+   Sin Supabase configurado —o con la red caída— el árbol NO se queda
+   vacío, y esto no es una concesión: el manglar tiene garzas porque es
+   un manglar, no porque haya alguien más mirando la página. Son
+   paisaje, exactamente lo que fueron desde el primer día, y el
+   proyecto lleva tres pasadas de trabajo en que dejen de leerse como
+   PNG pegados. Vaciarlo por falta de una variable de entorno sería
+   apagar la pintura, no apagar un servicio.
+
+   La regla 3 —«no fabricar personas»— sigue intacta: estas garzas no
+   dicen ser nadie. Las que SÍ significan «hay alguien más» son otras
+   dos cosas, y las dos son ciertas o no aparecen: las filas reales de
+   `garzas_publico` cuando hay red, y las manos de `presencia.js`, que
+   son pestañas que existen de verdad.
+
+   Se emiten con la MISMA FORMA que una fila de la base y entran por el
+   mismo camino (`poblarBandada` → `garzaDesdeFila`), para que no haya
+   dos maneras de nacer que puedan divergir. */
+const POSES_PAISAJE = ['reposo', 'reposo', 'alerta', 'encogida', 'una-pata', 'mira-abajo'];
+function filasDePaisaje() {
+  const chica = viewportWidth() < 700;
+  /* NUNCA llena el árbol: dos perchas quedan libres siempre, que es
+     donde se posan las garzas de presencia cuando no hay red — y sin
+     red es justo cuando las hay. */
+  const techo = Math.max(2, PERCHAS.length - 2);
+  const cuantas = Math.min(techo, chica ? 3 + Math.floor(Math.random() * 2)
+                                        : 4 + Math.floor(Math.random() * 3));
+  const orden = PERCHAS.map((_, i) => i);
+  for (let i = orden.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [orden[i], orden[j]] = [orden[j], orden[i]];
+  }
+  return Array.from({ length: cuantas }, (_, n) => ({
+    id: 'paisaje-' + n,
+    percha: orden[n],
+    pose: POSES_PAISAJE[Math.floor(Math.random() * POSES_PAISAJE.length)],
+    escala: 0.86 + Math.random() * 0.24,
+    /* Las láminas están pintadas mirando a la izquierda: -1 es como
+       vinieron, 1 las voltea. Menos de la mitad volteadas, para que el
+       dosel no se lea simétrico. */
+    mira: Math.random() < 0.45 ? -1 : 1,
+  }));
+}
+
 /* El punto de entrada real: pide la propia garza (deja constancia de
    esta visita) y luego la bandada entera —la propia incluida, ya no
    hay que distinguirla— y recién ahí puebla el árbol. Si Supabase no
-   está configurado o la red falla, el árbol se queda vacío: el mar es
-   un enhancement, y esto también — el resto del sitio sigue en pie. */
+   está configurado o la red falla, cae al dormidero de paisaje de
+   arriba: el sitio sigue pintado, solo que sin nadie más dentro. */
 async function poblarBandadaReal() {
   if (!contenedor) return;
   try {
+    if (!bandadaEnRed) throw new Error('Supabase no está configurado');
     await dejarGarza();
     const reales = await garzasVivas();
     poblarBandada(reales);
     dispatchEvent(new Event('resize'));
   } catch (e) {
-    console.warn('No se pudo conectar con la bandada compartida:', e);
+    if (bandadaEnRed) console.warn('No se pudo conectar con la bandada compartida:', e);
+    poblarBandada(filasDePaisaje());
+    dispatchEvent(new Event('resize'));
     return;
   }
   suscribirManglar({
@@ -2507,6 +2614,27 @@ const PERCHAS = [
    están en la lista: ahí se posa la garza que llega (`POSADERO`), y dos
    aves en el mismo sitio se solapan. El acontecimiento de la portada
    tiene preferencia sobre la bandada. */
+
+/* CUÁNTAS CABEN, Y POR QUÉ NO ES UN DIEZ REDONDO.
+
+   Se deriva de las perchas medidas, y son dos números según de qué
+   esté hecha la bandada.
+
+   SIN RED la bandada es paisaje y DEJA DOS PERCHAS LIBRES: en esas se
+   posan las garzas de presencia —ver `colocarPresentes`—, y con ocho
+   perchas una bandada de ocho dejaba a la primera persona que llegara
+   sin rama, o sea invisible. El paisaje cede sitio a la gente.
+
+   CON RED no hay nada que reservar: las garzas de presencia no se
+   ponen (serían la misma persona dos veces) y la bandada YA es la
+   gente. Reservar dos ramas ahí sería dejar fuera a dos sesiones que
+   existen de verdad, que es el error contrario y peor. La base
+   reparte exactamente estas ocho — ver esquema-bandada.sql.
+
+   Va DEBAJO de `PERCHAS` a propósito: un `const` existe a partir de su
+   línea, no desde el principio del ámbito, y este archivo ya pagó ese
+   fallo una vez (ver la nota de `despegue`). */
+const BANDADA_MAX = bandadaEnRed ? PERCHAS.length : Math.max(2, PERCHAS.length - 2);
 
 poblarBandadaReal();
 

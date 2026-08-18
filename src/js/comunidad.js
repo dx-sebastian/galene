@@ -494,10 +494,20 @@ async function arrancar() {
 
   await cargarPagina(true);
 
-  if (import.meta.env.DEV) {
-    window.__com = {
-      estado: () => ({ orden: estado.orden, etiqueta: estado.etiqueta, hilos: lista.children.length, hayMas }),
-      recargar: () => cargarPagina(true),
-    };
-  }
+  /* Asidero de medición, y NO va detrás de `import.meta.env.DEV` — la
+     misma regla que `window.__garzas` en main.js: las pruebas de
+     extremo a extremo corren contra el sitio COMPILADO, así que un
+     asidero que solo existe en desarrollo es un asidero que no se
+     puede usar para medir lo que se publica. Es de LECTURA de cosas
+     que ya están en pantalla —qué orden hay puesto, cuántos hilos se
+     pintaron— y `recargar()` no hace nada que no haga el botón de
+     «Traer más».
+
+     Y que EXISTA significa algo por sí solo: se define en la última
+     línea de `arrancar()`, o sea que si está, el módulo llegó entero
+     hasta el final. Lo comprueba foro.spec.js. */
+  window.__com = {
+    estado: () => ({ orden: estado.orden, etiqueta: estado.etiqueta, hilos: lista.children.length, hayMas }),
+    recargar: () => cargarPagina(true),
+  };
 }
