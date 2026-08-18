@@ -1,42 +1,50 @@
 /* ═══════════════════════════════════════════════════════════════════
    purgar.js — LA RETENCIÓN, A MANO.
 
-   El servidor la corre solo al arrancar y una vez al día. Esto es para
-   correrla cuando se quiera y VER lo que se llevó, que es la única
-   manera de comprobar que la promesa de retención es verdad y no una
-   frase en un README.
+   El foro vive en Postgres y el resto en el SQLite local, así que esto
+   corre la purga de los dos sitios. Nadie más la corre sola: sin
+   `servidor/` sirviendo el foro, no hay proceso que la dispare al
+   arrancar ni una vez al día — este comando es, por ahora, la única
+   forma de que la retención sea de verdad y no una frase en un README.
 
        npm run purgar
    ═══════════════════════════════════════════════════════════════════ */
 
 import { config } from '../src/config.js';
 import { abrirBase, crearAcceso } from '../src/base/base.js';
-import { purgar } from '../src/base/purga.js';
+import { abrirBaseForo, crearAccesoForo } from '../src/base/basePostgres.js';
+import { purgarLocal, purgarForo } from '../src/base/purga.js';
 
 const db = abrirBase(config.base);
 const acceso = crearAcceso(db);
+const poolForo = await abrirBaseForo();
+const accesoForo = crearAccesoForo(poolForo);
 
 const antes = {
-  hilos: acceso.uno('SELECT COUNT(*) AS n FROM hilos').n,
-  comentarios: acceso.uno('SELECT COUNT(*) AS n FROM comentarios').n,
   garzas: acceso.uno('SELECT COUNT(*) AS n FROM garzas').n,
   gestos: acceso.uno('SELECT COUNT(*) AS n FROM gestos').n,
+  hilos: (await accesoForo.uno('SELECT COUNT(*) AS n FROM hilos')).n,
+  comentarios: (await accesoForo.uno('SELECT COUNT(*) AS n FROM comentarios')).n,
 };
 
-const fuera = purgar(acceso);
+const fueraLocal = purgarLocal(acceso);
+const fueraForo = await purgarForo(accesoForo, config.foro.diasRetencion);
 
-/* VACUUM devuelve al sistema el espacio de lo borrado. Sin él, el
-   fichero conserva su tamaño y los datos borrados siguen ahí dentro,
-   en páginas libres, hasta que algo los pise. En una base con lo que
-   hay en esta, eso no es un detalle de disco: es la diferencia entre
-   borrado y «marcado como borrado». */
+/* VACUUM solo aplica al SQLite local: Postgres recupera el espacio de
+   lo borrado él solo, en segundo plano (autovacuum). */
 db.exec('VACUUM');
 
-console.log('\n  Purga:');
-for (const [k, v] of Object.entries(fuera)) console.log(`   · ${k}: ${v} fuera`);
+console.log('\n  Purga · local (SQLite):');
+for (const [k, v] of Object.entries(fueraLocal)) console.log(`   · ${k}: ${v} fuera`);
+console.log('\n  Purga · foro (Supabase):');
+for (const [k, v] of Object.entries(fueraForo)) console.log(`   · ${k}: ${v} fuera`);
+
 console.log('\n  Queda:');
-for (const [k, v] of Object.entries(antes)) {
-  console.log(`   · ${k}: ${v} → ${acceso.uno(`SELECT COUNT(*) AS n FROM ${k}`).n}`);
-}
+console.log(`   · garzas: ${antes.garzas} → ${acceso.uno('SELECT COUNT(*) AS n FROM garzas').n}`);
+console.log(`   · gestos: ${antes.gestos} → ${acceso.uno('SELECT COUNT(*) AS n FROM gestos').n}`);
+console.log(`   · hilos: ${antes.hilos} → ${(await accesoForo.uno('SELECT COUNT(*) AS n FROM hilos')).n}`);
+console.log(`   · comentarios: ${antes.comentarios} → ${(await accesoForo.uno('SELECT COUNT(*) AS n FROM comentarios')).n}`);
+
 console.log(`\n  Retención configurada: ${config.foro.diasRetencion} días.\n`);
 db.close();
+await poolForo.end();

@@ -7,53 +7,38 @@
    respuestas anidadas, y ordenar por nuevos o por votados. Nada de
    reacciones y nada de compartir.
 
-   Lo que se queda del sitio, y por qué:
+   ── DESDE EL 17 AGO 2026, ESTO SE PINTA EN EL CLIENTE ─────────────
+   El foro vive en Supabase, no en datos quemados en el build. Astro ya
+   no tiene los hilos al compilar — solo la cáscara: cabecera, mando,
+   panel de escribir y una plantilla vacía que `js/comunidad.js` llena
+   al cargar, hablándole a `js/supabase-cliente.js`.
 
-     1 · EL PIE DE UNA TARJETA TIENE DOS COSAS: votos y respuestas. Sin
-         compartir —de una página sobre sumisión química no se reenvía a
-         nadie— y sin guardar ni premios, que es lo que convierte un foro
-         en un marcador de puntos.
+   Eso obliga a tres cosas que antes no hacían falta:
+     1. Un `<noscript>` que diga la verdad: la comunidad necesita
+        JavaScript, la ayuda no. Los tres enlaces de siempre en HTML.
+     2. Un estado de carga que sea la misma hoja mojada de
+        `.hilos--mojada`, no un esqueleto gris.
+     3. Un estado de error honesto, sin dramatismo y sin rojo —el rojo
+        de este sitio es del daño, no de una petición que falló.
 
-     2 · SE PUEDE ORDENAR POR QUIÉN ESTÁ SOLA. «Sin responder» saca
-         arriba los hilos que nadie ha contestado, y es el único orden
-         con una razón moral detrás: los otros dos amplifican lo que ya
-         tiene compañía. Por eso es el que lleva su explicación en
-         pantalla y su propio color.
-
-     3 · DOS NIVELES DE RESPUESTA Y SE ACABA. Ver Comentario.astro.
-
-     4 · NADA QUE ACUMULAR. Sin karma, sin medallas, sin antigüedad, sin
-         rachas. La única insignia dice «abrió el hilo», y es
-         información, no premio.
-
-   Y QUEDA ANOTADO EL REPARO, para quien lea esto dentro de un año: la
-   regla 8 del proyecto dice que nadie es castigado por su contexto, y la
-   flecha de bajar es lo único de esta página que puede hacer eso. Se
-   implementa porque se pidió; lo que sí se cuidó es que su color sea el
-   azul apagado de «quizás» del reloj y no el rojo del sitio, que está
-   reservado al daño.
+   Las tarjetas de hilo y de comentario ya no las pinta un componente de
+   Astro (`Sello`/`Votos`/`Nodo`/`Comentario` solo corren en el build):
+   viven como `<template>` más abajo, y `comunidad.js` las clona y
+   rellena con `textContent` — nunca con `innerHTML`, porque lo que
+   rellenan es texto que escribió alguien. Los cuatro componentes se
+   quedan tal cual para quien los siga usando en el build (por ahora,
+   ninguna otra página).
 
    MATERIAL PRESTADO, CERO LÁMINAS NUEVAS. El fondo son las mismas clases
-   del fondo de las herramientas (`.herramientas__fondo`, papel + dos
-   aguadas pintadas), los sellos son las seis garzas posadas del manglar
-   del hero, la viñeta de las reglas es el filete 5 que ya usan las
-   tarjetas de consejos, y el canto de arriba es el mismo `papel-barbas`.
-   La página no estrena ni un archivo.
+   del fondo de las herramientas, los sellos son las seis garzas posadas
+   del manglar del hero, la viñeta de las reglas es el filete 5 que ya
+   usan las tarjetas de consejos.
 
-   `data-seccion-hoja` es el ancla de los DOS módulos de la hoja, y con
-   eso esta página hereda gratis los dos gestos que ya existen: las
-   aguadas se descuelgan al bajar y derivan con el puntero
-   (js/paralaje.js), y cada hilo llega mojado y se seca antes de entrar
-   en la zona de lectura (js/desplazamiento.js). Este componente no sabe
-   nada de ninguno de los dos: pone el ancla y las clases, y los módulos
-   encuentran su trabajo solos.
+   `data-seccion-hoja` es el ancla de los DOS módulos de la hoja
+   (`js/paralaje.js`, `js/desplazamiento.js`). Este componente no sabe
+   nada de ninguno de los dos: pone el ancla y las clases.
    ═══════════════════════════════════════════════════════════════════ */
-import Comentario from './Comentario.astro';
-import Sello from './Sello.astro';
-import Votos from './Votos.astro';
-import { HILOS, ETIQUETAS, respuestasDe } from '../datos/comunidad.js';
-
-const deEtiqueta = (id) => ETIQUETAS.find((e) => e.id === id) || ETIQUETAS[0];
+import { ETIQUETAS } from '../datos/etiquetas.js';
 
 /* Las rutas NUNCA se escriben a mano: el sitio se publica bajo /galene
    y en local bajo /. Un `href="/#reloj"` funciona en el portátil y se
@@ -63,12 +48,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 <section class="comunidad" id="comunidad" data-seccion-hoja>
 
-  {/* EL FONDO. Las mismas cuatro capas de la sección de herramientas y
-      con los mismos nombres de clase, así que hereda entero su
-      tratamiento: papel en multiply de día y screen de noche, aguadas
-      pintadas con la máscara elíptica que les come el canto, y el rojo
-      solo en el flanco derecho, fuera del ancho de lectura. Decorativo
-      entero: aria-hidden y sin un dato dentro. */}
   <div class="herramientas__fondo" aria-hidden="true">
     <div class="fondo__papel"></div>
     <div class="fondo__capa fondo__capa--alta"    data-hondo="0.94"></div>
@@ -76,12 +55,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     <div class="fondo__capa fondo__capa--cercana" data-hondo="0.66"></div>
   </div>
 
-  {/* ── LA CABECERA ──────────────────────────────────────────────────
-      El H1 lleva la palabra que se busca —«comunidad»— y debajo va lo
-      que de verdad hace falta saber antes de leer el primer hilo: que
-      aquí nadie pregunta qué pasó. Es la regla 4 del proyecto puesta
-      como norma de la casa, y va ARRIBA porque es la que decide si
-      alguien se atreve a escribir. */}
   <header class="comunidad__cabecera">
     <p class="comunidad__sobre">El manglar</p>
     <h1 class="comunidad__titulo">Comunidad</h1>
@@ -102,17 +75,20 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     </ul>
   </header>
 
-  {/* ── EL MANDO ─────────────────────────────────────────────────────
-      Tres órdenes y ningún filtro por defecto. «Sin responder» lleva su
-      propio pie porque es el que no se explica solo, y es el que
-      justifica que esta página no tenga un «lo mejor».
+  {/* Sin JavaScript no hay dónde pintar la lista: se dice, y se deja la
+      ayuda a mano, en HTML, sin depender de nada — la regla 5 no admite
+      excepciones. */}
+  <noscript>
+    <p class="comunidad__aviso-js">La comunidad necesita JavaScript para
+      cargar lo que ha escrito la gente. La ayuda no lo necesita:</p>
+    <p class="comunidad__pie-enlaces">
+      <a href={base + '#sin-hablar'}>Pedir ayuda sin hablar</a>
+      <a href={base + '#mapa'}>Dónde ir en mi ciudad</a>
+      <a href={base + '#recordar'}>Guardar lo que recuerdo</a>
+    </p>
+  </noscript>
 
-      La fila de etiquetas nace OCULTA y la enciende js/comunidad.js. Un
-      chip que no filtra porque el script no llegó es un control muerto,
-      y este proyecto no deja controles muertos en pantalla: sin
-      JavaScript la lista sale entera y en orden de llegada, que es un
-      estado correcto. */}
-  <div class="mando">
+  <div class="mando" id="mando" hidden>
     <div class="mando__orden" role="group" aria-label="Ordenar los hilos">
       <button class="orden" type="button" data-orden="recientes" aria-pressed="true">
         Nuevos
@@ -125,7 +101,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       </button>
     </div>
 
-    <div class="mando__etiquetas" hidden="hidden">
+    <div class="mando__etiquetas">
       <button class="chip chip--todas" type="button" data-etiqueta="" aria-pressed="true">
         Todo
       </button>
@@ -142,174 +118,219 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   </div>
 
   {/* ── ESCRIBIR ─────────────────────────────────────────────────────
-      Y AQUÍ NO SE FINGE. Va como <details>, así que abre y cierra sin
-      JavaScript, y lo que dice al abrirse es la verdad: este sitio no
-      tiene servidor —ni base de datos, ni cuentas, ni analítica— así
-      que no hay dónde guardar un mensaje. El botón de publicar está
-      apagado y explica por qué.
-
-      Se puede escribir en el campo de todas formas. No es un adorno:
-      ordenar lo que uno quiere decir sirve aunque no se envíe, y lo
-      escrito se puede copiar y llevar a donde sí haya alguien
-      escuchando. Lo que no se hace es prometer que llega. */}
-  <details class="escribir" id="escribir">
+      Ya hay dónde publicar. El aviso dice lo que de verdad pasa: se
+      publica de verdad, no hace falta nombre, no se guarda quién eres,
+      se puede borrar con una llave, y hay moderación — sin letra
+      pequeña. Nace `hidden` y lo enciende `comunidad.js`: sin
+      JavaScript no hay a quién mandarle el POST. */}
+  <details class="escribir" id="escribir" hidden>
     <summary class="escribir__senuelo">
-      <Sello autora={{ nombre: 'quien llega', pose: 'mira-abajo', mirar: 1 }} />
+      <span class="sello">
+        <img class="sello__ave" src={`${base}arte/1024/posada/mira-abajo.webp`}
+             alt="" aria-hidden="true" width="120" height="168" loading="lazy" decoding="async" />
+      </span>
       <span class="escribir__frase">Escribir en la comunidad…</span>
     </summary>
 
-    <div class="escribir__panel">
-      <p class="escribir__aviso"><strong>Esto es una maqueta.</strong> Galene
-        no tiene servidor, ni cuentas, ni base de datos, y eso es una
-        decisión: lo que se escribe sobre salud o vida sexual es dato
-        sensible, y este proyecto eligió no guardarlo. Mientras no exista
-        un sitio donde recibirlo con ese cuidado, aquí no se publica nada.</p>
+    <form class="escribir__panel" id="form-escribir" novalidate>
+      <p class="escribir__aviso">Se publica de verdad. No hace falta
+        nombre y no se guarda quién eres — lo único que ata dos mensajes
+        a la misma persona es un identificador que vive en esta pestaña y
+        se va al cerrarla. Lo que escribas se puede borrar después con
+        una llave que se enseña una sola vez, al publicar. Los mensajes
+        pasan por una revisión ligera antes de mostrarse a los demás; tú
+        siempre puedes ver los tuyos.</p>
+
+      <label class="escribir__campo">
+        <span class="visualmente-oculto">Título</span>
+        <input type="text" name="titulo" class="escribir__entrada"
+               placeholder="Un título (8 a 140 caracteres)" maxlength="140" required />
+      </label>
+
+      <label class="escribir__campo">
+        <span class="visualmente-oculto">Etiqueta</span>
+        <select name="etiqueta" class="escribir__entrada" required>
+          {ETIQUETAS.map((e) => <option value={e.id}>{e.nombre}</option>)}
+        </select>
+      </label>
 
       <label class="escribir__campo">
         <span class="visualmente-oculto">Lo que quieres decir</span>
-        <textarea rows="4" placeholder="Se queda en tu pantalla."></textarea>
+        <textarea name="cuerpo" rows="4" placeholder="Lo que quieras contar." required></textarea>
       </label>
+      <p class="escribir__contador" data-contador aria-live="polite"></p>
 
       <div class="escribir__fila">
         <label class="interruptor">
-          <input type="checkbox" checked />
+          <input type="checkbox" name="anonima" checked />
           <span>Publicar sin nombre</span>
         </label>
-        <button class="boton" type="button" disabled
-                title="No hay servidor: todavía no hay dónde publicarlo.">
-          Publicar
-        </button>
+        <input type="text" name="nombre" class="escribir__entrada escribir__nombre"
+               placeholder="Un nombre de agua (opcional)" maxlength="24" disabled />
       </div>
-    </div>
+
+      <p class="escribir__estado" data-estado role="status" aria-live="polite" hidden></p>
+
+      {/* La llave de borrado se enseña UNA VEZ, aquí, y no se vuelve a
+          poder leer — igual que la llave que hoy da GitHub o Stripe al
+          crear un token. */}
+      <div class="escribir__llave" data-llave hidden>
+        <p><strong>Guarda esto si quieres poder borrarlo más adelante.</strong>
+          No se vuelve a mostrar y no la tenemos.</p>
+        <code data-llave-texto></code>
+        <button type="button" class="boton boton--fantasma" data-llave-copiar>Copiar</button>
+      </div>
+
+      <div class="escribir__fila">
+        <button class="boton" type="submit">Publicar</button>
+      </div>
+    </form>
   </details>
 
   {/* ── LOS HILOS ────────────────────────────────────────────────────
-      Las cuentas viajan en data-* para que el orden y el filtro sean
-      aritmética sobre el DOM y no otra copia de los datos en el
-      cliente. `data-indice` guarda el orden de llegada: es a lo que
-      vuelve «Recientes» sin tener que interpretar las cadenas de
-      tiempo, que están escritas para leerse y no para calcular. */}
-  <ol class="hilos" id="hilos">
-    {HILOS.map((h, i) => {
-      const et = deEtiqueta(h.etiqueta);
-      const n = respuestasDe(h);
-      return (
-        <li class="hilos__item"
-            data-indice={i}
-            data-etiqueta={h.etiqueta}
-            data-minutos={h.minutos}
-            data-votos={h.votos}
-            data-respuestas={n}>
-          {/* EL PIGMENTO SE DECLARA UNA VEZ, EN LA TARJETA, y desciende
-              por herencia al canto pintado del borde izquierdo y a la
-              etiqueta. Puesto solo en la etiqueta —donde estaba— el
-              canto tenía que repetir el color, y dos declaraciones del
-              mismo color son dos colores el día que alguien toque una. */}
-          <article class="hilo" id={`hilo-${h.id}`} style={`--pigmento: ${et.pigmento}`}>
+      Vacío al compilar, a propósito: `comunidad.js` lo llena. El estado
+      de carga usa la misma hoja mojada que ya tiñe la lista al
+      reordenar — no un esqueleto gris parpadeando, que es el vocabulario
+      de otro tipo de sitio. */}
+  <p class="hilos__carga" data-carga hidden>Cargando lo que se ha escrito…</p>
+  <p class="hilos__error" data-error hidden>
+    No se pudo llegar a la comunidad ahora mismo.
+    <button type="button" class="boton boton--fantasma" data-reintentar>Reintentar</button>
+  </p>
+  <p class="hilos__nuevos" data-hilos-nuevos type="button" role="button" tabindex="0" hidden></p>
 
-            {/* EL SELLO VA EN SU PROPIA COLUMNA, fuera de la cabecera:
-                así el nombre, el título, el cuerpo, los botones y la
-                hebra comparten una sola sangría, y el canal de la
-                izquierda queda libre para que la raíz de las respuestas
-                baje por debajo de la garza. Dentro de la cabecera, la
-                garza solo medía lo que mide la fila del nombre y el
-                título volvía a empezar pegado al borde. */}
-            <Sello autora={h.autora} grande={true} />
+  <ol class="hilos" id="hilos"></ol>
+  <p class="hilos__vacio" data-vacio hidden></p>
 
-            <div class="hilo__col">
-              <header class="hilo__cabeza">
-                <span class:list={['hilo__autora', h.autora.anonima && 'hilo__autora--anonima']}>
-                  {h.autora.nombre}
-                </span>
-                <span class="hilo__cuando">{h.cuando}</span>
-                <span class="etiqueta">{et.nombre}</span>
-              </header>
+  <div class="hilos__paginacion" data-paginacion hidden>
+    <button type="button" class="boton boton--fantasma" data-cargar-mas>Traer más</button>
+    <p data-fin hidden>No hay más por ahora.</p>
+  </div>
+  <div data-centinela aria-hidden="true"></div>
 
-              <h2 class="hilo__titulo">{h.titulo}</h2>
+  {/* ── LAS PLANTILLAS ───────────────────────────────────────────────
+      Marcado fijo, sin datos dentro: lo escribe esta misma página, no
+      quien publica. `comunidad.js` clona esto y solo cambia texto y
+      atributos con las APIs seguras del DOM. */}
+  <template data-plantilla-hilo>
+    <li class="hilos__item">
+      <article class="hilo">
+        <span class="sello">
+          <img class="sello__ave" alt="" aria-hidden="true" width="120" height="168"
+               loading="lazy" decoding="async" />
+        </span>
+        <div class="hilo__col">
+          <header class="hilo__cabeza">
+            <span class="hilo__autora" data-autora></span>
+            <span class="hilo__cuando" data-cuando></span>
+            <span class="etiqueta" data-etiqueta-nombre></span>
+          </header>
 
-              <div class="hilo__cuerpo">
-                {h.cuerpo.map((p) => <p>{p}</p>)}
-              </div>
+          <h2 class="hilo__titulo" data-titulo></h2>
+          <div class="hilo__cuerpo" data-cuerpo></div>
 
-              {/* LA FILA DE ABAJO, LA DE REDDIT: votos y respuestas.
-                  Nada más. No hay compartir, ni guardar, ni premios, ni
-                  reacciones — y que no haya un botón de compartir en un
-                  sitio sobre sumisión química es además la única postura
-                  posible: de aquí nadie reenvía a nadie a ninguna parte.
-
-                  ── POR QUÉ ESTO NO ES UN <details> ──────────────────
-                  Lo fue, y se cambió por una razón de maqueta que no
-                  tiene vuelta: el contenido de un <details> vive DENTRO
-                  de la caja de su <summary>, así que el contador de
-                  respuestas no puede estar en la misma fila que las
-                  flechas sin que la lista entera de comentarios se meta
-                  en esa fila también. En Reddit las dos cosas van juntas
-                  abajo y los comentarios se despliegan a lo ancho de la
-                  tarjeta, y eso pedía separar el botón de su panel.
-
-                  Lo que se pierde con el cambio es el plegado sin
-                  JavaScript, y se recupera al revés: la hebra nace
-                  ABIERTA (`aria-expanded="true"`, sin `hidden`), y es
-                  js/comunidad.js quien la pliega al cargar. Sin script,
-                  la página sale con todos los comentarios a la vista —
-                  larga, pero entera y legible. Nunca hay un botón que no
-                  hace nada, que es la única cosa que este proyecto no se
-                  permite. */}
-              <div class="hilo__pie">
-                <Votos votos={h.votos} />
-
-                {n > 0 ? (
-                  <button class="hebra__abrir" type="button"
-                          aria-expanded="true" aria-controls={`hebra-${h.id}`}>
-                    <svg class="hebra__globo" viewBox="0 0 16 14" aria-hidden="true" focusable="false">
-                      {/* Un globo de diálogo dibujado a mano: la línea no
-                          cierra del todo por abajo, como no cierra un
-                          trazo de pincel al levantarlo. */}
-                      <path d="M2.2 3.4 C 2.2 2.2, 3.2 1.5, 4.6 1.5 L11.4 1.5
-                               C 12.8 1.5, 13.8 2.3, 13.8 3.5 L13.8 7.8
-                               C 13.8 9, 12.8 9.8, 11.4 9.8 L6.4 9.8
-                               L3.4 12.4 L3.7 9.7 C 2.7 9.4, 2.2 8.7, 2.2 7.7 Z"
-                            fill="none" stroke="currentColor" stroke-width="1.4"
-                            stroke-linecap="round" stroke-linejoin="round"
-                            vector-effect="non-scaling-stroke" />
-                    </svg>
-                    <span class="hebra__cuenta">{n}</span>
-                    <span>{n === 1 ? 'respuesta' : 'respuestas'}</span>
-                  </button>
-                ) : (
-                  /* SIN RESPUESTA, Y SE DICE EN VOZ BAJA. Ni aviso rojo
-                     ni icono de alerta: no es un error del sitio, es
-                     alguien esperando. El único énfasis es que la frase
-                     existe y que al lado hay una puerta para contestar. */
-                  <p class="hilo__sola">
-                    Nadie ha respondido todavía.
-                    <a class="hebra__responder" href="#escribir">Contestar</a>
-                  </p>
-                )}
-              </div>
-
-              {n > 0 && (
-                <div class="hebra" id={`hebra-${h.id}`}>
-                  <ol class="hebra__lista">
-                    {h.comentarios.map((c) => <Comentario c={c} />)}
-                  </ol>
-
-                  <p class="hebra__pie">
-                    <a class="hebra__responder" href="#escribir">Escribir en este hilo</a>
-                  </p>
-                </div>
-              )}
+          <div class="hilo__pie">
+            <div class="votos" data-votos data-base="0" data-voto="0">
+              <button class="voto voto--sube" type="button" data-dir="1"
+                      aria-pressed="false" aria-label="Votar a favor" title="A favor">
+                <svg class="voto__flecha" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+                  <path d="M7 12.2 C 6.8 9, 7.2 5.6, 7 2.8 M2.9 7.2 C 4.3 5.6, 5.7 4.1, 7 2.5
+                           C 8.3 4.1, 9.7 5.6, 11.1 7.2" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        vector-effect="non-scaling-stroke" />
+                </svg>
+              </button>
+              <span class="votos__marcador" data-marcador></span>
+              <button class="voto voto--baja" type="button" data-dir="-1"
+                      aria-pressed="false" aria-label="Votar en contra" title="En contra">
+                <svg class="voto__flecha" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+                  <path d="M7 1.8 C 7.2 5, 6.8 8.4, 7 11.2 M2.9 6.8 C 4.3 8.4, 5.7 9.9, 7 11.5
+                           C 8.3 9.9, 9.7 8.4, 11.1 6.8" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        vector-effect="non-scaling-stroke" />
+                </svg>
+              </button>
             </div>
-          </article>
-        </li>
-      );
-    })}
-  </ol>
 
-  {/* ── EL PIE ───────────────────────────────────────────────────────
-      Lo último de la página no es la comunidad: es la ayuda. Quien haya
-      bajado leyendo diez hilos tiene que salir de aquí con la ruta a
-      mano, no con la sensación de que esto era el destino. */}
+            <button class="hebra__abrir" type="button" aria-expanded="false" hidden>
+              <svg class="hebra__globo" viewBox="0 0 16 14" aria-hidden="true" focusable="false">
+                <path d="M2.2 3.4 C 2.2 2.2, 3.2 1.5, 4.6 1.5 L11.4 1.5
+                         C 12.8 1.5, 13.8 2.3, 13.8 3.5 L13.8 7.8
+                         C 13.8 9, 12.8 9.8, 11.4 9.8 L6.4 9.8
+                         L3.4 12.4 L3.7 9.7 C 2.7 9.4, 2.2 8.7, 2.2 7.7 Z"
+                      fill="none" stroke="currentColor" stroke-width="1.4"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      vector-effect="non-scaling-stroke" />
+              </svg>
+              <span class="hebra__cuenta" data-cuenta></span>
+              <span data-palabra></span>
+            </button>
+            <p class="hilo__sola" data-sola hidden>Nadie ha respondido todavía.
+              <a class="hebra__responder" href="#escribir">Contestar</a>
+            </p>
+
+            <button class="hilo__accion" type="button" data-reportar>Reportar</button>
+            <button class="hilo__accion" type="button" data-borrar hidden>Borrar</button>
+          </div>
+
+          <p class="hilo__revision" data-revision hidden>Se está revisando
+            antes de publicarse. Lo puedes ver tú.</p>
+
+          <div class="hebra" data-hebra hidden>
+            <ol class="hebra__lista" data-hebra-lista></ol>
+            <button class="hilo__accion" type="button" data-cargar-comentarios hidden>Ver más respuestas</button>
+            <p class="hebra__pie"><a class="hebra__responder" href="#escribir">Escribir en este hilo</a></p>
+          </div>
+        </div>
+      </article>
+    </li>
+  </template>
+
+  <template data-plantilla-comentario>
+    <li class="nodo">
+      <article class="nodo__caja">
+        <span class="sello">
+          <img class="sello__ave" alt="" aria-hidden="true" width="120" height="168"
+               loading="lazy" decoding="async" />
+        </span>
+        <div class="nodo__col">
+          <header class="nodo__cabeza">
+            <span class="nodo__autora" data-autora></span>
+            <span class="nodo__insignia" data-insignia hidden>abrió el hilo</span>
+            <span class="nodo__cuando" data-cuando></span>
+          </header>
+          <p class="nodo__texto" data-texto></p>
+          <div class="nodo__pie">
+            <div class="votos votos--compactos" data-votos data-base="0" data-voto="0">
+              <button class="voto voto--sube" type="button" data-dir="1"
+                      aria-pressed="false" aria-label="Votar a favor" title="A favor">
+                <svg class="voto__flecha" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+                  <path d="M7 12.2 C 6.8 9, 7.2 5.6, 7 2.8 M2.9 7.2 C 4.3 5.6, 5.7 4.1, 7 2.5
+                           C 8.3 4.1, 9.7 5.6, 11.1 7.2" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        vector-effect="non-scaling-stroke" />
+                </svg>
+              </button>
+              <span class="votos__marcador" data-marcador></span>
+              <button class="voto voto--baja" type="button" data-dir="-1"
+                      aria-pressed="false" aria-label="Votar en contra" title="En contra">
+                <svg class="voto__flecha" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+                  <path d="M7 1.8 C 7.2 5, 6.8 8.4, 7 11.2 M2.9 6.8 C 4.3 8.4, 5.7 9.9, 7 11.5
+                           C 8.3 9.9, 9.7 8.4, 11.1 6.8" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        vector-effect="non-scaling-stroke" />
+                </svg>
+              </button>
+            </div>
+            <a class="nodo__responder" href="#escribir" data-responder>Responder</a>
+            <button class="hilo__accion" type="button" data-reportar>Reportar</button>
+            <button class="hilo__accion" type="button" data-borrar hidden>Borrar</button>
+          </div>
+        </div>
+      </article>
+    </li>
+  </template>
+
   <footer class="comunidad__pie">
     <p class="comunidad__pie-frase">Si estás en medio de algo ahora mismo,
       la ayuda no está aquí: está en la portada.</p>

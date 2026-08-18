@@ -15,6 +15,7 @@
     "prueba": "node --disable-warning=ExperimentalWarning pruebas/prueba.mjs"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "pg": "^8.13.0"
   }
 }

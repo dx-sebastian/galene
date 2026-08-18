@@ -3,6 +3,12 @@ node_modules/
 Thumbs.db
 *.log
 
+# La URL y la llave anon de Supabase no son secretas de verdad —la
+# seguridad la ponen las políticas RLS, no que esto quede oculto—, pero
+# no hay motivo para que el valor de un proyecto concreto viaje en el
+# repo. Ver .env.example para lo que hace falta poner.
+.env
+
 # Láminas fuente en PNG/JPG. El sitio sirve los WebP; los originales
 # pesan 83 MB y no tienen por qué viajar en el repo.
 #
