@@ -250,6 +250,54 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION pintar_pico(TEXT, TEXT) TO anon, authenticated;
 
+-- ── LA GARZA QUE SE VA ─────────────────────────────────────────────
+-- ESTO FALTABA, Y NO ERA UN DETALLE.
+--
+-- Hasta aquí, lo ÚNICO que ponía `viva = 0` era el desalojo de la más
+-- antigua dentro de `dejar_garza()`. Nada marcaba una garza como ida
+-- cuando su pestaña se cerraba. O sea que `garzas_publico` no decía
+-- «quién está ahora mismo» sino «las últimas N sesiones que hubo
+-- alguna vez», y el árbol salía lleno de gente que ya no estaba.
+--
+-- MEDIDO el 18 ago 2026 contra la base en vivo: once sesiones seguidas
+-- dejaron once garzas y el árbol se quedó con diez, todas de sesiones
+-- muertas, sin que ninguna se fuera sola.
+--
+-- Eso choca de frente con la regla 3 del proyecto —no fabricar
+-- personas—: una garza que representa a alguien que cerró hace horas
+-- es exactamente una persona inventada. El servidor viejo de Node lo
+-- resolvía con un WebSocket que se cerraba solo; sin servidor propio
+-- hay que decirlo a mano, y esta es la función que lo dice.
+--
+-- La llama `main.js` en `pagehide` —no en `unload`, que en iOS no
+-- dispara— con `keepalive`, que es lo que hace que la petición salga
+-- aunque la pestaña ya se esté cerrando.
+--
+-- NO recibe el id: borra la de QUIEN LLAMA, y punto. Pasar un id
+-- convertiría esto en «quitar la garza de cualquiera», que es un botón
+-- que nadie ha pedido y que no debería existir.
+CREATE OR REPLACE FUNCTION volar_garza()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_sesion UUID := auth.uid();
+  g garzas%ROWTYPE;
+BEGIN
+  IF v_sesion IS NULL THEN RETURN FALSE; END IF;
+  SELECT * INTO g FROM garzas WHERE sesion = v_sesion AND viva = 1;
+  IF NOT FOUND THEN RETURN FALSE; END IF;
+
+  UPDATE garzas SET viva = 0, partida = (extract(epoch FROM clock_timestamp()) * 1000)::bigint
+    WHERE garzas.id = g.id;
+  PERFORM realtime.send(jsonb_build_object('id', g.id), 'garza-vuela', 'manglar', true);
+  RETURN TRUE;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION volar_garza() TO anon, authenticated;
+
 -- ── EL GESTO SOBRE EL MAR ──────────────────────────────────────────
 -- Acredita segundos sostenidos, con el mismo tope de 240 s por sesión
 -- que `config.mar.topeSesion`. SECURITY DEFINER porque toca
@@ -303,9 +351,33 @@ $$;
 GRANT EXECUTE ON FUNCTION calma_actual() TO anon, authenticated;
 
 -- ── LO QUE SE LEE ──────────────────────────────────────────────────
+-- Y LAS QUE NO LLEGARON A DESPEDIRSE. `volar_garza()` en `pagehide`
+-- cubre el caso normal, pero no todos: un teléfono que se queda sin
+-- batería, una pestaña que el sistema mata en segundo plano, una
+-- petición que no sale a tiempo. Sin un segundo freno, esas garzas se
+-- quedan en el árbol para siempre y el manglar vuelve a llenarse de
+-- gente que no está.
+--
+-- El freno es la EDAD, y va AQUÍ, en la vista, para que no haya forma
+-- de saltárselo desde el cliente. Dos horas: lo bastante largo para
+-- que nadie desaparezca mientras lee —una visita de verdad no dura
+-- eso— y lo bastante corto para que el árbol no acumule fantasmas de
+-- ayer.
+--
+-- No es un latido, y es a propósito: un latido sería escribir en la
+-- base cada pocos segundos por cada persona que mira un sitio sobre
+-- sumisión química, o sea justo el registro que la regla 9 prohíbe
+-- construir. Se prefiere una ventana generosa a un rastro fino.
+--
+-- El `viva = 1` también se dice aquí y no solo en la política: una
+-- vista sin filtro que se apoya en RLS funciona hasta el día que
+-- alguien toque la política. Dos cerrojos para una puerta que da al
+-- «quién está aquí».
 CREATE OR REPLACE VIEW garzas_publico WITH (security_invoker = true) AS
 SELECT id, percha, pose, mira, escala, pico, llegada, tocada
-FROM garzas;
+FROM garzas
+WHERE viva = 1
+  AND llegada > (extract(epoch FROM clock_timestamp()) * 1000)::bigint - 7200000;
 
 -- ── ROW LEVEL SECURITY ────────────────────────────────────────────
 ALTER TABLE garzas     ENABLE ROW LEVEL SECURITY;

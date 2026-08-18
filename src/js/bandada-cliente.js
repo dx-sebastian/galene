@@ -21,7 +21,7 @@
    enhancements, y esta es la página que alguien abre a las cuatro de
    la mañana con datos móviles. Ver la cabecera de `supabase-config.js`
    para la medida. */
-import { listo } from './supabase-config.js';
+import { listo, URL_SUPABASE, LLAVE_ANON } from './supabase-config.js';
 
 export { listo };
 
@@ -59,6 +59,55 @@ export async function dejarGarza() {
   const { data, error } = await supabase.rpc('dejar_garza');
   if (error) throw error;
   return data?.[0] || null;
+}
+
+/* ── DESPEDIRSE AL CERRAR ──────────────────────────────────────────
+   Sin esto, una garza se queda en el árbol para siempre: lo único que
+   la sacaba era el desalojo de la más antigua, o sea que el manglar
+   enseñaba las últimas diez sesiones que hubo alguna vez y no quién
+   está. MEDIDO contra la base en vivo: once sesiones seguidas dejaron
+   once garzas y ninguna se fue sola. La regla 3 dice que no se fabrica
+   a nadie, y una garza de alguien que cerró hace horas es exactamente
+   eso.
+
+   Va en `pagehide` y NO en `unload`: `unload` no dispara en iOS y
+   además rompe la caché de atrás-adelante. Y va por `fetch` a pelo con
+   `keepalive` en vez de por el SDK, porque en una pestaña que se está
+   cerrando el navegador cancela cualquier petición que no lo lleve.
+   `keepalive` es la promesa de que sale igual.
+
+   Si no sale —sin batería, proceso matado por el sistema—, el respaldo
+   es la ventana de dos horas de `garzas_publico`. Ver la nota en
+   esquema-bandada.sql. */
+export async function despedirse() {
+  if (!listo || !cliente) return false;      // ni configurado ni conectado: nada que retirar
+  try {
+    const m = await import('./supabase-cliente.js');
+    const { data: { session } } = await m.supabase.auth.getSession();
+    if (!session) return false;
+    return navigator.sendBeacon
+      ? enviarConBeacon(session.access_token)
+      : enviarConFetch(session.access_token);
+  } catch { return false; }
+}
+
+/* `sendBeacon` es lo que de verdad sobrevive al cierre, pero no deja
+   poner cabeceras: la `apikey` y el token tienen que viajar en la
+   consulta. PostgREST los acepta ahí — es el mismo mecanismo que usan
+   los enlaces firmados de Storage. */
+function enviarConBeacon(token) {
+  const url = `${URL_SUPABASE}/rest/v1/rpc/volar_garza?apikey=${encodeURIComponent(LLAVE_ANON)}`;
+  return navigator.sendBeacon(url, new Blob([JSON.stringify({})],
+    { type: 'application/json' })) || enviarConFetch(token);
+}
+
+function enviarConFetch(token) {
+  fetch(`${URL_SUPABASE}/rest/v1/rpc/volar_garza`, {
+    method: 'POST', keepalive: true,
+    headers: { apikey: LLAVE_ANON, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: '{}',
+  }).catch(() => { /* se cerró antes: queda la ventana de dos horas */ });
+  return true;
 }
 
 export async function garzasVivas() {

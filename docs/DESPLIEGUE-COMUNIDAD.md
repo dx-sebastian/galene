@@ -72,10 +72,22 @@ este orden:
 Los dos son idempotentes (`CREATE TABLE IF NOT EXISTS`, `CREATE OR
 REPLACE FUNCTION`), así que se pueden volver a pasar sin romper nada.
 
-> **Si ya los habías corrido antes del 18 ago 2026**, vuelve a pasar
-> `esquema-bandada.sql`: `dejar_garza()` repartía perchas del 0 al 10 y
-> el manglar solo tiene ocho ramas medidas. Una garza en la percha 8, 9
-> o 10 no se pinta, y quien la dejó no se veía a sí misma.
+> ### ⚠ Si ya los habías corrido antes del 18 ago 2026
+>
+> **Hay que volver a pasar `esquema-bandada.sql`.** Comprobado contra
+> tu base el 18 ago 2026 con `npm run base`: le faltan dos cosas.
+>
+> 1. **Las perchas.** `dejar_garza()` reparte del 0 al 10 y el manglar
+>    tiene **ocho** ramas medidas sobre la lámina. Una garza en la 8, 9
+>    o 10 no se pinta, y quien la dejó no se ve a sí misma — tres de
+>    cada diez visitantes.
+> 2. **Nadie se va nunca.** No existe `volar_garza()`, así que lo único
+>    que saca una garza del árbol es el desalojo de la más antigua: el
+>    manglar enseña las últimas diez sesiones que hubo, no quién está.
+>    Once sesiones seguidas dejaron once garzas y ninguna se fue sola.
+>    Eso es fabricar personas, que es la regla 3.
+>
+> Después de pasarlo, `npm run base` tiene que salir todo verde.
 
 ## 3 · Auth anónima
 

@@ -234,25 +234,104 @@
   gap: var(--e-4);
   max-width: 56rem;
 }
+/* ── LOS DOS BOTONES DE LA AYUDA ─────────────────────────────────
+   Aquí no hay sombras y no las va a haber: la acuarela no proyecta
+   sombras de caja —lo que separa una pieza del papel es estar pintada
+   encima, no flotar sobre él— y `controles.spec.js` cuenta las
+   familias de sombra de la página entera. Así que la afordancia de
+   «esto se pulsa» la tiene que dar el RELLENO, no una elevación
+   fingida.
+
+   Y el canto sigue siendo `--canto`, el mismo de todo el instrumento.
+   Un radio propio para estos dos sería una cuarta forma en una página
+   que solo tolera tres, y además sería mentira: el reloj, el teléfono
+   y el botón de salir hablan todos el mismo idioma. */
 .ayuda__canal {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.4rem;
   padding: var(--e-5);
-  border: 1px solid rgb(var(--letra-rgb) / 22%);
+  border: 2px solid var(--letra);
   border-radius: var(--canto);
   background: var(--papel-alto);
   color: var(--letra);
   text-decoration: none;
   line-height: 1.5;
+  cursor: pointer;
+  transition: background-color 160ms var(--paso), color 160ms var(--paso),
+              transform 90ms var(--paso);
 }
-.ayuda__canal:hover { border-color: var(--letra); }
+
+/* EL PRIMERO VA MACIZO. De los dos canales, llamar es el que resuelve
+   más rápido, y en una pantalla con dos salidas iguales la decisión
+   la acaba tomando el orden de lectura. Relleno de tinta y letra de
+   papel: no hay forma de confundirlo con un recuadro de texto. */
+.ayuda__canal--primero {
+  background: var(--letra);
+  color: var(--contra);
+  border-color: var(--letra);
+}
+
+/* HOVER: el segundo se rellena y el primero se aclara un punto. Los
+   dos cambian de MASA, no de borde — un cambio de borde de un píxel
+   es la clase de respuesta que solo nota quien ya sabía que había un
+   botón ahí. */
+.ayuda__canal--segundo:hover { background: var(--letra); color: var(--contra); }
+.ayuda__canal--primero:hover { background: color-mix(in srgb, var(--letra) 86%, var(--papel)); }
+
+/* Y AL PULSAR, SE HUNDE UN PÍXEL. Es el único gesto de profundidad
+   que se puede hacer sin sombra, y es el que confirma el toque en un
+   teléfono, donde no hay hover que valga. */
+.ayuda__canal:active { transform: translateY(1px); }
+
 .ayuda__canal:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
 .ayuda__canal > span:last-child { color: rgb(var(--letra-rgb) / 72%); font-size: var(--t-sm); }
-.ayuda__numero {
-  font-family: var(--tipo-titulo);
-  font-size: var(--t-2xl);
-  line-height: 1;
-  color: var(--acento, #C4703F);
+
+/* ── Y ESTA VA DESPUÉS, QUE NO ES CASUAL ──────────────────────────
+   `.ayuda__canal--primero > span:last-child` y `.ayuda__canal >
+   span:last-child` tienen EXACTAMENTE la misma especificidad (0,2,1),
+   así que no gana la más específica: gana la última escrita. Puesta
+   antes, el párrafo del botón macizo salía en tinta al 72 % SOBRE
+   tinta maciza, o sea invisible — y no se veía en el código, se veía
+   en la captura: el botón oscuro tenía un hueco vacío del tamaño del
+   párrafo que no estaba pintando.
+
+   El texto de dentro se apaga contra SU propio fondo, no contra el
+   papel. */
+.ayuda__canal--primero > span:last-child {
+  color: color-mix(in srgb, var(--contra) 78%, transparent);
+}
+.ayuda__canal--segundo:hover > span:last-child {
+  color: color-mix(in srgb, var(--contra) 78%, transparent);
+}
+
+/* EL VERBO, que antes era un número. «155» no dice qué pasa al
+   tocarlo y una «S» suelta no dice nada; LLAMAR y ESCRIBIR sí. Va en
+   la tipografía del instrumento —plana y exacta, no la del título— y
+   con el interletraje abierto de los rótulos del sitio. */
+.ayuda__accion {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--t-lg);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+}
+.ayuda__sena {
+  flex: none;
+  width: 1.15em; height: 1.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ayuda__canal strong { font-size: var(--t-md); }
+
+/* `prefers-reduced-motion` APAGA, no reduce (regla 7). */
+@media (prefers-reduced-motion: reduce) {
+  .ayuda__canal { transition: none; }
+  .ayuda__canal:active { transform: none; }
 }
 .ayuda__nota {
   max-width: 56ch;
@@ -260,8 +339,12 @@
   font-size: var(--t-sm);
   color: rgb(var(--letra-rgb) / 78%);
 }
-.ayuda__mas { margin: var(--e-3) 0 0; font-size: var(--t-sm); }
-.ayuda__mas a, .ayuda__nota a { color: inherit; }
+/* `.ayuda__mas` se fue con «Más caminos, con calma →». El camino
+   sigue existiendo —«Recursos» en la barra y dos enlaces desde la
+   comunidad llevan a #sin-hablar—; lo que sobraba era ofrecer un
+   tercer sitio a donde ir justo debajo de los dos botones que existen
+   para que no haya que elegir. */
+.ayuda__nota a { color: inherit; }
 
 .comunidad-panel {
   position: relative;

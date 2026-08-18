@@ -108,8 +108,20 @@ es un detalle de implementación: es dónde queda escrito qué.
 
 **La bandada del manglar** son sesiones reales, y viven en Supabase
 (`garzas_publico`). Una fila por pestaña abierta, con su percha, su
-escala y hacia dónde mira; se va cuando la pestaña se va. Es lo único
-de «los demás» que cruza la red, y no guarda quién es nadie.
+escala y hacia dónde mira. Es lo único de «los demás» que cruza la
+red, y no guarda quién es nadie.
+
+> Esta línea decía «se va cuando la pestaña se va» y era falsa. Nada
+> marcaba una garza como ida al cerrar: lo único que la sacaba del
+> árbol era el desalojo de la más antigua, así que el manglar enseñaba
+> *las últimas diez sesiones que hubo alguna vez*. MEDIDO contra la
+> base en vivo el 18 ago 2026: once sesiones seguidas dejaron once
+> garzas y ninguna se fue sola. Una garza de alguien que cerró hace
+> horas es una persona inventada, que es justo lo que la regla 3
+> prohíbe. Ahora hay `volar_garza()` en `pagehide` y una ventana de
+> dos horas en la vista pública para las que no lleguen a despedirse
+> — y **eso pide volver a pasar `esquema-bandada.sql`**; hasta
+> entonces la base sigue siendo la de antes. Lo dice `npm run base`.
 
 **La calma del mar** también: lo que sostiene todo el mundo se suma en
 la base y vuelve como `calma_actual()`, la curva YA aplicada. El
@@ -185,6 +197,12 @@ aparece al compilar es el que nadie descubre hasta que está publicado.
 
 Lo que vigila, por archivo:
 
+- `npm run base` — no es Playwright y por eso está aparte: comprueba
+  que la base DESPLEGADA se comporta como el `.sql` del repo. Leer el
+  esquema del repositorio no dice nada sobre lo que alguien pegó en el
+  editor de Supabase hace tres semanas, y esa diferencia ya costó dos
+  hallazgos. Verifica también lo que NO debe poderse: editar un hilo
+  por UPDATE, leer la columna `sesion`. Limpia lo que escribe.
 - `fluidez.spec.js` — las dos invariantes del pase de rendimiento del
   héroe, contadas y no cronometradas (un techo en milisegundos no vale
   nada en una máquina sin GPU): como mucho **una lectura de píxeles por

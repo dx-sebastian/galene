@@ -22,6 +22,7 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 const RAIZ = resolve(process.argv[3] || 'dist');
 const PUERTO = Number(process.argv[2] || 5178);
@@ -46,6 +47,25 @@ const TIPOS = {
      de pruebas que miente sobre las cabeceras hace medir otra cosa. */
   '.xml':  'application/xml; charset=utf-8',
 };
+
+/* ── COMPRIME LO QUE GITHUB PAGES COMPRIME ────────────────────────
+   Y por el mismo motivo que el 301 de arriba: un servidor de pruebas
+   más permisivo que el de verdad es un sitio donde se esconden fallos.
+   Aquí el fallo era al revés —éste era más CARO— y también costó caro.
+
+   MEDIDO el 18 ago 2026 contra dx-sebastian.github.io: el paquete de
+   `main.js` pesa 200 203 B en disco y GitHub Pages lo entrega en
+   71 367 B con `content-encoding: gzip`. Casi tres veces menos.
+
+   `peso.spec.js` mide `transferSize`, o sea lo que viaja por el cable,
+   así que sin esto el presupuesto llevaba contando el JavaScript
+   inflado ×2.8. Se notó al encender Supabase: el móvil se salía del
+   techo por 80 kB de un chunk que en producción pesa 77.
+
+   Las imágenes NO se comprimen —webp y png ya vienen comprimidos, y
+   gzip sobre ellos no quita nada y gasta CPU—; GitHub Pages tampoco lo
+   hace. Solo texto. */
+const COMPRIMIBLES = new Set(['.html', '.js', '.mjs', '.css', '.json', '.svg', '.txt', '.md', '.xml']);
 
 createServer(async (pet, res) => {
   try {
@@ -85,13 +105,23 @@ createServer(async (pet, res) => {
       if (!extname(archivo)) archivo = join(archivo, 'index.html');
     }
 
-    const cuerpo = await readFile(archivo);
-    res.writeHead(200, {
+    let cuerpo = await readFile(archivo);
+    const cabeceras = {
       'Content-Type': TIPOS[extname(archivo)] || 'application/octet-stream',
       /* Sin caché: una prueba que reutiliza el servidor entre ejecuciones
          no puede quedarse con el `dist/` de la compilación anterior. */
       'Cache-Control': 'no-store',
-    });
+    };
+    const acepta = String(pet.headers['accept-encoding'] || '');
+    if (COMPRIMIBLES.has(extname(archivo)) && /\bgzip\b/.test(acepta)) {
+      cuerpo = gzipSync(cuerpo);
+      cabeceras['Content-Encoding'] = 'gzip';
+      /* `Vary` porque la respuesta cambia según lo que pida el cliente.
+         No lo necesita ninguna prueba; lo necesita no mentir. */
+      cabeceras.Vary = 'Accept-Encoding';
+    }
+    cabeceras['Content-Length'] = cuerpo.length;
+    res.writeHead(200, cabeceras);
     res.end(cuerpo);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });

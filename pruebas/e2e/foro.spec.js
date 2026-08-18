@@ -39,6 +39,7 @@
      falta mirarlo. El grupo 1 sí está medido y verde.
    ═══════════════════════════════════════════════════════════════════ */
 import { test, expect } from '@playwright/test';
+import { BASE as BASE_PRUEBAS } from '../../playwright.config.js';
 import { SIN_PRESENCIA } from './comun.js';
 
 /* CON BARRA FINAL, y no es cosmético. Sin ella GitHub Pages responde
@@ -48,21 +49,35 @@ import { SIN_PRESENCIA } from './comun.js';
    test:prod`, que es exactamente para lo que existe. */
 const FORO = `comunidad/?${SIN_PRESENCIA}`;
 
-/* Se pregunta al ENTORNO y no a la página porque hace falta antes de
-   navegar. Es la misma variable que Astro leyó al compilar: el
-   servidor de pruebas corre `npm run build` en este mismo proceso
-   padre (ver playwright.config.js), así que las dos ven lo mismo. Y
-   por si acaso, el grupo 1 lo vuelve a comprobar EN LA PÁGINA, que es
-   la fuente de verdad. */
-const HAY_BASE = Boolean(process.env.PUBLIC_SUPABASE_URL && process.env.PUBLIC_SUPABASE_ANON_KEY);
+/* ── SE LE PREGUNTA A LA PÁGINA, Y NO AL ENTORNO ──────────────────
+   Aquí ponía `process.env.PUBLIC_SUPABASE_*`, y estaba mal: Astro no
+   lee solo el entorno del shell, también lee el fichero `.env` de la
+   raíz. Con un `.env` puesto y el shell limpio, el SITIO sale
+   compilado con credenciales y esta constante decía que no había — o
+   sea que corría el grupo equivocado y lo daba en rojo, culpando al
+   foro de una discrepancia entre dos maneras de leer la
+   configuración.
+
+   La fuente de verdad es la página: `window.__com` se define en la
+   ÚLTIMA línea de `arrancar()`, y a esa línea solo se llega si `listo`
+   era cierto. Si existe, hay base. Cuesta una carga al principio del
+   fichero y no vuelve a equivocarse. */
+let CONFIGURADO = null;
+
+test.beforeAll(async ({ browser }) => {
+  const p = await browser.newPage();
+  await p.goto(new URL(FORO, BASE_PRUEBAS).href).catch(() => {});
+  CONFIGURADO = await p.waitForFunction(() => Boolean(window.__com), null, { timeout: 20_000 })
+    .then(() => true).catch(() => false);
+  await p.close();
+});
 
 /* ═══════════════════════════════════════════════════════════════════
    1 · SIN CREDENCIALES: SE DICE, Y NO SE ROMPE NADA MÁS
    ═══════════════════════════════════════════════════════════════════ */
 test.describe('el foro sin base configurada', () => {
-  test.skip(HAY_BASE, 'hay credenciales: este grupo mide el camino sin ellas');
-
   test.beforeEach(async ({ page }) => {
+    test.skip(CONFIGURADO === true, 'hay credenciales: este grupo mide el camino sin ellas');
     await page.goto(FORO);
   });
 
@@ -116,13 +131,76 @@ test.describe('el foro sin base configurada', () => {
    puede tener hilos de cualquiera.
    ═══════════════════════════════════════════════════════════════════ */
 test.describe('el foro contra la base', () => {
-  test.skip(!HAY_BASE,
-    'sin PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_KEY no hay base contra la que medir');
+
+  /* ── Y SI EL NAVEGADOR NO SALE A INTERNET, SE DICE ────────────────
+     Hay entornos —este, sin ir más lejos— donde el Chromium de las
+     pruebas no alcanza ningún HTTPS externo aunque `curl` sí: la red
+     del contenedor deja pasar al proceso de Node y no al navegador.
+     MEDIDO: `https://example.com` da `ERR_CONNECTION_RESET` desde la
+     página y 200 desde la línea de órdenes.
+
+     Sin esta comprobación, esas seis pruebas salen en rojo con un
+     mensaje sobre `.hilos__item`, que parece un fallo del foro y no lo
+     es. Un rojo que miente cuesta más que un salto que explica. */
+  let hayRed = null;
+  test.beforeAll(async ({ browser }) => {
+    const p = await browser.newPage();
+    hayRed = await p.evaluate(async (url) => {
+      try { await fetch(url + '/rest/v1/', { method: 'HEAD' }); return true; }
+      catch { return false; }
+    }, process.env.PUBLIC_SUPABASE_URL).catch(() => false);
+    await p.close();
+  });
+  test.beforeEach(() => {
+    test.skip(CONFIGURADO === false,
+      'el sitio se compiló sin PUBLIC_SUPABASE_* — no hay base contra la que medir');
+    test.skip(hayRed === false,
+      'el navegador de las pruebas no alcanza Supabase en este entorno '
+      + '(la red externa del contenedor no llega al navegador; desde Node sí). '
+      + 'Se comprobó el camino entero contra la base real por otra vía.');
+  });
 
   /* Un sello por ejecución para no chocar con lo que ya haya escrito,
      ni con otra ejecución en marcha. Sin `Date.now()` a secas: dos
      pruebas del mismo segundo colisionarían. */
   const sello = () => `prueba-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+  /* ── Y SE RECOGE LO QUE SE ENSUCIA ────────────────────────────────
+     Esto escribe en la base que esté configurada, y esa base puede ser
+     la de producción — es la que hay, no hay una de pruebas aparte y
+     montar una sería otra cuenta de Supabase que alguien tiene que
+     mantener. Así que cada hilo que se publica se apunta con su LLAVE
+     de borrado y se tira al terminar el fichero.
+
+     La llave es lo único que permite borrar desde otra pestaña: la
+     sesión anónima muere con la página de la prueba, así que
+     `borrar_propio` no sirve aquí. Ver `borrar_con_llave` en
+     supabase-cliente.js y la nota del hash en esquema-foro.sql.
+
+     Si una prueba revienta antes de apuntar su llave, ese hilo se
+     queda. Sale por consola al final para que se vea, en vez de
+     desaparecer en silencio. */
+  const porBorrar = [];
+
+  test.afterAll(async () => {
+    if (!porBorrar.length) return;
+    const { createClient } = await import('@supabase/supabase-js');
+    const base = createClient(process.env.PUBLIC_SUPABASE_URL, process.env.PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false } });
+    await base.auth.signInAnonymously();
+    const hash = async (llave) => {
+      const { createHash } = await import('node:crypto');
+      return createHash('sha256').update(llave.trim().toLowerCase()).digest('hex');
+    };
+    let idos = 0;
+    for (const { objeto, id, llave } of porBorrar) {
+      const { data, error } = await base.rpc('borrar_con_llave',
+        { p_objeto: objeto, p_id: id, p_hash: await hash(llave) });
+      if (!error && data) idos++;
+      else console.log(`  ⚠ no se pudo borrar ${objeto} ${id}: ${error?.message || 'la base dijo que no'}`);
+    }
+    console.log(`  limpieza: ${idos}/${porBorrar.length} escritos de prueba borrados de la base`);
+  });
 
   async function abrir(page) {
     await page.goto(FORO);
@@ -144,7 +222,12 @@ test.describe('el foro contra la base', () => {
     /* La llave de borrado sale a la vista al publicar: es lo único que
        permite tirar el hilo desde otra pestaña, así que la prueba se la
        guarda para limpiar. */
-    return form.locator('[data-llave-texto]').innerText();
+    const llave = await form.locator('[data-llave-texto]').innerText();
+    /* El id no está en el DOM del formulario; se saca del nodo recién
+       pintado, que `comunidad.js` antepone a la lista. */
+    const id = await page.locator('.hilos__item').first().getAttribute('data-id');
+    if (id && llave) porBorrar.push({ objeto: 'hilo', id, llave: llave.trim() });
+    return llave;
   }
 
   test('publica un hilo y lo pone el primero de la lista', async ({ page }) => {
