@@ -125,9 +125,12 @@
      canto deja de tener esquina y el panel se lee como un canto rodado
      — y encima le sienta bien al pigmento del fondo, que no tiene
      ninguna recta. */
-  --redondo:       26px;
-  --redondo-medio: 18px;
-  --redondo-chico: 12px;
+  /* Los tres radios propios de esta página —26, 18 y 12— se fueron el
+     18 ago 2026. Eran el sistema aparte que `controles.spec.js` llevaba
+     anotado como deuda: cuatro formas distintas de redondear en una
+     página donde el resto del sitio usa dos. Ahora usa esas dos:
+     `--canto` para lo recto y `--canto-pildora` para lo que de verdad
+     es una píldora. */
 
   /* ── EL VIDRIO ─────────────────────────────────────────────────────
      Cuatro valores y cada uno hace un trabajo distinto:
@@ -341,11 +344,13 @@
   overflow: clip;                  /* que el canto de barbas respete el radio */
   padding-block: clamp(1.5rem, 5vw, 3rem) clamp(3rem, 8vw, 6rem);
   padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
-  border-radius: 28px 28px 0 0;
   background: linear-gradient(to bottom, var(--papel-arriba) 0, var(--papel) 12rem);
   color: var(--letra);
-  box-shadow: 0 -1px 0 var(--vidrio-canto),
-              0 -18px 40px -28px rgb(var(--sombra-rgb) / 30%);
+  /* La sombra hacia arriba que separaba esta franja de la anterior se
+     va con las demás: lo que cose las dos hojas es el canto de barbas
+     de `papel-barbas`, que ya está ahí y es de acuarela. Una sombra
+     debajo de una hoja de papel es un truco de otra clase de sitio. */
+  border-top: 1px solid rgb(var(--letra-rgb) / 10%);
 }
 .comunidad > *:not(.herramientas__fondo) { position: relative; z-index: 1; }
 
@@ -451,11 +456,9 @@
   list-style: none;
   margin: 0;
   padding: var(--e-4) clamp(1rem, 2.2vw, 1.4rem);
-  border: 1px solid var(--vidrio-canto);
-  border-radius: var(--redondo-medio);
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: var(--canto);
+  background: var(--papel-alto);
   display: grid;
   gap: var(--e-2);
   font-size: var(--t-sm);
@@ -506,11 +509,9 @@
   width: fit-content;
   min-height: 2.6rem;
   padding: 0 1rem;
-  border: 1px solid var(--vidrio-canto);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
   border-radius: 999px;
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  background: var(--papel-alto);
   color: rgb(var(--letra-rgb) / 86%);
   font-size: var(--t-xs);
   letter-spacing: 0.08em;
@@ -521,7 +522,7 @@
   list-style: none;
 }
 .mando__boton::-webkit-details-marker { display: none; }
-.mando__boton:hover { background: var(--vidrio-alto); color: var(--letra); }
+.mando__boton:hover { background: rgb(var(--letra-rgb) / 6%); color: var(--letra); }
 .mando__boton:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
 .mando__icono {
   display: grid;
@@ -546,10 +547,9 @@
   gap: var(--e-3);
   margin-top: var(--e-3);
   padding: var(--e-3);
-  border: 1px solid var(--vidrio-canto);
-  border-radius: var(--redondo-medio, 18px);
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: var(--canto);
+  background: var(--papel-alto);
 }
 .mando__orden, .mando__etiquetas {
   display: flex;
@@ -563,11 +563,9 @@
 .orden {
   min-height: 2.6rem;
   padding: 0 1rem;
-  border: 1px solid var(--vidrio-canto);
-  border-radius: 999px;
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  border: 1px solid rgb(var(--letra-rgb) / 20%);
+  border-radius: var(--canto-pildora);
+  background: var(--papel-alto);
   color: rgb(var(--letra-rgb) / 82%);
   font: inherit;
   font-size: var(--t-xs);
@@ -575,14 +573,13 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: background-color 180ms var(--paso), color 180ms var(--paso),
-              box-shadow 180ms var(--paso), translate 180ms ease-out;
+              border-color 180ms var(--paso);
 }
-.orden:hover { background: var(--vidrio-alto); color: var(--letra); }
+.orden:hover { background: rgb(var(--letra-rgb) / 6%); color: var(--letra); }
 .orden[aria-pressed="true"] {
   background: var(--letra);
-  border-color: transparent;
+  border-color: var(--letra);
   color: var(--contra);
-  box-shadow: var(--sombra-alta);
 }
 .orden:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
 
@@ -613,36 +610,58 @@
 /* Los chips de etiqueta. Cada uno lleva su pigmento en una GOTA, no en
    el fondo: cinco fondos de color en fila serían cinco manchas
    compitiendo, y el color aquí es una clave de lectura, no un adorno. */
+/* ── Y AQUÍ SE PAGA LA DEUDA ───────────────────────────────────────
+   Las fichas, los tres órdenes y el botón de filtros eran vidrio con
+   sombra: seis familias de sombra en una página donde el resto del
+   sitio tolera dos, y por eso `controles.spec.js` llevaba escrita una
+   deuda con esta página y una fecha de pago.
+
+   La regla del sitio: la acuarela NO proyecta sombras de caja. Lo que
+   separa una pieza del papel es estar pintada encima, no flotar sobre
+   él. Así que lo que distingue una ficha del fondo es su filete y su
+   relleno, y lo que distingue la ELEGIDA es que se rellena de tinta —
+   no que se despega un milímetro. La píldora se queda: `--canto-pildora`
+   es del vocabulario de la casa. */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
   min-height: 2.4rem;
   padding: 0 0.9rem;
-  border: 1px solid var(--vidrio-canto);
-  border-radius: 999px;
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja);
+  border: 1px solid rgb(var(--letra-rgb) / 20%);
+  border-radius: var(--canto-pildora);
+  background: var(--papel-alto);
   color: rgb(var(--letra-rgb) / 80%);
   font: inherit;
   font-size: var(--t-xs);
   cursor: pointer;
-  transition: background-color 180ms var(--paso), box-shadow 180ms var(--paso);
+  transition: background-color 180ms var(--paso), border-color 180ms var(--paso),
+              color 180ms var(--paso);
 }
 .chip::before {
   content: "";
   width: 0.62em; height: 0.62em;
   border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
   background: var(--pigmento, currentColor);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--pigmento, currentColor) 18%, transparent);
+  /* El halo era una sombra más en el inventario, y de las que no se
+     ven: 3 px de un color al 18 % detrás de un punto de 0.62 em. Se
+     va con las demás. */
   flex: none;
 }
 .chip--todas::before { display: none; }
-.chip:hover { background: var(--vidrio-alto); color: var(--letra); }
+.chip:hover { background: rgb(var(--letra-rgb) / 6%); color: var(--letra); }
+/* La elegida se rellena de tinta, y su punto de pigmento pasa a papel
+   para seguir viéndose encima. Un filete interior no bastaba: en una
+   fila de cinco fichas iguales, medio píxel de borde no dice cuál está
+   puesta. */
 .chip[aria-pressed="true"] {
-  color: var(--letra);
-  box-shadow: var(--sombra-baja), inset 0 0 0 1.5px rgb(var(--letra-rgb) / 55%);
+  background: var(--letra);
+  border-color: var(--letra);
+  color: var(--contra);
+}
+.chip[aria-pressed="true"]::before {
+  background: var(--contra);
+  box-shadow: none;
 }
 .chip:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
 
@@ -654,64 +673,148 @@
    que hay dentro es la verdad: no hay servidor, no hay dónde publicar, y
    el botón está apagado con su razón escrita.
    ═══════════════════════════════════════════════════════════════════ */
+/* ── EL PANEL, DE VUELTA AL CUADERNO ───────────────────────────────
+   Esto era cristal: `--vidrio`, `backdrop-filter`, dos sombras y un
+   canto de 26 px. Un sistema entero distinto del resto del sitio, y
+   por eso `controles.spec.js` llevaba una deuda escrita para esta
+   página. La acuarela no proyecta sombras de caja —lo que separa una
+   pieza del papel es estar pintada encima, no flotar sobre él— así que
+   lo que separa este panel de la hoja es un filete y el papel alto,
+   igual que en las demás páginas. */
 .escribir {
   margin-bottom: var(--e-6);
   max-width: 62rem;
-  border: 1px solid var(--vidrio-canto);
-  border-radius: var(--redondo);
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
-  transition: box-shadow 220ms var(--paso);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: var(--canto);
+  background: var(--papel-alto);
+  transition: border-color 180ms var(--paso);
 }
-.escribir[open] { box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo); }
+.escribir[open] { border-color: rgb(var(--letra-rgb) / 34%); }
+
+/* ── EL SEÑUELO ───────────────────────────────────────────────────
+   Era una frase gris clara sobre papel, del mismo tono que un
+   marcador de posición: se leía como un campo vacío y apagado. Lleva
+   su lápiz y el peso de un control, y al pasar por encima se tiñe
+   entero, no solo la palabra. */
 .escribir__senuelo {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  padding: 0.9rem clamp(1rem, 2.2vw, 1.4rem);
-  border-radius: var(--redondo);
+  gap: 0.7rem;
+  padding: 0.95rem clamp(1rem, 2.2vw, 1.4rem);
+  border-radius: var(--canto);
   cursor: pointer;
+  color: var(--letra);
   list-style: none;                       /* fuera el triángulo */
+  transition: background-color 180ms var(--paso);
 }
 .escribir__senuelo::-webkit-details-marker { display: none; }
-.escribir__senuelo:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; border-radius: var(--redondo); }
+.escribir__senuelo:hover { background: rgb(var(--letra-rgb) / 5%); }
+.escribir__senuelo:focus-visible { outline: 3px solid var(--letra); outline-offset: -3px; border-radius: var(--canto); }
+.escribir__sena {
+  flex: none;
+  width: 1.15em; height: 1.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .escribir__frase {
   font-size: var(--t-md);
-  color: rgb(var(--letra-rgb) / var(--gris-suelo));
+  font-weight: 600;
 }
-.escribir__senuelo:hover .escribir__frase { color: rgb(var(--letra-rgb) / 85%); }
+.escribir[open] .escribir__sena { opacity: 0.55; }
+.escribir[open] .escribir__frase { font-weight: 400; color: rgb(var(--letra-rgb) / 72%); }
 
 .escribir__panel {
   padding: 0 clamp(1rem, 2.2vw, 1.4rem) var(--e-4);
   display: grid;
-  gap: var(--e-3);
+  gap: var(--e-4);
 }
+
+/* ── EL AVISO, PLEGADO ─────────────────────────────────────────────
+   Eran seis renglones de gris entre el título de la sección y el
+   primer campo: lo primero que leía quien venía a escribir era una
+   explicación de privacidad del tamaño de unas condiciones de uso.
+   Ahora es una frase con un triángulo, y lo demás sigue entero
+   detrás. */
 .escribir__aviso {
   margin: 0;
-  padding: var(--e-3) 1rem;
-  border-radius: var(--redondo-medio);
-  background: rgb(var(--letra-rgb) / 5%);
   font-size: var(--t-sm);
   line-height: 1.55;
   max-width: 58ch;
-  color: rgb(var(--letra-rgb) / 84%);
+  color: rgb(var(--letra-rgb) / 78%);
 }
-.escribir__campo textarea {
+.escribir__aviso > summary {
+  cursor: pointer;
+  padding: 0.15rem 0;
+  color: rgb(var(--letra-rgb) / 82%);
+}
+.escribir__aviso > summary:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.escribir__aviso > p {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  border-left: 2px solid rgb(var(--letra-rgb) / 14%);
+}
+
+/* ── UN CAMPO ──────────────────────────────────────────────────────
+   Rótulo arriba, caja, y una línea de ayuda debajo. Los tres siempre:
+   un campo sin rótulo visible es una caja gris que solo se entiende
+   mientras está vacía, porque el marcador de posición desaparece justo
+   cuando empiezas a necesitarlo. */
+.campo { display: grid; gap: 0.35rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.campo__rotulo {
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--letra-rgb) / 72%);
+  padding: 0;
+}
+.campo__opcional {
+  margin-left: 0.4em;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: rgb(var(--letra-rgb) / 55%);
+}
+
+/* La caja de una línea comparte TODO con la de varias menos el alto:
+   dos declaraciones distintas para el mismo campo son dos campos el
+   día que alguien toque una. */
+.campo__entrada,
+.campo textarea {
   width: 100%;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgb(var(--letra-rgb) / 16%);
-  border-radius: var(--redondo-medio);
-  background: rgb(var(--letra-rgb) / 4%);
+  box-sizing: border-box;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgb(var(--letra-rgb) / 22%);
+  border-radius: var(--canto);
+  background: var(--papel-alto);
   color: var(--letra);
   font: inherit;
   font-size: var(--t-md);
   line-height: 1.5;
-  resize: vertical;
 }
-.escribir__campo textarea:focus-visible {
-  outline: 3px solid var(--letra); outline-offset: 2px;
+.campo textarea { resize: vertical; min-height: 7rem; }
+.campo__entrada:focus-visible,
+.campo textarea:focus-visible { outline: 3px solid var(--letra); outline-offset: 2px; }
+.campo__entrada::placeholder,
+.campo textarea::placeholder { color: rgb(var(--letra-rgb) / 45%); }
+.campo__entrada[aria-invalid="true"] { border-color: var(--alarma, #A03B2A); }
+
+/* La ayuda vive DEBAJO de su campo y en su misma columna, no suelta a
+   la derecha: lo que dice es de ese campo y de ningún otro. */
+.campo__ayuda {
+  font-size: var(--t-xs);
+  color: rgb(var(--letra-rgb) / 62%);
+  min-height: 1.2em;
 }
+.campo__ayuda[data-mal="true"] { color: var(--alarma, #A03B2A); }
+
+/* ── LAS FICHAS DE ETIQUETA ────────────────────────────────────────
+   Las mismas del filtro. Ninguna marcada de salida, y volver a pulsar
+   la puesta la quita: se puede publicar sin clasificar lo que te pasó,
+   que es lo que hay que poder hacer. */
+.fichas { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
 .escribir__fila {
   display: flex;
   flex-wrap: wrap;
@@ -719,6 +822,9 @@
   gap: var(--e-3);
   justify-content: space-between;
 }
+.escribir__fila--enviar { justify-content: flex-start; gap: var(--e-4); }
+.escribir__fila--enviar .escribir__estado { margin: 0; }
+
 /* «Publicar sin nombre» viene MARCADO por defecto, y esa casilla es una
    declaración: el valor por defecto de esta casa es el anonimato, y
    quien quiera poner su nombre tiene que decidirlo. Al revés —marcar
@@ -731,41 +837,10 @@
   color: rgb(var(--letra-rgb) / 85%);
   cursor: pointer;
 }
-.interruptor input { width: 1.1rem; height: 1.1rem; accent-color: #2F6B4F; }
-.escribir .boton { border-radius: 999px; }
-
-/* ── LO QUE EL COMPOSITOR ESTRENA AL DEJAR DE SER UNA MAQUETA ──────
-   El título, la etiqueta, el nombre y el aviso de validación. Todo con
-   los tokens que ya existen: aquí no hay un color, un radio ni una
-   sombra que no estuvieran en la hoja. */
-.escribir__campo { display: grid; gap: 0.35rem; min-width: 0; }
-.escribir__rotulo {
-  font-size: var(--t-xs);
-  letter-spacing: 0.06em;
-  color: rgb(var(--letra-rgb) / 72%);
-  text-transform: uppercase;
-}
-/* El campo de una línea comparte TODO con el de varias menos el alto:
-   dos declaraciones distintas para el mismo campo son dos campos el día
-   que alguien toque uno. */
-.escribir__campo input[type="text"],
-.escribir__campo textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgb(var(--letra-rgb) / 16%);
-  border-radius: var(--redondo-medio);
-  background: rgb(var(--letra-rgb) / 4%);
-  color: var(--letra);
-  font: inherit;
-  font-size: var(--t-md);
-  line-height: 1.5;
-}
-.escribir__campo input[type="text"]:focus-visible {
-  outline: 3px solid var(--letra); outline-offset: 2px;
-}
-.escribir__campo input::placeholder,
-.escribir__campo textarea::placeholder { color: rgb(var(--letra-rgb) / 45%); }
+/* El `accent-color` era un verde que no está en la paleta de este
+   sitio. La casilla se tiñe con la tinta, como todo lo demás. */
+.interruptor input { width: 1.1rem; height: 1.1rem; accent-color: var(--letra); }
+.escribir__nombre { max-width: 20rem; }
 
 .escribir__grupo { margin: 0; padding: 0; border: 0; min-width: 0; }
 .escribir__etiquetas { display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -797,7 +872,7 @@
   min-height: 2.4rem;
   padding: 0 0.6rem;
   border: 1px solid rgb(var(--letra-rgb) / 18%);
-  border-radius: var(--redondo-medio);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 4%);
   color: var(--letra);
   font: inherit;
@@ -838,7 +913,7 @@
   box-sizing: border-box;
   padding: 0.7rem 0.85rem;
   border: 1px solid rgb(var(--letra-rgb) / 16%);
-  border-radius: var(--redondo-medio);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 4%);
   color: var(--letra);
   font: inherit;
@@ -921,7 +996,7 @@
   width: 100%;
   padding: 0.7rem 0.9rem;
   border: 1px solid rgb(var(--letra-rgb) / 16%);
-  border-radius: var(--redondo-medio);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 4%);
   color: var(--letra);
   font: inherit;
@@ -942,7 +1017,7 @@
 .escribir__estado {
   margin: 0;
   padding: 0.6rem 1rem;
-  border-radius: var(--redondo-medio);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 6%);
   font-size: var(--t-sm);
 }
@@ -952,13 +1027,13 @@
   gap: 0.5rem;
   padding: var(--e-3) 1rem;
   border: 1px dashed rgb(var(--letra-rgb) / 30%);
-  border-radius: var(--redondo-medio);
+  border-radius: var(--canto);
   font-size: var(--t-sm);
 }
 .escribir__llave p { margin: 0; }
 .escribir__llave code {
   padding: 0.5rem 0.7rem;
-  border-radius: var(--redondo-chico);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 8%);
   font-size: var(--t-md);
   letter-spacing: 0.02em;
@@ -1009,7 +1084,7 @@
   max-width: 62rem;
   margin: 0 0 var(--e-4);
   padding: var(--e-3) 1rem;
-  border-radius: var(--redondo-medio);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 5%);
   font-size: var(--t-sm);
   color: rgb(var(--letra-rgb) / 78%);
@@ -1022,9 +1097,8 @@
   margin: 0 0 var(--e-4);
   padding: 0.5rem 1.1rem;
   border-radius: 999px;
-  border: 1px solid var(--vidrio-canto);
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  background: var(--papel-alto);
   font-size: var(--t-sm);
   cursor: pointer;
 }
@@ -1062,7 +1136,7 @@
 .hilo__accion-campo {
   padding: 0.3rem 0.6rem;
   border: 1px solid rgb(var(--letra-rgb) / 20%);
-  border-radius: var(--redondo-chico);
+  border-radius: var(--canto);
   background: rgb(var(--letra-rgb) / 4%);
   color: var(--letra);
   font: inherit;
@@ -1092,11 +1166,9 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 0.9rem;
   padding: clamp(1.05rem, 2.4vw, 1.5rem);
-  border: 1px solid var(--vidrio-canto);
-  border-radius: var(--redondo);
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: var(--canto);
+  background: var(--papel-alto);
   transition: background-color 220ms var(--paso), box-shadow 220ms var(--paso),
               translate 220ms cubic-bezier(.2,.7,.2,1);
 }
@@ -1106,13 +1178,11 @@
    sombra, que se abre y se separa: eso es lo que se lee como altura. */
 @media (hover: hover) and (min-width: 700px) {
   .hilo:hover {
-    background: var(--vidrio-alto);
-    box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo);
-    translate: 0 -2px;
+    background: rgb(var(--letra-rgb) / 6%);
+      translate: 0 -2px;
   }
 }
 .hilo:focus-within {
-  box-shadow: var(--sombra-alta), inset 0 1px 0 var(--vidrio-brillo);
 }
 
 /* EL PIGMENTO DE LA ETIQUETA, COMO UNA AGUADA BAJO EL VIDRIO.
@@ -1190,7 +1260,6 @@
   width: 0.55em; height: 0.55em;
   border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
   background: var(--pigmento, currentColor);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--pigmento) 16%, transparent);
 }
 
 .hilo__titulo {
@@ -1544,11 +1613,9 @@
 .comunidad__pie {
   margin-top: var(--e-7);
   padding: var(--e-5) clamp(1.1rem, 2.4vw, 1.6rem);
-  border: 1px solid var(--vidrio-canto);
-  border-radius: var(--redondo);
-  background: var(--vidrio);
-  backdrop-filter: var(--difuminado);
-  box-shadow: var(--sombra-baja), inset 0 1px 0 var(--vidrio-brillo);
+  border: 1px solid rgb(var(--letra-rgb) / 18%);
+  border-radius: var(--canto);
+  background: var(--papel-alto);
   max-width: 62rem;
 }
 .comunidad__pie-frase {
@@ -1600,7 +1667,7 @@
    del desenfoque cuesta la mitad.
    ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 620px) {
-  .pagina-papel { --difuminado: blur(12px) saturate(1.3); --redondo: 22px; }
+  .pagina-papel { --difuminado: blur(12px) saturate(1.3); }
 
   .hilo { gap: 0.7rem; }
 
@@ -1629,4 +1696,27 @@
   /* La flecha votada se queda ensanchada: no es una animación, es el
      estado. Lo que se quita es el camino hasta él. */
   .voto--sube[aria-pressed="true"], .voto--baja[aria-pressed="true"] { scale: 1.12; }
+}
+
+
+/* ── EL BOTÓN QUE PUBLICA ──────────────────────────────────────────
+   Era el elemento más tenue del panel: un contorno fino sobre papel,
+   más ligero que los campos que tenía encima, para hacer la única cosa
+   que este panel existe para hacer. Macizo, como los dos de la ayuda:
+   el relleno es lo que dice «esto se pulsa», y aquí no hay sombras que
+   lo digan por él. */
+.boton--macizo {
+  background: var(--letra);
+  color: var(--contra);
+  border-color: var(--letra);
+  font-weight: 600;
+  transition: background-color 160ms var(--paso), transform 90ms var(--paso);
+}
+.boton--macizo:hover { background: color-mix(in srgb, var(--letra) 86%, var(--papel)); }
+.boton--macizo:active { transform: translateY(1px); }
+.boton--macizo[disabled] { opacity: 0.55; cursor: progress; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .boton--macizo { transition: none; }
+  .boton--macizo:active { transform: none; }
 }

@@ -37,7 +37,19 @@
 -- ── LAS TABLAS ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS hilos (
   id         TEXT    PRIMARY KEY,
-  etiqueta   TEXT    NOT NULL CHECK (etiqueta IN ('acompanar','ruta','despues','cuidados','preguntas')),
+  -- ── LA ETIQUETA DEJA DE SER OBLIGATORIA (18 ago 2026) ────────────
+  -- Era `NOT NULL` contra una lista de cinco, y en el formulario salía
+  -- como un desplegable con la primera ya elegida. O sea que para poder
+  -- contar lo que te pasó había que clasificarlo primero, y si no
+  -- tocabas nada quedaba clasificado igual, con una palabra que no
+  -- habías dicho.
+  --
+  -- La cadena vacía es «ninguna», y se admite. Se prefiere a `NULL`
+  -- porque el índice, los filtros y la vista pública ya tratan esta
+  -- columna como texto y `NULL` habría obligado a repasar cada
+  -- comparación buscando las que se vuelven desconocidas en vez de
+  -- falsas.
+  etiqueta   TEXT    NOT NULL DEFAULT '' CHECK (etiqueta IN ('','acompanar','ruta','despues','cuidados','preguntas')),
   -- `estado = 'borrado' OR …`: borrar vacía titulo/cuerpo en el acto
   -- (más abajo, `borrar_propio`/`borrar_con_llave`), y una fila vacía
   -- no puede seguir cumpliendo un mínimo de longitud pensado para

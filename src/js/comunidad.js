@@ -70,7 +70,10 @@ async function arrancar() {
     const nodo = plantillaHilo.content.firstElementChild.cloneNode(true);
     const et = deEtiqueta(h.etiqueta);
     nodo.dataset.id = h.id;
-    nodo.querySelector('.hilo').style.setProperty('--pigmento', et.pigmento);
+    /* Sin etiqueta, el hilo se queda con la tinta de la casa: el
+       pigmento es de la etiqueta, y si no hay etiqueta no hay pigmento
+       que poner. */
+    if (et) nodo.querySelector('.hilo').style.setProperty('--pigmento', et.pigmento);
 
     const ave = nodo.querySelector('.sello__ave');
     ave.src = rutaAve(h.autora.pose);
@@ -80,7 +83,9 @@ async function arrancar() {
     autoraEl.textContent = h.autora.nombre;
     autoraEl.classList.toggle('hilo__autora--anonima', h.autora.anonima);
     nodo.querySelector('[data-cuando]').textContent = h.cuando;
-    nodo.querySelector('[data-etiqueta-nombre]').textContent = et.nombre;
+    const etiquetaEl = nodo.querySelector('[data-etiqueta-nombre]');
+    if (et) etiquetaEl.textContent = et.nombre;
+    else etiquetaEl.remove();   // sin etiqueta no se enseña una vacía
     nodo.querySelector('[data-titulo]').textContent = h.titulo;
 
     const cuerpo = nodo.querySelector('[data-cuerpo]');
@@ -293,16 +298,101 @@ async function arrancar() {
   const campoAnonima = form.querySelector('[name="anonima"]');
   const campoNombre = form.querySelector('[name="nombre"]');
   const contador = form.querySelector('[data-contador]');
+  const ayudaTitulo = form.querySelector('[data-ayuda-titulo]');
+  const fichas = form.querySelector('[data-fichas]');
   const estadoEl = form.querySelector('[data-estado]');
   const llaveBox = form.querySelector('[data-llave]');
   const llaveTexto = llaveBox.querySelector('[data-llave-texto]');
 
+  /* ═══ LA ETIQUETA, EN FICHAS Y SIN OBLIGAR ═══════════════════════
+     Un `<input type="hidden">` guarda la elección para que el resto
+     del formulario siga leyendo `[name="etiqueta"]` como antes. Vacío
+     significa «ninguna», y eso ahora se puede publicar.
+
+     Volver a pulsar la que ya está puesta la QUITA. Sin eso, elegir
+     una por error sería irreversible sin recargar — y en un panel que
+     acaba de dejar de obligar a etiquetar, no poder desetiquetar sería
+     el mismo problema con otra forma. */
+  fichas?.addEventListener('click', (e) => {
+    const boton = e.target.closest('[data-etiqueta-elegir]');
+    if (!boton) return;
+    const id = boton.dataset.etiquetaElegir;
+    const yaEstaba = campoEtiqueta.value === id;
+    campoEtiqueta.value = yaEstaba ? '' : id;
+    for (const b of fichas.querySelectorAll('[data-etiqueta-elegir]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.etiquetaElegir === campoEtiqueta.value));
+    }
+  });
+
+  /* ═══ LO QUE NO CABE, DICHO ANTES DE ENVIAR ══════════════════════
+     Esto faltaba, y se notaba: escribir «Hola» de título y pulsar
+     Publicar devolvía «Eso no cabe en el tamaño permitido — revisa el
+     título o el texto», que llegaba DESPUÉS de un viaje a la base, no
+     decía cuál de los dos campos era, y no decía cuánto faltaba. El
+     mínimo de ocho caracteres solo vivía en un CHECK de Postgres y en
+     un marcador de posición que desaparece justo al empezar a escribir.
+
+     Ahora lo dice el propio campo, mientras se teclea, con el número
+     que falta. La base sigue siendo la que manda —esto es cortesía,
+     no seguridad: quien quiera saltárselo lo hace con la consola y se
+     encuentra el CHECK igual— pero nadie debería enterarse de un
+     mínimo estrellándose contra él. */
+  const problemaDe = (campo) => {
+    const [min, max] = campo === 'titulo' ? limites.titulo
+                     : objetivo ? limites.comentario : limites.cuerpo;
+    const valor = campo === 'titulo' ? campoTitulo.value : campoCuerpo.value;
+    const n = largo(valor.trim());
+    if (n === 0) return { corto: true, falta: min, texto: `Entre ${min} y ${max} caracteres.` };
+    if (n < min) {
+      const falta = min - n;
+      return { corto: true, falta,
+        texto: falta === 1 ? 'Falta un carácter.' : `Faltan ${falta} caracteres.` };
+    }
+    if (n > max) return { largo: true, texto: `Sobran ${n - max} caracteres.` };
+    return null;
+  };
+
+  function pintarAyudaTitulo() {
+    if (!ayudaTitulo) return;
+    const p = problemaDe('titulo');
+    const tocado = campoTitulo.value.length > 0;
+    ayudaTitulo.textContent = p ? p.texto : '';
+    /* El aviso solo se pone en rojo cuando ya se escribió algo: teñir
+       un campo vacío que nadie ha tocado todavía es regañar por
+       adelantado. */
+    ayudaTitulo.dataset.mal = String(Boolean(p) && tocado);
+    campoTitulo.setAttribute('aria-invalid', String(Boolean(p) && tocado));
+  }
+  /* Y al corregir, el aviso de arriba se va. Sin esto, «El título:
+     faltan 4 caracteres» se quedaba en pantalla después de haber puesto
+     un título bueno: un mensaje de error que sobrevive a su causa
+     enseña a no leer los mensajes de error. */
+  const limpiarEstado = () => {
+    if (!estadoEl.hidden && !problemaDe('titulo') && !problemaDe('cuerpo')) {
+      estadoEl.hidden = true;
+      estadoEl.textContent = '';
+    }
+  };
+  campoTitulo.addEventListener('input', () => { pintarAyudaTitulo(); limpiarEstado(); });
+  campoCuerpo.addEventListener('input', limpiarEstado);
+  pintarAyudaTitulo();
+
   campoAnonima.addEventListener('change', () => { campoNombre.disabled = campoAnonima.checked; });
+
+  /* Al contestar se esconden el título y las etiquetas: una respuesta
+     no lleva ni lo uno ni lo otro. Se esconde el CAMPO ENTERO y no solo
+     el `input`, porque ahora los rótulos se ven — dejar «Título» a la
+     vista sobre un hueco sería peor que antes, cuando el rótulo estaba
+     oculto y bastaba con quitar la caja. */
+  const bloqueTitulo = () => campoTitulo.closest('.campo') || campoTitulo;
+  const bloqueEtiqueta = () => form.querySelector('.campo--fichas');
 
   function prepararRespuesta(hiloId, padreId) {
     objetivo = { hilo: hiloId, padre: padreId };
-    campoTitulo.hidden = true; campoTitulo.required = false;
-    campoEtiqueta.closest('label').hidden = true; campoEtiqueta.required = false;
+    bloqueTitulo().hidden = true; campoTitulo.required = false;
+    const et = bloqueEtiqueta();
+    if (et) et.hidden = true;
+    campoEtiqueta.value = '';
     campoCuerpo.placeholder = 'Tu respuesta.';
     escribir.open = true;
     escribir.scrollIntoView({ block: 'start', behavior: quieto.matches ? 'auto' : 'smooth' });
@@ -310,8 +400,9 @@ async function arrancar() {
   }
   function volverAHiloNuevo() {
     objetivo = null;
-    campoTitulo.hidden = false; campoTitulo.required = true;
-    campoEtiqueta.closest('label').hidden = false; campoEtiqueta.required = true;
+    bloqueTitulo().hidden = false; campoTitulo.required = true;
+    const et = bloqueEtiqueta();
+    if (et) et.hidden = false;
     campoCuerpo.placeholder = 'Lo que quieras contar.';
   }
 
@@ -320,6 +411,7 @@ async function arrancar() {
     const n = largo(campoCuerpo.value);
     contador.textContent = n === 0 ? `Entre ${min} y ${max} caracteres.` : `${n} / ${max}`;
     contador.classList.toggle('escribir__contador--cerca', n > max * 0.85);
+    contador.dataset.mal = String(n > max);
   }
   campoCuerpo.addEventListener('input', actualizarContador);
   actualizarContador();
@@ -328,7 +420,25 @@ async function arrancar() {
     e.preventDefault();
     estadoEl.hidden = true;
     llaveBox.hidden = true;
-    for (const c of form.querySelectorAll('.escribir__entrada')) c.setCustomValidity('');
+
+    /* ── SE COMPRUEBA AQUÍ, NO EN LA BASE ─────────────────────────
+       Un mínimo que solo vive en un CHECK de Postgres se descubre
+       chocándose con él, después de esperar a la red, con un mensaje
+       que no dice cuál de los dos campos era. Se para antes, se dice
+       cuál y cuánto falta, y se lleva el cursor allí — que es la
+       diferencia entre un aviso y una ayuda. */
+    const malTitulo = objetivo ? null : problemaDe('titulo');
+    const malCuerpo = problemaDe('cuerpo');
+    if (malTitulo || malCuerpo) {
+      pintarAyudaTitulo();
+      actualizarContador();
+      const campo = malTitulo ? campoTitulo : campoCuerpo;
+      const cual = malTitulo ? 'El título' : 'El texto';
+      estadoEl.hidden = false;
+      estadoEl.textContent = `${cual}: ${(malTitulo || malCuerpo).texto.toLowerCase()}`;
+      campo.focus();
+      return;
+    }
 
     const boton = form.querySelector('button[type="submit"]');
     boton.disabled = true;
@@ -387,6 +497,8 @@ async function arrancar() {
   function mensajeDeError(err) {
     const msg = String(err?.message || '');
     if (/demasiado rápido|no se puede publicar aquí/i.test(msg)) return msg;
+    if (/titulo|char_length\(titulo\)/i.test(msg) && /check/i.test(msg))
+      return `El título tiene que medir entre ${limites.titulo[0]} y ${limites.titulo[1]} caracteres.`;
     if (/violates check constraint|char_length/i.test(msg)) return 'Eso no cabe en el tamaño permitido — revisa el título o el texto.';
     if (/hilo ya no está/i.test(msg)) return 'Ese hilo ya no está disponible.';
     return 'No se pudo publicar. El texto sigue aquí — puedes reintentar.';

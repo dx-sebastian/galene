@@ -157,48 +157,91 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       pequeña. Nace `hidden` y lo enciende `comunidad.js`: sin
       JavaScript no hay a quién mandarle el POST. */}
   <details class="escribir" id="escribir" hidden>
+    {/* El señuelo era una frase gris clara sobre papel, del mismo tono
+        que un `placeholder`: se leía como un campo vacío y apagado, no
+        como algo que se abre al tocarlo. Ahora lleva su seña —un lápiz—
+        y el peso de un control. */}
     <summary class="escribir__senuelo">
-      <span class="escribir__frase">Escribir en la comunidad…</span>
+      <svg class="escribir__sena" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+        <path d="M3 17h3.2l8.4-8.4-3.2-3.2L3 13.8V17Z"/>
+        <path d="m13.1 4.3 1.5-1.5a1.4 1.4 0 0 1 2 0l1.2 1.2a1.4 1.4 0 0 1 0 2l-1.5 1.5"/>
+      </svg>
+      <span class="escribir__frase">Escribir en la comunidad</span>
     </summary>
 
     <form class="escribir__panel" id="form-escribir" novalidate>
-      <p class="escribir__aviso">Se publica de verdad. No hace falta
-        nombre y no se guarda quién eres — lo único que ata dos mensajes
-        a la misma persona es un identificador que vive en esta pestaña y
-        se va al cerrarla. Lo que escribas se puede borrar después con
-        una llave que se enseña una sola vez, al publicar. Los mensajes
-        pasan por una revisión ligera antes de mostrarse a los demás; tú
-        siempre puedes ver los tuyos.</p>
+      {/* ── EL AVISO, PLEGADO ────────────────────────────────────────
+          Estaba abierto, y eran seis renglones de letra gris entre el
+          título de la sección y el primer campo: lo primero que leía
+          quien venía a escribir era una explicación de privacidad del
+          tamaño de unas condiciones de uso. Lo que hace falta ahí es
+          una frase; lo demás está a un clic, para quien quiera
+          leerlo, y sigue estando entero. */}
+      <details class="escribir__aviso">
+        <summary>No hace falta nombre, y se puede borrar después.</summary>
+        <p>Se publica de verdad. Lo único que ata dos mensajes a la misma
+          persona es un identificador que vive en esta pestaña y se va al
+          cerrarla. Lo que escribas se puede borrar después con una llave
+          que se enseña una sola vez, al publicar. Los mensajes pasan por
+          una revisión ligera antes de mostrarse a los demás; tú siempre
+          puedes ver los tuyos.</p>
+      </details>
 
-      <label class="escribir__campo">
-        <span class="visualmente-oculto">Título</span>
-        <input type="text" name="titulo" class="escribir__entrada"
-               placeholder="Un título (8 a 140 caracteres)" maxlength="140" required />
+      {/* ── LOS RÓTULOS SE VEN ───────────────────────────────────────
+          Estaban en `.visualmente-oculto`, o sea solo para lectores de
+          pantalla, y en pantalla quedaban tres cajas grises iguales sin
+          nada que dijera cuál era cuál. Un marcador de posición no es un
+          rótulo: desaparece en cuanto escribes, y justo entonces es
+          cuando hace falta saber qué campo estás rellenando. */}
+      <label class="campo">
+        <span class="campo__rotulo">Título</span>
+        <input type="text" name="titulo" class="campo__entrada"
+               placeholder="De qué quieres hablar" maxlength="140"
+               required minlength="8"
+               aria-describedby="ayuda-titulo" />
+        <span class="campo__ayuda" id="ayuda-titulo" data-ayuda-titulo aria-live="polite">
+          Entre 8 y 140 caracteres.
+        </span>
       </label>
 
-      <label class="escribir__campo">
-        <span class="visualmente-oculto">Etiqueta</span>
-        <select name="etiqueta" class="escribir__entrada" required>
-          {ETIQUETAS.map((e) => <option value={e.id}>{e.nombre}</option>)}
-        </select>
-      </label>
+      {/* ── LA ETIQUETA, EN FICHAS Y SIN OBLIGAR ─────────────────────
+          Era un `<select>` idéntico al campo de arriba —misma caja,
+          mismo gris— con la primera opción ya elegida, así que no
+          parecía una elección sino un dato más que rellenar. Y era
+          obligatoria, que es pedirle a alguien que clasifique lo que le
+          pasó antes de poder contarlo.
 
-      <label class="escribir__campo">
-        <span class="visualmente-oculto">Lo que quieres decir</span>
-        <textarea name="cuerpo" rows="4" placeholder="Lo que quieras contar." required></textarea>
+          Ahora son las MISMAS fichas del filtro, que ya existen y ya se
+          entienden, ninguna marcada de salida, y se puede publicar sin
+          tocar ninguna. */}
+      <fieldset class="campo campo--fichas">
+        <legend class="campo__rotulo">Etiqueta <span class="campo__opcional">opcional</span></legend>
+        <div class="fichas" data-fichas role="group">
+          {ETIQUETAS.map((e) => (
+            <button class="chip" type="button" data-etiqueta-elegir={e.id}
+                    aria-pressed="false" style={`--pigmento: ${e.pigmento}`}>
+              {e.nombre}
+            </button>
+          ))}
+        </div>
+        <input type="hidden" name="etiqueta" value="" />
+      </fieldset>
+
+      <label class="campo">
+        <span class="campo__rotulo">Lo que quieres decir</span>
+        <textarea name="cuerpo" rows="5" placeholder="Lo que quieras contar." required
+                  aria-describedby="ayuda-cuerpo"></textarea>
+        <span class="campo__ayuda" id="ayuda-cuerpo" data-contador aria-live="polite"></span>
       </label>
-      <p class="escribir__contador" data-contador aria-live="polite"></p>
 
       <div class="escribir__fila">
         <label class="interruptor">
           <input type="checkbox" name="anonima" checked />
           <span>Publicar sin nombre</span>
         </label>
-        <input type="text" name="nombre" class="escribir__entrada escribir__nombre"
+        <input type="text" name="nombre" class="campo__entrada escribir__nombre"
                placeholder="Un nombre de agua (opcional)" maxlength="24" disabled />
       </div>
-
-      <p class="escribir__estado" data-estado role="status" aria-live="polite" hidden></p>
 
       {/* La llave de borrado se enseña UNA VEZ, aquí, y no se vuelve a
           poder leer — igual que la llave que hoy da GitHub o Stripe al
@@ -210,8 +253,14 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
         <button type="button" class="boton boton--fantasma" data-llave-copiar>Copiar</button>
       </div>
 
-      <div class="escribir__fila">
-        <button class="boton" type="submit">Publicar</button>
+      {/* El botón que hace la única cosa que este panel existe para
+          hacer era el elemento MÁS TENUE de la pantalla: un contorno
+          fino sobre papel, más ligero que los campos que tenía encima.
+          Va macizo, como los dos de la ayuda: el relleno es lo que dice
+          «esto se pulsa». */}
+      <div class="escribir__fila escribir__fila--enviar">
+        <button class="boton boton--macizo" type="submit">Publicar</button>
+        <p class="escribir__estado" data-estado role="status" aria-live="polite" hidden></p>
       </div>
     </form>
   </details>
