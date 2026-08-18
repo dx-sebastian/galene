@@ -49,6 +49,26 @@ GitHub → el repositorio → **Settings → Secrets and variables →
 Actions** → pestaña **Variables** → **New repository variable**, dos
 veces, con esos dos nombres exactos.
 
+> ### ⚠ La trampa, vista en vivo
+>
+> En esa misma página hay un botón **«Manage environment secrets»**. Si
+> se entra por ahí, GitHub pide primero un **nombre de entorno** — y es
+> muy fácil escribir ahí el nombre de la variable. Las dos quedan
+> guardadas como secretos de un entorno llamado `PUBLIC_SUPABASE_URL`,
+> que ningún trabajo declara, así que **no las ve nadie**.
+>
+> Y no canta a la vista: en la lista aparecen con su nombre correcto.
+> Lo que hay que mirar es la columna **Environment**. Si tiene algo
+> escrito, están en el sitio equivocado.
+>
+> Cómo distinguirlo de un vistazo: lo que sirve sale bajo el epígrafe
+> **Repository variables** (o **Repository secrets**), sin columna de
+> entorno. Si abajo pone «This repository has no secrets», no hay nada
+> puesto donde el build pueda leerlo.
+>
+> El paso «Ver si las llaves de Supabase llegaron al build» del flujo lo
+> dice en cada despliegue, con la lista de nombres que sí ve.
+
 El flujo las lee de `vars` y, si no están ahí, de `secrets`; funciona
 de las dos maneras. Como la `anon` es pública por diseño, **Variables**
 es su sitio: en `Secrets` GitHub la enmascara en los registros y hace
