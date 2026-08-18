@@ -443,17 +443,22 @@ async function arrancar() {
     const boton = form.querySelector('button[type="submit"]');
     boton.disabled = true;
     try {
+      /* El plazo de escribir es más largo y su aviso dice otra cosa:
+         al leer, que no conteste significa que no hay nada; al
+         escribir, puede que el mensaje SÍ haya llegado y solo se haya
+         perdido la respuesta. Decir «no se pudo» ahí sería la mentira
+         que hace que alguien lo escriba dos veces. */
       let r;
       if (objetivo) {
-        r = await crearComentario({
+        r = await conPlazo(crearComentario({
           hilo: objetivo.hilo, padre: objetivo.padre,
           texto: campoCuerpo.value, nombre: campoNombre.value, anonima: campoAnonima.checked,
-        });
+        }), PLAZO_ESCRIBIR, 'La comunidad no contestó a tiempo al enviarlo.');
       } else {
-        r = await crearHilo({
+        r = await conPlazo(crearHilo({
           titulo: campoTitulo.value, cuerpo: campoCuerpo.value, etiqueta: campoEtiqueta.value,
           nombre: campoNombre.value, anonima: campoAnonima.checked,
-        });
+        }), PLAZO_ESCRIBIR, 'La comunidad no contestó a tiempo al enviarlo.');
       }
 
       llaveTexto.textContent = r.llave;
@@ -530,6 +535,14 @@ async function arrancar() {
       return 'Eso no cabe en el tamaño permitido — revisa el título o el texto.';
     if (/hilo ya no está/i.test(msg)) return 'Ese hilo ya no está disponible.';
 
+    /* El plazo se agotó: la petición ni volvió ni falló. */
+    if (/no contestó a tiempo al enviarlo/i.test(msg))
+      return 'La comunidad no contestó a tiempo. Puede que sí se haya enviado: '
+           + 'recarga la página y míralo antes de volver a escribirlo.';
+    if (/no contestó a tiempo/i.test(msg))
+      return 'La comunidad no contestó a tiempo. Puede ser tu conexión o la base; '
+           + 'vuelve a intentarlo.';
+
     /* No hay red, o la hay y no llega. `Failed to fetch` es lo que dice
        el navegador cuando la petición ni sale ni vuelve. */
     if (/failed to fetch|networkerror|load failed|fetch/i.test(msg))
@@ -564,6 +577,36 @@ async function arrancar() {
      reinicia cursor e instantánea y vuelve a pedir desde el principio. */
   const nota = mando.querySelector('[data-nota-orden]');
 
+  /* ═══ UN PLAZO, PORQUE UNA PROMESA PUEDE NO VOLVER NUNCA ══════════
+     No basta con capturar el error: una petición que ni sale ni vuelve
+     no lanza nada, se queda. Y `supabase-js`, cuando la sesión se le
+     ha caído por red, reintenta por dentro con espera creciente — o
+     sea que la promesa de leer puede tardar minutos en decidirse.
+
+     Medido, con la salida a internet cortada, que es lo que ve alguien
+     sin cobertura:
+
+       · antes de tocar nada ....... 13.08 s hasta enseñar el error
+       · al dejar de exigir sesión .. NO TERMINABA — más de 60 s en
+         «Cargando lo que se ha escrito…», sin error y sin lista
+       · con este plazo ............ 12.18 s, y diciendo qué pasó
+
+     La segunda línea es el fallo que este plazo repara, y lo introduje
+     yo al hacer que la lectura no dependiera de entrar: la excepción
+     dejó de llegar, pero la espera se quedó.
+
+     Un plazo convierte «no vuelve» en «no contestó», que es una frase
+     que sí se puede enseñar. */
+  const PLAZO_LEER = 12_000;
+  const PLAZO_ESCRIBIR = 25_000;
+  function conPlazo(promesa, ms, aviso) {
+    let reloj;
+    return Promise.race([
+      Promise.resolve(promesa).finally(() => clearTimeout(reloj)),
+      new Promise((_, rechazar) => { reloj = setTimeout(() => rechazar(new Error(aviso)), ms); }),
+    ]);
+  }
+
   async function cargarPagina(reiniciar) {
     if (cargando) return;
     cargando = true;
@@ -580,7 +623,9 @@ async function arrancar() {
     }
     botonMas.disabled = true;
     try {
-      const r = await listar({ orden: estado.orden, etiqueta: estado.etiqueta, cursor, instantanea });
+      const r = await conPlazo(
+        listar({ orden: estado.orden, etiqueta: estado.etiqueta, cursor, instantanea }),
+        PLAZO_LEER, 'La comunidad no contestó a tiempo.');
       instantanea = r.instantanea; cursor = r.cursor; hayMas = !!r.cursor;
       for (const h of r.hilos) pintarHilo(h);
       await cargarComentariosDe(r.hilos);

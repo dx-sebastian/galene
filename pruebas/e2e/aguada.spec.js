@@ -38,14 +38,19 @@ import { SIN_PRESENCIA } from './comun.js';
 
 const PORTADA = `?${SIN_PRESENCIA}&auditar-mar=1`;
 
-/* Diferencia media por canal entre dos recortes, decodificando los PNG
-   dentro de la propia página: no hace falta traerse un decodificador. */
-async function diferencia(page, a, b) {
-  return page.evaluate(async ([x, y]) => {
+/* UNA SOLA FOTO ANCHA, DOS ZONAS DENTRO. Se recorta una banda que
+   contiene el núcleo del charco Y un trozo al borde de la caja de la
+   luz, y se comparan las dos zonas de la MISMA imagen. Dos motivos:
+   cuesta la mitad de capturas —y aquí cada captura pasa por un héroe
+   pintado por software—, y sobre todo las dos zonas quedan medidas en
+   el mismo instante, así que lo que se mueva solo afecta a las dos por
+   igual en vez de meterse en la resta. */
+async function zonas(page, seca, mojada, corte) {
+  return page.evaluate(async ([a, b, corte]) => {
     const carga = (b64) => new Promise((ok) => {
       const i = new Image(); i.onload = () => ok(i); i.src = 'data:image/png;base64,' + b64;
     });
-    const [ia, ib] = await Promise.all([carga(x), carga(y)]);
+    const [ia, ib] = await Promise.all([carga(a), carga(b)]);
     const cv = document.createElement('canvas');
     cv.width = ia.width; cv.height = ia.height;
     const cx = cv.getContext('2d', { willReadFrequently: true });
@@ -54,12 +59,21 @@ async function diferencia(page, a, b) {
     cx.clearRect(0, 0, cv.width, cv.height);
     cx.drawImage(ib, 0, 0);
     const db = cx.getImageData(0, 0, cv.width, cv.height).data;
-    let suma = 0, n = 0;
-    for (let i = 0; i < da.length; i += 4) {
-      for (let k = 0; k < 3; k++) { suma += Math.abs(da[i + k] - db[i + k]); n++; }
-    }
-    return +(suma / n).toFixed(2);
-  }, [a.toString('base64'), b.toString('base64')]);
+
+    const media = (x0, x1) => {
+      let suma = 0, n = 0;
+      for (let y = 0; y < cv.height; y++) {
+        for (let x = x0; x < x1; x++) {
+          const i = (y * cv.width + x) * 4;
+          for (let k = 0; k < 3; k++) { suma += Math.abs(da[i + k] - db[i + k]); n++; }
+        }
+      }
+      return +(suma / n).toFixed(2);
+    };
+    /* El puntero está en el extremo DERECHO de la banda: el núcleo es
+       la cola de la imagen, y el canto de la caja de la luz, la cabeza. */
+    return { nucleo: media(cv.width - corte, cv.width), borde: media(0, corte) };
+  }, [seca.toString('base64'), mojada.toString('base64'), corte]);
 }
 
 test('aguada · la luz sigue al ratón, y no tiene bordes', async ({ page }) => {
@@ -67,46 +81,63 @@ test('aguada · la luz sigue al ratón, y no tiene bordes', async ({ page }) => 
   await page.goto(PORTADA, { waitUntil: 'load' });
   await page.waitForTimeout(2400);
 
-  /* Un sitio de papel liso y quieto: dentro del bloque de la ayuda,
-     en su margen izquierdo, lejos de los dos botones —el charco de
-     esos es otro gesto y contaminaría la medida. */
-  const caja = await page.locator('.ayuda').first().boundingBox();
-  expect(caja, 'la portada tiene bloque de ayuda').toBeTruthy();
-  const px = Math.round(caja.x + 77);
-  const py = Math.round(caja.y + Math.min(caja.height, 700) * 0.5);
+  /* UN SITIO DE PAPEL LISO Y QUIETO, y encontrarlo costó una medida
+     equivocada: el primer punto que elegí —el margen izquierdo, a media
+     altura del bloque— caía DENTRO del botón LLAMAR, así que lo que
+     salía era su propio charco (29.67 donde tenía que haber 0) y no la
+     luz. Se comprobó con `elementFromPoint` en vez de a ojo.
 
-  const nucleo = { x: px - 40, y: py - 40, width: 80, height: 80 };
-  /* 17 rem son 272 px con la raíz a 16: justo el borde de la caja de la
-     luz. Se mira 12 px MÁS ALLÁ, donde la mezcla ya tiene que ser la
-     identidad, pero aún dentro de la sección para que el fondo sea el
-     mismo papel en las dos fotos. */
-  const borde = { x: px + 232, y: py - 30, width: 60, height: 60 };
+     Este está arriba a la derecha: por encima de los dos botones, a la
+     derecha de todo el texto. `elementFromPoint` ahí devuelve `.ayuda`
+     pelado. */
+  const ayuda = page.locator('.ayuda').first();
+  await ayuda.scrollIntoViewIfNeeded();
+  /* La caja se mide DESPUÉS de que el desplazamiento pare, o el recorte
+     cae fuera de la ventana y la foto no existe. */
+  await page.waitForTimeout(900);
+  const caja = await ayuda.boundingBox();
+  expect(caja, 'la portada tiene bloque de ayuda').toBeTruthy();
+  const px = Math.round(caja.x + Math.min(caja.width - 240, 1000));
+  const py = Math.round(caja.y + 90);
+  expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.className,
+    [px, py]), 'el punto de medida es papel pelado, no una pieza').toBe('ayuda');
+
+  /* La banda va hacia la IZQUIERDA del puntero, que es donde queda
+     sitio: 40 px pasado el puntero por la derecha, y 296 px por la
+     izquierda. Los últimos 80 son el núcleo del charco; los primeros
+     80 están entre 216 y 296 px del puntero.
+
+     Los dos degradados llegan a blanco puro —y a negro puro— al 78 %
+     de `closest-side`, o sea a 212 px del centro con la caja de 34 rem
+     y la raíz a 16 px. De 216 en adelante la mezcla es la identidad y
+     no puede quedar absolutamente nada. */
+  const CORTE = 80;
+  const banda = { x: px - 296, y: py - 30, width: 336, height: 60 };
 
   await page.mouse.move(4, 4);
+  await page.waitForTimeout(1100);
+  const seca1 = await page.screenshot({ clip: banda });
   await page.waitForTimeout(1200);
-  const lejos1 = await page.screenshot({ clip: nucleo });
-  const lejos1b = await page.screenshot({ clip: borde });
-  await page.waitForTimeout(1300);
-  const lejos2 = await page.screenshot({ clip: nucleo });
-  const lejos2b = await page.screenshot({ clip: borde });
-
+  const seca2 = await page.screenshot({ clip: banda });
   await page.mouse.move(px, py);
   await page.waitForTimeout(1500);
-  const cerca = await page.screenshot({ clip: nucleo });
-  const cercaB = await page.screenshot({ clip: borde });
+  const mojada = await page.screenshot({ clip: banda });
 
-  const suelo = await diferencia(page, lejos1, lejos2);
-  const enPuntero = await diferencia(page, lejos2, cerca);
-  const sueloBorde = await diferencia(page, lejos1b, lejos2b);
-  const enBorde = await diferencia(page, lejos2b, cercaB);
+  /* La portada se mueve sola —el mar, las aves, los lavados—. Dos fotos
+     seguidas con el ratón quieto y lejos dan el suelo que hay que
+     descontar: sin eso no se estaría midiendo la luz, sino la luz más
+     lo que se movió entretanto. */
+  const suelo = await zonas(page, seca1, seca2, CORTE);
+  const conLuz = await zonas(page, seca2, mojada, CORTE);
+  const enPuntero = +(conLuz.nucleo - suelo.nucleo).toFixed(2);
+  const enBorde = +(conLuz.borde - suelo.borde).toFixed(2);
 
-  console.log(`  luz · en el puntero ${(enPuntero - suelo).toFixed(2)} / 255 `
-            + `· a 34 rem ${(enBorde - sueloBorde).toFixed(2)} / 255`);
+  console.log(`  luz · en el puntero ${enPuntero} / 255 · a 17 rem ${enBorde} / 255`);
 
-  expect(enPuntero - suelo,
+  expect(enPuntero,
     'la luz tiene que verse donde está el ratón').toBeGreaterThan(2);
-  expect(enBorde - sueloBorde,
-    'a la distancia del borde de la caja no puede quedar nada: si queda, la mezcla no está actuando').toBeLessThan(1.5);
+  expect(enBorde,
+    'al canto de su caja no puede quedar nada: si queda, la mezcla no está actuando y lo que hay es un rectángulo').toBeLessThan(1.5);
 });
 
 test('aguada · con «reducir movimiento» no se enciende', async ({ page }) => {
