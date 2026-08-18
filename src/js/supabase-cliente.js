@@ -207,7 +207,29 @@ export async function listar({ orden = 'recientes', etiqueta = '', cursor = '', 
      La sesión sigue haciendo falta para SABER QUÉ VOTÉ y para publicar.
      Ninguna de las dos cosas es motivo para no dejar leer. */
   let hayQuien = true;
-  try { await entrar(); } catch (err) { hayQuien = false; console.warn('[foro] se lee sin sesión:', err?.message || err); }
+  try {
+    await entrar();
+  } catch (err) {
+    /* PERO SI LO QUE FALLÓ FUE LA RED, NO SE SIGUE. Leer va por el
+       mismo cable que entrar: insistir solo consigue esperar dos veces
+       por la misma avería.
+
+       Lo que esta rama SÍ hace, medido, y lo que NO: con la salida a
+       internet cortada no cambia nada, porque `supabase-js` reintenta
+       por dentro antes de rendirse y `entrar()` tarda unos 13 s en
+       rechazar —más que el plazo de lectura de comunidad.js, que salta
+       primero—. Para ese caso el que responde es el plazo, no esto.
+
+       Donde sí decide es en el otro: cuando la sesión falla POR SÍ
+       MISMA con la red buena —el tope de sesiones anónimas por hora,
+       un almacenamiento bloqueado en modo privado—. Ahí no se lanza,
+       se sigue, y la lista se lee igual. Ese es exactamente el caso
+       para el que existe todo esto. */
+    const msg = String(err?.message || '');
+    if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) throw err;
+    hayQuien = false;
+    console.warn('[foro] se lee sin sesión:', msg || err);
+  }
 
   const inst = instantanea || Date.now();
   const c = deCursor(cursor);
