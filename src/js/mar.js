@@ -2694,6 +2694,20 @@ function compilar(gl, tipo, fuente) {
   return s;
 }
 
+/* Lee `--cielo-bajo` de la hoja y lo deja pintado en el buffer. Si el
+   token no se puede leer —hoja aún sin aplicar—, se usa su valor de
+   fábrica: un gris azulado claro es infinitamente mejor que negro. */
+function cieloDeSalida(gl) {
+  const leido = getComputedStyle(document.documentElement)
+    .getPropertyValue('--cielo-bajo').trim();
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(leido || '');
+  const [r, g, b] = m
+    ? [parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255]
+    : [0xDC / 255, 0xE7 / 255, 0xE8 / 255];
+  gl.clearColor(r, g, b, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
 export function crear(lienzo) {
   const perfilMovil = matchMedia('(max-width: 700px), (pointer: coarse)').matches;
   const gl = lienzo.getContext('webgl2', {
@@ -2701,6 +2715,24 @@ export function crear(lienzo) {
     powerPreference: 'high-performance', preserveDrawingBuffer: false,
   });
   if (!gl) return null;
+
+  /* ── EL PRIMER COLOR DEL LIENZO NO PUEDE SER NEGRO ─────────────────
+     El contexto se pide con `alpha: false`, y un buffer opaco recién
+     creado está a (0,0,0,1): NEGRO. Entre que el navegador compone el
+     canvas por primera vez y que el shader termina de compilarse y
+     pinta su primer cuadro hay una ventana —corta en un portátil, larga
+     en un teléfono— en la que lo que se ve es ese negro a pantalla
+     completa. Es el «parpadeo negro» que reportó el dueño en Safari de
+     iOS, y en iOS vuelve a verse cada vez que el sistema recicla el
+     buffer al volver a la pestaña.
+
+     Un `clearColor` aquí mismo, ANTES de compilar nada, hace que el
+     primer color que exista en ese buffer sea el del cielo. No arregla
+     nada más y no cuesta nada: es una llamada.
+
+     El color se lee del mismo token que usa el respaldo CSS, así que no
+     hay dos cielos que mantener sincronizados a mano. */
+  cieloDeSalida(gl);
 
   /* Un WebGL emulado por CPU convierte la pintura en una tarea de varios
      segundos. En ese entorno el respaldo CSS es visualmente completo y
