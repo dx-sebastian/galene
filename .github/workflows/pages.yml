@@ -40,6 +40,39 @@ jobs:
       # Si faltan, el sitio se publica igual y el foro sale diciendo que
       # no se pudo llegar a la comunidad. Es un estado declarado y
       # medido (foro.spec.js), no una página rota.
+      # ── ¿ESTÁN O NO ESTÁN? ──────────────────────────────────────────
+      # Sin esto, unas variables mal puestas se ven así: el flujo en
+      # verde, el sitio publicado, y el foro diciendo que no se pudo
+      # llegar. Un despliegue que sale bien no es lo mismo que un
+      # despliegue que hizo lo que se esperaba.
+      #
+      # NO IMPRIME LOS VALORES. Solo si cada sitio tiene algo y cuánto
+      # mide, que es lo que hace falta para distinguir «no las puse»
+      # de «las puse en el sitio equivocado» de «me comí una letra del
+      # nombre». La `anon` es pública de todas formas, pero un registro
+      # de Actions es público en un repo público y no hay motivo para
+      # regalar nada.
+      - name: Ver si las llaves de Supabase llegaron al build
+        env:
+          V_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
+          S_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          V_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY }}
+          S_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          medir() { if [ -n "$2" ]; then echo "  $1: sí, ${#2} caracteres"; else echo "  $1: vacío"; fi; }
+          echo "Variables del repositorio (Settings → Secrets and variables → Actions):"
+          medir "vars.PUBLIC_SUPABASE_URL     " "$V_URL"
+          medir "vars.PUBLIC_SUPABASE_ANON_KEY" "$V_KEY"
+          medir "secrets.PUBLIC_SUPABASE_URL     " "$S_URL"
+          medir "secrets.PUBLIC_SUPABASE_ANON_KEY" "$S_KEY"
+          if [ -z "$V_URL$S_URL" ] || [ -z "$V_KEY$S_KEY" ]; then
+            echo ""
+            echo "::warning::El sitio se va a publicar SIN foro. Si las pusiste en"
+            echo "::warning::Settings → Environments → github-pages, ese sitio no lo ve este"
+            echo "::warning::paso: tienen que estar en Secrets and variables → Actions,"
+            echo "::warning::pestaña Variables, a nivel de repositorio."
+          fi
+
       - run: npm run build
         env:
           PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL }}
