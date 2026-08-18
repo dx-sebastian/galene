@@ -369,15 +369,24 @@ GRANT EXECUTE ON FUNCTION calma_actual() TO anon, authenticated;
 -- sumisión química, o sea justo el registro que la regla 9 prohíbe
 -- construir. Se prefiere una ventana generosa a un rastro fino.
 --
--- El `viva = 1` también se dice aquí y no solo en la política: una
--- vista sin filtro que se apoya en RLS funciona hasta el día que
--- alguien toque la política. Dos cerrojos para una puerta que da al
--- «quién está aquí».
+-- ── Y AQUÍ NO SE FILTRA POR `viva`, AUNQUE APETEZCA ────────────────
+-- La primera versión de esto añadía `WHERE viva = 1` «por poner dos
+-- cerrojos». Ese segundo cerrojo CERRÓ LA PUERTA: la vista es
+-- `security_invoker`, o sea que corre con los permisos de quien llama,
+-- y quien llama tiene SELECT sobre ocho columnas —id, percha, pose,
+-- mira, escala, pico, llegada, tocada— y NO sobre `viva`, a propósito.
+-- Filtrar por una columna que no se puede leer es
+-- «permission denied for table garzas», y el manglar se quedaba vacío
+-- para todo el mundo.
+--
+-- Quien filtra por `viva` es la POLÍTICA (`garzas_leer`, más abajo), y
+-- eso sí funciona: una política la evalúa el motor, no el rol, así que
+-- no le hacen falta privilegios de columna. `llegada` sí está
+-- concedida, y por eso la ventana de edad puede vivir aquí.
 CREATE OR REPLACE VIEW garzas_publico WITH (security_invoker = true) AS
 SELECT id, percha, pose, mira, escala, pico, llegada, tocada
 FROM garzas
-WHERE viva = 1
-  AND llegada > (extract(epoch FROM clock_timestamp()) * 1000)::bigint - 7200000;
+WHERE llegada > (extract(epoch FROM clock_timestamp()) * 1000)::bigint - 7200000;
 
 -- ── ROW LEVEL SECURITY ────────────────────────────────────────────
 ALTER TABLE garzas     ENABLE ROW LEVEL SECURITY;

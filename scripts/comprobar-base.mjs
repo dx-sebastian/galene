@@ -140,11 +140,21 @@ if (eV && /PGRST202|Could not find the function/i.test(eV.message || '')) {
 /* Y el rango de verdad, mirando lo que hay puesto ahora mismo. Con el
    esquema viejo aparecen perchas 8, 9 o 10, que no tienen rama donde
    posarse y por eso no se pintan. */
-const { data: arbol } = await base.from('garzas_publico').select('percha');
-const altas = (arbol || []).map((g) => g.percha).filter((p) => p > 7);
-altas.length
-  ? no(`hay garzas en perchas ${[...new Set(altas)].sort().join(', ')} y el manglar tiene ocho ramas (0..7)`)
-  : ok(`las ${(arbol || []).length} garzas del árbol están dentro de las ocho ramas`);
+/* Y AQUÍ SE MIRA EL ERROR, que la primera versión no miraba: se
+   quedaba con `data` y trataba un fallo como «cero filas», o sea que
+   daba verde cuando la vista devolvía «permission denied». Así se
+   coló, verde, una vista que dejaba el manglar vacío para todo el
+   mundo. Un cero y un error no son lo mismo y no se pueden leer
+   igual. */
+const { data: arbol, error: eArbol } = await base.from('garzas_publico').select('percha');
+if (eArbol) {
+  no(`leer garzas_publico`, eArbol);
+} else {
+  const altas = (arbol || []).map((g) => g.percha).filter((p) => p > 7);
+  altas.length
+    ? no(`hay garzas en perchas ${[...new Set(altas)].sort().join(', ')} y el manglar tiene ocho ramas (0..7)`)
+    : ok(`las ${arbol.length} garzas del árbol están dentro de las ocho ramas`);
+}
 
 const { data: calma, error: eC } = await base.rpc('calma_actual');
 eC ? no('calma_actual()', eC) : ok(`calma_actual() → ${typeof calma === 'number' ? calma.toFixed(4) : calma}`);
