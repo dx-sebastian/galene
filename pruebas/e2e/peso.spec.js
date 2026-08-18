@@ -21,23 +21,40 @@ import { test, expect } from '@playwright/test';
 
 const MB = 1024 * 1024;
 
+/* ── LOS TECHOS SE REBAJARON EL 18 AGO 2026, Y NO PORQUE EL SITIO
+       ADELGAZARA ────────────────────────────────────────────────────
+   Estos números estaban puestos contra un servidor de pruebas que
+   servía SIN COMPRIMIR, y GitHub Pages comprime. MEDIDO: el paquete
+   de main.js son 200 203 B en disco y llegan 71 367 B por el cable.
+   O sea que el presupuesto llevaba contando el JavaScript inflado
+   ×2.8, y por eso sobraba tanto sitio.
+
+   Se vio al encender Supabase: el móvil se salió del techo por 80 kB
+   de un chunk que en producción pesa 77. La reparación no fue subir el
+   techo —eso es mover la portería— sino hacer que
+   `pruebas/servidor.mjs` y `prod-espejo.mjs` compriman igual que el
+   servidor de verdad, y volver a medir.
+
+   Lo que hay abajo son las medidas reales del 18 ago 2026 con el
+   foro y la bandada ENCENDIDOS, más un margen de alrededor del 10 %.
+   Siguen siendo trinquete y no objetivo. */
 const CASOS = [
   {
     nombre: 'escritorio',
     opciones: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },
+    /* medido: imágenes 2.25 · total 2.47 */
     imagenes: 2.4 * MB,
-    total: 3.2 * MB,
+    total: 2.7 * MB,
   },
   {
     nombre: 'móvil',
     opciones: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
                 isMobile: true, hasTouch: true },
-    /* Ratchet, no objetivo. El móvil ya venía trabajado y esta fase no
-       lo tocó: estos números son los que tiene hoy, puestos como techo
-       para que no crezcan. Lo que queda por ahí —`aguadas-seccion2` a
-       174 kB sin variante de teléfono— es trabajo de otra ronda. */
+    /* medido: imágenes 1.96 · total 2.18. Lo que queda por ahí
+       —`aguadas-seccion2` a 174 kB sin variante de teléfono— es
+       trabajo de otra ronda; las imágenes no las toca gzip. */
     imagenes: 2.0 * MB,
-    total: 2.5 * MB,
+    total: 2.4 * MB,
   },
 ];
 
@@ -112,12 +129,15 @@ for (const caso of CASOS) {
    están contados, con el techo puesto donde están hoy más un margen
    para que la comunidad crezca en hilos.
    ═══════════════════════════════════════════════════════════════════ */
+/* Medidas del 18 ago 2026, ya comprimidas y con Supabase encendido, y
+   el techo un escalón por encima. `comunidad` lleva más margen a
+   propósito: es la única que crece con lo que la gente escriba. */
 const OTRAS = [
-  ['expertos', 'expertos/', 0.75 * MB],
-  ['comunidad', 'comunidad/', 1.25 * MB],
-  ['acerca', 'acerca/', 0.75 * MB],
-  ['productos', 'productos/', 0.85 * MB],
-  ['ficha', 'productos/funda-coletero/', 0.7 * MB],
+  ['expertos', 'expertos/', 0.58 * MB],    // medido 0.48
+  ['comunidad', 'comunidad/', 1.00 * MB],  // medido 0.79, con el SDK dentro
+  ['acerca', 'acerca/', 0.58 * MB],        // medido 0.48
+  ['productos', 'productos/', 0.60 * MB],  // medido 0.50
+  ['ficha', 'productos/funda-coletero/', 0.42 * MB],  // medido 0.34
 ];
 
 test.describe('peso · las otras páginas', () => {

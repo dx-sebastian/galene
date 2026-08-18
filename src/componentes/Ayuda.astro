@@ -23,15 +23,51 @@
   <p class="seccion-rotulo">SI FUE HOY, SI FUE HACE POCO</p>
   <h2 id="ayuda-titulo">Ayuda ahora</h2>
 
+  {/* ── DOS BOTONES, Y SE VE QUE LO SON ─────────────────────────────
+      Esto eran dos tarjetas con un filete al 22 % y un número grande
+      de adorno. Se leían como cajas de texto, no como algo que se
+      pulsa — y en la sección que existe para que alguien pulse en la
+      primera hora, eso no es un detalle de estilo.
+
+      Lo que se cambia:
+
+        · EL TÍTULO ES EL VERBO. Antes decía «155» y «S». Un número no
+          dice qué va a pasar al tocarlo, y una inicial suelta no dice
+          nada. LLAMAR y ESCRIBIR sí: quien llega sabe cuál de las dos
+          puede hacer ahora mismo, que a veces es solo una.
+        · SE RELLENAN. Un filete de un píxel sobre papel del mismo
+          color no es un botón, es un recuadro. El principal va en
+          tinta maciza con la letra en papel; el segundo, en papel con
+          borde de dos píxeles. El contraste hace de afordancia, no
+          una sombra — aquí no hay sombras, la acuarela no proyecta.
+        · LLEVAN SEÑA. Un auricular y una flecha, trazados con la
+          misma línea del instrumento. Dicen «esto marca» y «esto
+          abre otra página» antes de leer una palabra.
+
+      Sigue siendo un `<a>` de verdad, con `href` real y sin
+      JavaScript: la regla 5 dice que la ayuda existe desde el primer
+      milisegundo. */}
   <div class="ayuda__canales">
-    <a class="ayuda__canal" href="tel:155">
-      <span class="ayuda__numero" aria-hidden="true">155</span>
+    <a class="ayuda__canal ayuda__canal--primero" href="tel:155">
+      <span class="ayuda__accion">
+        <svg class="ayuda__sena" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3c0 1.1-.9 2-2 2A16.5 16.5 0 0 1 4.5 5.5c0-1.1.9-2 2-2Z"/>
+        </svg>
+        LLAMAR
+      </span>
       <strong>Línea 155</strong>
       <span>Orientación a víctimas de violencia. Nacional y gratuita
         desde cualquier teléfono en Colombia; marca al tocar.</span>
     </a>
-    <a class="ayuda__canal" href="https://salvia.minigualdadyequidad.gov.co" rel="noopener">
-      <span class="ayuda__numero" aria-hidden="true">S</span>
+    <a class="ayuda__canal ayuda__canal--segundo"
+       href="https://salvia.minigualdadyequidad.gov.co" rel="noopener">
+      <span class="ayuda__accion">
+        <svg class="ayuda__sena" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 6.5h16v11H4z"/>
+          <path d="m4.5 7 7.5 6 7.5-6"/>
+        </svg>
+        ESCRIBIR
+      </span>
       <strong>SALVIA — por internet, sin hablar</strong>
       <span>Del Ministerio de Igualdad y Equidad. Orienta y activa
         rutas de atención sin exigir una llamada.</span>
@@ -42,5 +78,4 @@
     la línea de emergencias. La atención en salud nunca exige denunciar.
     {/* AVISO RETIRADO PARA LA DEMO, no resuelto: vuelve antes de
         publicar de verdad. Deuda en GUIA.md; el noindex sigue. */}</p>
-  <p class="ayuda__mas"><a href="#sin-hablar">Más caminos, con calma →</a></p>
 </section>

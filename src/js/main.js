@@ -32,7 +32,7 @@ import { viewportHeight, viewportWidth } from './viewport.js';
    eso es fabricar gente (regla 3). Las manos entran igual por los dos
    caminos, porque una mano no es una garza. */
 import { dejarGarza, garzasVivas, suscribirManglar, calmaActual, acreditarGesto,
-         POSE_A_CAPA, listo as bandadaEnRed } from './bandada-cliente.js';
+         despedirse, POSE_A_CAPA, listo as bandadaEnRed } from './bandada-cliente.js';
 import * as presencia from './presencia.js';
 /* Solo `perfil`: el panel de personalizar (montarPanel) quedó fuera
    del MVP junto con su disparador en index.astro. Sin panel, `perfil()`
@@ -2375,6 +2375,24 @@ async function poblarBandadaReal() {
     onLlega: (fila) => agregarGarzaEnVivo(fila),
     onVuela: ({ id }) => quitarGarzaEnVivo(id),
   });
+
+  /* Y AL CERRAR, LA GARZA SE VA. Sin esto se quedaba en el árbol para
+     siempre —lo único que la sacaba era el desalojo de la más
+     antigua—, y el manglar acababa lleno de sesiones muertas. Ver
+     `despedirse()` en bandada-cliente.js y `volar_garza()` en
+     esquema-bandada.sql.
+
+     `pagehide` y no `unload`, igual que en presencia.js: es el único
+     que dispara de verdad en iOS y el único compatible con la caché de
+     atrás-adelante. Y por eso mismo hay `pageshow`: quien vuelve por
+     el botón de atrás no llega con una página nueva, llega con la
+     misma, y sin volver a dejar garza se quedaría fuera del árbol
+     mirando a los demás. */
+  addEventListener('pagehide', () => { despedirse(); });
+  addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;              // carga normal: ya la dejó el arranque
+    dejarGarza().catch(() => { /* sin red: el árbol se queda como está */ });
+  });
 }
 
 
@@ -3748,6 +3766,12 @@ window.__garzas = {
     id: a.id, puesta: a.alto > 0, pico: a.sena?.pico || null, frase: a.sena?.frase || null,
   })),
   mia: () => (visita ? { pico: visita.sena?.pico || null, frase: visita.sena?.frase || null } : null),
+  /* De dónde salen las garzas del árbol. Con `enRed` cierto la bandada
+     son filas de Supabase y las de `presencia.js` NO se ponen —serían
+     la misma persona dos veces—, así que las pruebas que miden el
+     camino de BroadcastChannel tienen que saber cuál de los dos mundos
+     están mirando en vez de fallar sin explicar por qué. */
+  enRed: bandadaEnRed,
 };
 
 /* ── ARRANQUE ──────────────────────────────────────────────────────

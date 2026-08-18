@@ -31,8 +31,20 @@ test.describe('quién más está', () => {
 
   test('otra pestaña añade una garza, con su pico y su frase, y se la lleva al cerrarse',
     async ({ page, context }) => {
+
       await page.goto(`.${CON_MAR}`);
       await esperarGarzas(page);
+
+      /* El salto va aquí y no al principio: `window.__garzas` no existe
+         hasta que el mar arranca. Con Supabase configurado,
+         `sincronizarPresencia` NO pone garzas de `presencia.js` — la
+         bandada del manglar YA son las sesiones vivas, y pintar además
+         una por pestaña sería la misma persona dos veces (regla 3, y
+         la nota en main.js). Esto mide el camino SIN red, que sigue
+         existiendo y tiene que funcionar; el de red lo comprueba
+         `npm run base` contra la base de verdad. */
+      test.skip(await page.evaluate(() => window.__garzas.enRed === true),
+        'la bandada va por Supabase: las garzas de presencia no se ponen a propósito');
       expect(await page.evaluate(() => window.__garzas.presentes())).toEqual([]);
 
       /* La segunda pestaña va SIN el mar: solo tiene que existir y
@@ -60,8 +72,20 @@ test.describe('quién más está', () => {
     });
 
   test('una frase que no existe en la lista no pinta nada', async ({ page, context }) => {
+
     await page.goto(`.${CON_MAR}`);
     await esperarGarzas(page);
+
+      /* El salto va aquí y no al principio: `window.__garzas` no existe
+         hasta que el mar arranca. Con Supabase configurado,
+         `sincronizarPresencia` NO pone garzas de `presencia.js` — la
+         bandada del manglar YA son las sesiones vivas, y pintar además
+         una por pestaña sería la misma persona dos veces (regla 3, y
+         la nota en main.js). Esto mide el camino SIN red, que sigue
+         existiendo y tiene que funcionar; el de red lo comprueba
+         `npm run base` contra la base de verdad. */
+      test.skip(await page.evaluate(() => window.__garzas.enRed === true),
+        'la bandada va por Supabase: las garzas de presencia no se ponen a propósito');
 
     const otra = await context.newPage();
     await otra.goto('.');

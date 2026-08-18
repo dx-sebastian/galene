@@ -538,22 +538,21 @@ main:focus { outline: none; }
   .experto__cita a,
   .experto a,
   .comunidad__normas summary,
-  .hero__enlace,
-  .ayuda__mas a
+  .hero__enlace
 ) { --toque: 24px; }
 
 :where(a[href^="tel:"],
   .barra__enlace, .marca, .pie__nav a, .pie__version a,
   .ficha__migas a, .ficha__vecino, .expertos-pagina__volver a,
   .experto__cita a, .experto a, .comunidad__normas summary,
-  .hero__enlace, .ayuda__mas a) {
+  .hero__enlace) {
   position: relative;
 }
 :where(a[href^="tel:"],
   .barra__enlace, .marca, .pie__nav a, .pie__version a,
   .ficha__migas a, .ficha__vecino, .expertos-pagina__volver a,
   .experto__cita a, .experto a, .comunidad__normas summary,
-  .hero__enlace, .ayuda__mas a)::before {
+  .hero__enlace)::before {
   content: "";
   position: absolute;
   z-index: 0;

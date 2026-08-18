@@ -16,6 +16,7 @@
    espejo. El navegador salta —igual que en producción— y quien mire el
    código de respuesta ve el 301 que hubo de verdad. */
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { execFile } from 'node:child_process';
 
 const ORIGEN = 'https://dx-sebastian.github.io';
@@ -50,9 +51,28 @@ createServer((req, res) => {
       }
 
       if (codigo !== 200) { res.writeHead(codigo); return res.end(cuerpo); }
+
+      /* ── SE VUELVE A COMPRIMIR LO QUE VINO COMPRIMIDO ──────────────
+         `curl --compressed` descomprime al recibir, así que aquí llega
+         el fichero en crudo. Si se sirviera así, `peso.spec.js` —que
+         mide `transferSize`, o sea lo que viaja por el cable— contaría
+         el JavaScript inflado, y el espejo diría que la portada pesa
+         un 12 % más de lo que de verdad le llega a nadie.
+
+         MEDIDO: el paquete de main.js son 200 203 B en disco y GitHub
+         Pages lo entrega en 71 367 B con `content-encoding: gzip`.
+         Volver a comprimir aquí no reproduce byte a byte lo de allá
+         —el nivel de gzip puede diferir— pero sí reproduce el orden de
+         magnitud, que es lo que un presupuesto mide. Y deja el espejo
+         y `pruebas/servidor.mjs` contando lo mismo, que es la
+         condición para que sus dos baterías se puedan comparar. */
+      const comprimible = /^(text\/|application\/(javascript|json|xml)|image\/svg)/.test(tipo || '');
+      const acepta = /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
+      const salida = comprimible && acepta ? gzipSync(cuerpo) : cuerpo;
       const cabeceras = { 'content-type': tipo };
-      cache.set(ruta, { codigo, cabeceras, cuerpo });
+      if (salida !== cuerpo) { cabeceras['content-encoding'] = 'gzip'; cabeceras.vary = 'Accept-Encoding'; }
+      cache.set(ruta, { codigo, cabeceras, cuerpo: salida });
       res.writeHead(codigo, cabeceras);
-      res.end(cuerpo);
+      res.end(salida);
     });
 }).listen(5179, () => console.log('espejo de prod en :5179'));
