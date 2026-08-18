@@ -1464,48 +1464,59 @@ main:focus { outline: none; }
      Y es lo que la pintura haría: una banda de bruma tendida sobre el
      agua es un gesto de acuarela; un óvalo detrás de un bloque de
      texto es una etiqueta. */
-  top: -20%;
-  bottom: -16%;
-  left: -50vw;
-  right: -50vw;
+  /* ── Y LA BANDA TAMBIÉN FALLÓ, POR LO CONTRARIO ─────────────────
+     La banda resolvió lo que el óvalo no podía —un velo parejo sobre
+     las cuatro piezas— y a cambio trajo su propio precio, que el dueño
+     señaló mirando el cuadro de noche: «una barra oscura debajo del
+     título que daña la pintura».
+
+     Y tenía toda la razón. Medido en producción: de noche esto es una
+     franja de 403 px de alto, de #0B141A, al 36 % de opacidad y de
+     borde a borde de la ventana. Al alba llega al 52 %. Sobre una
+     acuarela con estrellas, eso no es bruma: es una barra.
+
+     El fallo estaba en la premisa que compartían los tres intentos —
+     que hace falta UNA forma que cubra las cuatro piezas a la vez. No
+     hace falta. Cada pieza puede llevar su propio velo, centrado en
+     ella, y entonces el desvanecido cae siempre en el aire de su
+     alrededor y nunca sobre sus letras: que es exactamente lo que la
+     banda conseguía a base de no tener bordes laterales.
+
+     Ya había un precedente funcionando en esta misma hoja desde la
+     fase 1: `.hero__enlace::after`, el suelo propio del botón, que lo
+     sacó de 4,5 a 13,9 sin tapar un centímetro de cielo de más.
+
+     Total pintado: antes, una franja del ancho de la ventana por 403
+     px. Ahora, tres manchas del tamaño de sus renglones. */
+  display: none;
+}
+
+/* Un velo por pieza, con la forma de lo que protege. El alfa lo sigue
+   escribiendo `calibrarTinta()` en el mismo `--lavado` de siempre: lo
+   que cambia no es cuánto vela, es dónde.
+
+   `isolation: isolate` es lo que mantiene el velo DENTRO de su pieza —
+   detrás de sus letras y delante del lienzo—. Sin él, un z-index de −1
+   se va detrás del mar y no vela nada. */
+:is(.titulo, .lockup, .hero__declaracion) {
+  position: relative;
+  isolation: isolate;
+}
+:is(.titulo, .lockup, .hero__declaracion)::before {
+  content: "";
+  position: absolute;
+  /* Generoso a los lados y corto arriba y abajo: el desenfoque tiene
+     que morir en el aire, no en la línea de al lado. */
+  inset: -0.3em -0.9em;
   z-index: -1;
   pointer-events: none;
-  /* ── ESTE LAVADO ESTUVO APAGADO, Y CON RAZÓN ────────────────────
-     Decía la nota anterior: «el lavado adaptativo garantizaba
-     contraste numérico, pero en pleno día aparecía como una nube gris
-     del tamaño del bloque». Cierto, y por eso se puso a cero. Lo que
-     pasa es que apagarlo dejó el otro problema entero: medido sobre
-     los píxeles, a las 13:00 la marca quedaba en 1,05:1 y la
-     declaración en 1,44:1, cuando la AA pide 4,5.
-
-     Las dos observaciones eran verdad a la vez porque las dos daban
-     por buena la misma premisa: que la tinta del héroe es blanca las
-     24 horas. Sobre un cielo claro, sostener tinta blanca EXIGE una
-     nube gris; no hay tercera salida.
-
-     Ahora la premisa se cae. `calibrarTinta()` en js/main.js mira lo
-     que hay pintado detrás y elige la tinta que ese cielo admite:
-     oscura sobre un cielo claro, clara sobre uno oscuro. Que es, por
-     lo demás, cómo se escribe sobre una acuarela.
-
-     Con la tinta bien elegida el lavado casi nunca hace falta, y
-     cuando hace falta —el crepúsculo, cuando el cielo está a medio
-     camino y ninguna de las dos tintas llega sola— sale pequeño y en
-     un momento en el que una veladura es exactamente lo que la
-     pintura estaría haciendo de todos modos. */
+  background: var(--lavado-color, transparent);
   opacity: var(--lavado, 0);
-  /* Plano sobre el texto, desvanecido en el aire. Las paradas del 26 y
-     el 76 % encierran la franja donde vive el bloque; fuera de ellas el
-     degradado se apaga a lo largo de un quinto de la altura, que a esta
-     escala es un palmo de cielo. El desenfoque solo le quita el filo,
-     no hace el degradado — confundir las dos cosas fue lo que rompió
-     los dos intentos anteriores. */
-  background: linear-gradient(to bottom,
-    transparent 0%,
-    var(--lavado-color, transparent) 26%,
-    var(--lavado-color, transparent) 76%,
-    transparent 100%);
-  filter: blur(clamp(10px, 1.2vw, 18px));
+  /* Canto de aguada, no de caja: es el mismo vocabulario de la fase 2
+     —el suelo del botón, el pie de las viñetas— y por la misma razón.
+     Un rectángulo difuminado sigue leyéndose como un rectángulo. */
+  border-radius: 46% 54% 52% 48% / 58% 44% 56% 42%;
+  filter: blur(clamp(9px, 1vw, 15px));
 }
 
 /* EL ROTULO. Es el elemento dominante del cuadro y el único sitio del
