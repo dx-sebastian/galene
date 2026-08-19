@@ -288,8 +288,15 @@ function arrancar(mar) {
        su rama mientras la barra sube y baja. */
     const wCaja = lienzo.clientWidth || viewportWidth();
     const hCaja = lienzo.clientHeight || caja.height || viewportHeight();
+    /* El margen táctil baja del 28 % al 4 %: existía para absorber la
+       barra de Safari, y ahora la barra no llega hasta aquí —`.mundo`
+       está anclado a `100lvh`, ver su nota en estilos.css—. Se queda un
+       margen corto para el temblor de subpíxel de algunos navegadores,
+       y así un cambio de verdad (girar el aparato, partir la pantalla)
+       sí se aplica en vez de quedarse a medias, que es lo que dejaba la
+       pintura estirada sobre una caja que no era la suya. */
     if (!TACTIL || wCaja !== bufer.w
-        || Math.abs(hCaja - bufer.h) > bufer.h * 0.28) {
+        || Math.abs(hCaja - bufer.h) > bufer.h * 0.04) {
       bufer.w = wCaja; bufer.h = hCaja;
     }
     /* ── Y SI LA CAJA NO CAMBIÓ, EL MUNDO TAMPOCO ───────────────────

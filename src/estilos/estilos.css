@@ -607,6 +607,36 @@ main:focus { outline: none; }
 .mundo {
   position: fixed;
   inset: 0;
+  /* ── LA CAJA DEL MUNDO NO PUEDE RESPIRAR CON LA BARRA ─────────────
+     `inset: 0` sobre un elemento fijo mide, en iOS, el viewport que hay
+     EN ESE MOMENTO — y en iOS ese viewport se encoge y se estira cada
+     vez que la barra de Safari se recoge o vuelve, que es en cada
+     desplazamiento. Todo lo que cuelga de esta caja hereda ese
+     temblor: el búfer del lienzo, y `.garzas`, que es su hermana
+     `absolute; inset: 0` y es donde se posan las aves.
+
+     Ahí estaba el ave flotando. El reparto del mundo se hace una vez
+     con la caja que haya —digamos 663 de alto, con la barra puesta— y
+     un momento después la caja pasa a 844 sin que nadie recalcule
+     nada: la pintura se estira sobre la caja nueva y la garza se queda
+     en la coordenada de la vieja. La raíz sube; el ave no. Y como la
+     diferencia es justo lo que mide la barra, el efecto va y viene.
+
+     `lvh` es la ventana GRANDE —la de la barra recogida— y por
+     definición no cambia mientras no cambie el aparato o la
+     orientación. Con el alto anclado ahí, la caja del mundo es una sola
+     de principio a fin: el búfer se pide una vez, el reparto se hace
+     una vez y el ave y su raíz no pueden separarse.
+
+     El respaldo en `vh` no es un respaldo cualquiera: en iOS `100vh`
+     YA es la ventana grande —es la vieja queja de que `100vh` se sale
+     por abajo—, así que donde no haya `lvh` el valor es el mismo.
+
+     Lo que se pierde: con la barra puesta, el último palmo del lienzo
+     queda detrás de ella. Ahí abajo hay agua y el canto rasgado del
+     papel, que es exactamente lo que puede taparse sin que se note. */
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
