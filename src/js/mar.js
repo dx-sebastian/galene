@@ -3541,8 +3541,30 @@ export function crear(lienzo) {
     cajaManglar: () => manglarCaja.slice(),
     cajaCerca: () => cercaCaja.slice(),
     redimensionar(w, h, escala) {
-      anchoEscena = Math.max(1, Math.round(w * escala));
-      altoEscena  = Math.max(1, Math.round(h * escala));
+      /* ── SI NO CAMBIA NADA, NO SE TOCA EL LIENZO ────────────────────
+         Asignar a `lienzo.width` REINICIA el búfer aunque el número sea
+         el mismo: lo reasigna y lo deja en blanco hasta el cuadro
+         siguiente. Y aquí se llamaba en cada `resize`, que en Safari de
+         iOS se dispara muchas veces seguidas mientras la barra de
+         direcciones se encoge al hacer scroll. Cada una de esas veces
+         era un lienzo vacío durante uno o más cuadros — o sea el
+         parpadeo que el dueño lleva seis ediciones viendo, y la razón
+         de que pasara SOLO al hacer scroll y SOLO en el hero.
+
+         Con esta puerta, un `resize` que no cambia el tamaño no cuesta
+         ni un píxel. */
+      const nAnchoEscena = Math.max(1, Math.round(w * escala));
+      const nAltoEscena  = Math.max(1, Math.round(h * escala));
+      const nEscalaSalida = perfilMovil
+        ? Math.min(Math.max(1, devicePixelRatio || 1), 2.0)
+        : escala;
+      const nAncho = Math.max(1, Math.round(w * nEscalaSalida));
+      const nAlto  = Math.max(1, Math.round(h * nEscalaSalida));
+      if (nAncho === ancho && nAlto === alto
+          && nAnchoEscena === anchoEscena && nAltoEscena === altoEscena) return;
+
+      anchoEscena = nAnchoEscena;
+      altoEscena  = nAltoEscena;
       /* La salida va hasta DPR 2 físico. El shader caro sigue en
          anchoEscena×altoEscena; aquí solo corre una lectura de textura,
          comparable a presentar un fotograma de vídeo. Limitar esto a
@@ -3550,11 +3572,8 @@ export function crear(lienzo) {
          DPR 2–3 y era la fuente del desenfoque que aún se veía. En DPR 3
          queda una ampliación de 1.5× en vez de 2.7×, sin pagar los tres
          millones de píxeles de salida que hicieron caer la cadencia. */
-      const escalaSalida = perfilMovil
-        ? Math.min(Math.max(1, devicePixelRatio || 1), 2.0)
-        : escala;
-      ancho = Math.max(1, Math.round(w * escalaSalida));
-      alto  = Math.max(1, Math.round(h * escalaSalida));
+      ancho = nAncho;
+      alto  = nAlto;
       lienzo.width = ancho; lienzo.height = alto;
 
       if (perfilMovil) {
