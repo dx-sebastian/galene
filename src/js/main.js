@@ -1236,7 +1236,27 @@ function arrancar(mar) {
     if (ahora < proximoLavado && !arranque && !luzCambio) return;
     proximoLavado = ahora + MS_LAVADO;
     luzCambio = false;
-    const caja = hero.getBoundingClientRect();
+    /* ── SE MIDE CONTRA EL LIENZO, NO CONTRA EL HERO ────────────────
+       Aquí se leía `hero.getBoundingClientRect()` y se convertían las
+       cajas del texto a píxeles de búfer restando `caja.top`. Eso vale
+       con la página arriba del todo y deja de valer en cuanto se hace
+       scroll: el hero SUBE con la página —su `top` se vuelve negativo—
+       pero el lienzo está pegado al viewport y no se mueve. Restar el
+       `top` del hero mete el scroll en la cuenta, así que la zona
+       leída se iba desplazando hacia abajo dentro del búfer: a media
+       pantalla de scroll ya no se estaba midiendo el fondo del rótulo
+       sino el agua de más abajo, y a una pantalla entera, nada.
+
+       Lo que se lee decide el color de la tinta, la carga del halo y el
+       alfa del velo. Medir mal es teñir mal, y hacia el lado que toque:
+       el velo de la tinta clara es `#0B141A` —casi negro— y el de la
+       oscura `#F4EFE6` —casi blanco—.
+
+       El origen bueno es el del propio lienzo, que además ya incluye su
+       escala y su hundido porque `getBoundingClientRect` devuelve la
+       caja transformada. Con esto la medida es la misma con la página
+       arriba, a media pantalla o a punto de salir. */
+    const caja = lienzo.getBoundingClientRect();
     const k = lienzo.width / Math.max(1, caja.width);
 
     const aGamma = (v) => (v <= 0.0031308 ? v * 12.92
@@ -1278,7 +1298,7 @@ function arrancar(mar) {
       if (r.width < 1 || r.height < 1) return null;
       // readPixels tiene el origen abajo-izquierda.
       return {
-        x: Math.round(r.left * k),
+        x: Math.round((r.left - caja.left) * k),
         y: Math.round(lienzo.height - (r.bottom - caja.top) * k),
         w: Math.round(r.width * k),
         h: Math.round(r.height * k),
@@ -1492,6 +1512,10 @@ function arrancar(mar) {
     ponerEscala(siguiente, `${hz.toFixed(0)} Hz de sobra`);
   }
 
+  /* Lo escribe el bloque de `?mar=diag`; sin el parámetro se queda en
+     nulo y el bucle no lo llama nunca. */
+  let diagVivo = null;
+
   function bucle() {
     if (corriendo) return;
     corriendo = true;
@@ -1535,6 +1559,7 @@ function arrancar(mar) {
            balancea medio grado y no merece el gasto. */
         if (despegue.ave) animarDespegue(despegue.ave, ms / 1000, estado.paralaje);
       }
+      if (diagVivo) diagVivo(ms);
       requestAnimationFrame(paso);
     };
     requestAnimationFrame(paso);
@@ -1544,7 +1569,37 @@ function arrancar(mar) {
   // tiene que ser bonito por sí solo. Es también la versión gama baja.
   cuadro(performance.now());
   hero.setAttribute('data-mar', 'listo');
-  if (DIAG_MAR && nota) nota.textContent = 'mar: pintando con webgl';
+
+  /* ── EL DIAGNÓSTICO, EN VIVO ───────────────────────────────────────
+     `?mar=diag` ya decía si el mar pintaba o se había caído al
+     respaldo, y con eso el dueño pudo descartar la pérdida de contexto
+     en un solo mensaje. Pero «pintando» no basta: el parpadeo sigue y
+     hay que ver QUÉ VALOR se descuadra en el instante en que ocurre.
+
+     Esta línea se reescribe con cada cuadro y trae lo poco que puede
+     explicar un hero lavado: el alfa del velo y qué tinta está puesta
+     —los dos salen de una medida sobre los píxeles del lienzo, y una
+     medida mala tiñe la pantalla entera—, el escalón de resolución
+     —por si el motor se está achicando bajo presión—, el tamaño real
+     del búfer, el scroll y la cadencia.
+
+     Se lee de una foto del teléfono, que es el único instrumento que
+     hay a este lado. No existe sin el parámetro y no cuesta nada sin
+     él: la escritura entera está dentro de la puerta. */
+  if (DIAG_MAR && nota) {
+    nota.style.fontVariantNumeric = 'tabular-nums';
+    let ultimoDiag = 0;
+    diagVivo = (ms) => {
+      if (ms - ultimoDiag < 120) return;
+      const fps = ultimoDiag ? Math.round(1000 / (ms - ultimoDiag)) : 0;
+      ultimoDiag = ms;
+      nota.textContent =
+        `webgl · lav ${alfaLavado.toFixed(2)} · ${tintaPuesta}`
+        + ` · esc ${escalonActual} ${lienzo.width}×${lienzo.height}`
+        + ` · sY ${Math.round(scrollY)} · ${fps}fps`
+        + ` · eco ${document.documentElement.classList.contains('con-eco') ? 'sí' : 'no'}`;
+    };
+  }
 
   /* ── EL ECO DEL MAR ────────────────────────────────────────────────
      Una FOTO del propio lienzo, reducida, puesta como fondo de `.mundo`
