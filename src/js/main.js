@@ -1249,12 +1249,50 @@ function arrancar(mar) {
        se le suma hasta un 34 % más de carga en la sombra corta y hasta
        un 46 % en la abierta. Con `necesario` en 0 —el caso normal— sale
        exactamente el halo de siempre y no hay ningún cambio. */
+    /* EL VELO SIGUE EXISTIENDO, PERO SOLO PARA LAS DOS LÍNEAS PEQUEÑAS.
+       Estas dos escrituras se habían perdido al pasar el trabajo al
+       halo, y el resultado fue silencioso y perfecto en su maldad: el
+       velo ceñido que se devolvió a `.lockup` y `.hero__declaracion`
+       estaba puesto en la hoja, con su forma y su desenfoque, y a
+       opacidad CERO. La medida no se movió, y por un momento pareció
+       que el velo tampoco servía. Servía; no estaba encendido.
+
+       Quién lo usa lo decide la hoja: el rótulo grande ya no lo lleva,
+       que es lo que el dueño pidió quitar. */
+    document.documentElement.style.setProperty('--lavado', alfaLavado.toFixed(3));
+    document.documentElement.style.setProperty('--lavado-color', T.lavado);
+
     const carga = Math.min(1, alfaLavado / 0.62);
     const tono = tintaPuesta === 'clara' ? '18 35 48' : '255 255 255';
     const base = tintaPuesta === 'clara' ? 30 : 38;
     hero.style.setProperty('--halo',
       `0 1px 3px rgb(${tono} / ${(base + carga * 34).toFixed(0)}%),`
       + ` 0 0 9px rgb(${tono} / ${(carga * 46).toFixed(0)}%)`);
+
+    /* ── Y EL LOCKUP PIDE MÁS, PORQUE ES EL MÁS PEQUEÑO ─────────────
+       Medido con `contraste.spec.js` después de quitar el velo: el
+       rótulo grande aguanta de sobra —es tipografía grande y su umbral
+       es más bajo—, pero el lockup se quedaba corto justo de noche:
+
+         móvil 19:00   4.13:1 · pide 4.95    escritorio 19:00  4.02:1
+         móvil 23:00   4.20:1 · pide 4.95    escritorio 23:00  4.10:1
+                                             escritorio 05:00  4.44:1
+
+       O sea: a las horas en que este sitio de verdad se abre. Trece
+       píxeles en versalitas con 0.30em de tracking, blancos, sobre la
+       Vía Láctea — es la pieza peor parada del cuadro y por eso el
+       velo existía.
+
+       Su halo va aparte y va más cargado: MÁS CERRADO, no más grande.
+       Tres píxeles de desenfoque pegados al glifo se leen como que la
+       letra está bien recortada; nueve píxeles con la misma carga se
+       leerían como la mancha que el dueño acaba de echar. La densidad
+       sube donde no se ve —contra el borde— en vez de extenderse por el
+       cielo. */
+    hero.style.setProperty('--halo-fino',
+      `0 0 3px rgb(${tono} / ${(58 + carga * 34).toFixed(0)}%),`
+      + ` 0 1px 2px rgb(${tono} / ${(52 + carga * 30).toFixed(0)}%),`
+      + ` 0 0 7px rgb(${tono} / ${(28 + carga * 34).toFixed(0)}%)`);
 
     primeraCalibracion = false;
   }
