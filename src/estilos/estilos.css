@@ -831,11 +831,51 @@ main:focus { outline: none; }
 }
 
 /* La sección de lectura empieza varios viewports más abajo. El navegador
-   conserva su geometría pero evita pintarla durante la carga del hero. */
+   conserva su geometría pero evita pintarla durante la carga del hero.
+
+   ── Y ESTA ERA «LO DE SAFARI» ──────────────────────────────────────
+   Con el WebKit de Playwright delante —el motor de Safari— y la misma
+   página medida en los dos motores a 1440×900:
+
+     WebKit    scrollHeight 10683 · .herramientas 7352 · el pie en 10463
+     Chromium  scrollHeight  8326 · .herramientas 4995 · el pie en  8106
+
+   El documento nacía 2 357 px más largo de lo que mide, y seguía así
+   hasta que el scroll llegaba a 1 200 px: ahí WebKit desplegaba por fin
+   la sección, su alto caía de golpe de 7 352 a 4 995 y TODO lo que hay
+   debajo —comunidad, expertos y el pie— pegaba un salto de 2 357 px
+   hacia arriba en mitad del desplazamiento. Chromium no lo enseñaba
+   nunca porque despliega la sección desde el primer cuadro, así que
+   aquí el número de abajo no se usaba jamás.
+
+   Dos causas, y las dos se arreglan:
+
+   1 · EL NÚMERO ERA MENTIRA. 7 200 px estaba puesto a ojo. Medido
+       después de renderizar de verdad: 5 060 a 1920, 4 995 a 1440,
+       4 791 a 1024 — y 6 224 a 760, 6 362 a 390, porque por debajo de
+       esa anchura los bloques se apilan. O sea 2 200 px de más en
+       escritorio y 800 de más en el teléfono. `contain-intrinsic-size`
+       es una PROMESA sobre el tamaño; una promesa con ese margen no
+       reserva sitio, inventa página.
+
+   2 · LA CONTENCIÓN NO SE SOLTABA NUNCA SOLA. Su trabajo dura lo que
+       dura la carga del hero, y hay una señal exacta para eso: la
+       misma clase que retira el cargador. Al soltarla ahí, la sección
+       se compone cuando todavía está fuera de pantalla y con el hero
+       ya montado: la geometría queda buena ANTES de que nadie pueda
+       desplazarse hasta ella, y el salto no tiene dónde ocurrir. Sin
+       JavaScript la clase no llega, la contención se queda puesta y el
+       navegador hace lo de siempre — con el número bueno. */
 .herramientas {
   content-visibility: auto;
-  contain-intrinsic-size: auto 7200px;
+  contain-intrinsic-size: auto 5000px;
 }
+/* Apilada, la misma sección mide 1 300 px más. Es el corte al que ya se
+   apilan sus bloques (ver nuevas-secciones.css), no uno nuevo. */
+@media (max-width: 760px) {
+  .herramientas { contain-intrinsic-size: auto 6300px; }
+}
+.contenido-listo .herramientas { content-visibility: visible; }
 
 .hero__lienzo {
   position: absolute; inset: 0;
