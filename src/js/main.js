@@ -255,6 +255,9 @@ function arrancar(mar) {
      del margen táctil dentro de `medidas()`. */
   const TACTIL = matchMedia('(pointer: coarse)').matches;
   const bufer = { w: 0, h: 0 };
+  /* Con qué caja se repartió el mundo la última vez. Ver la puerta de
+     salida al principio de `medidas()`. */
+  const repartido = { w: 0, h: 0, escala: 0 };
 
   function medidas() {
     const caja = hero.getBoundingClientRect();
@@ -289,6 +292,36 @@ function arrancar(mar) {
         || Math.abs(hCaja - bufer.h) > bufer.h * 0.28) {
       bufer.w = wCaja; bufer.h = hCaja;
     }
+    /* ── Y SI LA CAJA NO CAMBIÓ, EL MUNDO TAMPOCO ───────────────────
+       Con el búfer ya quieto, quedaba una vía por la que la barra de
+       Safari seguía moviendo el cuadro: el HORIZONTE. Se calcula a
+       partir de dónde termina el bloque de texto dentro del hero —«el
+       horizonte lo manda el texto, no el diseño», y sigue siendo
+       cierto— y el hero mide `100dvh`, que en iOS SÍ se encoge con la
+       barra. Al encogerse, el texto se recoloca, el horizonte se mueve,
+       y con el horizonte se recolocan el manglar y su hundimiento: el
+       árbol crecía y menguaba al desplazarse. Es lo que el dueño vio
+       después del arreglo anterior.
+
+       La cura es la misma idea llevada hasta el final: `medidas()` es
+       el reparto del mundo DENTRO de la caja del lienzo, así que si esa
+       caja no ha cambiado no hay nada que repartir de nuevo. Se sale
+       antes de tocar nada.
+
+       Los tres números que sí obligan a rehacerlo: el ancho, el alto y
+       la escala de resolución —esta última la cambia `ponerEscala`, que
+       llama aquí justo para eso—. La primera vez siempre pasa, porque
+       el reparto no existe todavía.
+
+       ¿Y el contraste? El horizonte queda calculado para la ventana
+       ALTA. Cuando la barra aparece y el hero encoge, el texto se
+       centra más arriba en términos absolutos, o sea que se aleja del
+       agua en vez de acercarse. La garantía que este cálculo protege no
+       se pierde: se holgura. */
+    if (repartido.w === bufer.w && repartido.h === bufer.h
+        && repartido.escala === escala) return;
+    repartido.w = bufer.w; repartido.h = bufer.h; repartido.escala = escala;
+
     const w = bufer.w, h = bufer.h;
     const aspecto = w / h;
 
