@@ -54,8 +54,34 @@ import * as pico from './pico.js';
 const PARAMS = new URLSearchParams(location.search);
 const HORA_FORZADA = PARAMS.has('hora') ? parseFloat(PARAMS.get('hora')) : null;
 /* Ver la nota dentro de `paisajeSegunScroll`: apaga el hundido del
-   mundo para poder descartarlo como causa del parpadeo de Safari. */
+   mundo para poder descartarlo como causa del parpadeo de Safari.
+   YA DESCARTADO: con `hundido=off` el parpadeo seguía igual. Se queda
+   el asidero, que no cuesta nada y ya demostró servir. */
 const SIN_HUNDIDO = PARAMS.get('hundido') === 'off';
+
+/* ── EL SIGUIENTE SOSPECHOSO, CON SU PROPIO INTERRUPTOR ────────────
+   Lo que el dueño ve es que el lienzo NO SE COMPONE —debajo asoma el
+   degradado de CSS de `.mundo`, que él describe como «un background que
+   parece css sin más»— mientras las garzas, que son DOM, siguen ahí. Y
+   pasa con el hundido apagado, o sea sin que nadie toque el lienzo.
+
+   Queda entonces la forma en que el lienzo está montado: es un hijo
+   `absolute` DENTRO de un `.mundo` que es `position: fixed`. WebKit
+   compone el scroll en otro hilo y las capas de hardware que cuelgan de
+   un ancestro fijo tienen que re-emparentarse en el árbol de capas
+   fijas; cuando no puede, la capa no se dibuja — y lo que se ve es
+   justo lo que hay detrás.
+
+   `?lienzo=suelto` hace que el lienzo sea ÉL el elemento fijo, sin
+   ancestro fijo por encima: misma caja, mismo sitio en el apilado
+   —`.mundo` ya es contexto propio por su z-index—, una anidación menos.
+   Si con eso deja de parpadear, la causa está encontrada y el cambio se
+   hace permanente; si no, este sospechoso queda descartado como el
+   anterior. Va como interruptor y no por defecto porque tocar el
+   montaje del hero a ciegas es exactamente lo que ya costó tres
+   rondas. */
+if (PARAMS.get('lienzo') === 'suelto')
+  document.documentElement.classList.add('lienzo-suelto');
 const reloj = () => (HORA_FORZADA !== null && !Number.isNaN(HORA_FORZADA))
   ? HORA_FORZADA : horaAhora();
 

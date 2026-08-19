@@ -882,6 +882,12 @@ main:focus { outline: none; }
   width: 100%; height: 100%;
   display: block;
 }
+/* El interruptor del sospechoso de turno; el porqué está en main.js,
+   junto a la lectura del parámetro. El lienzo pasa a ser él el elemento
+   fijo, en vez de colgar de uno. Misma caja y mismo sitio en el
+   apilado: `.mundo` ya es un contexto propio por su `z-index`, así que
+   un hijo fijo no se le escapa a ninguna parte. */
+.lienzo-suelto .hero__lienzo { position: fixed; }
 
 /* ═══════════════════════════════════════════════════════════════════
    LA BARRA — la fila del logotipo y los enlaces.
@@ -7410,103 +7416,26 @@ main:focus { outline: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Y EN SAFARI TAMBIÉN, AUNQUE SEA UN MAC — LOS PARPADEOS NEGROS
+   AQUÍ VIVIÓ UN BLOQUE SOLO PARA SAFARI, Y SE RETIRA
 
-   Los dos bloques de arriba se escribieron para el teléfono y se
-   cerraron con `pointer: coarse`, porque allí fue donde se midió. Pero
-   quien paga esas dos facturas no es el dedo: es WebKit. En un Mac con
-   Safari, `pointer` vale `fine` y la ventana pasa de 700 px, así que
-   hasta aquí no se aplicaba nada de esto — y el dueño sigue viendo
-   parpadeos negros.
+   Apagaba en WebKit las aguadas SVG de las aves, el desenfoque de la
+   entrada y el vidrio de la barra, apuntando a los «parpadeos negros»
+   del hero. La causa resultó ser otra —el buffer del lienzo, en
+   js/mar.js— así que estas tres cosas se estaban pagando sin comprar
+   nada: el dueño mira el sitio en Safari, y era justo a él a quien se
+   le quitaba el grano de papel sobre las garzas y el cristal de la
+   barra.
 
-   ── LO QUE SE PUDO MEDIR Y LO QUE NO ──────────────────────────────
-   Con el WebKit de Playwright corriendo aquí no se logró REPRODUCIR el
-   parpadeo: cuatro baterías —muestreo de cuadros durante la carga en
-   perfil de teléfono y de escritorio, con y sin el secado de entrada, y
-   con y sin los filtros SVG— y ni un cuadro negro. Los que lo parecían
-   eran cuadros VACÍOS del capturador (alfa cero), no pintura. Este
-   contenedor compone por software y con otro motor gráfico que un Mac;
-   ese parpadeo vive en el compositor de verdad.
+   Y llevaba un defecto de método que conviene dejar escrito: la
+   condición era `@supports (background: -webkit-named-image(i))`, una
+   prueba que aquí solo se puede verificar contra el WebKit de
+   Playwright, que no es el Safari de nadie. Publicar un remedio detrás
+   de una puerta que no se puede comprobar significa que, cuando el
+   síntoma sigue, no se sabe si el remedio no sirve o si no llegó a
+   encenderse. Si algún día hace falta volver a distinguir motores
+   aquí, el bloque está entero en el historial (edición 0705261).
 
-   Lo que sí se midió aquí, a 1440×900 y con `pointer: fine`: los
-   `url(#aguada-…)` cuestan un 18 % del tiempo de rasterizar el hero
-   (891 ms de mediana contra 732 sin ellos).
-
-   Así que esto NO es un arreglo comprobado del parpadeo: es apagar, en
-   el único motor donde el síntoma existe, las TRES cosas de esta página
-   que en WebKit producen cuadros negros — y las tres ya estaban
-   apagadas para el teléfono por razones de la misma familia:
-
-     1 · UN `url()` DENTRO DE UNA CADENA DE `filter`. Arrastra la cadena
-         entera al camino lento del SVG y `feTurbulence` se calcula en
-         CPU, a cada re-rasterizado. Un tile que no llega a tiempo se
-         compone negro. (El porqué largo está tres bloques más arriba.)
-
-     2 · UN `blur` SOBRE EL LIENZO VIVO. El secado de entrada desenfoca
-         y reescala `.mundo`, que es fijo y lleva dentro el canvas de
-         WebGL. Eso obliga a WebKit a copiar el canvas a una capa
-         intermedia en cada cuadro durante dos segundos, justo al
-         arrancar — que es cuando se ven los parpadeos. En el teléfono
-         ya entra solo aclarándose; aquí se hace lo mismo.
-
-     3 · UN `backdrop-filter` QUE MUESTREA ESE MISMO LIENZO. La barra
-         está pegada arriba y su vidrio lee todo lo que tiene detrás,
-         que en la portada es el mar animado. Es además el mayor culpable
-         medido en la edición anterior: sin él, el peor corte de
-         animación bajó de 2656 ms a 1139 ms.
-
-   ── CÓMO SE DESHACE ───────────────────────────────────────────────
-   Borrando el bloque entero, o cualquiera de sus tres partes por
-   separado. Lo que se pierde con cada una está dicho arriba: el grano
-   de papel sobre las aves, el desenfoque de la entrada, y el vidrio de
-   la barra —que pasa a papel al 94 %, la misma pieza que ya usa el
-   teléfono—.
-
-   `-webkit-named-image()` es la prueba: es una función CSS que solo
-   existe en WebKit, así que este bloque entra en Safari y en todo lo
-   que en iOS es Safari por dentro, y en ningún otro sitio. No mira el
-   tamaño de la ventana ni el tipo de puntero a propósito: lo que decide
-   es el motor, que es quien paga.
+   Lo que sí queda vivo, dos bloques más arriba, es el apagado por
+   `pointer: coarse`: aquello se midió en un teléfono y sigue midiendo
+   lo que decía.
    ═══════════════════════════════════════════════════════════════════ */
-@supports (background: -webkit-named-image(i)) {
-  .vuelo {
-    filter: saturate(var(--vuelo-sat, 0.3))
-            contrast(var(--vuelo-contraste, 0.72))
-            brightness(var(--vuelo-brillo, 1));
-  }
-
-  .vuelo--bandada {
-    filter: saturate(var(--vuelo-sat, 0.3))
-            contrast(calc(var(--vuelo-contraste, 0.72) * 1.14))
-            brightness(calc(var(--vuelo-brillo, 1) * 0.93))
-            drop-shadow(0 1px 1.5px color-mix(in srgb, var(--sombra-ave) 30%, transparent))
-            drop-shadow(0 0 5px color-mix(in srgb, var(--sombra-ave) 16%, transparent));
-  }
-
-  .vuelo--visita {
-    filter: saturate(var(--vuelo-sat-cerca, 0.94))
-            contrast(var(--vuelo-contraste-cerca, 0.98))
-            brightness(var(--vuelo-brillo-cerca, 1))
-            drop-shadow(0 3px 2px color-mix(in srgb, var(--sombra-ave) 78%, transparent))
-            drop-shadow(2px 5px 5px color-mix(in srgb, var(--sombra-ave) 45%, transparent));
-  }
-
-  .entrando .mundo {
-    animation: llegar-pintura 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-    filter: none;
-    scale: 1;
-  }
-
-  .barra--papel,
-  .barra--flotante {
-    background: color-mix(in srgb, var(--papel) 94%, transparent);
-    -webkit-backdrop-filter: none;
-            backdrop-filter: none;
-  }
-  .boca__hoja::before,
-  .mapa__permiso,
-  .hero__enlace {
-    -webkit-backdrop-filter: none;
-            backdrop-filter: none;
-  }
-}
