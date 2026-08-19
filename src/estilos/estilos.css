@@ -7232,3 +7232,36 @@ main:focus { outline: none; }
             drop-shadow(2px 5px 5px color-mix(in srgb, var(--sombra-ave) 45%, transparent));
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EN TÁCTIL, EL VIDRIO SE VUELVE PAPEL — Y ES POR MEDIDA, NO POR MANÍA
+
+   Medido en WebKit de verdad (el motor de Safari, corriendo aquí)
+   scrolleando la portada entera: el peor corte de animación pasó de
+   2656 ms a 1139 ms SOLO con quitar los `backdrop-filter`. Un blur de
+   backdrop se recalcula en cada cuadro de scroll sobre todo lo que
+   tiene detrás, y la barra está pegada arriba: paga ese precio durante
+   TODO el desplazamiento. En un iPhone eso es «se corta la animación».
+
+   La barra pasa a papel casi opaco: mismo aspecto a un palmo, cero
+   coste por cuadro. El lavado del canto de la boca y el velo del mapa
+   pierden su blur de fondo, que a ese tamaño y en ese contexto no se
+   distinguen del velo plano.
+
+   En escritorio no cambia nada: allí el puntero es fino, el motor es
+   otro y la medida no acusó a nadie.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (pointer: coarse) {
+  .barra--papel,
+  .barra--flotante {
+    background: color-mix(in srgb, var(--papel) 94%, transparent);
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+  }
+  .boca__hoja::before,
+  .mapa__permiso,
+  .hero__enlace {
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+  }
+}
