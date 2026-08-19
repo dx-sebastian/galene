@@ -154,10 +154,44 @@
    No se vio antes porque toda la batería miraba a 1440 px o menos, que
    es justo donde el daño todavía parece una decisión tipográfica. De
    ahí sale `pruebas/e2e/anchos.spec.js`, que mira hasta 2560. */
+/* ── Y ERA UN AGUJERO AL LIENZO, MEDIDO ────────────────────────────
+   Esta línea vivía entre `#expertos` y el pie con `margin` y sin fondo.
+   Nada más: cien píxeles de alto en los que la página no pintaba, y
+   detrás de la portada está `.mundo` —el mar, fijo al viewport, en
+   z-index −1—. Resultado en captura a 1440×900, con tres pantallas de
+   papel encima y el pie de papel debajo: una FRANJA de pintura de
+   102 px con un trozo de cielo, media raíz de manglar y una garza
+   partida por los dos cantos, entre dos rectas de lado a lado. Medido:
+   luminancia 245 arriba, 189 en la franja, 245 abajo.
+
+   Es exactamente la rendija por la que se retiró la boca —está escrito
+   en index.astro—, la razón por la que el pie se pinta y no se deja
+   transparente —está escrito en Pie.astro— y la misma avería que en
+   móvil se cazó entre comunidad y expertos, donde la cura fue idéntica:
+   relleno y no margen, porque el aire es de la pieza y lo paga la pieza
+   con su propio papel (ver `.expertos` en responsive.css). Volvió aquí
+   porque este párrafo no es una sección: es un <p> suelto entre dos que
+   sí lo son, y nadie le dio hoja.
+
+   Ahora la tiene, y de ancho completo: el margen se vuelve relleno
+   —con `margin` el fondo no cubre el hueco, que es lo que dejaba las
+   dos rectas— y el papel BAJA de `--papel-arriba` a `--papel`, o sea
+   del papel de los expertos al del pie. La franja deja de ser una
+   franja: es el tramo en el que una hoja cambia de tono, y los dos
+   cantos que la delataban dejan de existir porque a cada lado tiene
+   exactamente el color que ya había.
+
+   `max-width` se va con el `margin: auto`: la caja es la banda entera y
+   el enlace lo centra `text-align`, así que se lee donde se leía. El
+   relleno lateral es el de las secciones vecinas —no el `--margen`
+   pelado de antes— porque ahora la caja mide lo que ellas. */
 .acerca__salida {
-  margin: var(--e-6) auto var(--e-5);
-  max-width: 62rem;
-  padding-inline: var(--margen, 1.25rem);
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding-block: var(--e-6) var(--e-5);
+  padding-inline: max(clamp(1.25rem, 5vw, 4rem), calc((100% - 72rem) / 2));
+  background: linear-gradient(to bottom, var(--papel-arriba), var(--papel));
   text-align: center;
   font-size: var(--t-sm);
   color: rgb(var(--letra-rgb) / 72%);
@@ -235,6 +269,29 @@
   background-image: var(--arte-papel);
   background-size: 820px;
   background-repeat: repeat;
+  /* ── MISMO GRANO, MISMA FUERZA, Y AUN ASÍ SE VEÍA LA RECTA ───────
+     Aquí abajo el color ya coincidía —las dos secciones son `--papel`—
+     y el diente también, y en captura seguía habiendo una línea de lado
+     a lado en el canto: medido, dos puntos y medio de luminancia.
+
+     La causa es que dos mosaicos iguales NO están en la misma FASE. El
+     grano se repite cada 820 px contado desde el canto de arriba de
+     CADA elemento, y esos dos cantos están donde están: la ayuda
+     empieza donde acaba el hero, que mide una ventana. Al llegar a la
+     juntura, esta hoja va por la fila 574 de la lámina y la de abajo
+     empieza por la 0 — dos trozos distintos del mismo papel puestos a
+     tope, y el ojo lee el salto como un canto aunque el color no se
+     mueva. No hay forma de alinearlos en CSS: la fase depende del alto
+     del hero, que es el de la pantalla de cada quien.
+
+     Así que no se alinean: se APAGAN donde se tocan. El diente se
+     desvanece en las últimas 6 rem de esta hoja y vuelve a entrar en
+     las primeras 6 de la siguiente (ver `.herramientas .fondo__papel`),
+     de modo que en la juntura las dos son papel liso del mismo color y
+     no hay fase que comparar. Seis rem son cien píxeles: una rampa así
+     de larga no se ve como una falta de textura, se ve como papel. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 6rem), transparent);
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 6rem), transparent);
   mix-blend-mode: multiply;
   opacity: 0.3;
 }
@@ -396,8 +453,9 @@
   /* Mismo papel base que #expertos, sin rampa: la primera rampa que se
      probó iba hacia `--papel` y ACLARABA justo antes del corte — lo
      agravaba. Las dos secciones son `--papel-arriba` con el mismo
-     grano; lo que queda de juntura lo disuelve la aguada de expertos,
-     que ahora asoma por encima de su propio canto (ver su regla). */
+     grano, y ahora #herramientas también baja a él en su último tramo:
+     de la sección de las herramientas al pie hay UNA hoja, y las
+     junturas no separan dos papeles porque no hay dos. */
   background:
     radial-gradient(circle at 12% 16%, rgb(115 159 163 / 15%), transparent 30%),
     radial-gradient(circle at 88% 82%, rgb(185 142 79 / 12%), transparent 28%),
@@ -449,48 +507,73 @@
 }
 /* Y el velo de papel encima, para que el texto siga midiendo su
    contraste contra papel y no contra un paisaje. El tramo abierto se
-   queda ARRIBA (donde el recuerdo asoma entre el título y el enlace) y
-   el cierre hacia el papel empieza antes y dura más: una rampa larga
-   no hace banda. */
+   queda EN EL MEDIO —entre el titular y el enlace, lejos de los dos
+   cantos— y el papel se cierra del todo antes de llegar a ellos: una
+   rampa larga no hace banda, y un canto opaco no hace costura. */
 .comunidad-panel::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* 62 % → 90 %: por la ventana del medio se veía el recuerdo borroso
-     del mar como una franja humosa entre dos papeles — el dueño la
-     leyó como «background transparente» encima del panel de expertos,
-     y con razón. El recuerdo se queda, pero como tinte bajo el papel,
-     no como agujero. */
-  /* Y EL GRANO VIAJA DENTRO DEL VELO. `.comunidad-panel` era la única
-     sección de abajo sin diente de papel de día —sus dos pseudos están
-     ocupados por el recuerdo del mar—, y esa carencia era la mitad del
-     corte contra #expertos: dos cremas casi iguales, una con grano y
-     otra lisa, y el ojo ve la juntura aunque no sepa decir por qué.
-     El grano entra como segunda capa de ESTE velo: donde el velo es
-     papel lleva diente, y donde se abre la ventana del recuerdo no
-     estorba. La otra mitad del corte era el color, y la resuelve la
-     rampa de 8 rem del bloque principal. */
-  /* Tres capas: un baño de papel casi opaco ENCIMA del grano, el grano
-     multiplicado, y el velo de siempre. El baño existe para bajarle la
-     fuerza al grano — multiplicado a pelo salía el doble de marcado que
-     el de #expertos y la diferencia de diente volvía a dibujar la
-     recta. Con el baño al 62 % los dos dientes quedan a la par, medido
-     en captura contra la sección de abajo. */
+  /* TRES CAPAS: un baño de papel ENCIMA del grano, el grano
+     multiplicado, y el papel de fondo. El baño existe para bajarle la
+     fuerza al grano — multiplicado a pelo sale el doble de marcado que
+     el de #expertos. Y el grano viaja aquí dentro porque los dos
+     pseudos de esta sección están ocupados: el otro lo lleva el
+     recuerdo del mar. Sin diente, esta era la única hoja lisa de las de
+     abajo, y una juntura entre liso y dentado se ve aunque el color
+     coincida. */
+  /* ── LA VENTANA NO ESTABA EN LA CAPA QUE PODÍA ABRIRLA ────────────
+     El degradado de abajo tenía sus paradas de alfa —90 % en el medio,
+     opaco en los cantos— y NO SERVÍAN DE NADA: `papel.webp` es un WebP
+     sin canal alfa, o sea una capa OPACA, y una capa opaca encima tapa
+     la transparencia de la que tiene debajo. Compuesto el velo, su alfa
+     era 1 de arriba abajo y lo único que dejaba pasar el recuerdo era
+     el `opacity: 0.92` del elemento entero.
+
+     Consecuencia, medida a 1440×900: el recuerdo del mar no era una
+     ventana en el medio sino un 8 % de tinte azul UNIFORME sobre todo
+     el panel. Y ese 8 % es justo lo que dejaba la banda catorce puntos
+     de luminancia por debajo de sus dos vecinas —227 contra 241— con
+     una recta arriba y otra abajo. Las dos costuras que quedaban.
+
+     Se arregla donde estaba el error: la ventana la abre ahora la
+     MÁSCARA del elemento, que sí manda sobre lo compuesto. Los cantos
+     van a máscara llena —papel opaco, exactamente `--papel-arriba`, que
+     es el papel de #expertos y al que ahora baja también #herramientas—
+     y el medio se entreabre un 12 %, donde no hay ningún borde con el
+     que comparar. El recuerdo pasa de ser un velo plano a ser lo que
+     decía este comentario que era. */
+  /* ── Y EL BAÑO SE CIERRA EN LOS CANTOS, QUE ES LO QUE APAGA EL
+     DIENTE JUSTO DONDE MOLESTA ─────────────────────────────────────
+     Era plano al 62 % de arriba abajo. Con el baño cerrado del todo en
+     las primeras y últimas 6 rem, el grano de este panel —un `multiply`
+     de verdad, ocho puntos de luminancia— desaparece en los dos cantos
+     y solo vive en el medio. Arriba y abajo tiene por vecinas dos hojas
+     cuyo diente también se apaga al llegar (`.herramientas
+     .fondo__papel` y `.expertos::before`), así que en las dos junturas
+     se tocan dos papeles lisos del MISMO color y no hay ni fase ni
+     fuerza que comparar. Es el mismo remedio que cerró la juntura de la
+     ayuda, aplicado a las otras dos. */
   background-image:
-    linear-gradient(color-mix(in srgb, var(--papel-arriba) 62%, transparent),
-                    color-mix(in srgb, var(--papel-arriba) 62%, transparent)),
-    var(--arte-papel),
     linear-gradient(to bottom,
-      var(--papel-arriba) 0%,
-      color-mix(in srgb, var(--papel-arriba) 90%, transparent) 30%,
-      color-mix(in srgb, var(--papel-arriba) 90%, transparent) 55%,
-      var(--papel-arriba) 96%);
+      var(--papel-arriba) 0,
+      color-mix(in srgb, var(--papel-arriba) 62%, transparent) 6rem,
+      color-mix(in srgb, var(--papel-arriba) 62%, transparent) calc(100% - 6rem),
+      var(--papel-arriba) 100%),
+    var(--arte-papel),
+    linear-gradient(var(--papel-arriba), var(--papel-arriba));
   background-size: 100% 100%, 820px, 100% 100%;
   background-repeat: no-repeat, repeat, no-repeat;
   background-blend-mode: normal, multiply, normal;
-  opacity: 0.92;
+  -webkit-mask-image: linear-gradient(to bottom,
+    #000 0%, #000 14%, rgb(0 0 0 / 88%) 34%,
+    rgb(0 0 0 / 88%) 56%, #000 80%, #000 100%);
+          mask-image: linear-gradient(to bottom,
+    #000 0%, #000 14%, rgb(0 0 0 / 88%) 34%,
+    rgb(0 0 0 / 88%) 56%, #000 80%, #000 100%);
+  opacity: 1;
 }
 .comunidad-panel > * { position: relative; z-index: 1; }
 
@@ -568,9 +651,25 @@
   /* Dos respiraciones de color, no una: el agua arriba a la derecha y
      un eco cálido abajo a la izquierda. Es el mismo par de pigmentos
      de las aguadas de la hoja — la sección deja de ser papel liso. */
+  /* ── Y NINGUNA DE LAS DOS TOCA SU PROPIO CANTO ───────────────────
+     Estaban centradas en el 24 % y el 88 % del ALTO con radios en
+     porcentaje, y con eso las dos se salían por su lado: la de agua
+     llegaba 178 px por encima del canto de arriba y la cálida asomaba
+     por el de abajo. Una aguada que llega al borde de su caja deja de
+     ser una aguada — el pigmento se corta en seco contra la sección
+     vecina y lo que se ve es una recta teñida, más clara a un lado que
+     a otro. Medido: dos puntos y pico de luminancia en la juntura con
+     `.comunidad-panel`, y era la última que quedaba ahí.
+
+     El centro y el radio pasan a REM. En porcentaje, el radio de un
+     `circle` se mide contra la diagonal de la caja y el centro contra
+     su alto: los dos se mueven al cambiar la ventana, y con tres
+     tarjetas en fila en vez de una columna la sección encoge y la
+     mancha vuelve a salirse. En rem, el aire que queda a cada canto es
+     el mismo en todas las ventanas — cuatro rem, medidos aquí. */
   background:
-    radial-gradient(circle at 88% 24%, rgb(115 159 163 / 16%), transparent 34%),
-    radial-gradient(circle at 6% 88%, rgb(196 112 63 / 8%), transparent 30%),
+    radial-gradient(circle 26rem at 88% 30rem, rgb(115 159 163 / 16%), transparent),
+    radial-gradient(circle 24rem at 6% calc(100% - 28rem), rgb(196 112 63 / 8%), transparent),
     var(--papel-arriba);
   color: var(--letra);
 }
@@ -973,9 +1072,19 @@
      texturas de fuerzas distintas tocándose dibujan una recta aunque el
      color coincida — era la última juntura que el dueño seguía viendo.
      Ocho rem de fundido y el diente de una hoja se convierte en el de
-     la otra sin línea donde compararlos. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 8rem);
-          mask-image: linear-gradient(to bottom, transparent, #000 8rem);
+     la otra sin línea donde compararlos.
+
+     ── Y SALE POR ABAJO POR EL MISMO MOTIVO ───────────────────────
+     Debajo está la línea de «Acerca de Galene» y debajo de ella el pie,
+     y ninguna de las dos lleva grano. Con el diente a plena fuerza
+     hasta el último píxel, la juntura de abajo era la de arriba al
+     revés: dos cremas iguales, una dentada y otra lisa, y el ojo
+     encuentra la recta aunque el color no se mueva. La misma rampa,
+     hacia el otro lado. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 8rem,
+                                      #000 calc(100% - 8rem), transparent);
+          mask-image: linear-gradient(to bottom, transparent, #000 8rem,
+                                      #000 calc(100% - 8rem), transparent);
   /* El grano muerde, nunca destiñe: es la misma regla que gobierna el
      botón de acuarela y por la misma razón física. */
   mix-blend-mode: multiply;
