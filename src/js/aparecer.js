@@ -73,6 +73,15 @@ if (!quieto.matches) {
   const piezas = [...document.querySelectorAll(SELECTOR)]
     /* Fuera el héroe y fuera la ayuda (regla 2). */
     .filter((el) => !el.closest('.hero, #ayuda'))
+    /* FUERA LO QUE NO TIENE CAJA. Los bloques de dentro de las escenas
+       del mapa viven en paneles con display:none hasta que alguien los
+       abre: un observador no puede verlos intersecar NUNCA, así que
+       apuntarlos es condenarlos a quedarse invisibles dentro de su
+       panel. Encontrado por la batería: cuatro piezas a 0×0 clavadas en
+       `por-llegar` tras recorrer la página entera. Al no apuntarse,
+       aparecen normales cuando su panel se abre, que es lo correcto:
+       la llegada es un gesto del scroll, no de abrir un cajón. */
+    .filter((el) => el.getClientRects().length > 0)
     /* Y fuera lo que ya está en pantalla al cargar: esconder algo que
        la persona ya está mirando para enseñárselo un instante después
        es el efecto peor de todos. */
@@ -96,9 +105,24 @@ if (!quieto.matches) {
           ojo.unobserve(e.target);
         }
       }, {
-        /* Un poco antes de asomar: el bloque tiene que estar entero
-           cuando llega el ojo, no empezar a aparecer cuando ya se lee. */
-        rootMargin: '0px 0px -12% 0px',
+        /* Abajo, un poco antes de asomar: el bloque tiene que estar
+           entero cuando llega el ojo, no empezar a aparecer cuando ya
+           se lee.
+
+           ARRIBA, PRÁCTICAMENTE INFINITO, y esto es una avería pagada:
+           con 0px arriba, alguien que scrollea RÁPIDO salta bloques
+           enteros entre dos cuadros — el observador nunca los ve
+           intersecar y se quedan invisibles para siempre. Lo cazó la
+           batería contra producción: 9 de 28 bloques sin llegar
+           después de recorrer la página entera. La red vieja de dos
+           segundos tapaba esto (revelándolo TODO, que era su propio
+           defecto); al quitarla, el agujero quedó al aire.
+
+           Con 10000px arriba, todo lo que quede POR ENCIMA del
+           viewport cuenta como visto: lo que se saltó de un tirón se
+           revela solo, y al volver a subir está ahí. Lo de abajo sigue
+           esperando su turno. */
+        rootMargin: '10000px 0px -12% 0px',
         threshold: 0.01,
       });
       for (const el of piezas) ojo.observe(el);
@@ -133,6 +157,40 @@ if (!quieto.matches) {
        Nada de esto puede dejar contenido invisible: lo de abajo no se
        lee hasta que se baja, y bajar dispara el observador. Y si el
        observador estuviera roto, no habría entrado en esta rama. */
+    /* ═══ EL BARRIDO DEL SCROLL — LA GARANTÍA, NO EL GESTO ══════════
+       El observador es quien hace bonito el gesto; esto es quien
+       garantiza el resultado. En cada scroll (coalescido a un cuadro)
+       se revela todo lo que haya quedado POR ENCIMA del borde inferior
+       del viewport: si pasaste por encima de algo —despacio, rápido,
+       de un salto de teclado o restaurando sesión—, está revelado.
+
+       Existe porque el observador solo, medido, dejaba cinco piezas
+       con caja sin llegar tras recorrer la página. Con este barrido el
+       peor caso posible es que una pieza haga su transición un cuadro
+       tarde; sin él, el peor caso era contenido que no aparece. Entre
+       un fallo estético y uno de contenido, este sitio elige siempre
+       pagar el estético. */
+    let barriendo = false;
+    addEventListener('scroll', () => {
+      if (barriendo) return;
+      barriendo = true;
+      requestAnimationFrame(() => {
+        barriendo = false;
+        for (const el of piezas) {
+          if (el.classList.contains('llegado')) continue;
+          const r = el.getBoundingClientRect();
+          /* Sin caja también se revela. Las escenas del mapa TIENEN
+             caja al cargar y su panel se cierra después: la pieza se
+             apuntó legítimamente y luego se quedó sin geometría, donde
+             ni el observador ni la comparación de arriba la alcanzan.
+             Dentro de un panel cerrado no hay gesto que proteger:
+             revelarla solo garantiza que esté ahí cuando el panel se
+             abra. */
+          if (r.top < innerHeight || (!r.width && !r.height)) revelar(el);
+        }
+      });
+    }, { passive: true });
+
     const barrerLoVisible = () => {
       for (const el of piezas) {
         if (!el.isConnected || el.classList.contains('llegado')) continue;
