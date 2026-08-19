@@ -58,6 +58,9 @@ const HORA_FORZADA = PARAMS.has('hora') ? parseFloat(PARAMS.get('hora')) : null;
    YA DESCARTADO: con `hundido=off` el parpadeo seguía igual. Se queda
    el asidero, que no cuesta nada y ya demostró servir. */
 const SIN_HUNDIDO = PARAMS.get('hundido') === 'off';
+/* `?mar=diag` cuenta en la nota del hero cómo acabó el mar: pintando o
+   caído al respaldo, y por qué. Ver `caerAlRespaldo` y `arrancar`. */
+const DIAG_MAR = PARAMS.get('mar') === 'diag';
 
 /* ── EL SIGUIENTE SOSPECHOSO, CON SU PROPIO INTERRUPTOR ────────────
    Lo que el dueño ve es que el lienzo NO SE COMPONE —debajo asoma el
@@ -1541,6 +1544,7 @@ function arrancar(mar) {
   // tiene que ser bonito por sí solo. Es también la versión gama baja.
   cuadro(performance.now());
   hero.setAttribute('data-mar', 'listo');
+  if (DIAG_MAR && nota) nota.textContent = 'mar: pintando con webgl';
 
   /* ── EL ECO DEL MAR ────────────────────────────────────────────────
      Una FOTO del propio lienzo, reducida, puesta como fondo de `.mundo`
@@ -1588,6 +1592,10 @@ function arrancar(mar) {
       c.width = ancho; c.height = alto;
       c.getContext('2d').drawImage(lienzo, 0, 0, ancho, alto);
       mundo.style.setProperty('--eco-mar', `url("${c.toDataURL('image/webp', 0.7)}")`);
+      /* Que exista un eco cambia lo que tiene que hacer el respaldo si
+         el contexto se pierde: ver `caerAlRespaldo` y la nota de
+         `.con-eco` en estilos.css. */
+      document.documentElement.classList.add('con-eco');
     } catch { /* un lienzo que no se deja leer no rompe la portada */ }
   }
   /* Al asentarse: 2 s después del primer cuadro es tiempo de sobra para
@@ -4067,6 +4075,13 @@ function caerAlRespaldo(motivo) {
   hero?.setAttribute('data-mar-motivo', motivo);
   document.documentElement.classList.add('hero-estatico');
   dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo: 'css', motivo } }));
+  /* ── Y SE DICE EN VOZ ALTA SI ALGUIEN LO PIDIÓ ──────────────────
+     `?mar=diag` escribe el motivo en la nota del hero. No hay consola
+     en un teléfono ajeno, y toda la ronda anterior se fue en no poder
+     distinguir «el remedio no sirve» de «el remedio no se encendió».
+     Esto contesta la pregunta en un vistazo y no existe sin el
+     parámetro. */
+  if (DIAG_MAR && nota) nota.textContent = `mar: sin webgl · motivo: ${motivo}`;
 }
 
 /* ── ARRANQUE ──────────────────────────────────────────────────────

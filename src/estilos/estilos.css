@@ -740,6 +740,27 @@ main:focus { outline: none; }
   animation: agua-movil 7.5s ease-in-out infinite alternate;
 }
 
+/* ── Y SI HAY ECO, EL RESPALDO NO ES ESTE ─────────────────────────
+   Estas dos capas son la composición de emergencia: una banda de agua
+   en `screen` y la lámina del manglar, pensadas para el aparato que
+   NUNCA tuvo WebGL. Cuando el contexto se pierde a mitad —que es lo que
+   le pasa al dueño en su iPhone: iOS recicla la memoria de vídeo al
+   desplazarse y mata el contexto— el sitio caía aquí, y lo que quedaba
+   era esta versión pálida con las garzas encima, que es exactamente lo
+   que él fotografió: el mar y los manglares «desaparecidos», las aves
+   en su sitio.
+
+   Pero en ese caso hay algo mucho mejor a mano: `--eco-mar`, la foto
+   del último cuadro bueno que ya se guarda para el parpadeo. Si existe,
+   el respaldo es la PINTURA, no su esquema. Así que estas dos capas se
+   apagan en cuanto hay eco — con `content: none` no se generan
+   siquiera, ni se descarga la lámina.
+
+   Sin JavaScript, sin WebGL desde el principio o antes de la primera
+   foto, `.con-eco` no está y esto sigue funcionando como siempre. */
+.con-eco.hero-estatico .mundo::before,
+.con-eco.hero-estatico .mundo::after { content: none; }
+
 .hero-estatico .mundo::after {
   content: "";
   position: absolute;
