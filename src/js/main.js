@@ -53,6 +53,9 @@ import * as pico from './pico.js';
    esto altera el sitio sin los parámetros. */
 const PARAMS = new URLSearchParams(location.search);
 const HORA_FORZADA = PARAMS.has('hora') ? parseFloat(PARAMS.get('hora')) : null;
+/* Ver la nota dentro de `paisajeSegunScroll`: apaga el hundido del
+   mundo para poder descartarlo como causa del parpadeo de Safari. */
+const SIN_HUNDIDO = PARAMS.get('hundido') === 'off';
 const reloj = () => (HORA_FORZADA !== null && !Number.isNaN(HORA_FORZADA))
   ? HORA_FORZADA : horaAhora();
 
@@ -816,6 +819,45 @@ function arrancar(mar) {
   lienzo.style.transformOrigin = '50% 100%';
   if (contenedorGarzas) contenedorGarzas.style.transformOrigin = '50% 100%';
 
+  /* ── Y LA ESCALA TAMBIÉN SE PONE UNA VEZ ─────────────────────────
+     Esto es el arreglo del «desaparece el agua y los árboles al hacer
+     scroll, y las aves permanecen» de Safari, y es el cuarto intento:
+     los tres anteriores fueron por el buffer del lienzo —el color del
+     vacío, y luego conservarlo entre presentaciones— y ninguno lo
+     movió. Que `preserveDrawingBuffer` no cambiara nada DESCARTA el
+     buffer: si el problema fuera que se compone vacío, conservarlo lo
+     habría cerrado. Lo que se compone entonces no es un lienzo vacío:
+     es que el lienzo NO SE COMPONE, y por eso se ve lo que hay detrás
+     —el degradado de CSS de `.mundo`, que no tiene ni olas ni árbol—
+     mientras las garzas, que son DOM y viven fuera, siguen ahí.
+
+     Y solo queda una cosa en toda la página que toque el lienzo
+     ÚNICAMENTE mientras se hace scroll: esta escala. Iba dentro de la
+     cadena de `transform` que se reescribe cuadro a cuadro, así que la
+     escala del lienzo CAMBIABA en cada cuadro del desplazamiento. Un
+     `translate` lo resuelve el compositor moviendo una capa que ya
+     tiene; un `scale` distinto en cada cuadro le pide REMUESTREAR la
+     superficie, y la de aquí es un canvas de WebGL a pantalla completa
+     dentro de un ancestro `position: fixed`, con el scroll compuesto en
+     otro hilo. Cuando esa superficie no está lista a tiempo, lo que se
+     compone es nada.
+
+     Así que la escala deja de moverse: se pone entera desde el primer
+     cuadro, en la propiedad `scale` —que es independiente de
+     `transform`— y el cuadro solo escribe un `translate3d`. El
+     compositor vuelve a tener una capa estática que solo se desplaza.
+
+     LO QUE CAMBIA A LA VISTA: el mundo nace ya un 2 % más grande en vez
+     de crecer ese 2 % a lo largo de una pantalla de scroll. Es el mismo
+     número que el comentario de arriba llama invisible —dos centésimas
+     de la copa—, solo que ahora está desde el principio; el margen que
+     abre por arriba, que es para lo que existe, es el mismo y se
+     consume igual. Las dos cajas lo llevan idéntico, así que el ave y
+     el árbol siguen sin poder separarse ni un píxel. */
+  const ESCALA_FIJA = String(1 + SALIDA_ESCALA);
+  lienzo.style.scale = ESCALA_FIJA;
+  if (contenedorGarzas) contenedorGarzas.style.scale = ESCALA_FIJA;
+
   function paisajeSegunScroll() {
     /* Movimiento apagado: NADA. No es un gesto reducido, es un gesto
        que no existe — y cuadro() se llama una vez justamente en ese
@@ -832,10 +874,23 @@ function arrancar(mar) {
        cero y este umbral no se cruza nunca. */
     if (salida > 0.004) empezarDespegue();
 
-    const e = SALIDA_ESCALA * salida;
-    const tr = e === 0 ? 'translate3d(0, 0, 0)'
-      : `translate3d(0, ${(e * viewportHeight() * SALIDA_HUNDE).toFixed(2)}px, 0) `
-        + `scale(${(1 + e).toFixed(5)})`;
+    /* Solo el hundido, y en píxeles enteros. El sub-píxel no se ve —el
+       recorrido entero son trece píxeles— y en cambio hacía que la
+       cadena cambiara en CADA cuadro aunque el movimiento no llegara a
+       medio píxel: trece escrituras de estilo en vez de sesenta por
+       segundo, y trece momentos en que el compositor tiene algo nuevo
+       que hacer en vez de todos. */
+    const hundido = Math.round(
+      SALIDA_ESCALA * salida * viewportHeight() * SALIDA_HUNDE);
+    /* ── UN INTERRUPTOR PARA MIRAR, NO PARA USAR ────────────────────
+       `?hundido=off` deja de escribir la transformación del lienzo, y
+       nada más. Existe porque el parpadeo de Safari solo se ve en el
+       aparato del dueño y este es el sospechoso: si con esto puesto
+       sigue pasando, el hundido queda descartado en un solo mensaje en
+       vez de en otra ronda entera. Es el mismo tipo de asidero que
+       `?hora=` o `?auditar-mar`, y como ellos no cambia nada sin él. */
+    if (SIN_HUNDIDO) return salida;
+    const tr = `translate3d(0, ${hundido}px, 0)`;
     if (tr === salidaEscrita) return salida;
     salidaEscrita = tr;
     lienzo.style.transform = tr;
