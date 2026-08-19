@@ -419,14 +419,34 @@ import { TERMINOS } from '../datos/glosario.js';
             al portal, que es una dirección corta y es la que esa
             entidad publica en todas partes.
 
-            NO SE HA PODIDO COMPROBAR DESDE AQUÍ: este entorno no
-            alcanza los dominios .gov.co colombianos —fiscalia.gov.co
-            cierra la conexión y adenunciar responde 500—, y eso puede
-            ser tanto la máquina como el sitio. Queda en la lista de
-            «antes de publicar»: hay que abrirlo desde Colombia. */}
-        <li><a href="https://adenunciar.policia.gov.co/" rel="noopener">
+            Y AQUÍ LA LECCIÓN SE DIO LA VUELTA. La regla de arriba
+            —«apunta al portal, que la raíz es corta y estable»— llevaba
+            a la raíz del dominio, y la raíz del dominio DEVUELVE 500. No
+            un 404: una pantalla de ASP.NET con volcado de configuración,
+            que a alguien que acaba de decidirse a denunciar le dice que
+            el Estado está roto.
+
+            Lo comprobó el dueño abriéndolo desde Colombia y mandando la
+            captura. Medido después desde aquí, una ruta por una:
+
+              /                      500  (pantalla de error de ASP.NET)
+              /Adenunciar/           200  → Login.aspx, la entrada real
+              policia.gov.co/denuncia-virtual   404
+              fiscalia.gov.co        la conexión se cierra
+
+            Así que el enlace va a `/Adenunciar/`, que es un segmento
+            más pero es el que contesta. La regla buena no era «la ruta
+            más corta»: era «la ruta que se ha probado». Una URL de una
+            entidad pública no se elige por elegante, se elige por
+            comprobada, y se vuelve a comprobar.
+
+            Si algún día vuelve a caerse, debajo está el 122 de la
+            Fiscalía, que es una línea de teléfono y no se cae con una
+            mudanza de servidor. */}
+        <li><a href="https://adenunciar.policia.gov.co/Adenunciar/" rel="noopener">
           A Denunciar — Fiscalía y Policía Nacional</a>
-          <span>Denuncia virtual, si decides denunciar. No es obligatorio.</span></li>
+          <span>Denuncia virtual, si decides denunciar. No es obligatorio.
+            Si el portal no abre, la Fiscalía atiende en el <a href="tel:122">122</a>.</span></li>
       </ul>
       <p class="bloque__intro">Denunciar nunca es requisito para que te
         atiendan en salud.</p>

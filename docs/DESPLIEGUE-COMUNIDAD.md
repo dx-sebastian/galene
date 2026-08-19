@@ -144,6 +144,14 @@ npm run test:prod
 - `VERIFICADO` en `src/datos/sitio.js` sigue en `false`, y tiene que
   seguir hasta que la revisión clínica firmada esté guardada en
   `docs/verificacion/`. Ver `docs/verificacion/SOLICITUD.md`.
-- El enlace de denuncia de la Fiscalía (`adenunciar.policia.gov.co`) no
-  se puede comprobar desde fuera de Colombia. Hay que abrirlo desde
-  allí.
+- El enlace de denuncia ya está comprobado y corregido. La RAÍZ del
+  dominio (`adenunciar.policia.gov.co/`) devuelve **500** con una
+  pantalla de error de ASP.NET; la entrada que funciona es
+  `adenunciar.policia.gov.co/Adenunciar/`, que redirige al login del
+  portal y responde 200. Lo vio el dueño desde Colombia y se midió
+  ruta por ruta después.
+
+  Conviene volver a medirlo de vez en cuando: es el sitio de una
+  entidad pública y ya se ha mudado una vez. Debajo del enlace queda
+  el 122 de la Fiscalía, que es un teléfono y no se cae con una
+  mudanza de servidor.

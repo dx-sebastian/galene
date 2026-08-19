@@ -1211,13 +1211,25 @@ function arrancar(mar) {
     hero.style.setProperty('--tinta-suave', T.suave);
     hero.style.setProperty('--halo', T.halo);
 
-    /* ── Y EL LAVADO, SOLO SI AÚN NO LLEGA ──────────────────────────
-       Con la tinta bien elegida esto vale 0 casi todo el día. Donde
-       hace falta es de noche, cuando la Vía Láctea cruza por detrás del
-       subtítulo, y en el cruce del crepúsculo, cuando ninguna de las
-       dos tintas alcanza sola: ahí sale una veladura pequeña, hacia el
-       lado contrario a la tinta, con el alfa mínimo que llega al
-       objetivo. Se mezcla en sRGB, que es como lo compone el navegador. */
+    /* ── Y SI AÚN NO LLEGA, ENGORDA EL HALO ─────────────────────────
+       Esto sacaba un óvalo desenfocado detrás de las letras. Hacía su
+       trabajo y se veía: el dueño lo pidió fuera —«esa sombra del
+       fondo», a todas las horas—, y con razón, porque una mancha oscura
+       sobre un cielo estrellado ensucia el cielo justo donde está lo
+       primero que se mira.
+
+       El cálculo se queda igual: se busca el alfa mínimo que llevaría
+       el contraste al objetivo. Lo que cambia es dónde se gasta. En vez
+       de pintar el FONDO, se engorda el BORDE DE LA LETRA — un
+       `text-shadow` corto, pegado al glifo, que sube la razón medida
+       sobre píxeles sin tener superficie propia que se pueda ver como
+       forma.
+
+       Dos sombras y no una: la corta despega la letra del grano, y la
+       segunda, más abierta y más floja, es la que hace el trabajo de
+       contraste cuando la Vía Láctea pasa por detrás. Las dos crecen
+       con lo que falte y valen su mínimo de siempre cuando no falta
+       nada, que es casi todo el día. */
     const fondoPeor = tintaPuesta === 'clara' ? fondoClaro : fondoOscuro;
     const lavCol = hexArr(T.lavado);
     const lt = lumRel(hexArr(T.color));
@@ -1232,8 +1244,18 @@ function arrancar(mar) {
        quien pidió calma. Después ya se acompaña con suavizado. */
     if (primeraCalibracion || arranque) alfaLavado = necesario;
     else alfaLavado += (necesario - alfaLavado) * 0.25;
-    document.documentElement.style.setProperty('--lavado', alfaLavado.toFixed(3));
-    document.documentElement.style.setProperty('--lavado-color', T.lavado);
+
+    /* `necesario` va de 0 a 0.62. El halo base es el de la tinta; a eso
+       se le suma hasta un 34 % más de carga en la sombra corta y hasta
+       un 46 % en la abierta. Con `necesario` en 0 —el caso normal— sale
+       exactamente el halo de siempre y no hay ningún cambio. */
+    const carga = Math.min(1, alfaLavado / 0.62);
+    const tono = tintaPuesta === 'clara' ? '18 35 48' : '255 255 255';
+    const base = tintaPuesta === 'clara' ? 30 : 38;
+    hero.style.setProperty('--halo',
+      `0 1px 3px rgb(${tono} / ${(base + carga * 34).toFixed(0)}%),`
+      + ` 0 0 9px rgb(${tono} / ${(carga * 46).toFixed(0)}%)`);
+
     primeraCalibracion = false;
   }
 
@@ -3259,19 +3281,30 @@ function animarCaida(ave, t, paralaje) {
     || ((mezcla > 0 && siguiente && siguiente !== clave)
       ? [[clave, saleFundido(mezcla)], [siguiente, mezcla]] : [[clave, 1]]);
 
-  /* MIRA HACIA LA DERECHA — la de la rama de delante. Las laminas estan
-     pintadas mirando a la izquierda, asi que se espeja. El origen de
-     transformacion ya esta en los PIES, de modo que el espejo gira
-     alrededor de ellos y el ave no se mueve de la rama: si girase sobre
-     su centro, saltaria media envergadura al voltearse.
+  /* ── MIRA HACIA DONDE VUELA, Y ESO ESTABA MAL ────────────────────
+     Aquí ponía `scaleX(-1)` SIEMPRE. Las láminas están pintadas mirando
+     a la izquierda, así que el ave miraba a la derecha pasara lo que
+     pasara — también cuando la percha le quedaba a la IZQUIERDA del
+     punto de entrada. Entonces cruzaba la pantalla de derecha a
+     izquierda con el cuerpo apuntando al otro lado: «vuela con
+     dirección adelante pero con movimiento hacia atrás», y el aterrizaje
+     igual, porque el aterrizaje usa esta misma transformación.
 
-     Y mirando a la derecha mira HACIA el manglar y hacia el mar, no
-     fuera del cuadro. Quien acaba de llegar mira lo que hay.
+     El sentido sale del propio recorrido: de `entraX` a `pieX`. Se
+     calcula UNA vez para toda la animación —no cuadro a cuadro— porque
+     el recorrido no cambia de signo a mitad: así no hay ni parpadeo en
+     el cruce ni un volteo seco al posarse. El ave llega mirando a donde
+     iba y se queda como llegó, que es lo que hace un ave.
 
-     Las de presencia NO se espejan: estan en la copa del fondo, con la
-     bandada, y ahi todas miran al mismo lado. Una sola vuelta del reves
+     El origen de transformación ya está en los PIES, de modo que el
+     espejo gira alrededor de ellos y el ave no se mueve de la rama: si
+     girase sobre su centro, saltaría media envergadura al voltearse.
+
+     Las de presencia NO se espejan: están en la copa del fondo, con la
+     bandada, y ahí todas miran al mismo lado. Una sola vuelta del revés
      en mitad del dormidero se ve como un error de montaje. */
-  const espejo = visita.espeja === false ? '' : ' scaleX(-1)';
+  const haciaLaDerecha = (visita.pieX - visita.entraX) >= 0;
+  const espejo = visita.espeja === false ? '' : (haciaLaDerecha ? ' scaleX(-1)' : '');
 
   /* Lo que hace falta para el pico teñido y para el globo: cuál es la
      lámina que de verdad se está viendo y dónde cayó en pantalla. Se
