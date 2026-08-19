@@ -1548,6 +1548,51 @@ main:focus { outline: none; }
   isolation: isolate;
 }
 
+/* ── PERO LAS DOS LÍNEAS PEQUEÑAS SÍ LO NECESITAN, Y ESTÁ MEDIDO ────
+   Quitar el velo de todo dejó esto, con `contraste.spec.js`:
+
+     móvil 19:00   lockup 4.13:1 · pide 4.95    escritorio 19:00  4.02:1
+     móvil 23:00   lockup 4.19:1 · pide 4.95    escritorio 23:00  4.10:1
+                                                escritorio 05:00  4.44:1
+
+   O sea: por debajo del umbral justo a las horas en que este sitio se
+   abre de verdad. El rótulo grande aguanta solo —es tipografía grande y
+   su umbral es más bajo—; el lockup son trece píxeles en versalitas
+   sobre la Vía Láctea, y la declaración va poco por encima.
+
+   Se intentó primero con el halo del texto, y no sirve. La prueba
+   ANULA la sombra antes de medir, a propósito y con razón: WCAG tampoco
+   la cuenta, y alguien con visión reducida leyendo a las cuatro de la
+   mañana no puede depender de tres píxeles de resplandor. La medida no
+   se movió ni una centésima —4.13 antes y 4.13 después—, que es la
+   forma más limpia que tiene un instrumento de decir «eso no es lo que
+   estoy midiendo».
+
+   Así que el velo vuelve, pero SOLO AQUÍ Y DE OTRA FORMA. Lo que el
+   dueño señaló en la foto era el óvalo grande y difuso detrás de
+   GALENE: eso sigue fuera para siempre, y el rótulo pasa sin él. Estas
+   dos son una línea corta cada una, y su velo se les ciñe — poco aire
+   alrededor y la mitad de desenfoque—, así que no hay una forma
+   flotando en el cielo: hay una línea de texto con su papel debajo.
+
+   Si aun así sobra, lo que hay que cambiar es el TAMAÑO de estas dos
+   líneas, no su fondo: por encima de 18.66 px el umbral baja de 4.5 a 3
+   y no harían falta ninguna de las dos cosas. */
+:is(.lockup, .hero__declaracion)::before {
+  content: "";
+  position: absolute;
+  /* Ceñido: la mitad de aire a los lados que el óvalo viejo, y arriba y
+     abajo lo justo para que el desenfoque muera dentro de la línea. */
+  inset: -0.12em -0.35em;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--lavado-color, transparent);
+  opacity: var(--lavado, 0);
+  /* Canto de aguada, no de caja — el mismo vocabulario del resto. */
+  border-radius: 46% 54% 52% 48% / 58% 44% 56% 42%;
+  filter: blur(clamp(4px, 0.5vw, 7px));
+}
+
 /* EL ROTULO. Es el elemento dominante del cuadro y el único sitio del
    hero donde entra la serif (ver `--tipo-marca`: pila del sistema,
    archivo propio pendiente).
@@ -1578,6 +1623,10 @@ main:focus { outline: none; }
    entonces el subtítulo pasa a ser una frase suelta debajo de un
    logotipo. Lo que los une es la falta de espacio. */
 .lockup {
+  /* El halo cerrado, no el general: es la pieza más pequeña del hero y
+     la única que no llegaba al umbral sin el velo. Ver la nota junto a
+     `--halo-fino` en js/main.js, con los números medidos. */
+  text-shadow: var(--halo-fino, var(--halo));
   margin: 0.28rem 0 0;
   font-family: var(--tipo-texto);
   font-size: var(--t-xs);
