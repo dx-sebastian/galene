@@ -257,38 +257,55 @@ async function arrancar() {
   /* ═══ 4 · REPORTAR ════════════════════════════════════════════════
      Discreto: el botón se convierte en un campo corto y un enviar. Sin
      ventana ni confirmación de terror — es lo que se pidió. */
+  /* ═══ 4 · REPORTAR, SIN PEDIR REDACCIÓN ═══════════════════════════
+     Antes esto abría un <input> de texto libre en medio de la tarjeta
+     —«un input molesto y feo», palabras del dueño, y con razón doble:
+     feo porque un campo crudo rompe la tarjeta, y molesto porque pide
+     REDACTAR. Reportar es un gesto de un segundo; obligar a escribir el
+     porqué es fricción exactamente donde no puede haberla.
+
+     Ahora son tres motivos hechos botón y un «solo reportar». Se elige
+     uno y ya está enviado. La base recibe lo mismo que antes (el motivo
+     es texto y siempre fue opcional); lo que cambia es que nadie tiene
+     que teclearlo. */
   function reportarClic(e, objeto, cosa) {
     const boton = e.currentTarget;
     if (boton.dataset.abierto) return;
     boton.dataset.abierto = '1';
 
-    const campo = document.createElement('input');
-    campo.type = 'text'; campo.maxLength = 200;
-    campo.placeholder = 'Motivo (opcional)';
-    campo.className = 'hilo__accion-campo';
+    const caja = document.createElement('span');
+    caja.className = 'reportar-motivos';
+    caja.setAttribute('role', 'group');
+    caja.setAttribute('aria-label', 'Motivo del reporte');
 
-    const enviar = document.createElement('button');
-    enviar.type = 'button'; enviar.className = 'hilo__accion';
-    enviar.textContent = 'Enviar';
-
-    boton.replaceWith(campo);
-    campo.after(enviar);
-    campo.focus();
-
-    enviar.addEventListener('click', async () => {
-      enviar.disabled = true;
-      try {
-        await reportar(objeto, cosa, campo.value);
-        const gracias = document.createElement('span');
-        gracias.className = 'hilo__accion-gracias';
-        gracias.textContent = 'Gracias.';
-        campo.replaceWith(gracias);
-        enviar.remove();
-      } catch (err) {
-        enviar.disabled = false;
-        enviar.textContent = 'No se pudo. Reintentar.';
-      }
-    });
+    const MOTIVOS = [
+      ['No respeta', 'no respeta'],
+      ['Datos de alguien', 'expone datos personales'],
+      ['Spam', 'spam'],
+      ['Solo reportar', ''],
+    ];
+    for (const [texto, motivo] of MOTIVOS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'reportar-motivo';
+      b.textContent = texto;
+      b.addEventListener('click', async () => {
+        for (const x of caja.children) x.disabled = true;
+        try {
+          await reportar(objeto, cosa, motivo);
+          const gracias = document.createElement('span');
+          gracias.className = 'hilo__accion-gracias';
+          gracias.textContent = 'Gracias.';
+          caja.replaceWith(gracias);
+        } catch {
+          for (const x of caja.children) x.disabled = false;
+          b.textContent = 'No se pudo. Reintenta';
+        }
+      });
+      caja.append(b);
+    }
+    boton.replaceWith(caja);
+    caja.querySelector('button')?.focus();
   }
 
   /* ═══ 5 · BORRAR LO PROPIO ═══════════════════════════════════════ */

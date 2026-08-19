@@ -221,6 +221,24 @@
           mask-repeat: repeat-x;
   pointer-events: none;
 }
+/* Y LA AYUDA TAMBIÉN LLEVA DIENTE. Era papel liso mientras la sección
+   de abajo ya iba con grano: la juntura entre ambas se veía como un
+   cambio de material aunque el color coincidiera. El mismo grano, la
+   misma talla, la misma fuerza que `.fondo__papel` — la hoja es una. */
+.ayuda { isolation: isolate; }
+.ayuda::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--arte-papel);
+  background-size: 820px;
+  background-repeat: repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.3;
+}
+
 .ayuda h2 {
   margin: 0 0 var(--e-5);
   font-family: var(--tipo-titulo);
@@ -258,8 +276,12 @@
   line-height: 1.5;
   cursor: pointer;
   transition: background-color 160ms var(--paso), color 160ms var(--paso),
-              transform 90ms var(--paso);
+              transform 160ms var(--paso);
 }
+/* Y SE LEVANTA al recibir el puntero. Dos píxeles: los justos para que
+   el cuerpo diga «me puedes coger» sin necesitar una sombra que el
+   presupuesto de la página no tiene. */
+.ayuda__canal:hover { transform: translateY(-2px); }
 
 /* EL PRIMERO VA MACIZO. De los dos canales, llamar es el que resuelve
    más rápido, y en una pantalla con dos salidas iguales la decisión
@@ -281,7 +303,7 @@
 /* Y AL PULSAR, SE HUNDE UN PÍXEL. Es el único gesto de profundidad
    que se puede hacer sin sombra, y es el que confirma el toque en un
    teléfono, donde no hay hover que valga. */
-.ayuda__canal:active { transform: translateY(1px); }
+.ayuda__canal:active { transform: translateY(1px); transition-duration: 60ms; }
 
 .ayuda__canal:focus-visible { outline: 3px solid var(--letra); outline-offset: 3px; }
 .ayuda__canal > span:last-child { color: rgb(var(--letra-rgb) / 72%); font-size: var(--t-sm); }
@@ -317,6 +339,27 @@
   letter-spacing: 0.08em;
   line-height: 1.1;
 }
+/* ── LA FLECHA QUE DICE «CLIQUÉAME» ────────────────────────────────
+   Un usuario de pruebas lo dijo sin rodeos: estos dos no parecen
+   botones. Y el diagnóstico es justo — tienen relleno y borde, pero
+   nada que apunte a una ACCIÓN futura. Una flecha al final del verbo
+   es la señal más vieja del oficio: esto lleva a alguna parte.
+
+   Se dibuja con un pseudoelemento del renglón de acción (los ::after
+   del botón ya tienen dueño: la aguada). En reposo asoma quieta; al
+   pasar por encima avanza — el botón contesta ANTES del clic, que es
+   exactamente lo que lo hace sentirse botón. */
+.ayuda__accion::after {
+  content: "";
+  width: 1em; height: 1em;
+  margin-inline-start: auto;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M13 6.2 19.5 12 13 17.8'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M13 6.2 19.5 12 13 17.8'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: translate 200ms var(--paso);
+}
+.ayuda__canal:hover .ayuda__accion::after,
+.ayuda__canal:focus-visible .ayuda__accion::after { translate: 0.3em 0; }
 .ayuda__sena {
   flex: none;
   width: 1.15em; height: 1.15em;
@@ -350,10 +393,15 @@
   position: relative;
   overflow: hidden;
   padding-block: clamp(4rem, 9vw, 8rem);
+  /* Mismo papel base que #expertos, sin rampa: la primera rampa que se
+     probó iba hacia `--papel` y ACLARABA justo antes del corte — lo
+     agravaba. Las dos secciones son `--papel-arriba` con el mismo
+     grano; lo que queda de juntura lo disuelve la aguada de expertos,
+     que ahora asoma por encima de su propio canto (ver su regla). */
   background:
     radial-gradient(circle at 12% 16%, rgb(115 159 163 / 15%), transparent 30%),
     radial-gradient(circle at 88% 82%, rgb(185 142 79 / 12%), transparent 28%),
-    var(--papel-arriba);
+    linear-gradient(to bottom, var(--papel-arriba), var(--papel-arriba));
 }
 
 /* ── EL PANEL LLEVA EL MAR DETRÁS, PERO QUIETO Y BORROSO ───────────
@@ -415,11 +463,34 @@
      leyó como «background transparente» encima del panel de expertos,
      y con razón. El recuerdo se queda, pero como tinte bajo el papel,
      no como agujero. */
-  background: linear-gradient(to bottom,
-    var(--papel-arriba) 0%,
-    color-mix(in srgb, var(--papel-arriba) 90%, transparent) 30%,
-    color-mix(in srgb, var(--papel-arriba) 90%, transparent) 55%,
-    var(--papel-arriba) 96%);
+  /* Y EL GRANO VIAJA DENTRO DEL VELO. `.comunidad-panel` era la única
+     sección de abajo sin diente de papel de día —sus dos pseudos están
+     ocupados por el recuerdo del mar—, y esa carencia era la mitad del
+     corte contra #expertos: dos cremas casi iguales, una con grano y
+     otra lisa, y el ojo ve la juntura aunque no sepa decir por qué.
+     El grano entra como segunda capa de ESTE velo: donde el velo es
+     papel lleva diente, y donde se abre la ventana del recuerdo no
+     estorba. La otra mitad del corte era el color, y la resuelve la
+     rampa de 8 rem del bloque principal. */
+  /* Tres capas: un baño de papel casi opaco ENCIMA del grano, el grano
+     multiplicado, y el velo de siempre. El baño existe para bajarle la
+     fuerza al grano — multiplicado a pelo salía el doble de marcado que
+     el de #expertos y la diferencia de diente volvía a dibujar la
+     recta. Con el baño al 62 % los dos dientes quedan a la par, medido
+     en captura contra la sección de abajo. */
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--papel-arriba) 62%, transparent),
+                    color-mix(in srgb, var(--papel-arriba) 62%, transparent)),
+    var(--arte-papel),
+    linear-gradient(to bottom,
+      var(--papel-arriba) 0%,
+      color-mix(in srgb, var(--papel-arriba) 90%, transparent) 30%,
+      color-mix(in srgb, var(--papel-arriba) 90%, transparent) 55%,
+      var(--papel-arriba) 96%);
+  background-size: 100% 100%, 820px, 100% 100%;
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-blend-mode: normal, multiply, normal;
+  opacity: 0.92;
 }
 .comunidad-panel > * { position: relative; z-index: 1; }
 
@@ -897,6 +968,14 @@
   background-image: var(--arte-papel);
   background-size: 820px;
   background-repeat: repeat;
+  /* EL GRANO ENTRA EN RAMPA. Arriba de #expertos está el panel de la
+     comunidad, que lleva su grano dentro del velo y a otra fuerza: dos
+     texturas de fuerzas distintas tocándose dibujan una recta aunque el
+     color coincida — era la última juntura que el dueño seguía viendo.
+     Ocho rem de fundido y el diente de una hoja se convierte en el de
+     la otra sin línea donde compararlos. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 8rem);
+          mask-image: linear-gradient(to bottom, transparent, #000 8rem);
   /* El grano muerde, nunca destiñe: es la misma regla que gobierna el
      botón de acuarela y por la misma razón física. */
   mix-blend-mode: multiply;
@@ -923,6 +1002,9 @@
 /* Cada una con su pigmento y su sitio, y ninguna centrada: una aguada
    centrada en su caja delata la caja. */
 .expertos::after {
+  /* SIN asomar por encima del canto: `overflow: clip` la recortaría en
+     y=0 y ese recorte ES una recta — probado y visto en captura. La
+     juntura la disuelve la máscara del grano, no esta mancha. */
   top: 10%; left: -16%;
   width: min(40rem, 52%); height: 62%;
   --tinta-a: #BFD3CE; --tinta-b: #CDC2DC;
