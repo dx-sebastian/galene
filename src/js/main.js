@@ -251,6 +251,11 @@ function arrancar(mar) {
 
   const estado = { t: 0, horizonte, calma, deriva: 0, papel: 0.055, luz: L };
 
+  /* El tamaño con el que se pidió el búfer la última vez. Ver la nota
+     del margen táctil dentro de `medidas()`. */
+  const TACTIL = matchMedia('(pointer: coarse)').matches;
+  const bufer = { w: 0, h: 0 };
+
   function medidas() {
     const caja = hero.getBoundingClientRect();
     const w = viewportWidth(), h = caja.height || viewportHeight();
@@ -307,7 +312,57 @@ function arrancar(mar) {
 
     horizonte = 1 - desdeArriba;
     document.documentElement.style.setProperty('--horizonte', (desdeArriba * 100).toFixed(1) + '%');
-    mar.redimensionar(w, h, escala);
+    /* ── EL BÚFER SE MIDE CONTRA EL LIENZO, NO CONTRA EL VIEWPORT ───
+       Aquí se pasaba `w`/`h`, que salen de `viewportWidth/Height` y esos
+       leen `visualViewport` — el viewport VISUAL, el que EXCLUYE las
+       barras del navegador. Pero el lienzo vive dentro de `.mundo`, que
+       es `position: fixed; inset: 0`, o sea el viewport de MAQUETACIÓN,
+       que las incluye. Dos medidas distintas para la misma caja.
+
+       Se vio en el diagnóstico del iPhone del dueño: búfer 780×1326 con
+       una ventana de 390×844 y DPR tope 2. 1326/2 son 663 px, que es su
+       viewport visual CON la barra de Safari puesta; el lienzo medía
+       844. O sea que el cuadro se estaba estirando un 27 % en vertical
+       todo el rato — y, mucho peor, que cada vez que la barra se encoge
+       al hacer scroll el viewport visual cambia, salta
+       `galene:viewportresize`, y el búfer se reasignaba. Un búfer
+       reasignado nace en blanco: eso es el parpadeo, y explica por qué
+       pasaba solo al hacer scroll y solo en el hero.
+
+       `clientWidth`/`clientHeight` del propio lienzo son su caja de
+       maquetación —sin la escala del hundido, que es una transformación
+       y no cambia el tamaño de la caja—, así que el búfer mide
+       exactamente lo que se ve y deja de moverse cuando la barra se
+       mueve. Con la puerta que ahora tiene `redimensionar`, esos
+       `resize` pasan a no costar nada.
+
+       El resto de `medidas()` sigue con `w`/`h`: el horizonte lo manda
+       el texto del hero, y ese sí vive en el viewport visual. */
+    /* ── Y EN TÁCTIL, UN MARGEN POR SI LA CAJA TAMBIÉN SE MUEVE ─────
+       Lo de arriba basta si la caja del lienzo no cambia cuando la
+       barra del navegador se encoge, que es lo que dice el diagnóstico
+       del aparato del dueño —búfer medido con 663 px de viewport visual
+       mientras la caja iba por 844—. Pero eso depende de la versión de
+       iOS y aquí no hay forma de comprobarlo en todas.
+
+       Así que en táctil, y SOLO en táctil, un cambio de alto de menos
+       del 28 % con el ancho quieto no reasigna nada. El número está
+       medido contra el caso peor: en un iPhone de 844 px la barra deja
+       663, o sea que se lleva el 21,4 %; con el umbral en 20 todavía se
+       colaba —comprobado, cuatro reasignaciones de seis— y con 28 cabe
+       entera y sobra margen. Girar el aparato cambia el ancho y sí
+       pasa. El precio es que el búfer puede quedar hasta un 28 % desajustado
+       respecto a la caja mientras la barra está a medio camino, y eso
+       es un estiramiento que no se ve; un lienzo en blanco sí se ve.
+
+       En escritorio no se aplica: allí no hay barra que se encoja, las
+       ventanas se redimensionan de verdad, y un búfer que no sigue a su
+       caja sería un cuadro deformado sin motivo. */
+    const bw = lienzo.clientWidth || w, bh = lienzo.clientHeight || h;
+    if (!TACTIL || bw !== bufer.w || Math.abs(bh - bufer.h) > bufer.h * 0.28) {
+      bufer.w = bw; bufer.h = bh;
+    }
+    mar.redimensionar(bufer.w, bufer.h, escala);
     estado.horizonte = horizonte;
 
     /* EL MANGLAR NO SE CENTRA NI EN VERTICAL. Estuvo en 0.50 con el
