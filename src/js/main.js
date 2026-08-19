@@ -2948,10 +2948,32 @@ function colocarGarzas(w, h, horDesdeArriba) {
     visita.pieY = c.y;
     visita.vela = c.vela;
     visita.alto = Math.max(28, c.grosorRama * 3.1);
-    /* Entra por arriba y algo a la derecha: cae en diagonal corta, no
+    /* Entra por arriba y algo a la IZQUIERDA: cae en diagonal corta, no
        en vertical. Una caida perfectamente vertical lee como un objeto
-       soltado, no como un ave que se posa. */
-    visita.entraX = c.x + w * 0.085;
+       soltado, no como un ave que se posa.
+
+       ── Y ES LA IZQUIERDA, NO LA DERECHA, Y ESO NO ES UN CAPRICHO ──
+       Entraba por la derecha, o sea volando hacia la izquierda, y se
+       quedaba posada mirando a la derecha —al manglar y al mar, que es
+       donde el cuadro la quiere—. Entre esas dos cosas hay un volteo, y
+       el volteo estaba escondido dentro del cruce de laminas del
+       aterrizaje con la idea de que se leyera como el ave
+       acomodandose. No se lee asi: el dueno lo vio a la primera y lo
+       dijo con la palabra exacta — «aterriza al reves».
+
+       Un ave que se posa no se da la vuelta al tocar la rama. Llega
+       mirando a donde iba y se queda como llego. Asi que el arreglo no
+       esta en disimular mejor el volteo: esta en que no haya volteo. Se
+       entra por el lado que hace que la direccion del vuelo y la
+       postura de la posada sean LA MISMA — el izquierdo, porque la
+       percha esta en el 22 % del ancho y el cuadro (manglar, agua,
+       horizonte) queda a su derecha.
+
+       El sentido lo sigue sacando `animarCaida` del propio recorrido,
+       de `entraX` a `pieX`: aqui no se declara ningun espejo, solo por
+       donde entra. Si algun dia la percha se muda al otro lado del
+       cuadro, basta cambiar este signo y todo lo demas se entera solo. */
+    visita.entraX = c.x - w * 0.085;
     visita.entraY = -h * 0.14;
     visita.h0 = h;
   }
@@ -3319,43 +3341,38 @@ function animarCaida(ave, t, paralaje) {
     || ((mezcla > 0 && siguiente && siguiente !== clave)
       ? [[clave, saleFundido(mezcla)], [siguiente, mezcla]] : [[clave, 1]]);
 
-  /* ── MIRA HACIA DONDE VUELA, Y ESO ESTABA MAL ────────────────────
-     Aquí ponía `scaleX(-1)` SIEMPRE. Las láminas están pintadas mirando
-     a la izquierda, así que el ave miraba a la derecha pasara lo que
-     pasara — también cuando la percha le quedaba a la IZQUIERDA del
-     punto de entrada. Entonces cruzaba la pantalla de derecha a
-     izquierda con el cuerpo apuntando al otro lado: «vuela con
-     dirección adelante pero con movimiento hacia atrás», y el aterrizaje
-     igual, porque el aterrizaje usa esta misma transformación.
+  /* ── MIRA HACIA DONDE VUELA, Y NO CAMBIA NUNCA ──────────────────
+     Las láminas están pintadas mirando a la izquierda, así que
+     `scaleX(-1)` es «mira a la derecha». Aquí estuvo fijo —el ave
+     miraba a la derecha aunque cruzara la pantalla hacia la izquierda,
+     «vuela con dirección adelante pero con movimiento hacia atrás»— y
+     después estuvo PARTIDO: el recorrido mandaba en el aire y el cuadro
+     mandaba en la posada, con el volteo escondido dentro del cruce de
+     láminas del aterrizaje. Lo segundo tampoco se lee como el ave
+     acomodándose; el dueño lo dijo con la palabra exacta: «aterriza al
+     revés».
 
-     El sentido sale del propio recorrido: de `entraX` a `pieX`. Se
-     calcula UNA vez para toda la animación —no cuadro a cuadro— porque
-     el recorrido no cambia de signo a mitad: así no hay ni parpadeo en
-     el cruce ni un volteo seco al posarse. El ave llega mirando a donde
-     iba y se queda como llegó, que es lo que hace un ave.
+     Ahora el sentido sale del propio recorrido —de `entraX` a `pieX`—
+     y se calcula UNA vez para toda la animación, porque el recorrido no
+     cambia de signo a mitad: ni parpadeo en el cruce, ni volteo seco al
+     posarse, ni una postura final que contradiga el vuelo que se acaba
+     de ver. El ave llega mirando a donde iba y se queda como llegó.
+
+     Que además acabe mirando al manglar y al mar —que es lo que el
+     cuadro quiere— no lo arregla esta línea: lo arregla POR DÓNDE
+     ENTRA, y eso se decide en `colocarGarzas`, donde está la percha y
+     se sabe qué lado del cuadro es el de dentro.
 
      El origen de transformación ya está en los PIES, de modo que el
      espejo gira alrededor de ellos y el ave no se mueve de la rama: si
      girase sobre su centro, saltaría media envergadura al voltearse.
 
-     Las de presencia NO se espejan: están en la copa del fondo, con la
-     bandada, y ahí todas miran al mismo lado. Una sola vuelta del revés
-     en mitad del dormidero se ve como un error de montaje. */
-  /* EN EL AIRE mira hacia donde va; POSADA mira hacia donde el cuadro
-     la quiere — al manglar y al mar (`scaleX(-1)`, las láminas están
-     pintadas mirando a la izquierda). El primer arreglo de esto volteó
-     el vuelo Y la posada a la vez, y el dueño lo vio en el acto: la
-     garza principal del primer término quedó de espaldas al cuadro.
-
-     El giro pasa EN EL ATERRIZAJE, y no se ve como un salto porque las
-     láminas de la caída y la de posada se cruzan en fundido justo ahí:
-     el volteo queda dentro del cruce y se lee como el ave acomodándose
-     al tocar la rama — que es lo que hace un ave de verdad. */
-  const enElAire = !posadas && t < p1;
+     Las de presencia NO se espejan nunca: están en la copa del fondo,
+     con la bandada, y ahí todas miran al mismo lado. Una sola vuelta
+     del revés en mitad del dormidero se ve como un error de montaje. */
   const haciaLaDerecha = (visita.pieX - visita.entraX) >= 0;
-  const espejo = visita.espeja === false
-    ? (enElAire && haciaLaDerecha ? ' scaleX(-1)' : '')
-    : (enElAire && !haciaLaDerecha ? '' : ' scaleX(-1)');
+  const espejo = visita.espeja === false ? ''
+    : (haciaLaDerecha ? ' scaleX(-1)' : '');
 
   /* Lo que hace falta para el pico teñido y para el globo: cuál es la
      lámina que de verdad se está viendo y dónde cayó en pantalla. Se

@@ -2279,11 +2279,29 @@ main:focus { outline: none; }
      de la bruma entra con calma un tercio de pantalla más abajo —donde
      ya no hay frontera con la que compararlo— y vuelve a papel para el
      resto. La costura no se disimula: deja de existir. */
+  /* ── Y SE DESPIDE EN EL PAPEL DE LA SECCIÓN DE ABAJO ────────────
+     El mismo razonamiento que el de arriba, aplicado al otro canto.
+     La sección terminaba en `--papel` y justo debajo empieza el panel
+     de la comunidad, que es `--papel-arriba`: dos cremas separadas por
+     siete, nueve y doce puntos de RGB, o sea una recta de lado a lado
+     con tres pantallas de papel encima para que el ojo la note.
+
+     Ahora las últimas 34 rem bajan de una a la otra. Es la misma
+     distancia que tarda en llegar por arriba, y por el mismo motivo:
+     por debajo de unas diez el ojo encuentra dónde acaba una hoja y
+     empieza otra, y entonces vuelve a ser un borde. Con 34 no hay nada
+     que encontrar — cuando el papel llega al canto ya es el de abajo.
+
+     No se toca `--papel-arriba` ni `--papel`: la juntura no se arregla
+     igualando dos tokens que existen por razones propias, se arregla
+     recorriendo la distancia entre ellos donde nadie puede medirla. */
   background: linear-gradient(to bottom,
     var(--papel) 0,
     color-mix(in srgb, var(--papel-cielo) 55%, var(--papel)) 14rem,
     var(--papel-arriba) 24rem,
-    var(--papel) 34rem);
+    var(--papel) 34rem,
+    var(--papel) calc(100% - 34rem),
+    var(--papel-arriba) 100%);
 }
 /* Todo lo que no sea el fondo va POR ENCIMA de él. Sin esto las aguadas
    se pintarían sobre el texto en vez de debajo. */
@@ -2340,6 +2358,33 @@ main:focus { outline: none; }
      miras papel con poca luz. */
   mix-blend-mode: multiply;
   opacity: 0.3;
+}
+/* EL DIENTE ENTRA, NO EMPIEZA. La otra mitad del apaño que está
+   explicado en `.ayuda::after`: dos mosaicos del mismo papel puestos a
+   tope van en fases distintas —la fase la fija el canto de arriba de
+   cada elemento y el de la ayuda depende del alto del hero— y ese salto
+   de fase dibujaba una recta de lado a lado en la juntura. Las dos
+   hojas apagan su grano donde se tocan: seis rem de rampa a cada lado y
+   en el empalme no hay textura que comparar, solo papel.
+
+   Y SALE POR ABAJO POR ALGO MÁS QUE LA FASE. Debajo empieza el panel
+   de la comunidad, cuyo diente es OTRO: aquel es un `multiply` de
+   verdad contra el papel y este no —`.herramientas__fondo` es un
+   contexto de apilado propio, así que su `mix-blend-mode` no encuentra
+   fondo con el que multiplicar y acaba pintando la lámina al 30 % y en
+   normal—. Medido: el grano de aquí cuesta un punto de luminancia y el
+   de allí casi ocho. Igualar las dos recetas es reescribir el papel de
+   media página; apagarlas donde se tocan cuesta dos líneas y hace que
+   no haya nada que comparar. Lo segundo.
+
+   Va sobre `.herramientas` y no sobre `.fondo__papel` a secas porque la
+   página de comunidad usa la misma clase y allí arriba no hay juntura
+   ninguna que resolver. */
+.herramientas .fondo__papel {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 6rem,
+                                      #000 calc(100% - 6rem), transparent);
+          mask-image: linear-gradient(to bottom, transparent, #000 6rem,
+                                      #000 calc(100% - 6rem), transparent);
 }
 :root[data-tinta="clara"] .fondo__papel {
   mix-blend-mode: screen;

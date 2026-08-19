@@ -2044,7 +2044,24 @@ void main(){
        0.60 conserva la silueta y deja adivinar el follaje a la luna. */
     vec3 claroNoche  = mix(u_cieloBajo, mix(u_altas, u_bruma, 0.25), 0.34) * 0.60;
     vec3 oscuroDia   = mix(vec3(0.155, 0.118, 0.086), u_agua * 0.35, 0.30);
-    vec3 claroDia    = mix(mix(u_bruma, u_altas, 0.30), vec3(0.72, 0.66, 0.54), 0.30) * 0.86;
+    /* ── Y EL EXTREMO CLARO DEJA DE PODARSE ────────────────────────
+       Ese 0.86 recortaba un 14 % justo el extremo por el que un arbol
+       al sol se lee: no bajaba la media —que la sube el color propio—
+       sino el TECHO, que es de donde sale el brillo. Medido a las
+       11:00, la copa pintada contra la lamina de la que sale:
+
+           lamina  media 0.399 · p90 0.563 · p99 0.699 · sat 0.311
+           pantalla media 0.424 · p90 0.535 · p99 0.646 · sat 0.232
+
+       O sea que el motor entregaba una copa MAS clara de media y a la
+       vez MENOS luminosa arriba y con un tercio menos de color. Eso no
+       es una copa apagada: es una copa APLANADA, y aplanado es
+       exactamente lo que se ve como «perdio el brillo» — el dueño lo
+       dijo asi. Una acuarela al sol no tiene la media alta: tiene la
+       media donde estaba y el techo arriba.
+
+       Sube a 1.02, que es devolver el 14 % y dos puntos mas. */
+    vec3 claroDia    = mix(mix(u_bruma, u_altas, 0.30), vec3(0.72, 0.66, 0.54), 0.30) * 1.02;
     vec3 oscuroM = mix(oscuroNoche, oscuroDia, diaArbol);
     vec3 claroM  = mix(claroNoche, claroDia, diaArbol);
     /* ── Y DE DIA LA COPA SE ENCIENDE ─────────────────────────────
@@ -2056,7 +2073,12 @@ void main(){
        que el sujeto del cuadro no destacaba por color de nada.
        Solo de dia. Al amanecer y de noche la copa es una silueta y ese
        limon seria mentira. */
-    claroM = mix(claroM, mix(claroM, vec3(0.83, 0.87, 0.47), 0.54), diaArbol);
+    /* Y EL LIMON SUBE CON EL. El extremo claro lo manda casi entero
+       esta mezcla —54 % del camino hacia el— asi que devolverle el
+       techo a claroDia sin tocar este verde apenas movia nada: el
+       limon estaba a 0.83 de luminancia y hacia de tapon. A 0.92/0.95
+       es la misma hoja, con el sol encima en vez de a media tarde. */
+    claroM = mix(claroM, mix(claroM, vec3(0.92, 0.95, 0.52), 0.56), diaArbol);
 
     /* ── EL ÁRBOL RESPIRA ─────────────────────────────────────────
        Un manglar clavado es una calcomanía, por bien pintada que esté:
@@ -2199,7 +2221,24 @@ void main(){
          No se quita del todo: si algun dia vuelve una lamina con
          reborde, el mecanismo sigue aqui. */
       vec3 tApagado = mix(t.rgb, vec3(valor(t.rgb)), calidoT * (1.0 - tramo) * 0.30);
-      vec3 pm = duotono(tApagado, oscuroM, claroM);
+      /* ── EL TECHO SUBE, LA MEDIA NO ─────────────────────────────
+         Devolverle el techo a claroDia lo aclaraba TODO por igual —el
+         duotono es lineal— y con eso la copa pasaba de 0.424 a 0.460 de
+         media cuando la lamina esta en 0.399. Mas clara de media no es
+         mas luminosa: es mas lavada, que es el mismo defecto de antes
+         con el signo cambiado.
+
+         Lo que hace radiante a una copa al sol es el RECORRIDO: sombra
+         que sigue siendo sombra y hojas que se van arriba del todo. Asi
+         que la rampa deja de ser recta y se curva un pelo hacia abajo:
+         las hojas en sombra vuelven a donde estaban y las del sol se
+         quedan con el techo nuevo.
+
+         Solo de dia. De noche la copa es una silueta y una silueta no
+         tiene recorrido que curvar. */
+      float vM = clamp((valor(tApagado) - 0.08) / 0.82, 0.0, 1.0);
+      vM = pow(vM, mix(1.0, 1.10, diaArbol));
+      vec3 pm = mix(oscuroM, claroM, vM);
       /* El manglar conserva su propio pigmento, como el agua: en duotono
          puro la copa salía gris contra un cielo cálido y leía recorte. */
       /* Y menos croma: 0.85 sobre una lamina que ya viene a 0.465 de
@@ -2217,7 +2256,20 @@ void main(){
          saturacion se paso de frenada y el sujeto del cuadro quedo tan
          gris como el fondo. Sigue muy por debajo del 0.465 original de
          la lamina — el arbol tiene color, no grita. */
-      pm += croma(tApagado, u_croma * 0.34, u_croma * mix(0.92, 1.30, diaArbol));
+      /* ── Y EL COLOR, CON EL VALOR ───────────────────────────────
+         Medido arriba: la copa pintada salia a 0.232 de saturacion con
+         una lamina que trae 0.311, o sea que el motor le quitaba un
+         cuarto largo de su color a lo que YA lo tenia. Eso no era
+         sobriedad; era la otra mitad de la copa aplanada.
+
+         La regla de la casa —lo apagado se queda apagado, de ahi la
+         paz— sigue mandando de noche, cuando la copa es silueta y no
+         sujeto. De dia sube el suelo a 0.48 y el techo a 1.62, y el
+         techo solo lo cobran las hojas que en la lamina ya estaban
+         limpias de color: las del sol. Sigue por debajo del 0.465
+         original de la lamina — el arbol tiene color, no grita. */
+      pm += croma(tApagado, u_croma * mix(0.34, 0.48, diaArbol),
+                            u_croma * mix(0.92, 1.62, diaArbol));
       /* ── LOS HUECOS DE LUZ ENTRE EL FOLLAJE ────────────────────────
          Lo que hace que una copa se vea al sol no es que este mas clara:
          son los pocos sitios donde la luz ATRAVIESA y el papel se queda
