@@ -750,9 +750,27 @@ function arrancar(mar) {
   }
 
   /* Pausar cuando el mar sale de pantalla: batería real en gama media. */
+  /* ── Y AL VOLVER, UN CUADRO EN LA MISMA TAREA ─────────────────────
+     `bucle()` no dibuja: pide un `requestAnimationFrame`. Entre que
+     este observador dispara —con el 2 % del hero asomando— y que ese
+     cuadro llega, el compositor puede presentar el canvas una o más
+     veces con lo que hubiera dentro, que es un buffer BORRADO: el mar
+     dejó de dibujarse hace rato y el lienzo, al vivir en un `.mundo`
+     fijo, nunca dejó de estar delante. En Safari, que compone el scroll
+     en otro hilo, ese hueco se ve — y es la mitad del parpadeo que el
+     dueño reporta al subir hacia el hero (la otra mitad, de qué color
+     es un buffer borrado, está arreglada en mar.js con `alpha: true`).
+
+     Un `cuadro()` síncrono aquí cierra el hueco: cuando el hero asoma,
+     el buffer ya tiene pintura. Cuesta un render de pantalla completa
+     en el mismo gesto en el que el usuario está volviendo a la
+     portada, que es exactamente cuando hace falta. */
   new IntersectionObserver(([e]) => {
+    const asomaAhora = e.isIntersecting && !visible;
     visible = e.isIntersecting;
-    if (visible && !quieto.matches) bucle();
+    if (!visible) return;
+    if (asomaAhora) cuadro(performance.now());
+    if (!quieto.matches) bucle();
   }, { threshold: 0.02 }).observe(hero);
 
   /* ── EL MUNDO SE HUNDE AL SALIR DEL HERO ──────────────────────────

@@ -2775,21 +2775,52 @@ function cieloDeSalida(gl) {
 
 export function crear(lienzo) {
   const perfilMovil = matchMedia('(max-width: 700px), (pointer: coarse)').matches;
+  /* ── `alpha: true`, Y ESTA ES LA LÍNEA DEL PARPADEO NEGRO ─────────
+     Estuvo en `false` —un canal menos que componer— y ese ahorro es lo
+     que pintaba los parpadeos. La regla de WebGL: cuando el compositor
+     presenta el canvas y `preserveDrawingBuffer` es `false`, el buffer
+     de dibujo se BORRA. Con `alpha: false` el canal alfa está forzado a
+     1, así que ese borrado deja (0,0,0,1) — negro OPACO a pantalla
+     completa. Con `alpha: true` deja (0,0,0,0), o sea nada.
+
+     Y aquí «nada» no es un agujero: detrás del canvas está `.mundo`,
+     que lleva pintado su degradado de cielo, bruma y agua con los
+     mismos tokens de la hora (es el respaldo sin WebGL). Así que el
+     peor caso deja de ser un fogonazo negro y pasa a ser el cuadro en
+     su versión de CSS durante un cuadro.
+
+     CUÁNDO SE VE ESE BORRADO, que es lo que costó encontrar: el bucle
+     del mar se PARA cuando el hero sale de pantalla —un
+     IntersectionObserver en main.js, y está bien que se pare, es
+     batería—. Pero el canvas vive dentro de `.mundo`, que es
+     `position: fixed`: no sale nunca de la ventana, solo queda tapado
+     por las secciones opacas. O sea que el compositor sigue teniéndolo
+     delante mientras nadie lo dibuja, y en Safari —que compone el
+     scroll en otro hilo— vuelve a presentar ese buffer borrado. Por eso
+     el parpadeo era NEGRO, pasaba AL HACER SCROLL y solo se veía EN EL
+     HERO, que es el único sitio donde el canvas no está tapado.
+
+     El shader escribe alfa 1.0 en su única salida, así que mientras
+     dibuja no cambia un píxel: `alpha: true` solo cambia de qué color
+     es el vacío.
+
+     Si algún día no bastara, la siguiente palanca es
+     `preserveDrawingBuffer: true` — el buffer conserva el último cuadro
+     en vez de borrarse— pero cuesta una copia por presentación, y no se
+     paga hasta comprobar que hace falta. */
   const gl = lienzo.getContext('webgl2', {
-    antialias: false, alpha: false, depth: false, stencil: false,
+    antialias: false, alpha: true, depth: false, stencil: false,
     powerPreference: 'high-performance', preserveDrawingBuffer: false,
   });
   if (!gl) return null;
 
-  /* ── EL PRIMER COLOR DEL LIENZO NO PUEDE SER NEGRO ─────────────────
-     El contexto se pide con `alpha: false`, y un buffer opaco recién
-     creado está a (0,0,0,1): NEGRO. Entre que el navegador compone el
-     canvas por primera vez y que el shader termina de compilarse y
+  /* ── Y EL PRIMER COLOR DEL LIENZO TAMPOCO PUEDE SER NEGRO ──────────
+     Un buffer recién creado está a cero. Entre que el navegador compone
+     el canvas por primera vez y que el shader termina de compilarse y
      pinta su primer cuadro hay una ventana —corta en un portátil, larga
-     en un teléfono— en la que lo que se ve es ese negro a pantalla
-     completa. Es el «parpadeo negro» que reportó el dueño en Safari de
-     iOS, y en iOS vuelve a verse cada vez que el sistema recicla el
-     buffer al volver a la pestaña.
+     en un teléfono— y con el contexto opaco lo que se veía ahí era
+     negro a pantalla completa; con el alfa ya arreglado se vería el
+     respaldo, que es correcto pero no es la pintura.
 
      Un `clearColor` aquí mismo, ANTES de compilar nada, hace que el
      primer color que exista en ese buffer sea el del cielo. No arregla
