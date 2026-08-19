@@ -1732,3 +1732,35 @@
   .boton--macizo { transition: none; }
   .boton--macizo:active { transform: none; }
 }
+
+/* ── REPORTAR: MOTIVOS HECHOS BOTÓN ─────────────────────────────────
+   El input de texto libre se fue (ver reportarClic en comunidad.js).
+   Esto son píldoras pequeñas en la misma fila de acciones: se elige
+   una y está enviado. */
+.reportar-motivos {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+.reportar-motivo {
+  border: 1px solid rgb(var(--letra-rgb) / 28%);
+  background: rgb(var(--letra-rgb) / 4%);
+  color: rgb(var(--letra-rgb) / 78%);
+  font: inherit;
+  font-size: var(--t-xs);
+  padding: 0.14rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 200ms var(--paso), color 200ms var(--paso);
+}
+.reportar-motivo:hover,
+.reportar-motivo:focus-visible {
+  background: rgb(var(--letra-rgb) / 12%);
+  color: var(--letra);
+}
+.reportar-motivo:disabled { opacity: 0.5; cursor: default; }
+
+/* La etiqueta en el pie se alinea a la derecha del renglón de acciones:
+   cierra la tarjeta como una firma de clasificación. */
+.etiqueta--pie { margin-inline-start: auto; }

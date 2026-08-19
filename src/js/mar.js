@@ -2031,9 +2031,18 @@ void main(){
        noche los extremos recogen el azul del ambiente: asi la misma
        lamina pasa de sujeto verde a silueta sin parecer un filtro
        marron pegado sobre un cielo violeta. */
-    float diaArbol = smoothstep(0.78, 0.98, u_int);
+    /* ── EL UMBRAL DEL COLOR, MAS TEMPRANO ────────────────────────
+       Con 0.78–0.98 el arbol solo tenia su verde en el pleno mediodia:
+       a media manana y media tarde —horas de sol de verdad— ya estaba
+       en el gris de transicion, y el dueño lo dijo con todas las
+       letras: «veo al arbol sin brillo, sin color, sin gracia». El
+       color propio entra ahora desde media manana; la noche sigue
+       siendo silueta, que ahi si es verdad. */
+    float diaArbol = smoothstep(0.55, 0.90, u_int);
     vec3 oscuroNoche = mix(u_cieloAlto * 0.42, u_agua * 0.34, 0.58);
-    vec3 claroNoche  = mix(u_cieloBajo, mix(u_altas, u_bruma, 0.25), 0.34) * 0.50;
+    /* 0.50 dejaba la copa nocturna como una mancha sin lectura interna;
+       0.60 conserva la silueta y deja adivinar el follaje a la luna. */
+    vec3 claroNoche  = mix(u_cieloBajo, mix(u_altas, u_bruma, 0.25), 0.34) * 0.60;
     vec3 oscuroDia   = mix(vec3(0.155, 0.118, 0.086), u_agua * 0.35, 0.30);
     vec3 claroDia    = mix(mix(u_bruma, u_altas, 0.30), vec3(0.72, 0.66, 0.54), 0.30) * 0.86;
     vec3 oscuroM = mix(oscuroNoche, oscuroDia, diaArbol);
@@ -2204,7 +2213,11 @@ void main(){
          sigue siendo la mas alta del juego —el resto va de 0.11 a 0.21—
          asi que el arbol seguia siendo el unico objeto con color fuerte.
          La curva le baja el suelo y el techo. */
-      pm += croma(tApagado, u_croma * 0.22, u_croma * mix(0.78, 1.20, diaArbol));
+      /* El suelo de croma subio de 0.22 a 0.34: la poda anterior de
+         saturacion se paso de frenada y el sujeto del cuadro quedo tan
+         gris como el fondo. Sigue muy por debajo del 0.465 original de
+         la lamina — el arbol tiene color, no grita. */
+      pm += croma(tApagado, u_croma * 0.34, u_croma * mix(0.92, 1.30, diaArbol));
       /* ── LOS HUECOS DE LUZ ENTRE EL FOLLAJE ────────────────────────
          Lo que hace que una copa se vea al sol no es que este mas clara:
          son los pocos sitios donde la luz ATRAVIESA y el papel se queda

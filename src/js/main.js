@@ -3341,8 +3341,21 @@ function animarCaida(ave, t, paralaje) {
      Las de presencia NO se espejan: están en la copa del fondo, con la
      bandada, y ahí todas miran al mismo lado. Una sola vuelta del revés
      en mitad del dormidero se ve como un error de montaje. */
+  /* EN EL AIRE mira hacia donde va; POSADA mira hacia donde el cuadro
+     la quiere — al manglar y al mar (`scaleX(-1)`, las láminas están
+     pintadas mirando a la izquierda). El primer arreglo de esto volteó
+     el vuelo Y la posada a la vez, y el dueño lo vio en el acto: la
+     garza principal del primer término quedó de espaldas al cuadro.
+
+     El giro pasa EN EL ATERRIZAJE, y no se ve como un salto porque las
+     láminas de la caída y la de posada se cruzan en fundido justo ahí:
+     el volteo queda dentro del cruce y se lee como el ave acomodándose
+     al tocar la rama — que es lo que hace un ave de verdad. */
+  const enElAire = !posadas && t < p1;
   const haciaLaDerecha = (visita.pieX - visita.entraX) >= 0;
-  const espejo = visita.espeja === false ? '' : (haciaLaDerecha ? ' scaleX(-1)' : '');
+  const espejo = visita.espeja === false
+    ? (enElAire && haciaLaDerecha ? ' scaleX(-1)' : '')
+    : (enElAire && !haciaLaDerecha ? '' : ' scaleX(-1)');
 
   /* Lo que hace falta para el pico teñido y para el globo: cuál es la
      lámina que de verdad se está viendo y dónde cayó en pantalla. Se

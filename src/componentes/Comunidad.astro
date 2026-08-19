@@ -297,7 +297,6 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
           <header class="hilo__cabeza">
             <span class="hilo__autora" data-autora></span>
             <span class="hilo__cuando" data-cuando></span>
-            <span class="etiqueta" data-etiqueta-nombre></span>
           </header>
 
           <h2 class="hilo__titulo" data-titulo></h2>
@@ -345,6 +344,11 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
             <button class="hilo__accion" type="button" data-reportar>Reportar</button>
             <button class="hilo__accion" type="button" data-borrar hidden>Borrar</button>
+            {/* La etiqueta cierra la tarjeta, no la abre. Arriba
+                competía con la autora y la fecha —tres datos antes de
+                que empiece el mensaje—; abajo es lo que es: una nota de
+                clasificación, después de leer. Lo pidió el dueño. */}
+            <span class="etiqueta etiqueta--pie" data-etiqueta-nombre></span>
           </div>
 
           <p class="hilo__revision" data-revision hidden>Se está revisando

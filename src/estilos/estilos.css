@@ -1214,8 +1214,19 @@ main:focus { outline: none; }
 /* Y por debajo de 940 no aparece: ahí la fila entera se esconde y la
    ayuda vive en el menú, que es donde cabe. Dos píldoras a la vez
    serían la misma acción ofrecida dos veces en la misma pantalla. */
+/* ── LA PÍLDORA DE LA BARRA, RETIRADA POR EL DUEÑO ─────────────────
+   A partir de 940 px aquí se enseñaba «Buscar ayuda» como botón de la
+   barra, y era la mitad de la diferencia entre las dos barras que el
+   dueño fotografió: la portada no la lleva y las interiores sí, o sea
+   dos barras distintas para un mismo sitio. Eligió la de la portada —
+   «prefiero que esté siempre como la foto 2»— y la barra vuelve a ser
+   UNA: marca a la izquierda, enlaces a la derecha, nada más.
+
+   La regla 5 («la ayuda a cero clics») no se abandona: la ayuda sigue
+   la primera en los enlaces vía Información, sigue en el panel del
+   menú del teléfono, y la portada la tiene a una pantalla. Lo que se
+   retira es el botón duplicado, no el camino. */
 .pildora--barra { display: none; }
-@media (min-width: 940px) { .pildora--barra { display: inline-flex; } }
 
 /* ── DÓNDE SE ANCLA EL PANEL, Y POR QUÉ NO AL BOTÓN ────────────────
    Medido a 375 px: colgado del propio <details> con `right: 0`, el
@@ -2256,11 +2267,23 @@ main:focus { outline: none; }
      LARGO, Y ESE ES EL PUNTO. 16 rem hasta el papel puro y 26 hasta el
      fondo: por debajo de unas diez el ojo encuentra dónde acaba el cielo
      y vuelve a ser un borde, que es justo lo que se quería quitar. */
+  /* ── EMPIEZA EN EL PAPEL DE LA AYUDA, NO EN EL DEL CIELO ─────────
+     Arrancaba en `--papel-cielo` y arriba estaba la ayuda en `--papel`
+     pelado: dos hojas de dos colores tocándose, y encima el canto
+     rasgado con su sombra — «el empate entre secciones es horrendo y
+     forzado, la ayuda con la definición es un corte de papel», dijo el
+     dueño mirándolo. Tenía razón: dos hojas son dos mundos, y este
+     sitio es UNO.
+
+     Ahora el primer palmo es exactamente el papel de la ayuda, el tinte
+     de la bruma entra con calma un tercio de pantalla más abajo —donde
+     ya no hay frontera con la que compararlo— y vuelve a papel para el
+     resto. La costura no se disimula: deja de existir. */
   background: linear-gradient(to bottom,
-    var(--papel-cielo) 0,
-    color-mix(in srgb, var(--papel-cielo) 45%, var(--papel-arriba)) 7rem,
-    var(--papel-arriba) 16rem,
-    var(--papel) 26rem);
+    var(--papel) 0,
+    color-mix(in srgb, var(--papel-cielo) 55%, var(--papel)) 14rem,
+    var(--papel-arriba) 24rem,
+    var(--papel) 34rem);
 }
 /* Todo lo que no sea el fondo va POR ENCIMA de él. Sin esto las aguadas
    se pintarían sobre el texto en vez de debajo. */
@@ -2516,7 +2539,12 @@ main:focus { outline: none; }
 .trazo {
   height: 26px;
   margin-block: clamp(3.5rem, 7vw, 6rem) clamp(2.25rem, 4.5vw, 4rem);
-  background: rgb(var(--letra-rgb) / 30%);
+  /* PIGMENTO, NO GRIS. Con la tinta del texto al 30 % esto era «solo
+     una mancha gris» —palabras del dueño—, y una mancha gris entre dos
+     bloques no une nada: ensucia. El azul del mar diluido es el mismo
+     pigmento que gobierna el sitio entero, así que el trazo pasa de ser
+     suciedad a ser la firma del pincel que pinta todo lo demás. */
+  background: color-mix(in srgb, #3E6E8E 42%, transparent);
   -webkit-mask: url("/galene/arte/filete-4.webp") 50% 50% / min(640px, 78%) auto no-repeat;
           mask: url("/galene/arte/filete-4.webp") 50% 50% / min(640px, 78%) auto no-repeat;
 }
@@ -3136,10 +3164,13 @@ main:focus { outline: none; }
   isolation: isolate;
   background: var(--papel-alto);
   border-radius: 10px 4px 12px 5px / 5px 12px 4px 11px;
-  /* El filete de tinta al 9 %: lo justo para que la ficha tenga canto
-     sobre el papel de la sección, que es casi del mismo valor. Más que
-     eso y vuelve a ser una caja dibujada. */
-  border: 1px solid rgb(var(--letra-rgb) / 9%);
+  /* SIN FILETE. Con borde —aunque fuera al 9 %— el glosario entero se
+     leía como «un montón de cuadros», palabras del dueño, y es que
+     veinte cajas con canto son una retícula, no un cuaderno. El canto
+     lo pone ahora el propio papel de la ficha: un valor por encima del
+     de la sección y el charco de la esquina. Una mancha se distingue de
+     la hoja sin necesitar contorno; una caja no puede. */
+  border: 1px solid transparent;
   /* La ficha entera se enfoca al llegar por un enlace `#t-*` (ver
      `irA()` en js/palabras.js). Sin esto, el anillo del foco se dibuja
      pegado al texto y no alrededor de la caja. */
@@ -3177,7 +3208,9 @@ main:focus { outline: none; }
   background-position: 0 0, 0 100%;
   background-repeat: repeat, no-repeat;
   background-blend-mode: multiply, normal;
-  opacity: 0.62;
+  /* Un punto más presente desde que la ficha no tiene borde: ahora el
+     grano y el charco son TODO su canto. */
+  opacity: 0.78;
   transition: opacity 700ms var(--paso);
 }
 /* De noche el papel es añil y `multiply` no muerde: oscurece hasta
@@ -6783,38 +6816,19 @@ main:focus { outline: none; }
   .rr__riel__pigmento { clip-path: none !important; }
 }
 
-/* El canto de la hoja de herramientas sobre la ayuda (ver la nota en
-   su bloque principal). El color es el del arranque de su degradado
-   (--papel-cielo) para que el canto y la hoja sean la misma agua. */
-.herramientas::before {
-  content: "";
-  position: absolute;
-  left: 0; right: 0;
-  top: 0;
-  height: var(--barbas, 34px);
-  /* HACIA DENTRO Y NO POR ENCIMA, y el porqué es de motor:
-     `content-visibility: auto` (regla de arriba) trae contención de
-     PINTURA, así que un pseudo asomado fuera de la caja se recorta en
-     el canto y no existe — se vio en dos capturas seguidas antes de
-     encontrar la causa. La misma costura, dicha al revés: el papel de
-     la AYUDA baja mordiendo el primer palmo de esta hoja, con su borde
-     rasgado abajo (el canto de barbas volteado) y su sombra cayendo
-     sobre la página nueva. Dos hojas de cuaderno, la de arriba asoma. */
-  background: var(--papel);
-  -webkit-mask-image: var(--arte-barbas, linear-gradient(#000, #000));
-          mask-image: var(--arte-barbas, linear-gradient(#000, #000));
-  -webkit-mask-size: auto 100%;
-          mask-size: auto 100%;
-  -webkit-mask-position: top center;
-          mask-position: top center;
-  -webkit-mask-repeat: repeat-x;
-          mask-repeat: repeat-x;
-  /* El volteo pone las barbas abajo; la sombra se escribe hacia
-     arriba para que, volteada, caiga hacia abajo sobre la hoja. */
-  transform: scale(1, -1);
-  filter: drop-shadow(0 -3px 5px rgb(28 42 48 / 22%));
-  pointer-events: none;
-}
+/* ── EL CANTO RASGADO SE FUE ────────────────────────────────────────
+   Aquí un pseudoelemento pintaba el papel de la ayuda mordiendo esta
+   hoja con barbas volteadas y una sombra cayendo — dos hojas de
+   cuaderno, una asomada sobre la otra. Era la costura más trabajada
+   del sitio y era exactamente lo que el dueño señaló como «un corte de
+   papel»: por muy bonito que sea el rasgado, un rasgado ES un corte, y
+   lo que se pidió es que todo sea parte del mismo eje.
+
+   La sección de arriba y esta empiezan ahora en el MISMO papel (ver el
+   degradado del bloque principal), así que no hay frontera que vestir:
+   el pseudo queda sin pintar nada y se deja el hueco documentado por si
+   alguna vez vuelve una costura con otra forma. */
+.herramientas::before { content: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
    LA AGUADA DEL PUNTERO — un charco que llega tarde
@@ -6931,13 +6945,17 @@ main:focus { outline: none; }
        hexadecimal y oklab mezcla sin la sequedad que tiene sRGB al
        bajar la saturación. Es la misma función que usa el resto de
        esta hoja. */
+    /* La FUERZA es una variable por superficie: sobre una tarjeta llena
+       de texto el mismo charco que en un boton es demasiado — lo dijo el
+       dueño del foro con estas palabras: «quiero el hover del mouse mas
+       sutil». 1 es la fuerza de un boton; el hilo va a 0.45. */
     background:
       radial-gradient(42% 52% at var(--ax) var(--ay),
-                      color-mix(in oklab, var(--aguada, var(--letra)) 20%, transparent),
-                      color-mix(in oklab, var(--aguada, var(--letra)) 7%, transparent) 46%,
+                      color-mix(in oklab, var(--aguada, var(--letra)) calc(20% * var(--aguada-f, 1)), transparent),
+                      color-mix(in oklab, var(--aguada, var(--letra)) calc(7% * var(--aguada-f, 1)), transparent) 46%,
                       transparent 72%),
       radial-gradient(19% 26% at calc(var(--ax) + 3.5%) calc(var(--ay) - 2.5%),
-                      color-mix(in oklab, var(--aguada, var(--letra)) 15%, transparent),
+                      color-mix(in oklab, var(--aguada, var(--letra)) calc(15% * var(--aguada-f, 1)), transparent),
                       transparent 78%);
     -webkit-mask-image: var(--arte-papel);
             mask-image: var(--arte-papel);
@@ -6971,7 +6989,7 @@ main:focus { outline: none; }
   /* Cada hilo moja del color de SU etiqueta — `--pigmento` ya viene
      puesto en la tarjeta desde `comunidad.js`. Un hilo sin etiqueta se
      queda con el azul de la casa, que es el del mar. */
-  .hilo { --aguada: var(--pigmento, #3E6E8E); }
+  .hilo { --aguada: var(--pigmento, #3E6E8E); --aguada-f: 0.45; }
 
   /* El panel de escribir, verde «acompañar»: es la puerta por la que
      alguien decide contar algo. */
