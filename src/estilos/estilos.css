@@ -1521,32 +1521,31 @@ main:focus { outline: none; }
   display: none;
 }
 
-/* Un velo por pieza, con la forma de lo que protege. El alfa lo sigue
-   escribiendo `calibrarTinta()` en el mismo `--lavado` de siempre: lo
-   que cambia no es cuánto vela, es dónde.
+/* ── EL VELO SE FUE, Y LO PIDIÓ EL DUEÑO ────────────────────────────
+   Aquí había un óvalo desenfocado detrás del rótulo, del lockup y de la
+   declaración: `::before` con `--lavado-color` al alfa que
+   `calibrarTinta()` calculara. Su trabajo era garantizar el contraste
+   cuando la Vía Láctea cruza justo por detrás de las letras.
 
-   `isolation: isolate` es lo que mantiene el velo DENTRO de su pieza —
-   detrás de sus letras y delante del lienzo—. Sin él, un z-index de −1
-   se va detrás del mar y no vela nada. */
+   Hacía su trabajo y se veía. «QUITALO NO LO QUIERO. Tanto de noche,
+   como de día como amanecer, esa sombra del fondo». Y tenía razón: un
+   óvalo oscuro y difuso sobre un cielo estrellado no se lee como una
+   aguada, se lee como una mancha — el cielo se ensucia justo donde está
+   lo primero que alguien mira.
+
+   El contraste no se abandona, cambia de herramienta. El velo pintaba
+   EL FONDO; el halo pinta EL BORDE DE LA LETRA. Un `text-shadow` corto
+   pegado al glifo levanta la razón de contraste medida sobre píxeles
+   igual de bien y no tiene superficie propia: no hay una forma detrás
+   del texto que se pueda ver como forma. `calibrarTinta()` ahora
+   engorda ese halo cuando la tinta sola no llega, en vez de sacar el
+   óvalo. Ver la nota de `--halo` en js/main.js.
+
+   Se conserva `isolation: isolate` porque las tres piezas siguen
+   necesitando su propio contexto para no colarse detrás del mar. */
 :is(.titulo, .lockup, .hero__declaracion) {
   position: relative;
   isolation: isolate;
-}
-:is(.titulo, .lockup, .hero__declaracion)::before {
-  content: "";
-  position: absolute;
-  /* Generoso a los lados y corto arriba y abajo: el desenfoque tiene
-     que morir en el aire, no en la línea de al lado. */
-  inset: -0.3em -0.9em;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--lavado-color, transparent);
-  opacity: var(--lavado, 0);
-  /* Canto de aguada, no de caja: es el mismo vocabulario de la fase 2
-     —el suelo del botón, el pie de las viñetas— y por la misma razón.
-     Un rectángulo difuminado sigue leyéndose como un rectángulo. */
-  border-radius: 46% 54% 52% 48% / 58% 44% 56% 42%;
-  filter: blur(clamp(9px, 1vw, 15px));
 }
 
 /* EL ROTULO. Es el elemento dominante del cuadro y el único sitio del

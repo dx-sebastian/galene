@@ -50,7 +50,31 @@ async function arrancar() {
     return;
   }
 
-  const rutaAve = (pose) => `${base}arte/1024/posada/${pose}.webp`;
+  /* ── AQUÍ VIVÍA EL SELLO, Y AHÍ ESTABA LA AVERÍA ────────────────────
+     Cada tarjeta llevaba un ave posada de sello, con su pose y su
+     mirada. El rediseño de la comunidad —«sin fotos de perfil»— la quitó
+     del marcado, de las dos plantillas, y este archivo se quedó
+     pintándola:
+
+       const ave = nodo.querySelector('.sello__ave');
+       ave.src = rutaAve(h.autora.pose);
+
+     `querySelector` de una clase que ya no existe devuelve `null`, y
+     asignarle `.src` lanza. En la PRIMERA tarjeta. O sea que desde ese
+     rediseño la comunidad no pintaba ni un hilo: cargaba la lista, la
+     recorría, reventaba en la primera y el `catch` de fuera enseñaba «no
+     se pudo llegar a la comunidad». Esa frase mandó a buscar la avería a
+     la red, a las llaves y a Supabase durante horas — y la base contestó
+     siempre bien, porque el fallo estaba tres capas más acá.
+
+     Lo que lo destapó fue el mensaje de error nuevo, la primera vez que
+     alguien vio el texto de verdad: «Cannot set properties of null
+     (setting 'src')». Un aviso honesto encontró en un minuto lo que un
+     aviso amable había escondido.
+
+     `autora.pose` y `autora.mirar` siguen llegando de la base y no
+     estorban: los lee la portada para las garzas del manglar. Aquí ya no
+     se usan. */
 
   let estado = { orden: 'recientes', etiqueta: '' };
   let cursor = '', instantanea = null, hayMas = true, cargando = false;
@@ -74,10 +98,6 @@ async function arrancar() {
        pigmento es de la etiqueta, y si no hay etiqueta no hay pigmento
        que poner. */
     if (et) nodo.querySelector('.hilo').style.setProperty('--pigmento', et.pigmento);
-
-    const ave = nodo.querySelector('.sello__ave');
-    ave.src = rutaAve(h.autora.pose);
-    nodo.querySelector('.sello').style.setProperty('--mirar', h.autora.mirar || 1);
 
     const autoraEl = nodo.querySelector('[data-autora]');
     autoraEl.textContent = h.autora.nombre;
@@ -168,8 +188,6 @@ async function arrancar() {
     const nodo = plantillaComentario.content.firstElementChild.cloneNode(true);
     nodo.dataset.id = c.id;
 
-    nodo.querySelector('.sello__ave').src = rutaAve(c.autora.pose);
-    nodo.querySelector('.sello').style.setProperty('--mirar', c.autora.mirar || 1);
 
     const autoraEl = nodo.querySelector('[data-autora]');
     autoraEl.textContent = c.autora.nombre;
