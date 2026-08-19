@@ -56,6 +56,18 @@ if (!quieto.matches) {
     '.comunidad-panel__entrada',
     '.glosario__ficha',
     '.emblema',
+    /* ── Y LO QUE SE PINTA, QUE ES OTRA COSA ──────────────────────
+       Los dos de abajo no LLEGAN: se DIBUJAN. El dueño lo pidió con
+       estas palabras —«los manchones de acuarela me gustaría ver cómo
+       se pintan»— y tiene razón en que no es lo mismo: un bloque que
+       aparece es una hoja que se pone encima, y un trazo que se dibuja
+       de izquierda a derecha es una mano.
+
+       Se les da un `clip-path` que se abre en lugar de opacidad, así
+       que la tinta entra por donde entraría un pincel. Está en la hoja,
+       aquí solo se apuntan. */
+    '.trazo',
+    '.seccion-rotulo',
   ].join(', ');
 
   const piezas = [...document.querySelectorAll(SELECTOR)]
@@ -91,10 +103,43 @@ if (!quieto.matches) {
       });
       for (const el of piezas) ojo.observe(el);
     } else {
+      /* Sin observador no hay llegada posible: se enseña todo y ya. */
       todo();
     }
 
-    /* La red. Dos segundos es más que cualquier llegada legítima. */
-    setTimeout(todo, 2000);
+    /* ═══ LA RED, Y POR QUÉ ESTABA MAL TENDIDA ══════════════════════
+       Aquí ponía `setTimeout(todo, 2000)`: a los dos segundos se
+       revelaba TODA la página, estuviera donde estuviera. La intención
+       era buena —que nada se quede invisible— pero el efecto es que la
+       llegada no existía: dos segundos después de cargar, cada bloque de
+       la página ya había hecho su transición a solas, con nadie
+       mirando, y quien bajaba después encontraba todo puesto. El dueño
+       lo dijo sin saber la causa: «quiero ver el sitio vivo mientras
+       scrolleo».
+
+       La red se queda, pero atada a lo que de verdad puede fallar:
+
+         · SIN observador, no hay nada que espere: se revela todo, como
+           antes. Ese caso sí es una emergencia.
+
+         · CON observador, lo único que puede quedarse colgado es algo
+           que YA ESTÁ EN PANTALLA y a lo que el observador no llegó —
+           una pestaña restaurada a mitad de página, un `scroll` que el
+           navegador restaura antes de que el módulo corra—. Así que a
+           los seis segundos se barre, pero solo lo que se está viendo.
+           Lo que hay más abajo sigue esperando su turno, que es
+           exactamente lo que tiene que hacer.
+
+       Nada de esto puede dejar contenido invisible: lo de abajo no se
+       lee hasta que se baja, y bajar dispara el observador. Y si el
+       observador estuviera roto, no habría entrado en esta rama. */
+    const barrerLoVisible = () => {
+      for (const el of piezas) {
+        if (!el.isConnected || el.classList.contains('llegado')) continue;
+        const r = el.getBoundingClientRect();
+        if (r.top < innerHeight && r.bottom > 0) revelar(el);
+      }
+    };
+    setTimeout(barrerLoVisible, 6000);
   }
 }
