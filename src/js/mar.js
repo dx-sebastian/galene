@@ -2804,13 +2804,45 @@ export function crear(lienzo) {
      dibuja no cambia un píxel: `alpha: true` solo cambia de qué color
      es el vacío.
 
-     Si algún día no bastara, la siguiente palanca es
-     `preserveDrawingBuffer: true` — el buffer conserva el último cuadro
-     en vez de borrarse— pero cuesta una copia por presentación, y no se
-     paga hasta comprobar que hace falta. */
+     ── Y NO BASTÓ: HUBO QUE PAGAR LA COPIA ──────────────────────────
+     Con el alfa arreglado el dueño volvió a mirar y lo describió
+     exacto: «ya no parpadea negro, pero ahora DESAPARECEN el agua y los
+     árboles, y las aves permanecen». Eso es el mismo suceso contado por
+     el otro lado y es la confirmación del diagnóstico: lo que se borra
+     es lo que pinta el shader; las garzas siguen ahí porque son DOM y
+     no viven en este buffer. El alfa solo cambió de qué color es el
+     vacío — el vacío seguía apareciendo.
+
+     Y aparece INCLUSO CON EL HERO A LA VISTA, o sea con el bucle
+     corriendo. El motivo es la asincronía: el mar se dibuja a 30 Hz en
+     el hilo principal y Safari compone el scroll en OTRO hilo, a la
+     tasa de la pantalla. Entre que se presenta un cuadro y se dibuja el
+     siguiente hay 33 ms en los que el buffer está borrado, y el
+     compositor del scroll cae dentro de esa ventana la mayoría de las
+     veces. Por eso se ve al desplazarse y no estando quieto.
+
+     `preserveDrawingBuffer: true` es la única palanca que cierra esa
+     ventana: el buffer deja de borrarse al presentar, así que sea cual
+     sea el instante en que el compositor lo pida, dentro hay pintura.
+     Cuesta una copia por presentación en vez de un intercambio de
+     punteros.
+
+     SOLO EN WEBKIT, y no por prudencia: en Blink el compositor va en
+     fase con el dibujo y este vacío no se ve nunca, así que allí la
+     copia sería un coste sin contrapartida. La prueba es la misma
+     función que cierra el bloque de Safari en estilos.css —
+     `-webkit-named-image()` solo existe en WebKit— para que las dos
+     decisiones se lean como lo que son: la misma, sobre el mismo motor.
+
+     Si en un teléfono viejo la copia pesara, no hay que deshacer esto:
+     `adaptarCadencia()` ya baja la resolución sola cuando los cuadros
+     se alargan, que es el mecanismo que este motor tiene para eso. */
+  /* eslint-disable-next-line no-undef */
+  const esWebKit = typeof CSS !== 'undefined' && CSS.supports
+    && CSS.supports('background', '-webkit-named-image(i)');
   const gl = lienzo.getContext('webgl2', {
     antialias: false, alpha: true, depth: false, stencil: false,
-    powerPreference: 'high-performance', preserveDrawingBuffer: false,
+    powerPreference: 'high-performance', preserveDrawingBuffer: esWebKit,
   });
   if (!gl) return null;
 
