@@ -611,8 +611,32 @@ main:focus { outline: none; }
   overflow: hidden;
   pointer-events: none;
 
-  /* Respaldo sin WebGL: cielo, horizonte y agua. Sigue siendo un mar. */
-  background:
+  /* ── DOS CAPAS: EL ECO DEL MAR, Y DEBAJO EL RESPALDO ──────────────
+     La de abajo es el respaldo sin WebGL de siempre: cielo, horizonte y
+     agua. Sigue siendo un mar y sigue siendo lo que se ve cuando no hay
+     shader.
+
+     La de ARRIBA, `--eco-mar`, es nueva y existe por el parpadeo de
+     Safari. Después de cinco hipótesis descartadas —el color del vacío,
+     conservar el buffer, la escala del hundido, la anidación del lienzo
+     dentro de un elemento fijo, y los filtros SVG— lo único seguro es
+     el síntoma: al hacer scroll, WebKit deja de componer la capa del
+     lienzo y se ve lo que hay detrás. El dueño lo describió con
+     precisión: «un background que parece css sin más».
+
+     Así que se deja de perseguir la causa y se arregla lo que se ve.
+     `--eco-mar` la escribe js/main.js: es una FOTO del propio lienzo,
+     tomada cada tanto y reducida, puesta justo detrás de él. Cuando el
+     compositor se salta la capa, lo que asoma ya no es un degradado
+     plano: es el mismo cuadro, quieto durante un instante. No arregla
+     el motor —no se puede desde aquí— pero convierte un fallo que se
+     ve en uno que no.
+
+     Nace en `none`, así que sin JavaScript, sin WebGL o antes de la
+     primera foto no hay ninguna capa de más: queda el respaldo, tal
+     cual estaba. */
+  background-image:
+    var(--eco-mar, none),
     linear-gradient(
       to bottom,
       var(--cielo-alto) 0%,
@@ -622,6 +646,17 @@ main:focus { outline: none; }
       var(--agua)       calc(var(--horizonte) + 14%),
       color-mix(in oklab, var(--agua) 82%, #000) 100%
     );
+  /* El eco lleva la MISMA geometría que el lienzo del que sale, o al
+     asomar quedaría desencajado de lo que estaba tapando: el lienzo va
+     con `scale: 1.02` anclado en el canto de abajo (ver el hundido del
+     mundo en main.js), y `102%` medido desde `bottom` es exactamente
+     esa escala con ese ancla. Lo único que no se replica es el hundido
+     —trece píxeles a lo largo de una pantalla de scroll— y no se
+     replica a propósito: sería una escritura de estilo por cuadro sobre
+     el elemento que estamos intentando no tocar. */
+  background-size: 102% 102%, 100% 100%;
+  background-position: center bottom, center;
+  background-repeat: no-repeat, no-repeat;
 }
 
 .hero {

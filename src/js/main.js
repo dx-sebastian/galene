@@ -1542,6 +1542,65 @@ function arrancar(mar) {
   cuadro(performance.now());
   hero.setAttribute('data-mar', 'listo');
 
+  /* ── EL ECO DEL MAR ────────────────────────────────────────────────
+     Una FOTO del propio lienzo, reducida, puesta como fondo de `.mundo`
+     —o sea justo detrás del lienzo—. Es el arreglo del parpadeo de
+     Safari, y no arregla la causa: la causa está en el compositor de
+     WebKit y desde aquí no se alcanza. Cinco hipótesis se probaron y
+     cayeron —el color del vacío, conservar el buffer, la escala del
+     hundido, la anidación del lienzo dentro de un elemento fijo, los
+     filtros SVG— y de todas ellas solo quedó firme el síntoma: al hacer
+     scroll, WebKit deja de componer la capa del lienzo y se ve lo que
+     hay detrás. Con esto, lo que hay detrás deja de ser un degradado
+     plano y pasa a ser el mismo cuadro, quieto un instante. El fallo
+     sigue ocurriendo; deja de verse.
+
+     POR QUÉ UNA FOTO Y NO LAS LÁMINAS. La otra salida era pintar detrás
+     la composición estática que el sitio ya tiene (agua y manglar en
+     CSS). Habría que hacerla coincidir a mano con lo que calcula el
+     shader —la caja del árbol, la línea de agua, la hora— y esa
+     coincidencia se rompería en cada ventana y a cada hora. Una foto
+     del lienzo coincide por construcción, siempre, sin un solo número
+     que mantener.
+
+     Y ES BARATA PORQUE YA SE PAGÓ EL BILLETE: leer un lienzo de WebGL
+     exige `preserveDrawingBuffer`, que este motor ya lleva puesto desde
+     que se persiguió el parpadeo por ahí. Se reduce a 720 px de ancho
+     —detrás de un lienzo opaco, y solo visible en un parpadeo, no hace
+     falta la resolución entera— y se codifica en WebP: unas pocas
+     decenas de kilobytes en memoria. Medida la diferencia entre el
+     lienzo vivo y su eco, sobre la portada entera: 33 de 765 en Blink y
+     40 en WebKit, o sea un 5 %, casi todo blandura del reescalado.
+
+     CADA CUÁNTO. Una al asentarse la escena y otra cada veinte
+     segundos, y solo mientras el hero se ve. La pintura cambia con la
+     hora, que se mueve despacio: veinte segundos de desfase no se
+     distinguen ni mirándolo. Al cambiar de tamaño la ventana se rehace
+     enseguida, porque ahí sí cambia todo. */
+  const mundo = document.querySelector('.mundo');
+  let ecoPedido = 0;
+  function ecoDelMar() {
+    if (!mundo || !visible || marPerdido || !lienzo.width) return;
+    try {
+      const ancho = 720;
+      const alto = Math.max(1, Math.round(ancho * lienzo.height / lienzo.width));
+      const c = document.createElement('canvas');
+      c.width = ancho; c.height = alto;
+      c.getContext('2d').drawImage(lienzo, 0, 0, ancho, alto);
+      mundo.style.setProperty('--eco-mar', `url("${c.toDataURL('image/webp', 0.7)}")`);
+    } catch { /* un lienzo que no se deja leer no rompe la portada */ }
+  }
+  /* Al asentarse: 2 s después del primer cuadro es tiempo de sobra para
+     que las catorce láminas estén subidas y el mar haya llegado a su
+     estado, y sigue siendo antes de que nadie haya bajado del hero. */
+  const pedirEco = () => {
+    clearTimeout(ecoPedido);
+    ecoPedido = setTimeout(ecoDelMar, 2000);
+  };
+  pedirEco();
+  setInterval(ecoDelMar, 20_000);
+  addEventListener('resize', pedirEco, { passive: true });
+
   /* Asidero de auditoría, solo en desarrollo. El muestreo tiene que
      ocurrir en el mismo cuadro que el dibujo y `estado` vive dentro de
      este cierre, así que la puerta se abre desde aquí. */
