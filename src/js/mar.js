@@ -2827,22 +2827,29 @@ export function crear(lienzo) {
      Cuesta una copia por presentación en vez de un intercambio de
      punteros.
 
-     SOLO EN WEBKIT, y no por prudencia: en Blink el compositor va en
-     fase con el dibujo y este vacío no se ve nunca, así que allí la
-     copia sería un coste sin contrapartida. La prueba es la misma
-     función que cierra el bloque de Safari en estilos.css —
-     `-webkit-named-image()` solo existe en WebKit— para que las dos
-     decisiones se lean como lo que son: la misma, sobre el mismo motor.
+     ── Y VA SIN CONDICIÓN, PORQUE CONDICIONARLO FUE UN ERROR ────────
+     Se puso primero solo para WebKit, detrás de un
+     `CSS.supports('background', '-webkit-named-image(i)')`, con el
+     argumento de que en Blink el compositor va en fase y la copia sería
+     coste sin contrapartida. El argumento sigue siendo cierto; la
+     decisión estaba mal igualmente.
 
-     Si en un teléfono viejo la copia pesara, no hay que deshacer esto:
+     Esa prueba se verificó en el WebKit de Playwright, que es un build
+     de WebKit, NO el Safari del aparato del dueño. O sea que la
+     corrección se publicó dependiendo de algo que aquí no se puede
+     comprobar, y cuando el dueño dijo «sigue igual» no había forma de
+     saber si el remedio no servía o si sencillamente no se había
+     encendido. Una corrección que no se puede distinguir de su propia
+     ausencia no es una corrección: es otra ronda perdida.
+
+     Así que va para todos. Cuesta una copia por presentación en un
+     motor que dibuja el mar a 30 Hz, y si en un aparato viejo pesara,
      `adaptarCadencia()` ya baja la resolución sola cuando los cuadros
-     se alargan, que es el mecanismo que este motor tiene para eso. */
-  /* eslint-disable-next-line no-undef */
-  const esWebKit = typeof CSS !== 'undefined' && CSS.supports
-    && CSS.supports('background', '-webkit-named-image(i)');
+     se alargan — que es el mecanismo que este motor tiene para eso.
+     Ese precio es preferible a no poder responder una pregunta. */
   const gl = lienzo.getContext('webgl2', {
     antialias: false, alpha: true, depth: false, stencil: false,
-    powerPreference: 'high-performance', preserveDrawingBuffer: esWebKit,
+    powerPreference: 'high-performance', preserveDrawingBuffer: true,
   });
   if (!gl) return null;
 
