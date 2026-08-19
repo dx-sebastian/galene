@@ -96,10 +96,16 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     letter-spacing: 0.34em;
     text-transform: uppercase;
   }
+  /* El alto sale de la proporción con la que está dibujada la olita
+     (viewBox 120×10), no de un número fijo: es la misma regla que la
+     de la barra, y por lo mismo — con el alto declarado, la olita del
+     pie salía a 10.4:1 y la de la barra a 15.2:1, o sea dos olitas
+     distintas para un solo logotipo. Ver `.marca__ola` en estilos.css. */
   .pie__ola {
     display: block;
     width: 5.2em;
-    height: 0.5em;
+    height: auto;
+    aspect-ratio: 120 / 10;
     margin-top: 0.4em;
     overflow: visible;
     color: var(--tinta-suave, currentColor);

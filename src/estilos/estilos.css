@@ -1144,10 +1144,45 @@ main:focus { outline: none; }
   margin-inline-end: -0.30em;
   text-transform: uppercase;
 }
+/* ── LA OLITA SE ESTIRA A LO ANCHO, PERO NO SE APLASTA ─────────────
+   Iba con el alto fijo (0.5em) y el ancho al de la palabra, y con
+   `preserveAspectRatio="none"` eso significa que su proporción la
+   decide la anchura del rótulo. Medido a 1440×900, con la Cormorant ya
+   cargada y en los dos motores:
+
+     dibujada (viewBox)  120 × 10   = 12.0 : 1
+     en la barra         121.8 × 8  = 15.2 : 1   ← un 27 % más plana
+     en el pie           120.6 × 11.6 = 10.4 : 1 ← un 15 % más alta
+
+   O sea que la MISMA olita se pinta con tres proporciones distintas
+   según dónde esté y según lo ancha que salga la palabra — y como la
+   palabra la dibuja la tipografía, basta con que el aparato use otra
+   (Didot en un Mac mientras el woff2 no ha llegado) para que la olita
+   cambie otra vez. «Se estira más de lo habitual», dijo el dueño
+   mirándola en Safari, y es literal: comparada con la del pie o con la
+   del cargador, la de la barra ES la más estirada de las tres.
+
+   El ancho sigue siendo el de la palabra —eso es lo que hace que sea
+   su olita y no un adorno— pero el ALTO deja de ser fijo y sale de la
+   proporción con la que está dibujada. Así se estira igual que se
+   dibujó, sea cual sea la palabra, la tipografía o el navegador.
+
+   `height: auto` es imprescindible: con un alto declarado, la
+   `aspect-ratio` no tiene nada que resolver.
+
+   Y `width: 0` con `min-width: 100%` NO es un truco gratuito: en cuanto
+   el alto pasa a `auto`, este <svg> empieza a declarar su tamaño
+   intrínseco (300 px, el que traen los SVG sin dimensiones) y la
+   columna de la rejilla se ensancha hasta él — medido: la olita pasó a
+   300 px de ancho y se llevó el rótulo por delante. Con el ancho a cero
+   la olita no opina sobre la columna, y el `min-width` la estira
+   después a lo que la palabra haya decidido. */
 .marca__ola {
   display: block;
-  width: 100%;
-  height: 0.5em;
+  width: 0;
+  min-width: 100%;
+  height: auto;
+  aspect-ratio: 120 / 10;
   margin-top: 0.42em;
   overflow: visible;
   color: var(--tinta-suave);
@@ -2969,8 +3004,31 @@ main:focus { outline: none; }
    mismos tamaños) y deja que el conjunto muera en festón, como muere
    una aguada. El núcleo va a alfa plena bien pasado el centro (74 %)
    para que ni una letra pierda su papel: lo que se desvanece es el
-   canto, nunca el soporte del texto. */
-:root[data-tinta="clara"] .realce {
+   canto, nunca el soporte del texto.
+
+   ── Y DE DÍA TAMBIÉN, PORQUE SAFARI SÍ ENSEÑA LA CAJA ─────────────
+   Esta máscara vivía solo en la noche. El razonamiento de arriba —de
+   día los bordes mueren en papel del mismo valor, así que la caja no se
+   ve— es cierto EN BLINK y falso en WebKit, y ahora está comprobado con
+   el motor de Safari corriendo aquí: en la misma frase, a 1440×900 y a
+   la misma hora, Chromium pinta la mancha rosa muriendo en el papel y
+   WebKit pinta un RECTÁNGULO gris verdoso de cantos rectos, más ancho y
+   más alto que la mancha, con el rosa embarrado dentro. «Los efectos de
+   acuarela no se ven bien sobre los títulos», dijo el dueño, y es
+   exactamente esto.
+
+   La causa es la misma que ya se cazó en el velo del panel de
+   comunidad: `papel.webp` es un WebP SIN CANAL ALFA. Una capa opaca
+   dentro de un `background-blend-mode` deja el fondo compuesto opaco de
+   canto a canto, y entonces lo que se ve no son los cinco toques: es su
+   caja. Blink conserva la transparencia de las capas de debajo y por
+   eso allí no se notaba; el que se ajusta a lo que dice la regla es
+   WebKit.
+
+   Así que la máscara sube a la regla general. De día no le cuesta nada
+   a Blink —recorta una caja que allí ya era invisible— y le devuelve a
+   Safari la aguada que el resto del mundo veía. */
+.realce {
   -webkit-mask-image:
     radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
     radial-gradient(closest-side ellipse, #000 74%, transparent 100%),
