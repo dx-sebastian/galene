@@ -75,17 +75,52 @@ def atlas_nubes(im):
     return Image.fromarray(salida.astype(np.uint8), 'RGBA')
 
 
+def armonizar(im, referencia):
+    """Iguala la distribución de VALOR y el nivel de CROMA de una hoja
+    nueva a los de la lámina vieja a la que sustituye.
+
+    El motivo no es nostalgia: el motor entero está calibrado contra
+    las hojas viejas —el umbral de facetas contra su decil claro, el
+    duotono contra su mediana, el croma contra su saturación— y además
+    las tres bandas viejas eran de la MISMA familia de gris, así que
+    sus fundidos eran invisibles. Las nuevas venían cada una de su
+    propia paleta y los fundidos entre bandas salían como CORTES de
+    tono horizontales cruzando el mar; el dueño lo vio en la primera
+    mirada: «veo cortes de distintos tonos de azul».
+
+    Se iguala media y desviación de luminancia, y el croma se lleva al
+    nivel de la vieja (el color de la hora lo pone el motor: una lámina
+    saturada no da un mar más vivo, da un mar de otro cuadro)."""
+    ref = np.asarray(referencia.convert('RGB')).astype(np.float32)
+    a = np.asarray(im.convert('RGB')).astype(np.float32)
+    pesos = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+    lumR, lumA = ref @ pesos, a @ pesos
+    mR, sR = lumR.mean(), lumR.std()
+    mA, sA = lumA.mean(), lumA.std()
+    lumN = (lumA - mA) / max(sA, 1.0) * sR + mR
+    ganancia = np.clip(lumN / np.maximum(lumA, 1.0), 0.35, 2.6)
+    a = a * ganancia[..., None]
+    cR = np.abs(ref - lumR[..., None]).mean()
+    lum2 = (a @ pesos)[..., None]
+    cA = np.abs(a - lum2).mean()
+    a = lum2 + (a - lum2) * np.clip(cR / max(cA, 1.0), 0.3, 1.0)
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), 'RGB')
+
+
 print('mar lejano (sereno):')
-guardar(Image.open('Estudio sereno de agua en acuarela.png').convert('RGB'),
-        'mar-lejano-v2')
+lejano = armonizar(Image.open('Estudio sereno de agua en acuarela.png'),
+                   Image.open('public/arte/mar-lejano.webp'))
+guardar(lejano, 'mar-lejano-v2')
 
 print('mar medio (superficie) y su calma:')
-medio = Image.open('Superficie de agua en acuarela.png').convert('RGB')
+medio = armonizar(Image.open('Superficie de agua en acuarela.png'),
+                  Image.open('public/arte/mar-medio.webp'))
 guardar(medio, 'mar-medio-v2')
 guardar(calmar(medio, 1.0), 'mar-medio-v2-calmo')
 
 print('mar cercano (olas) y su calma:')
-cerca = Image.open('Estudio de olas en acuarela.png').convert('RGB')
+cerca = armonizar(Image.open('Estudio de olas en acuarela.png'),
+                  Image.open('public/arte/mar-cercano.webp'))
 guardar(cerca, 'mar-cercano-v2')
 guardar(calmar(cerca, 1.4), 'mar-cercano-v2-calmo')
 
