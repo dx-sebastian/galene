@@ -1569,8 +1569,28 @@ void main(){
        mitad de lo que hace que un mar de acuarela se vea soleado. */
     float diaFaceta = smoothstep(0.50, 0.92, u_int);
     float cresta = smoothstep(0.42, 0.88, onda * 0.5 + 0.5);
+    /* ── LOS TRES REFLEJOS QUE NO ERAN EL SOL ─────────────────────
+       Las facetas exigian lamina clara + cresta + poca profundidad,
+       pero NINGUNA de las tres mira donde esta la fuente: de dia
+       salian TRES manchas blancas separadas por el mar —una era el
+       reguero y las otras dos, papel reservado donde la lamina trae
+       su decil claro—. Tres reflejos es tres soles, y este cuadro
+       tiene uno.
+
+       Un destello es un espejo, y un espejo solo devuelve la fuente
+       que tiene delante. La columna de luz bajo el sol es un CONO en
+       perspectiva —angosto en el horizonte, abierto al acercarse al
+       ojo— y las facetas viven dentro de el. Fuera queda un residuo
+       minimo, porque un mar de dia si tiene algun brillo suelto,
+       pero ya no compite con el reguero.
+
+       columnaLuz se calcula aqui y lo reutilizan las crestas mas
+       abajo: la luz del agua entera sale del mismo sitio. */
+    float dxLuz = abs(q.x - fuenteQ.x);
+    float columnaLuz = exp(-pow(dxLuz / mix(0.17, 0.58, pp), 2.0));
     float faceta = smoothstep(mix(0.93, 0.865, diaFaceta),
-                              mix(0.985, 0.950, diaFaceta), valor(pintura)) * cresta;
+                              mix(0.985, 0.950, diaFaceta), valor(pintura)) * cresta
+                 * mix(0.06, 1.0, columnaLuz);
     /* Y DE NOCHE, CERO. Con mix(0.03, 1.0, dia) a las 21:00 quedaba al
        15 %, que parece poco — pero sobre agua casi negra (luminancia
        0.05) mezclar un 15 % hacia papel (0.87) multiplica el brillo por
@@ -1745,10 +1765,39 @@ void main(){
        distancia es el espaciado entre crestas, no su frecuencia.
        4.4 rad/s recorre las 40 radianes del horizonte al ojo en ~9 s. */
     float paso = sin(marcha * 2.35 + u_t * 3.52 + q.x * 1.15 + fase1);
+    /* ── EL SEGUNDO TREN ──────────────────────────────────────────
+       Un solo tren de crestas, por bien roto que vaya, sigue siendo
+       UN ritmo: el ojo lo cuenta y lo predice, y lo predecible es lo
+       que separa una animacion de un mar. El segundo termino del
+       oleaje ya existia como deformacion; aqui ademas ACLARA, con
+       otra velocidad y otra deriva en x, y donde los dos trenes se
+       cruzan la luz se suma y donde se desfasan se apaga. Esa
+       interferencia —crestas que se encienden un momento y se
+       deshacen— es lo que hace que el agua parezca tener corrientes
+       dentro y no un motor. Entra a la mitad de fuerza: es el
+       acompanamiento, no otra voz igual de alta. */
+    float paso2 = sin(marcha * 1.42 + u_t * 2.16 - q.x * 2.05 + fase2);
     float lomo = smoothstep(0.30, 0.95, paso) * (1.0 - cn) * pp;
+    float lomo2 = smoothstep(0.45, 0.98, paso2) * (1.0 - cn) * pp;
     float valle = smoothstep(-0.30, -0.95, paso) * (1.0 - cn) * pp;
-    col = mix(col, mix(col, u_altas, 0.55), lomo * 0.30);
-    col = mix(col, col * 0.86, valle * 0.30);
+    /* ── LA CRESTA TIENE UN LADO, COMO TODO LO DEMAS ──────────────
+       El lomo se aclaraba hacia u_altas por igual en todo el ancho:
+       luz de ninguna parte, el error que el resto del cuadro lleva
+       corregido desde ladoDeLuz(). Dentro de la columna del sol la
+       cara de la ola devuelve la luz CALIDA de la fuente —es el
+       mismo mecanismo que el reguero, visto ola a ola— y fuera
+       devuelve el cielo, que es frio. Con fuerzaLuz() para que de
+       noche quede un tercio: la luna tambien enciende crestas.
+
+       Y el seno, al reves: dentro de la columna el contraste sube
+       —donde hay mas luz hay mas sombra, no menos— y la sombra tira
+       un punto hacia el cuerpo del agua, que es de donde sale el
+       volumen de una ola pintada: cresta fria o calida segun la
+       fuente, seno hondo. Dos pigmentos, no un brillo. */
+    vec3 luzCresta = mix(u_altas, luzCalida(), columnaLuz * fuerzaLuz() * 0.62);
+    col = mix(col, mix(col, luzCresta, 0.55), lomo * 0.30 + lomo2 * 0.15);
+    col = mix(col, mix(col * 0.86, u_agua * 0.70, columnaLuz * 0.22),
+              valle * mix(0.30, 0.38, columnaLuz));
 
     /* (AQUI ESTUVO LA ESPUMA DE LA CRESTA, y se DESCARTA — no se
        reintenta. Se pinto como papel reservado sobre la cresta que
@@ -1855,7 +1904,13 @@ void main(){
       float haciaLuz  = exp(-pow((q.x - fuenteQ.x) / 0.95, 2.0));
       float trazo     = smoothstep(0.60, 0.93,
                           ruido(vec2(q.x * 3.2 + u_deriva * 0.55, uv.y * 190.0)));
-      float chispa = trazo * cercaHor * mix(0.30, 1.0, haciaLuz)
+      /* El suelo de haciaLuz baja con el dia. De noche los hilos
+         plateados recorren todo el horizonte y esta bien —la luz de
+         la luna se dispersa y un mar nocturno centellea entero—,
+         pero de dia un destello lejos del sol es otro reflejo suelto:
+         el mismo defecto de los tres soles, en miniatura. Con el sol
+         alto casi todos los hilos se recogen hacia su columna. */
+      float chispa = trazo * cercaHor * mix(mix(0.30, 0.10, dia), 1.0, haciaLuz)
                    * smoothstep(0.10, 0.72, paso * 0.5 + 0.5)
                    * (1.0 - cn * 0.40);
       vec3 destello = mix(col, mix(luzCalida(), u_altas, 0.30), 0.62);
@@ -1888,8 +1943,36 @@ void main(){
            disco hasta el borde de abajo, y es media composicion: sin
            ella el sol es un adorno pegado al fondo en vez de la fuente
            que ilumina la escena. */
+        /* ── EL REGUERO RESPIRA CON LA OLA ─────────────────────────
+           La lamina del camino entraba con peso fijo: una columna de
+           luz ESTAMPADA, que se deformaba con el agua pero no vivia
+           con ella. Un camino de sol de verdad es miles de espejos
+           momentaneos: cada cara de ola lo enciende al pasar y lo
+           apaga al irse. El peso ondula con el mismo paso de las
+           crestas —la luz nace y muere con la ola, no con un reloj
+           propio— y una brisa de ruido lo granula en trazos
+           horizontales, que son las caras vistas de canto.
+           Oscila alrededor de 1 (0.78 a 1.22): la media no cambia,
+           asi que ninguna hora sale mas clara ni mas oscura que
+           antes; cambia que ahora es agua iluminada y no pintura. */
+        float brisa = smoothstep(0.45, 0.92,
+                        ruido(vec2(q.x * mix(64.0, 20.0, pp) + u_deriva * 26.0,
+                                   uv.y * 170.0 - u_t * 0.6)));
+        float vivo = 0.78 + 0.30 * smoothstep(0.05, 0.80, paso * 0.5 + 0.5)
+                   + 0.14 * brisa;
         col = mix(col, u_reguero,
-                  tr.a * u_int * mix(0.44, 0.78, cn) * mix(1.0, 0.58, prof));
+                  clamp(tr.a * u_int * mix(0.44, 0.78, cn)
+                        * mix(1.0, 0.58, prof) * vivo, 0.0, 0.92));
+        /* Y las chispas mas altas del camino tocan papel: el punto
+           donde una cara de ola encara el sol de lleno no es color,
+           es reserva — la misma ley que las facetas, dentro del
+           unico sitio donde un espejo tiene sol que devolver. Solo
+           de dia y solo en el agua cercana, donde las caras son
+           anchas; en el horizonte serian purpurina. */
+        float chispaSol = tr.a * brisa
+                        * smoothstep(0.35, 0.90, paso * 0.5 + 0.5)
+                        * (1.0 - smoothstep(0.15, 0.70, prof)) * dia;
+        col = mix(col, papelBlanco(), chispaSol * 0.20);
       }
     } else {
       float ancho = mix(0.42, 0.055, cn) * mix(0.35, 1.0, pp);
