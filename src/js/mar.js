@@ -1170,6 +1170,38 @@ void main(){
       col = mix(col, pn, nb.a * mix(0.40, 0.85, nubeBaja)
                        * smoothstep(0.01, 0.17, nv) * abreArriba);
 
+//#NUBES_FINAS
+      /* ── Y LOS CUMULOS MENORES, A OTRA ESCALA ────────────────────
+         Un cielo con UNA masa de nubes es un cielo con un solo
+         acontecimiento: el ojo lo agota en un vistazo. En la
+         referencia hay una masa grande y, sueltos alrededor, cumulos
+         menores a media altura — es la variedad de TALLA, no la
+         cantidad, lo que hace que un cielo se lea lleno.
+
+         No hace falta lamina nueva: el mismo atlas, muestreado otra
+         vez mas apretado y corrido de fase, da nubes que el ojo no
+         empareja con las grandes. Viven en la banda media del cielo
+         (los cumulos chicos flotan lejos, o sea bajos en el cuadro),
+         derivan un poco mas despacio —estan mas lejos— y solo
+         aparecen donde la masa grande no esta: rellenan el aire, no
+         lo tapan. Con los mismos extremos de duotono, porque la
+         misma luz ilumina a todas.
+
+         Va entre marcas y en movil se recorta: son dos lecturas mas
+         de textura por pixel de cielo, y en un telefono el grano del
+         papel ya hace este trabajo. */
+      float bandaF = smoothstep(0.05, 0.16, nv) * (1.0 - smoothstep(0.42, 0.64, nv));
+      vec2 nuF = vec2(fract(q.x * 0.61 + margenN + 0.37 + u_deriva * 0.011),
+                      clamp(1.0 - (nv - 0.05) * 1.65, 0.0, 1.0))
+                 * 0.5 * 0.998 + 0.001;
+      vec4 nbF = mix(texture(u_nubes, CELDA[ca] + nuF),
+                     texture(u_nubes, CELDA[cb] + nuF),
+                     fract(u_cielo));
+      vec3 pnF = duotono(nbF.rgb, sombraN, luzN);
+      col = mix(col, pnF, nbF.a * mix(0.16, 0.34, nubeBaja)
+                        * bandaF * (1.0 - nb.a * 0.85));
+//#FIN
+
       /* Aquí estuvo un cúmulo procedural para suplir la lámina. Se
          quitó porque el umbral del ruido heredaba su retícula y pintaba
          rectángulos. La celda nueva ya aporta la estructura real: valor
@@ -1925,11 +1957,60 @@ void main(){
        rosa cerca de la linea; a 0.46 de base el reflejo llega a ~0.20
        con oleaje y ~0.35 en calma, que ya es un cielo tumbado y sigue
        muy lejos de tapar la pintura de las bandas. */
-    float espejoCielo = 1.0 - smoothstep(0.03, 0.58, prof);
+    /* Y LLEGA MAS HONDO. Cortaba a 0.58 de profundidad y el agua
+       cercana volvia a su duotono frio: en la referencia el cielo
+       tumbado llega hasta el pie del cuadro, solo que cada vez mas
+       roto. El cuadrado ya hace esa caida; el corte era redundante. */
+    float espejoCielo = 1.0 - smoothstep(0.03, 0.85, prof);
     espejoCielo *= espejoCielo;
     espejoCielo *= solBajo * mix(0.62, 1.0, cn) * (0.40 + 0.60 * cara)
                  * mix(0.40, 1.0, smoothstep(0.35, 0.75, u_int)) * 0.46;
     col = mix(col, u_cieloHorizonte, espejoCielo);
+
+    /* ── Y LAS NUBES SE REFLEJAN EN EL AGUA ───────────────────────
+       El agua reflejaba el COLOR del cielo pero no sus COSAS: las
+       nubes morian en el horizonte como si el mar no estuviera
+       debajo — el mismo diagnostico que ya se corrigio de noche con
+       las estrellas y la via lactea, pendiente de dia. Un agua que
+       no devuelve sus nubes se lee plana por muy bien pintada que
+       este, porque un espejo sin nada dentro no es un espejo.
+
+       Es la MISMA lamina del atlas, muestreada con la vertical
+       espejada sobre el horizonte (como el reflejo estelar) y
+       arrastrada por la onda del agua, asi que el reflejo se mece
+       con el oleaje en vez de flotar. Se apaga con la profundidad
+       —cerca de la linea es coherente, lejos lo deshace el agua—,
+       se quiebra menos con la calma, y monta en la cara de la onda
+       que mira arriba. La panza reflejada se hunde hacia el agua y
+       la cara clara hacia el cielo del horizonte: un reflejo
+       devuelve menos luz que su cielo, nunca mas.
+
+       De noche la celda del atlas esta vacia (alfa cero) y esto no
+       pinta un pixel: gratis a la hora en que no toca. */
+    if (u_hayNubes > 0.5) {
+      float anchoNR = aspecto * 0.42;
+      float margenNR = max(0.0, (1.0 - anchoNR) * 0.5);
+      float uvEspN = 2.0 * horX - uv.y;
+      float nvR = clamp((uvEspN - horX) / max(1.0 - horX, 0.001), 0.0, 1.0);
+      vec2 nuwR = vec2(fract(q.x * 0.42 + margenNR + u_deriva * 0.018 + duv.x * 3.0),
+                       clamp(1.0 - nvR * 0.92, 0.0, 1.0)) * 0.5 * 0.998 + 0.001;
+      int caR = int(mod(floor(u_cielo), 4.0));
+      int cbR = int(mod(floor(u_cielo) + 1.0, 4.0));
+      vec2 CELDAR[4] = vec2[4](vec2(0.0, 0.5), vec2(0.5, 0.5),
+                               vec2(0.0, 0.0), vec2(0.5, 0.0));
+      vec4 nbR = mix(texture(u_nubes, CELDAR[caR] + nuwR),
+                     texture(u_nubes, CELDAR[cbR] + nuwR),
+                     fract(u_cielo));
+      float vNube = valor(nbR.rgb);
+      vec3 nubeAgua = mix(mix(u_cieloAlto, u_agua, 0.30) * 0.90,
+                          mix(u_cieloHorizonte, papelBlanco(), 0.28),
+                          smoothstep(0.25, 0.85, vNube));
+      float pesoNubeR = nbR.a
+                      * (1.0 - smoothstep(0.03, 0.70, prof))
+                      * mix(0.12, 0.30, cn)
+                      * (0.45 + 0.55 * cara);
+      col = mix(col, nubeAgua, pesoNubeR);
+    }
 
     /* ═══ LOS DESTELLOS DE LA LINEA DEL AGUA ═════════════════════
        El agua ya se movia, pero lo que se movia era el MUESTREO de la
@@ -2418,9 +2499,15 @@ void main(){
          el lado que mira a la fuente, y el dia— y donde coinciden no hay
          pintura, hay hoja. Son cuatro o cinco por copa, no un brillo
          repartido: eso seria barniz. */
-      float huecoLuz = smoothstep(0.74, 0.94, valor(t.rgb))
+      /* 0.42 -> 0.58, y el umbral baja un punto: el dueño lo dijo con
+         todas las letras — "el arbol parece estar solo y triste, sin
+         nada de brillo". Los huecos existian pero entraban tan
+         apagados que no se leian como luz atravesando, se leian como
+         hojas palidas. Siguen siendo cuatro o cinco por copa: lo que
+         sube es cuanto BRILLA cada uno, no cuantos hay. */
+      float huecoLuz = smoothstep(0.70, 0.92, valor(t.rgb))
                      * ladoDeLuz(m.x, cx, aspecto) * diaArbol;
-      pm = mix(pm, papelBlanco(), clamp(huecoLuz, 0.0, 1.0) * 0.42);
+      pm = mix(pm, papelBlanco(), clamp(huecoLuz, 0.0, 1.0) * 0.58);
 
       /* ── Y LE DA LA LUZ POR UN LADO ─────────────────────────────
          El arbol recibia la misma luz por los cuatro costados. Con el
@@ -2448,7 +2535,12 @@ void main(){
          a mediodia —con el sol al otro lado del cuadro— el motor
          encendia el flanco contrario y salian dos luces. Se queda como
          un refuerzo, no como la fuente. */
-      pm = mix(pm, mix(pm, luzCalida(), 0.62), caricia * 0.18);
+      /* 0.18 -> 0.28. El aviso de las dos luces sigue vigente —la
+         lamina ya viene iluminada y esto es refuerzo, no fuente— pero
+         a 0.18 el refuerzo no refuerza: medido contra la queja del
+         dueño, la copa seguia sin canto vivo. tramoLuz ya lo rompe a
+         trozos, asi que subirlo no dibuja un reborde continuo. */
+      pm = mix(pm, mix(pm, luzCalida(), 0.62), caricia * 0.28);
       /* Y SE ENTIERRA: el borde inferior de la lámina es un corte recto
          y se veía como tal cruzando las raíces. Aquí el alfa se apaga en
          el último tramo, así que el árbol se disuelve en el agua en vez
@@ -2516,7 +2608,12 @@ void main(){
        textura que cruza exactamente la superficie; desde ahi la misma
        pintura se recorre al reves, a escala uno a uno. */
     float corteAgua = clamp((lineaAgua - base) / S, 0.0, 1.0);
-    float escalaReflejo = 0.62;
+    /* El espejo se ALARGA con la calma: un agua quieta devuelve el
+       arbol casi entero (la referencia es un estero en calma y su
+       reflejo es media composicion), un agua picada lo acorta. Era
+       fijo en 0.62 y el gesto de calmar el mar no le hacia nada al
+       reflejo del sujeto, que es donde mas se nota. */
+    float escalaReflejo = mix(0.62, 0.78, cn);
     vec2 r2 = vec2((q.x + tajo - (cx - Sx * 0.5)) / Sx,
                    corteAgua + profundidadR / (S * escalaReflejo));
     /* El reflejo se dobla con el árbol. El agua ya lo rompe en tajos,
@@ -2582,8 +2679,12 @@ void main(){
          debajo de este techo, pero cada canal queda mas oscuro que el
          agua que tenia debajo. */
       refl = min(refl, col * 0.88);
+      /* Y mas ENTERO con la calma: 0.68 -> 0.80. El techo del espejo
+         estaba pensado para mar abierto; en calma un reflejo de
+         estero es casi solido, y es lo que ancla el arbol al agua en
+         vez de dejarlo parado encima. */
       col = mix(col, refl,
-                t.a * roto * desvanece * mix(0.42, 0.68, cn));
+                t.a * roto * desvanece * mix(0.42, 0.80, cn));
     }
   }
 
@@ -2862,7 +2963,20 @@ void main(){
   }
 
     float g = valor(texture(u_papelTex, gl_FragCoord.xy / (u_papelTam * 0.30)).rgb);
-    col *= 1.0 + (g - u_papelMedia) * u_papel;
+    /* ── EL AGUA SE GRANULA MAS QUE EL CIELO ──────────────────────
+       El diente del papel modulaba el cuadro entero por igual, y eso
+       es fisicamente falso en acuarela: el pigmento de una aguada
+       CARGADA —el agua, con sus azules densos— se asienta en los
+       valles del papel mucho mas que el de una aguada fina como el
+       cielo. Es el granulado, y es la firma de textura que al agua
+       le faltaba: sin el, el mar se leia como color liso con grano
+       de foto encima en vez de pintura sobre lienzo.
+
+       Doble de grano bajo el horizonte, con la transicion en la
+       propia linea para que no haya costura. El cielo se queda como
+       estaba — un cielo granulado pareceria sucio. */
+    float granula = 1.0 + (1.0 - smoothstep(0.0, 0.015, uv.y - horX)) * 1.1;
+    col *= 1.0 + (g - u_papelMedia) * u_papel * granula;
   } else {
     col *= 1.0 - (hash(gl_FragCoord.xy * 0.75) - 0.5) * 0.055;
   }
@@ -3052,6 +3166,11 @@ export function crear(lienzo) {
   if (!CABE_ESTRELLAS) fuenteFS = recortar(fuenteFS, 'ESTRELLAS');
   if (perfilMovil && CABE_ESTRELLAS)
     fuenteFS = recortar(fuenteFS, 'ESTRELLAS_PROCEDURALES');
+  /* Los cumulos menores son dos lecturas mas de textura por pixel de
+     cielo. En escritorio no se notan; en un telefono el grano del
+     papel ya llena el aire y ese presupuesto va mejor en el muestreo
+     nitido. Se recortan, como todo lo que en movil no paga su coste. */
+  if (perfilMovil) fuenteFS = recortar(fuenteFS, 'NUBES_FINAS');
   /* En móvil el ruido de valor se consulta en una LUT diminuta que cabe
      completa en caché. Cada muestra reemplaza cuatro hashes, cuatro dot,
      varios fract y los mix del ruido analítico. Conserva la misma
