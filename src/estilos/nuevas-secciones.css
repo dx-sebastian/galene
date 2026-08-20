@@ -481,7 +481,7 @@
   z-index: 0;
   pointer-events: none;
   background:
-    url("/galene/arte/mobile/manglar-v2.webp") 82% calc(66% - 24px) / auto 62% no-repeat,
+    url("/galene/arte/mobile/manglar-v3.webp") 82% calc(66% - 24px) / auto 62% no-repeat,
     linear-gradient(to bottom,
       var(--cielo-alto) 0%,
       var(--cielo-bajo) 46%,
