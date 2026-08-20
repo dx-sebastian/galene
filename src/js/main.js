@@ -185,6 +185,25 @@ const lienzo = document.getElementById('lienzo');
 const contenedorGarzas = document.getElementById('garzas');
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
 
+/* ── LA BANDADA LEJANA ─────────────────────────────────────────────
+   Tres garzas en vuelo, muy lejos, que cruzan el cielo de tarde en
+   tarde. Es UNA lamina y UNA capa —el gesto entero viene pintado— y su
+   marcha vive en CSS (ver garza.css): cruza durante un minuto y pico y
+   desaparece durante seis, porque el mundo no esta poblado de pajaros,
+   pasa uno de vez en cuando. Se crea aqui y no en el marcado para que
+   herede la carpeta de tamano del aparato (ARTE), como todas las aves.
+   Va la primera dentro del contenedor: lo lejano se pinta detras.
+   Con `quieto` no se crea: un cielo con trafico no es reposo. */
+if (contenedorGarzas && !quieto.matches) {
+  const bandadaLejana = new Image();
+  bandadaLejana.src = ARTE + 'garza-bandada.webp';
+  bandadaLejana.alt = '';
+  bandadaLejana.decoding = 'async';
+  bandadaLejana.loading = 'lazy';
+  bandadaLejana.className = 'bandada-lejana';
+  contenedorGarzas.prepend(bandadaLejana);
+}
+
 /* EL ESTADO DEL DESPEGUE, y vive AQUI ARRIBA por una razon que costo un
    fallo entero. Estaba declarado con `const` al lado de su propia
    maquinaria, mil cuatrocientas lineas mas abajo, que es donde apetece
@@ -257,7 +276,7 @@ function arrancar(mar) {
   const bufer = { w: 0, h: 0 };
   /* Con qué caja se repartió el mundo la última vez. Ver la puerta de
      salida al principio de `medidas()`. */
-  const repartido = { w: 0, h: 0, escala: 0 };
+  const repartido = { w: 0, h: 0, escala: 0, aspLam: 0 };
 
   function medidas() {
     const caja = hero.getBoundingClientRect();
@@ -325,9 +344,28 @@ function arrancar(mar) {
        centra más arriba en términos absolutos, o sea que se aleja del
        agua en vez de acercarse. La garantía que este cálculo protege no
        se pierde: se holgura. */
+    /* ── Y UN CUARTO NÚMERO: EL ASPECTO DE LA LÁMINA DEL MANGLAR ────
+       La guarda de arriba curó la respiración de la barra de Safari y
+       ROMPIÓ, sin que se viera, la re-medición de después de cargar
+       las láminas: ese medidas() existe porque «el aspecto real del
+       manglar solo se conoce cuando su lámina ha cargado», y la caja
+       del lienzo no cambia al cargar una lámina — así que la guarda lo
+       devolvía sin tocar nada. La bandada entera quedaba colocada con
+       el aspecto por defecto (1.0 contra 0.667 de la lámina vertical):
+       cada percha se corría en x un 50 % de su distancia al centro y
+       las garzas flotaban en el aire junto a la copa. El dueño lo vio
+       dos veces y la segunda con la pregunta exacta: «¿seguro que
+       están posadas bien?». No lo estaban.
+
+       El aspecto entra en la firma: cambia UNA vez por carga de
+       lámina, nunca durante el scroll, así que la cura de Safari se
+       conserva entera. */
+    const aspLamManglar = mar.cajaManglar()[3];
     if (repartido.w === bufer.w && repartido.h === bufer.h
-        && repartido.escala === escala) return;
+        && repartido.escala === escala
+        && repartido.aspLam === aspLamManglar) return;
     repartido.w = bufer.w; repartido.h = bufer.h; repartido.escala = escala;
+    repartido.aspLam = aspLamManglar;
 
     const w = bufer.w, h = bufer.h;
     const aspecto = w / h;
@@ -1793,15 +1831,17 @@ function arrancar(mar) {
   /* Las láminas llegan después del primer cuadro. La ayuda nunca espera
      al arte: si no cargan, el mar sigue siendo procedural y el sitio
      entero sigue funcionando. */
-  mar.ventana('Lejano', 0.10, 0.86);   // recorta el margen de papel
+  /* La hoja v2 del lejano no trae margen de papel: la ventana se abre
+     casi entera. (La vieja necesitaba recortar 0.10–0.86.) */
+  mar.ventana('Lejano', 0.03, 0.97);
   /* Primer sorbo: solo lo que compone el cuadro reconocible. En móvil
      son ~250 KB. El loader espera este grupo; todo lo decorativo entra
      después con prioridad ociosa y jamás bloquea el contenido. */
   const criticas = {
-    lejano:       ARTE + 'mar-lejano.webp',
-    medio:        ARTE + 'mar-medio.webp',
-    cercano:      ARTE + 'mar-cercano.webp',
-    manglar:      ARTE + 'manglar-v2.webp',
+    lejano:       ARTE + 'mar-lejano-v2.webp',
+    medio:        ARTE + 'mar-medio-v2.webp',
+    cercano:      ARTE + 'mar-cercano-v2.webp',
+    manglar:      ARTE + 'manglar-v3.webp',
   };
   /* De noche la Vía Láctea no es adorno: es el sujeto del cielo pulido.
      El loader espera sus ~58 KB para no abrir primero una noche distinta
@@ -1809,16 +1849,16 @@ function arrancar(mar) {
   const nocheVisible = L.int <= 0.62;
   if (nocheVisible) criticas.estrellas = ARTE + 'estrellas.webp';
   const decorativas = {
-    medioCalmo:   ARTE + 'mar-medio-calmo.webp',
-    cercanoCalmo: ARTE + 'mar-cercano-calmo.webp',
+    medioCalmo:   ARTE + 'mar-medio-v2-calmo.webp',
+    cercanoCalmo: ARTE + 'mar-cercano-v2-calmo.webp',
     manglarCerca: ARTE + 'manglar-cerca.webp',
     corales:      ARTE + 'corales.webp',
     luces:        ARTE + 'luces.webp',
     astro:        ARTE + 'astro.webp',
-    camino:       ARTE + 'reguero.webp',
+    camino:       ARTE + 'reguero-v2.webp',
     papel:        ARTE + 'papel.webp',
     grafito:      ARTE + 'grafito.webp',
-    nubes:        ARTE + 'cielo-atlas-v3.webp',
+    nubes:        ARTE + 'cielo-atlas-v4.webp',
     /* La aguada de cielo estrellado: salpicado de sal sobre azul de
        payne, que es como se pinta a mano una via lactea. Va de adorno,
        asi que si el aparato no tiene unidad libre se cae sola y quedan
@@ -2783,7 +2823,10 @@ async function poblarBandadaReal() {
    mas alta. A y=0.14 de la lamina la masa va de x 0.229 a 0.693 con un
    45 % de densidad, asi que el ave se posa en 0.40 de ancho y 0.15 de
    alto — dentro de la copa solida, no en el aire de la silueta. */
-const POSADERO = [0.40, 0.15];
+/* Re-medido sobre manglar-v3: en la columna 0.40 el canto sólido de la
+   copa está en 0.019 (solidez 0.93) — la protagonista se posa cerca de
+   la cima nueva. Con el mismo hundimiento de 0.012 que las perchas. */
+const POSADERO = [0.40, 0.031];
 /* Subida por el mismo arco. Medido sobre la lamina: a y=0.455 el tramo
    solido va de x 0.279 a 0.311, y a y=0.400 va de 0.262 a 0.292 — es la
    misma raiz, que sube hacia la izquierda. Se planta en el centro del
@@ -3030,15 +3073,22 @@ function xCerca(alto, aspLam, aspecto) {
    en el primero está reservada la percha del ave que llega, y en el
    segundo la copa cae a pico y ninguna columna pasó la prueba de
    pendiente. */
+/* RE-MEDIDAS SOBRE manglar-v3. Las de la v2 dejaron de ser ciertas al
+   cambiar la lámina —la copa nueva tiene otras masas— y el dueño lo
+   cazó a la primera: garzas flotando en el aire junto a la copa. La
+   medición es la misma de siempre (canto sólido de cada masa, solidez
+   en la ventana de debajo, pendiente local) más un hundimiento de
+   0.012 para que las patas pisen follaje y no el borde antialiasado.
+   Si la lámina vuelve a cambiar, ESTA TABLA CADUCA CON ELLA. */
 const PERCHAS = [
-  [0.259, 0.191],   // solidez 0.90 · pendiente 0.024
-  [0.336, 0.093],   // solidez 0.82 · pendiente 0.040
-  [0.467, 0.058],   // solidez 1.00 · pendiente 0.012 — junto a la cima
-  [0.556, 0.081],   // solidez 0.92 · pendiente 0.036
-  [0.668, 0.169],   // solidez 0.99 · pendiente 0.026
-  [0.741, 0.156],   // solidez 0.78 · pendiente 0.034
-  [0.830, 0.257],   // solidez 0.99 · pendiente 0.008
-  [0.896, 0.269],   // solidez 0.77 · pendiente 0.040
+  [0.150, 0.241],   // solidez 0.65 · pendiente 0.61 — la masa baja izquierda
+  [0.220, 0.155],   // solidez 0.90 · pendiente 0.09
+  [0.330, 0.092],   // solidez 0.92 · pendiente 0.24
+  [0.505, 0.043],   // solidez 0.95 · pendiente 0.02 — junto a la cima
+  [0.590, 0.077],   // solidez 0.93 · pendiente 0.11
+  [0.710, 0.158],   // solidez 0.94 · pendiente 0.00
+  [0.790, 0.199],   // solidez 0.76 · pendiente 0.93
+  [0.865, 0.259],   // solidez 0.92 · pendiente 0.00 — la masa baja derecha
 ];
 /* Las perchas a menos de 5.8 % de x = 0.40 salieron de la medición y NO
    están en la lista: ahí se posa la garza que llega (`POSADERO`), y dos

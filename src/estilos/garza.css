@@ -272,3 +272,41 @@
     max-width: none;
   }
 }
+
+/* ── LA BANDADA LEJANA ──────────────────────────────────────────────
+   Tres aves en una sola lámina, cruzando alto y de tarde en tarde. La
+   lámina mira a la DERECHA, así que la bandada cruza de izquierda a
+   derecha — al revés que la protagonista, y está bien: dos travesías
+   idénticas se leerían como un ciclo. Pasa por ENCIMA de la copa del
+   manglar (top 11%) y lleva el mismo filtro de aguada que todo lo
+   lejano, o sería una calcomanía.
+
+   El ciclo entero dura 7 minutos: cruza durante ~85 segundos y el
+   resto no está. El mundo no está poblado de pájaros — pasa uno de
+   vez en cuando. Con movimiento reducido no existe (el JS no la crea),
+   y este display:none es el cinturón por si llegara de otro modo. */
+.bandada-lejana {
+  position: absolute;
+  top: 11%;
+  left: 0;
+  width: clamp(84px, 10vw, 150px);
+  height: auto;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  filter: url(#aguada-lejos);
+  animation: bandada-cruza 420s linear infinite;
+  animation-delay: 22s;
+  will-change: transform, opacity;
+}
+@keyframes bandada-cruza {
+  0%    { transform: translate3d(-18vw, 1.5vh, 0); opacity: 0; }
+  1%    { opacity: 0.72; }
+  10%   { transform: translate3d(42vw, -1vh, 0); }
+  19%   { opacity: 0.72; }
+  20.2% { transform: translate3d(106vw, -2.5vh, 0); opacity: 0; }
+  100%  { transform: translate3d(106vw, -2.5vh, 0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bandada-lejana { display: none; }
+}

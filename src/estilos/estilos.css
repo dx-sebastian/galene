@@ -796,7 +796,7 @@ main:focus { outline: none; }
   position: absolute;
   z-index: 1;
   inset: 0;
-  background: url("/galene/arte/mobile/manglar-v2.webp") 78% 66% / auto 68% no-repeat;
+  background: url("/galene/arte/mobile/manglar-v3.webp") 78% 66% / auto 68% no-repeat;
   filter: saturate(0.72) contrast(0.94);
   opacity: 0.94;
   transform-origin: 78% 83%;
