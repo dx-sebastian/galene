@@ -7,12 +7,18 @@ const arteUrl = new URL('./arte/', distUrl);
 const dist = fileURLToPath(distUrl);
 const arte = fileURLToPath(arteUrl);
 
+/* ACTUALIZADA CON LAS LÁMINAS PREMIUM (20 ago 2026). Esta lista es la
+   que decide qué llega a producción de verdad: el primer despliegue de
+   las v2/v3 salió en verde y sirvió 404, porque el podador se llevó
+   las láminas nuevas — sus rutas se arman por trozos en JS y el
+   rastreo automático no las ve. Si se cambia una lámina del mar, SE
+   CAMBIA AQUÍ, o el sitio publicado se queda con la vieja. */
 const texturasHero = [
-  'mar-lejano.webp', 'mar-medio.webp', 'mar-medio-calmo.webp',
-  'mar-cercano.webp', 'mar-cercano-calmo.webp', 'manglar-v2.webp',
+  'mar-lejano-v2.webp', 'mar-medio-v2.webp', 'mar-medio-v2-calmo.webp',
+  'mar-cercano-v2.webp', 'mar-cercano-v2-calmo.webp', 'manglar-v3.webp',
   'manglar-cerca.webp', 'corales.webp', 'luces.webp', 'astro.webp',
-  'reguero.webp', 'papel.webp', 'grafito.webp', 'cielo-atlas-v3.webp',
-  'estrellas.webp',
+  'reguero-v2.webp', 'papel.webp', 'grafito.webp', 'cielo-atlas-v4.webp',
+  'estrellas.webp', 'garza-bandada.webp',
 ];
 const aves = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11]
   .map((n) => `aves/ave${String(n).padStart(2, '0')}.webp`);
@@ -34,7 +40,7 @@ const conservar = new Set([
   ...dinamicas.map((ruta) => `768/${ruta}`),
   'aguadas-seccion2.webp', 'filete-2-v.webp', 'filete-4-v.webp',
   'papel-barbas.webp', '1024/papel-barbas.webp', '1024/filete-5.webp',
-  '1024/manglar-enterrado-a.webp', 'mobile/manglar-v2.webp',
+  '1024/manglar-enterrado-a.webp', 'mobile/manglar-v3.webp',
 ]);
 
 /* Las secciones pulidas cambian con frecuencia. En vez de mantener una
