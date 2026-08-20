@@ -1578,8 +1578,19 @@ void main(){
       // El par revuelto ↔ calmo: acá se VE que el mar se calma.
       vec3 pC = mix(pCr, pCc, cn);
 
-      float wM = smoothstep(0.08, 0.44, prof);
-      float wC = smoothstep(0.40, 0.82, prof);
+      /* ── EL FUNDIDO ENTRE BANDAS NO ES UNA RECTA ─────────────────
+         Con las hojas viejas —tres grises de la misma familia— estos
+         dos smoothstep eran invisibles. Las hojas nuevas, aun
+         armonizadas en el preprocesado, conservan cada una su factura,
+         y un fundido puramente vertical deja el residuo como un CORTE
+         horizontal de tono cruzando el mar (el dueno: «veo cortes de
+         distintos tonos de azul»). La frontera se ondula con un ruido
+         de periodo largo —el mismo gesto del horizonte perdido— y se
+         ensancha: donde antes habia una linea ahora hay una zona donde
+         las dos aguas se mezclan a trechos. */
+      float ondaBanda = (fbm(vec2(q.x * 1.9 + 13.0, 5.1)) - 0.5) * 0.14;
+      float wM = smoothstep(0.02, 0.52, prof + ondaBanda);
+      float wC = smoothstep(0.30, 0.92, prof + ondaBanda);
       pintura = mix(mix(pL, pM, wM), pC, wC);
     } else {
       float m = fbm(q * vec2(1.0, mix(3.4, 1.0, pp)) * mix(5.0, 2.0, pp) + duv);

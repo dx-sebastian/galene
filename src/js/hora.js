@@ -156,8 +156,16 @@ const A = {
      IGUAL; el color cambia en el alba y el ocaso, que para eso tienen
      ancla propia. Lo unico que recorre el dia es el SOL (elev y
      fuenteX), que es fisica y no paleta. */
+  /* ── EL AGUA DEL DIA ES TURQUESA CLARO, por peticion del dueno ────
+     (20 ago 2026): «me gustaria que todo fuera turquesa, o sea el azul
+     mas claro». El acero #6796B4 se va a un cian claro (#64ABB8, matiz
+     ~192) y las altas suben a un turquesa palido (#B2DEE2). Solo el
+     dia: el ocaso sigue en acero (#4E6B8C) porque de tarde el mar ya
+     no devuelve el turquesa, devuelve el cielo — y la noche ni se
+     toca. El color del mar lo pone ESTA paleta, no las laminas: ellas
+     entran en duotono y armonizadas a la familia gris de siempre. */
   h09: { cieloAlto:'#77A3D8', cieloBajo:'#B4C8E2', cieloHorizonte:'#CCD7E5',
-         agua:'#6796B4', altas:'#A0C4D7',
+         agua:'#64ABB8', altas:'#B2DEE2',
          reguero:'#FFF8EE', bruma:'#DCE6EA', acento:'#C4703F', elev:42, int:0.95 },
   /* ── Y AHORA MEDIDO CONTRA LA FOTO, NO MIRANDOLA ─────────────────
      La referencia de dia, muestreada franja a franja evitando el arbol y
@@ -230,7 +238,7 @@ const A = {
      horizonte ya la pone `cieloHorizonte`, que para eso existe. Y es el
      sol mas alto del dia (elev 66) y la luz mas intensa. */
   h12: { cieloAlto:'#77A3D8', cieloBajo:'#B4C8E2', cieloHorizonte:'#CCD7E5',
-         agua:'#6796B4', altas:'#A0C4D7',
+         agua:'#64ABB8', altas:'#B2DEE2',
          reguero:'#FFF8EE', bruma:'#DCE6EA', acento:'#C4703F', elev:66, int:1.00 },
   /* LA TARDE, DORADA — pero dorada de acuarela, no de postal. El
      horizonte se va a un dorado tenue y no a un naranja: un atardecer
@@ -240,7 +248,7 @@ const A = {
   /* La tarde YA NO es arena: esa calidez vive ahora solo en h18. Ver
      la nota del bloque de arriba — misma paleta que h09 y h12. */
   h15: { cieloAlto:'#77A3D8', cieloBajo:'#B4C8E2', cieloHorizonte:'#CCD7E5',
-         agua:'#6796B4', altas:'#A0C4D7',
+         agua:'#64ABB8', altas:'#B2DEE2',
          reguero:'#FFF8EE', bruma:'#DCE6EA', acento:'#B4552E', elev:52, int:0.95 },
   /* EL OCASO. Mismo cielo que el alba con el polvo de la tarde dentro:
      el violeta de arriba se entibia, el rosa baja a coral y el agua se
