@@ -1090,6 +1090,24 @@ void main(){
          El rango se abre solo cuando la luz es rasante, asi que el
          mediodia se queda exactamente como estaba. */
       sombraN = mix(sombraN, sombraN * 0.76, nubeBaja);
+      /* ── DOS PIGMENTOS EN LA MISMA NUBE ──────────────────────────
+         Con la luz rasante el cielo real tiene masas ROSADAS y masas
+         MALVA conviviendo —la nube que mira a la fuente contra la que
+         ya quedo en sombra de aire—, y un duotono solo puede dar una
+         familia. Por eso el crepusculo salia correcto pero pobre: un
+         degradado con nubes del mismo tono, cuando lo que hace rico
+         un cielo de ocaso es que sus nubes NO son del mismo tono.
+
+         Es la misma separacion de pigmentos que ya hace el agua
+         (crestas frias, senos calidos): un ruido de periodo largo
+         decide que masas se van al malva y cuales se quedan en la
+         sombra de la hora. Solo con el sol de canto — a mediodia una
+         nube es blanca y azul y esto se apaga con nubeBaja. El malva
+         es el mismo violeta terroso del halo de la via lactea, para
+         que el cuadro entero comparta familia. */
+      float veta = fbm(vec2(nu.x * 4.2 + 7.0, nv * 2.6 - 3.0));
+      sombraN = mix(sombraN, mix(sombraN, vec3(0.60, 0.53, 0.72), 0.52),
+                    smoothstep(0.42, 0.78, veta) * nubeBaja);
       vec3 luzN    = mix(u_cieloAlto, mix(u_altas, u_reguero, 0.34), 0.62);
       /* Y LA CARA ILUMINADA SE VA AL COLOR DEL HORIZONTE cuanto mas
          baja esta la nube y mas rasante la luz. Una nube al amanecer no
@@ -1144,7 +1162,12 @@ void main(){
          La nube de dia baja de 0.74 a 0.40 y se adelgaza casi la mitad
          hacia arriba. Lo que estructura el cielo es el degradado, no la
          cantidad de nube; la nube es el acontecimiento, no el fondo. */
-      col = mix(col, pn, nb.a * mix(0.40, 0.74, nubeBaja)
+      /* 0.74 -> 0.85 con el sol de canto. Con el malva de la veta ya
+         dentro, la nube de ocaso seguia leyendose como humo: el aviso
+         de "las nubes son media composicion al atardecer" estaba
+         escrito arriba y la cifra no lo cumplia. El mediodia no se
+         toca — su extremo sigue en 0.40. */
+      col = mix(col, pn, nb.a * mix(0.40, 0.85, nubeBaja)
                        * smoothstep(0.01, 0.17, nv) * abreArriba);
 
       /* Aquí estuvo un cúmulo procedural para suplir la lámina. Se
@@ -1818,7 +1841,14 @@ void main(){
        aguada se seca. Periodo largo a proposito — se ve como zonas del
        agua que tiran a verde y otras a violeta, no como rayas. */
     float aparta = fbm(vec2(q.x * 1.35 + u_deriva * 0.03, uv.y * 3.2 + 7.0));
-    col = mix(col, mix(col, u_agua, 0.24), smoothstep(0.58, 0.86, aparta) * 0.55);
+    /* Con el sol de canto, las pozas frias tiran a MALVA en vez de a
+       azul de agua: son las nubes en sombra reflejadas, y es la mitad
+       de lo que hace que un agua de crepusculo se lea como crepusculo.
+       El mismo violeta terroso de las nubes y la via lactea — una
+       familia, no una capa nueva. A mediodia no pasa nada: solBajo lo
+       apaga y la poza vuelve a ser agua. */
+    vec3 pozaFria = mix(u_agua, vec3(0.52, 0.48, 0.66), solBajo * 0.45);
+    col = mix(col, mix(col, pozaFria, 0.24), smoothstep(0.58, 0.86, aparta) * 0.55);
     /* Y el lobulo calido, de verdad calido. Estaba tan lavado que solo
        era azul un poco menos azul, y un cuadro de un solo matiz se ve
        apagado por mucho que se le suba el color. El rosa polvoriento que
@@ -1872,6 +1902,34 @@ void main(){
     col = mix(u_bruma * 0.82, col,
               smoothstep(0.0, anchoBruma, prof) * 0.58 + 0.42);
     col = mix(col, col * 0.90, smoothstep(0.60, 1.0, prof));
+
+    /* ── EL CIELO BAJO SE MOJA ────────────────────────────────────
+       En un crepusculo real el agua lejana no es azul: es EL CIELO,
+       tumbado. El rosa de la franja del horizonte moria en la linea
+       del mar y el agua seguia en su duotono frio, asi que arriba
+       habia un ocaso y abajo cualquier tarde — el cuadro partido en
+       dos horas distintas, que es lo que lo hacia menos que la
+       referencia.
+
+       Es el mismo color que ya existe (u_cieloHorizonte, la tercera
+       parada del cielo), reflejado: fuerte pegado al horizonte y
+       deshecho por el oleaje al acercarse, mas entero cuanto mas
+       calmo el agua —un espejo picado devuelve menos—, y montado en
+       la cara de la onda que mira arriba, que es la que refleja. Con
+       el sol alto casi desaparece: a mediodia el horizonte es bruma
+       palida y el agua ya la tiene. De noche queda un hilo del malva
+       bajo, que es la ultima luz de esa hora. */
+    /* Medido en pantalla con la primera version: a las 17:12, con la
+       calma en su suelo, el peso efectivo se quedaba en 0.09 — un velo
+       que no se distinguia de la bruma. El agua de la referencia ES
+       rosa cerca de la linea; a 0.46 de base el reflejo llega a ~0.20
+       con oleaje y ~0.35 en calma, que ya es un cielo tumbado y sigue
+       muy lejos de tapar la pintura de las bandas. */
+    float espejoCielo = 1.0 - smoothstep(0.03, 0.58, prof);
+    espejoCielo *= espejoCielo;
+    espejoCielo *= solBajo * mix(0.62, 1.0, cn) * (0.40 + 0.60 * cara)
+                 * mix(0.40, 1.0, smoothstep(0.35, 0.75, u_int)) * 0.46;
+    col = mix(col, u_cieloHorizonte, espejoCielo);
 
     /* ═══ LOS DESTELLOS DE LA LINEA DEL AGUA ═════════════════════
        El agua ya se movia, pero lo que se movia era el MUESTREO de la
