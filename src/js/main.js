@@ -3353,8 +3353,43 @@ function animarGarzas(t, paralaje, dt) {
   // salto del reloj no pueden lanzar al ave al infinito.
   dt = Math.min(0.05, Math.max(0.001, dt || 1 / 60));
 
+  /* ── LA ENTREGA A LA APROXIMACIÓN ES POSICIONAL ──────────────────
+     Las fases iban solo por RELOJ y el crucero va por VELOCIDAD, sin
+     destino: dos relojes distintos midiendo el mismo viaje. Medido con
+     los números nominales ni siquiera coincidían en el caso bueno: el
+     crucero dejaba al ave en ~0.74·w y el punto de frenado está en
+     ~0.80·w — o sea que llegaba PASADA de su percha, y el muelle de la
+     aproximación la devolvía VOLANDO HACIA ATRÁS con las láminas
+     mirando al otro lado. Y con una pestaña oculta a mitad de
+     travesía o un cambio de tamaño, lo contrario: el reloj decía
+     «frena» con el ave en mitad del cielo y un muelle la arrastraba
+     media pantalla. El dueño lo dijo exacto: «se pasan de donde van a
+     aterrizar y terminan volando hacia atrás y aterrizando igual de
+     mal».
+
+     El arreglo tiene dos mitades. El crucero deja de llevar velocidad
+     fija: apunta a llegar al punto de espera JUSTO cuando el reloj
+     termina (velocidad = distancia restante / tiempo restante, ver la
+     fase). Y por si aun así no coinciden, la entrega manda la
+     POSICIÓN: si el ave llega antes, el reloj se adelanta; si va
+     tarde, el reloj la espera reteniéndose al final del crucero. A
+     partir de la entrega vuelve a mandar el reloj, que es quien
+     reparte los ocho cuadros del aterrizaje. */
+  let reloj = t - (vuelo.desfase || 0);
+  if (!vuelo.entregada && vuelo.arrancado && vuelo.posX !== undefined) {
+    const cerca = vuelo.px <= vuelo.posX + w * 0.14 + w * 0.02;
+    if (cerca) {
+      if (reloj < FASES[0][1])
+        vuelo.desfase = (vuelo.desfase || 0) - (FASES[0][1] - reloj);
+      vuelo.entregada = true;
+    } else if (reloj >= FASES[0][1]) {
+      vuelo.desfase = t - (FASES[0][1] - 0.001);
+    }
+    reloj = t - (vuelo.desfase || 0);
+  }
+
   // ¿En qué fase vamos? Sin módulo: pasado el frenado, se queda posada.
-  let tt = t, fase = 'posada', p = 1;
+  let tt = reloj, fase = 'posada', p = 1;
   if (tt < HASTA_POSADA) {
     for (const [nombre, dur] of FASES) {
       if (tt < dur) { fase = nombre; p = tt / dur; break; }
@@ -3389,9 +3424,17 @@ function animarGarzas(t, paralaje, dt) {
        un muelle posicional el ave llegaba a su objetivo y se quedaba
        colgada en el aire —medido: vx bajaba a 3 px/s—, que es lo que
        hace un globo, no un pájaro. Un ave en crucero mantiene rumbo. */
-    // 0.024 del ancho por segundo: cruza la pantalla en ~40 s. A 0.052
-    // se sentía disparada; una garza planea, no corre.
-    const vDeseada = -w * 0.012;
+    /* Pero la velocidad ya no es fija: es la que hace llegar al punto
+       de espera JUSTO cuando el reloj del crucero termina. Con la fija
+       (0.012·w) el ave recorría 0.34·w en 26 s hiciera falta lo que
+       hiciera falta, y por eso se pasaba de la percha — ver la nota de
+       la entrega posicional, arriba. Sigue siendo un rumbo, no un
+       muelle: el ave no persigue un punto, lleva la marcha que la deja
+       ahí a tiempo. Acotada por abajo (nunca se para en el aire) y por
+       arriba (nunca corre más que al entrar). */
+    const restante = Math.max(1.5, FASES[0][1] - reloj);
+    const queda = Math.max(0, vuelo.px - xEspera);
+    const vDeseada = -Math.min(w * 0.030, Math.max(w * 0.004, queda / restante));
     vuelo.vx += (vDeseada - vuelo.vx) * Math.min(1, dt * 0.5);
     vuelo.vy += ((alto - vuelo.py) * 0.9 - vuelo.vy) * Math.min(1, dt * 1.6);
     vuelo.px += vuelo.vx * dt;
