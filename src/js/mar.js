@@ -3014,14 +3014,22 @@ function recortar(fuente, etiqueta) {
     new RegExp('^//#' + etiqueta + '$[\\s\\S]*?^//#FIN$', 'gm'), '');
 }
 
+/* NO SE PREGUNTA AQUÍ SI COMPILÓ. Preguntar —`COMPILE_STATUS`,
+   `LINK_STATUS`, `useProgram`, `getUniformLocation`— obliga al navegador
+   a esperar a que el compilador termine, y ese compilador, en Windows,
+   traduce el shader a HLSL y lo pasa por el de Direct3D: MEDIDO, 18,4 s
+   de hilo principal congelado en la primera visita (AMD Radeon, D3D11),
+   1,0 s cuando el binario ya está en la caché del navegador. Con el hilo
+   congelado no corre ni la animación del cargador ni su tope de ocho
+   segundos: la página parecía muerta.
+
+   El estado se consulta en `crear()`, y solo cuando `COMPLETION_STATUS`
+   dice que el trabajo terminó. Hasta entonces el compilador corre en su
+   propio hilo y la página sigue viva. */
 function compilar(gl, tipo, fuente) {
   const s = gl.createShader(tipo);
   gl.shaderSource(s, fuente);
   gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-    console.error('[mar] shader:', gl.getShaderInfoLog(s));
-    return null;
-  }
   return s;
 }
 
@@ -3037,6 +3045,14 @@ function cieloDeSalida(gl) {
     : [0xDC / 255, 0xE7 / 255, 0xE8 / 255];
   gl.clearColor(r, g, b, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
+function fallo(gl, etiqueta, programa, shaders) {
+  console.error('[mar] ' + etiqueta + ':', gl.getProgramInfoLog(programa));
+  for (const s of shaders) {
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+      console.error('[mar] shader:', gl.getShaderInfoLog(s));
+  }
 }
 
 export function crear(lienzo) {
@@ -3240,33 +3256,32 @@ export function crear(lienzo) {
      octava no añade detalle, solo resta presupuesto al muestreo nítido.
      Escritorio conserva las cinco. */
   fuenteFS = fuenteFS.replace('__FBM_OCTAVAS__', perfilMovil ? '2' : '5');
+  /* ── COMPILAR SIN ESPERAR ──────────────────────────────────────────
+     Se encolan los shaders y el enlazado y se devuelve el control: el
+     navegador compila en otro hilo (KHR_parallel_shader_compile, que
+     traen Chrome, Edge y Firefox) y aquí solo se PREGUNTA, en `listo`,
+     cuando `COMPLETION_STATUS` dice que acabó. Todo lo que necesita el
+     programa enlazado —las direcciones de los uniformes, sus valores de
+     partida— vive en `enlazar()`, que corre entonces y no antes.
+
+     Sin la extensión no hay forma de esperar sin bloquear: se cede un
+     turno para que el cargador pinte una vez y se pregunta igual. */
+  const paralelo = gl.getExtension('KHR_parallel_shader_compile');
+  const compiladoDesde = performance.now();
   const vs = compilar(gl, gl.VERTEX_SHADER, VS);
   const fs = compilar(gl, gl.FRAGMENT_SHADER, fuenteFS);
-  if (!vs || !fs) return null;
 
   const p = gl.createProgram();
   gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-    console.error('[mar] link:', gl.getProgramInfoLog(p));
-    return null;
-  }
-  gl.useProgram(p);
 
-  let pHD = null, uEscenaTamHD = null, uSalidaHD = null;
+  let pHD = null, fsHD = null, uEscenaTamHD = null, uSalidaHD = null;
   let escenaTex = null, escenaFbo = null;
   if (perfilMovil) {
-    const fsHD = compilar(gl, gl.FRAGMENT_SHADER, FS_HD);
-    if (!fsHD) return null;
+    /* El reconstructor HD se encola a la vez que el programa principal:
+       dos compilaciones en paralelo, no una detrás de otra. */
+    fsHD = compilar(gl, gl.FRAGMENT_SHADER, FS_HD);
     pHD = gl.createProgram();
     gl.attachShader(pHD, vs); gl.attachShader(pHD, fsHD); gl.linkProgram(pHD);
-    if (!gl.getProgramParameter(pHD, gl.LINK_STATUS)) {
-      console.error('[mar] link HD:', gl.getProgramInfoLog(pHD));
-      return null;
-    }
-    gl.useProgram(pHD);
-    gl.uniform1i(gl.getUniformLocation(pHD, 'u_escena'), 0);
-    uEscenaTamHD = gl.getUniformLocation(pHD, 'u_escenaTam');
-    uSalidaHD = gl.getUniformLocation(pHD, 'u_salida');
 
     escenaTex = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
@@ -3282,11 +3297,56 @@ export function crear(lienzo) {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
                             gl.TEXTURE_2D, escenaTex, 0);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.useProgram(p);
   }
 
   const u = {};
-  for (const n of ['u_res','u_t','u_hor','u_calma','u_deriva','u_comp','u_int',
+  /* Corre UNA vez, cuando el compilador ha terminado. Devuelve false si
+     el enlazado falló: entonces el mar es el respaldo CSS, igual que sin
+     WebGL. */
+  function enlazar() {
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      fallo(gl, 'link', p, [vs, fs]);
+      return false;
+    }
+    gl.useProgram(p);
+    if (perfilMovil) {
+      if (!gl.getProgramParameter(pHD, gl.LINK_STATUS)) {
+        fallo(gl, 'link HD', pHD, [vs, fsHD]);
+        return false;
+      }
+      gl.useProgram(pHD);
+      gl.uniform1i(gl.getUniformLocation(pHD, 'u_escena'), 0);
+      uEscenaTamHD = gl.getUniformLocation(pHD, 'u_escenaTam');
+      uSalidaHD = gl.getUniformLocation(pHD, 'u_salida');
+      gl.useProgram(p);
+    }
+    for (const n of NOMBRES_UNIFORMES) u[n] = gl.getUniformLocation(p, n);
+    escribirIniciales();
+    console.info('[mar] programa enlazado en '
+      + Math.round(performance.now() - compiladoDesde) + ' ms'
+      + (paralelo ? ' (en paralelo)' : ' (bloqueando)'));
+    return true;
+  }
+
+  /* Se resuelve con true cuando el mar puede dibujar; con false si no
+     va a poder nunca. Quien la espera es main.js, que no arranca el mar
+     hasta entonces. */
+  const listo = new Promise((resolver) => {
+    const programas = perfilMovil ? [p, pHD] : [p];
+    const comprobar = () => {
+      if (paralelo && !programas.every((pr) =>
+            gl.getProgramParameter(pr, paralelo.COMPLETION_STATUS_KHR))) {
+        /* setTimeout y no rAF: en una pestaña de fondo rAF no corre y el
+           mar se quedaría sin enlazar hasta que volvieran a mirarla. */
+        setTimeout(comprobar, 40);
+        return;
+      }
+      resolver(enlazar());
+    };
+    setTimeout(comprobar, 0);
+  });
+
+  const NOMBRES_UNIFORMES = ['u_res','u_t','u_hor','u_calma','u_deriva','u_comp','u_int',
                    'u_fuente','u_papel','u_laminas','u_cieloAlto','u_cieloBajo',
                    'u_cieloHorizonte',
                    'u_agua','u_altas','u_reguero','u_bruma',
@@ -3301,9 +3361,7 @@ export function crear(lienzo) {
                    'u_grafitoTex','u_hayGrafito','u_grafitoMedia','u_grafito',
                    'u_paralaje','u_garzaCerca','u_garzaLejos','u_hayGarzas',
                    'u_garzaCercaCaja','u_garzaLejosCaja','u_toques','u_viento',
-                   'u_encoge','u_cielo','u_estrellas','u_hayEstrellas']) {
-    u[n] = gl.getUniformLocation(p, n);
-  }
+                   'u_encoge','u_cielo','u_estrellas','u_hayEstrellas'];
 
   /* Textura provisional de 1 px para que el primer cuadro salga aunque
      las láminas todavía no hayan llegado. La ayuda nunca espera arte. */
@@ -3351,6 +3409,19 @@ export function crear(lienzo) {
                      estrellas: 7, medioCalmo: 9, nubes: 10,
                      manglarCerca: 11, corales: 12, luces: 13,
                      astro: 14, camino: 15 };
+
+  /* Las cajas viven en el ámbito de `crear` porque las leen los métodos
+     de abajo; sus valores explicados están junto a cada escritura. */
+  const cercaCaja = [-0.02, 0.92, -0.34, 1.5];
+  const coralesCaja = [0.155, 0.215, 4.0];
+  const garzaCercaCaja = [0.655, 0.17, 0.012, 1.0];
+  const garzaLejosCaja = [0.78, 0.075, 0.003, 1.5];
+  const grafitoCaja = [0.68, 1.0, 0.55];
+  const manglarCaja = [0.775, 0.62, 0.252, 1.0];
+
+  /* Los valores de partida de cada uniforme. Corre desde `enlazar()`,
+     con el programa ya enlazado: antes no hay dónde escribirlos. */
+  function escribirIniciales() {
   if (CABE_ESTRELLAS) {
     gl.uniform1i(u.u_estrellas, unidades.estrellas);
     gl.uniform1f(u.u_hayEstrellas, 0);
@@ -3370,8 +3441,6 @@ export function crear(lienzo) {
   /* El manglar cercano tiene que DOMINAR la esquina inferior izquierda:
      es el primer plano y es el posadero. A 0.52 de alto quedaba como una
      mancha en el canto. */
-  const cercaCaja = [-0.02, 0.92, -0.34, 1.5];
-  const coralesCaja = [0.155, 0.215, 4.0];
   gl.uniform4fv(u.u_cercaCaja, cercaCaja);
   gl.uniform3fv(u.u_coralesCaja, coralesCaja);
   gl.uniform1i(u.u_medioCalmo, 9);
@@ -3387,8 +3456,6 @@ export function crear(lienzo) {
   /* La garza NO va parada en mar abierto: una garza vadea en agua somera,
      y en medio del mar no hay dónde pararse. Va junto a las raíces del
      manglar, que es el único bajo del cuadro, y a tamaño modesto. */
-  const garzaCercaCaja = [0.655, 0.17, 0.012, 1.0];
-  const garzaLejosCaja = [0.78, 0.075, 0.003, 1.5];
   gl.uniform4fv(u.u_garzaCercaCaja, garzaCercaCaja);
   gl.uniform4fv(u.u_garzaLejosCaja, garzaLejosCaja);
   gl.uniform1i(u.u_papelTex, 5);
@@ -3400,7 +3467,6 @@ export function crear(lienzo) {
   gl.uniform1f(u.u_grafitoMedia, 0.93);
   /* ancla: dónde está el horizonte DIBUJADO dentro de la lámina (v),
      escala vertical, y fuerza del multiplicado. */
-  const grafitoCaja = [0.68, 1.0, 0.55];
   gl.uniform3fv(u.u_grafito, grafitoCaja);
   gl.uniform1i(u.u_lejano, 0); gl.uniform1i(u.u_medio, 1);
   gl.uniform1i(u.u_cercano, 2); gl.uniform1i(u.u_cercanoCalmo, 3);
@@ -3431,7 +3497,6 @@ export function crear(lienzo) {
      10 % del alto del arbol) devuelve los arcos altos, que es lo que se
      reconoce, y deja abajo el enrejado denso disolviendose en el agua,
      que es lo que incomodaba. */
-  const manglarCaja = [0.775, 0.62, 0.252, 1.0];
   gl.uniform4fv(u.u_manglarCaja, manglarCaja);
 
   /* Repeticiones de cada lámina a lo ancho. MENOS repeticiones = marcas
@@ -3447,6 +3512,7 @@ export function crear(lienzo) {
   gl.uniform2f(u.u_vLejano, 0.0, 1.0);
   gl.uniform2f(u.u_vMedio, 0.0, 1.0);
   gl.uniform2f(u.u_vCercano, 0.0, 1.0);
+  }
 
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
@@ -3803,6 +3869,7 @@ export function crear(lienzo) {
     return { max, min, prom: suma / n, p995: percentil(0.995), p005: percentil(0.005) };
   }
   return {
+    listo,
     cargar, ventana, colocarManglar, colocarCerca, pincelada, ajustarGrafito,
     toques,
     /* La caja del manglar, para que quien pinte encima —la garza que se

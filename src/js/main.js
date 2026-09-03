@@ -250,6 +250,11 @@ document.getElementById('mar')?.style.setProperty('cursor', 'grab');
 let marPerdido = false;
 
 function arrancar(mar) {
+  /* Si la portada se abrió antes de que el mar pudiera dibujar, la
+     visita del ave cuenta desde AHORA: su caída está medida contra el
+     momento en que hay paisaje donde caer, no contra el del cargador. */
+  if (inicioContenido !== null) inicioContenido = performance.now() / 1000;
+
   /* En móvil esta es la resolución de SIMULACIÓN, no la de salida: el
      reconstructor HD de mar.js presenta hasta 2×. Se mantiene en 1× CSS
      para que la acuarela se muestree con detalle real antes de ampliar. */
@@ -1869,8 +1874,18 @@ function arrancar(mar) {
        el DOM, que llega volando y se posa sobre la copa del manglar. */
   };
 
-  const anunciarListo = (modo) =>
+  const anunciarListo = (modo) => {
+    /* Si la portada ya se abrió sobre el respaldo CSS porque el shader
+       tardaba, la pintura entra ahora en fundido POR ENCIMA del respaldo
+       (`.mar-entrando` lo mantiene debajo mientras dura el fundido) y
+       después el respaldo se va. Ver `.mar-pendiente` en estilos.css. */
+    const raiz = document.documentElement;
+    if (raiz.classList.contains('mar-pendiente')) {
+      raiz.classList.replace('mar-pendiente', 'mar-entrando');
+      setTimeout(() => raiz.classList.remove('mar-entrando'), quieto.matches ? 0 : 1100);
+    }
     dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo } }));
+  };
   /* En móvil no se suben diez texturas a la GPU en el mismo instante:
      esa ráfaga producía el tirón que se sentía justo después del loader.
      Entran en tres tandas ociosas; el resultado final es idéntico. */
@@ -4297,6 +4312,9 @@ function caerAlRespaldo(motivo) {
   lienzo.remove();                 // el respaldo CSS ya es un mar
   hero?.setAttribute('data-mar', 'sin-webgl');
   hero?.setAttribute('data-mar-motivo', motivo);
+  /* Si la portada se abrió sobre el respaldo esperando al shader, ese
+     estado se cierra: el respaldo pasa a ser el definitivo. */
+  document.documentElement.classList.remove('mar-pendiente', 'mar-entrando');
   document.documentElement.classList.add('hero-estatico');
   dispatchEvent(new CustomEvent('galene:hero-listo', { detail: { modo: 'css', motivo } }));
   /* ── Y SE DICE EN VOZ ALTA SI ALGUIEN LO PIDIÓ ──────────────────
@@ -4341,5 +4359,29 @@ if (!mar) {
     console.info('[mar] contexto WebGL perdido: se cae al respaldo CSS');
     caerAlRespaldo('contexto-perdido');
   }, { once: true });
-  arrancar(mar);
+  /* ── EL MAR COMPILA APARTE, Y LA AYUDA NO LO ESPERA ─────────────────
+     `crear()` encola el shader y devuelve enseguida; `mar.listo` se
+     resuelve cuando el compilador ha terminado. En la primera visita
+     desde un Windows eso son varios segundos —MEDIDO: 18,4 s en un
+     AMD Radeon por Direct3D— y en las siguientes, con el binario en
+     caché, alrededor de uno.
+
+     Si a los tres segundos no ha enlazado, se avisa al cargador para
+     que abra la portada sobre el respaldo CSS —el mismo que ve quien no
+     tiene WebGL— y la pintura entra en fundido cuando llegue (ver
+     `anunciarListo`). Tres y no menos: en una segunda visita el enlace
+     tarda un segundo y no se quiere que el mar de respaldo aparezca un
+     instante para ser sustituido enseguida. */
+  const PACIENCIA = 3000;
+  const aviso = setTimeout(() => {
+    document.documentElement.classList.add('mar-pendiente');
+    dispatchEvent(new CustomEvent('galene:hero-pendiente'));
+  }, PACIENCIA);
+  mar.listo.then((puede) => {
+    clearTimeout(aviso);
+    /* Si el contexto se fue mientras compilaba, ya se cayó al respaldo. */
+    if (marPerdido) return;
+    if (puede) arrancar(mar);
+    else caerAlRespaldo('enlace-fallido');
+  });
 }
