@@ -723,7 +723,14 @@ main:focus { outline: none; }
 }
 
 /* Respaldo animado si WebGL no existe. Una visita normal —también en
-   móvil— pinta el canvas completo y nunca activa estas reglas. */
+   móvil— pinta el canvas completo y nunca activa estas reglas.
+
+   También sirve MIENTRAS el shader compila (`.mar-pendiente`, que pone
+   main.js si a los tres segundos no ha enlazado) y durante el fundido
+   con que la pintura lo sustituye (`.mar-entrando`). En esos dos estados
+   el respaldo va DEBAJO del lienzo —z-index 0 frente al 1 del canvas—
+   para que la pintura entre por encima y no haya un cuadro vacío entre
+   uno y otra. */
 
 /* ── EL HORIZONTE DEL RESPALDO, QUE NO LO PONÍA NADIE ──────────────
    `--horizonte` vale 56 % en `:root` y lo reescribe `medidas()` en
@@ -740,12 +747,12 @@ main:focus { outline: none; }
    que las dos versiones del hero repartan cielo y agua igual. El corte
    por proporción de ventana es también el mismo: 4/5 es el 0.8 de
    aspecto con el que allí se decide. */
-.hero-estatico { --horizonte: 66%; }
+:is(.hero-estatico, .mar-pendiente) { --horizonte: 66%; }
 @media (max-aspect-ratio: 4 / 5) {
-  .hero-estatico { --horizonte: 74%; }
+  :is(.hero-estatico, .mar-pendiente) { --horizonte: 74%; }
 }
 
-.hero-estatico .mundo::before {
+:is(.hero-estatico, .mar-pendiente, .mar-entrando) .mundo::before {
   content: "";
   position: absolute;
   z-index: 0;
@@ -791,7 +798,7 @@ main:focus { outline: none; }
 .con-eco.hero-estatico .mundo::before,
 .con-eco.hero-estatico .mundo::after { content: none; }
 
-.hero-estatico .mundo::after {
+:is(.hero-estatico, .mar-pendiente, .mar-entrando) .mundo::after {
   content: "";
   position: absolute;
   z-index: 1;
@@ -842,9 +849,10 @@ main:focus { outline: none; }
   45%      { transform: rotate(0.46deg) skewX(0.24deg) translate3d(1.5px, -0.5px, 0); }
   72%      { transform: rotate(0.12deg) skewX(0.08deg) translate3d(0.5px, 0, 0); }
 }
+:is(.mar-pendiente, .mar-entrando) .mundo::after { z-index: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .hero-estatico .mundo::before,
-  .hero-estatico .mundo::after { animation: none !important; }
+  :is(.hero-estatico, .mar-pendiente, .mar-entrando) .mundo::before,
+  :is(.hero-estatico, .mar-pendiente, .mar-entrando) .mundo::after { animation: none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -967,6 +975,15 @@ main:focus { outline: none; }
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   display: block;
+  /* Por encima del respaldo CSS (z-index 0) y por debajo de las garzas
+     (1, y después en el árbol). Invisible mientras el shader compila;
+     entra en fundido cuando el primer cuadro reconocible está pintado. */
+  z-index: 1;
+  transition: opacity 900ms ease;
+}
+.mar-pendiente .hero__lienzo { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .hero__lienzo { transition: none; }
 }
 /* El interruptor del sospechoso de turno; el porqué está en main.js,
    junto a la lectura del parámetro. El lienzo pasa a ser él el elemento

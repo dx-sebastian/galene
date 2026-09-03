@@ -13,6 +13,13 @@
 
    Sin JavaScript, el bloque `noscript` del documento abre el contenido.
    Con JavaScript incompleto, el límite de ocho segundos hace lo mismo.
+
+   Y hay un tercer aviso, `galene:hero-pendiente`: main.js lo manda
+   cuando el shader del mar lleva tres segundos compilando —en Windows la
+   primera compilación tarda mucho más—. Entonces se abre sobre el
+   respaldo CSS sin esperar al límite, y la pintura entra en fundido
+   cuando llega. Esperar ocho segundos a algo que va a tardar dieciocho
+   no es prudencia: es un cargador parado delante de la ayuda.
    ═══════════════════════════════════════════════════════════════════ */
 
 const raiz = document.documentElement;
@@ -25,6 +32,7 @@ const MAXIMO = 8000;
 let resolverHero;
 const heroListo = new Promise((resolver) => { resolverHero = resolver; });
 addEventListener('galene:hero-listo', resolverHero, { once: true });
+addEventListener('galene:hero-pendiente', resolverHero, { once: true });
 
 const fuentesListas = document.fonts?.ready?.catch?.(() => undefined)
   || Promise.resolve();
